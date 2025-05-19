@@ -1,0 +1,16 @@
+flutter_native_splash:
+  # iOS & Android below 12
+
+  color: "#681F00"
+  image: assets/images/rafiq_logo.png
+
+
+  android_12:
+    color: "#681F00"
+    image: assets/images/new.jpg
+    icon_background_color: "#681F00"
+    icon_background_color_dark: "#681F00"
+
+
+  android: true
+  ios: true

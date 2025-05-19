@@ -1,0 +1,196 @@
+----- Start of Request -----
+Received Data: {"placeName":"حموكشا","activityId":"1","budget":"أقل من 100 جنيه","priceRange":"100","address":"القاهره وسط البلد ","cityName":"القاهرة","description":"طعام لذيذ فن ونبيذ ","imagePath":"default.jpg"}
+CityID: 1
+Success: تم إضافة المكان بنجاح.
+----- End of Request -----
+
+----- Start of Request -----
+Received Data: {"placeName":"مطعم اش اش","activityId":"1","budget":"أقل من 100 جنيه","priceRange":"100","address":"المنصوره شارع احمد ماهر","cityName":"المنصورة","description":"طعام لذيذ فن ونبيذ","imagePath":"default.jpg"}
+CityID: 2
+Success: تم إضافة المكان بنجاح.
+----- End of Request -----
+
+----- Start of Request -----
+Received Data: {"placeName":"مطعم انس","activityId":"1","budget":"أقل من 100 جنيه","priceRange":"20","address":"المنصوره شارع احمد ماهر","cityName":"المنصورة","description":"طعام لذيذ فن ونبيذ","imagePath":"default.jpg"}
+CityID: 2
+ActivityName: طعام
+Success: تم إضافة المكان بنجاح.
+----- End of Request -----
+
+----- Start of Request -----
+Received Data: {"placeName":"مطعم اش اش","activityId":"1","budget":"أقل من 100 جنيه","priceRange":"100","address":"المنصوره الدقهليه شارع احمد ماهر","cityName":"المنصورة","description":"طعام لذيذ فن ونبيذ","imagePath":"default.jpg"}
+CityID: 2
+ActivityName: طعام
+Success: تم إضافة المكان بنجاح.
+----- End of Request -----
+
+----- Start of Request -----
+Received Data: {"placeName":"مطعم اش اش","activityId":"1","budget":"أقل من 100 جنيه","priceRange":"100","address":"المنصوره الدقهليه شارع احمد ماهر","cityName":"المنصورة","description":"طعام لذيذ فن ونبيذ","imagePath":"default.jpg"}
+CityID: 2
+ActivityName: طعام
+Success: تم إضافة المكان بنجاح.
+----- End of Request -----
+
+----- Start of Request -----
+Received Data: {"placeName":"مطعم العب يلا","activityId":"1","budget":"أقل من 100 جنيه","priceRange":"100","address":"المنصوره شارع احمد ماهر","cityName":"المنصورة","description":"طعام لذيذ فن ونبيذ","imagePath":"assets\/images\/padel.png"}
+CityID: 2
+ActivityName: طعام
+Exception: حدث خطأ: Unknown column 'imageurl' in 'field list'
+----- End of Request -----
+
+----- Start of Request -----
+Received Data: {"placeName":"مطعم العب يلا","activityId":"1","budget":"أقل من 100 جنيه","priceRange":"100","address":"المنصوره شارع احمد ماهر","cityName":"المنصورة","description":"طعام لذيذ فن ونبيذ","imagePath":"assets\/images\/padel.png"}
+CityID: 2
+ActivityName: طعام
+Exception: حدث خطأ: Unknown column 'imageurl' in 'field list'
+----- End of Request -----
+
+----- Start of Request -----
+Received Data: {"placeName":"مطعم الآكابر","activityId":"1","budget":"أقل من 100 جنيه","priceRange":"30","address":"المنصوره شارع احمد ماهر ","cityName":"القاهرة","description":"طعام لذيذ فن ونبيذ","imagePath":"assets\/images\/padel.png"}
+CityID: 1
+ActivityName: طعام
+Exception: حدث خطأ: Unknown column 'imageurl' in 'field list'
+----- End of Request -----
+
+----- Start of Request -----
+Received Data: {"placeName":"مطعم الآكابر","activityId":"1","budget":"أقل من 100 جنيه","priceRange":"30","address":"المنصوره شارع احمد ماهر ","cityName":"القاهرة","description":"طعام لذيذ فن ونبيذ","imagePath":"assets\/images\/padel.png"}
+CityID: 1
+ActivityName: طعام
+Exception: حدث خطأ: Unknown column 'imageurl' in 'field list'
+----- End of Request -----
+
+----- Start of Request -----
+Received Data: {"placeName":"مطعم الآكابر","activityId":"1","budget":"أقل من 100 جنيه","priceRange":"30","address":"المنصوره شارع احمد ماهر ","cityName":"القاهرة","description":"طعام لذيذ فن ونبيذ","imagePath":"assets\/images\/padel.png"}
+CityID: 1
+ActivityName: طعام
+Exception: حدث خطأ: Unknown column 'imageurl' in 'field list'
+----- End of Request -----
+
+----- Start of Request -----
+Received Data: {"placeName":"مطعم الآكابر","activityId":"1","budget":"أقل من 100 جنيه","priceRange":"30","address":"المنصوره شارع احمد ماهر ","cityName":"القاهرة","description":"طعام لذيذ فن ونبيذ","imagePath":"assets\/images\/padel.png"}
+CityID: 1
+ActivityName: طعام
+Exception: حدث خطأ: Unknown column 'imageurl' in 'field list'
+----- End of Request -----
+
+----- Start of Request -----
+Received Data: {"placeName":"مطعم الآكابر","activityId":"1","budget":"أقل من 100 جنيه","priceRange":"30","address":"المنصوره شارع احمد ماهر ","cityName":"القاهرة","description":"طعام لذيذ فن ونبيذ","imagePath":"assets\/images\/padel.png"}
+CityID: 1
+ActivityName: طعام
+Exception: حدث خطأ: Unknown column 'imageurl' in 'field list'
+----- End of Request -----
+
+----- Start of Request -----
+Received Data: {"placeName":"مطعم الآكابر","activityId":"1","budget":"أقل من 100 جنيه","priceRange":"30","address":"المنصوره شارع احمد ماهر ","cityName":"القاهرة","description":"طعام لذيذ فن ونبيذ","imagePath":"assets\/images\/padel.png"}
+CityID: 1
+ActivityName: طعام
+Success: تم إضافة المكان بنجاح.
+----- End of Request -----
+
+----- Start of Request -----
+Received Data: {"placeName":"حدائق الزيتون","activityId":"2","budget":"أقل من 100 جنيه","priceRange":"50","address":"القاهره وسط البلد","cityName":"القاهرة","description":"حدائق الزيتون من اشهر الحدائق التي يحبها الأطفال.","imagePath":"assets\/images\/padel.png"}
+CityID: 1
+ActivityName: ترفيه
+Success: تم إضافة المكان بنجاح.
+----- End of Request -----
+
+----- Start of Request -----
+Received Data: {"placeName":"مطعم منعم","activityId":"1","budget":"1000 إلى 1500 جنيه","priceRange":"100","address":"شربين شارع باتا","cityName":"المنصورة","description":"مطعم توب التوب ","imagePath":"assets\/images\/padel.png"}
+CityID: 2
+ActivityName: طعام
+Success: تم إضافة المكان بنجاح.
+----- End of Request -----
+
+----- Start of Request -----
+Error: الطلب يجب أن يكون من نوع POST.
+----- Start of Request -----
+Received Data: {"placeName":"مطعم ابو عبده","activityId":"1","budget":"أقل من 100 جنيه","priceRange":"100","address":"القاهره وسط البلد","cityName":"القاهرة","description":"مطعم ابو عبده لجميع انواع المشويات😍👍","imagePath":"assets\/images\/padel.png"}
+CityID: 1
+ActivityName: طعام
+Success: تم إضافة المكان بنجاح.
+----- End of Request -----
+
+----- Start of Request -----
+Received Data: {"placeName":"restaurant(Continue &Stop)","activityId":"1","budget":"أقل من 100 جنيه","priceRange":"100","address":"المنصوره شارع احمد ماهر","cityName":"المنصورة","description":"مطعم continue and stop  من المطاعم المشهوره جدا في مدينة المنصورة جرب تزوره الآن ومش هتندم👋🥰"}
+CityID: 2
+ActivityName: طعام
+Success: تم إضافة المكان بنجاح.
+----- End of Request -----
+
+----- Start of Request -----
+Received Data: {"placeName":"مطعم أبو علي🔥","activityId":"1","budget":"أقل من 100 جنيه","priceRange":"40","address":"المنصوره شارع احمد ماهر","cityName":"المنصورة","description":"مطعم أبو علي من اشهر المطاعم في المنصورة لتقديم المشويات🔥🥰 "}
+CityID: 2
+ActivityName: طعام
+Success: تم إضافة المكان بنجاح.
+----- End of Request -----
+
+----- Start of Request -----
+Received Data: {"placeName":"مطعم المحمدي","activityId":"1","budget":"أقل من 100 جنيه","priceRange":"100","address":"الاسكندريه أبو قير","cityName":"الإسكندرية","description":"طعام لذيذ فن ونبيذ"}
+CityID: 3
+ActivityName: طعام
+Success: تم إضافة المكان بنجاح.
+----- End of Request -----
+
+----- Start of Request -----
+Received Data: {"placeName":"مطعم أبو علي","activityId":"1","budget":"أقل من 100 جنيه","priceRange":"100","address":"المنصوره شارع احمد ماهر","cityName":"المنصورة","description":"طعام لذيذ فن ونبيذ"}
+CityID: 2
+ActivityName: طعام
+Success: تم إضافة المكان بنجاح.
+----- End of Request -----
+
+----- Start of Request -----
+Received Data: {"placeName":"مطعم أبو بكر","activityId":"1","budget":"أقل من 100 جنيه","priceRange":"100","address":"المنصوره شارع احمد ماهر","cityName":"المنصورة","description":"طعام لذيذ فن ونبيذ"}
+CityID: 2
+ActivityName: طعام
+Success: تم إضافة المكان بنجاح.
+----- End of Request -----
+
+----- Start of Request -----
+Received Data: {"placeName":"مطعم أبو قير","activityId":"1","budget":"أقل من 100 جنيه","priceRange":"100","address":"الاسكندريه أبو قير","cityName":"الإسكندرية","description":"طعام لذيذ فن ونبيذ"}
+CityID: 3
+ActivityName: طعام
+Success: تم إضافة المكان بنجاح.
+----- End of Request -----
+
+----- Start of Request -----
+Received Data: {"placeName":"مطعم المحمدي الأصيل","activityId":"1","budget":"أقل من 100 جنيه","priceRange":"100","address":"الاسكندريه أبو قير","cityName":"الإسكندرية","description":"طعام لذيذ فن ونبيذ"}
+CityID: 3
+ActivityName: طعام
+Success: تم إضافة المكان بنجاح.
+----- End of Request -----
+
+----- Start of Request -----
+Received Data: {"placeName":"مطعم ابو عبده","activityId":"1","budget":"100 إلى 500 جنيه","priceRange":"100","address":"المنصوره شارع احمد ماهر","cityName":"المنصورة","description":"طعام لذيذ جدا❤️🥰"}
+CityID: 2
+ActivityName: طعام
+Success: تم إضافة المكان بنجاح.
+----- End of Request -----
+
+----- Start of Request -----
+Received Data: {"placeName":"مطعم أبو علي","activityId":"1","budget":"أقل من 100 جنيه","priceRange":"50","address":"المنصوره شارع احمد ماهر","cityName":"المنصورة","description":"طعام لذيذ جدا ❤️😍"}
+CityID: 2
+ActivityName: طعام
+Success: تم إضافة المكان بنجاح.
+----- End of Request -----
+
+----- Start of Request -----
+Received Data: {"placeName":"مطعم ابو عمر","activityId":"1","budget":"أقل من 100 جنيه","priceRange":"50","address":"المنصوره شارع احمد ماهر","cityName":"القاهرة","description":"نقدم أجود أنواع المشويات واللحوم😍❤️"}
+CityID: 1
+ActivityName: طعام
+Success: تم إضافة المكان بنجاح.
+----- End of Request -----
+
+----- Start of Request -----
+Received Data: {"placeName":"مطعم عبده سمير🔥","activityId":"1","budget":"أقل من 100 جنيه","priceRange":"30","address":"المنصوره شارع احمد ماهر","cityName":"المنصورة","description":"مطعم شاورما سوري يقدم اجود الانواع من اللحوم😍"}
+CityID: 2
+ActivityName: طعام
+Success: تم إضافة المكان بنجاح.
+----- End of Request -----
+
+----- Start of Request -----
+Received Data: {"placeName":"مطعم أبو علي","activityId":"1","budget":"أقل من 100 جنيه","priceRange":"20","address":"المنصوره شارع احمد ماهر","cityName":"المنصورة","description":"مطعم سوري للوجبات السريعة"}
+CityID: 2
+ActivityName: طعام
+Success: تم إضافة المكان بنجاح.
+----- End of Request -----
+
