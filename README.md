@@ -1,4 +1,4 @@
-# rafiq_app
+# Rafiq_app
 
 A new Flutter project.
 
