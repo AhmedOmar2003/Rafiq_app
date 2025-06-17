@@ -19,19 +19,4 @@ class CacheHelper {
   static Future<bool> clearUserData() async {
     return prefs.clear();
   }
-
-  static Future<bool> saveData({
-    required String key,
-    required String value,
-  }) async {
-    return await prefs.setString(key, value);
-  }
-
-  static Future<String?> getData({required String key}) async {
-    return prefs.getString(key);
-  }
-
-  static Future<bool> removeData({required String key}) async {
-    return await prefs.remove(key);
-  }
 }

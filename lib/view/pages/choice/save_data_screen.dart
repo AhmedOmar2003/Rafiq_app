@@ -11,6 +11,7 @@ class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
 
   @override
+  @override
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -29,18 +30,7 @@ class SplashScreen extends StatelessWidget {
                         children: [
                           CustomTextWidget(
                             label: "\"مبروك عليك تم حفظ بيانات مكانك بنجاح\"",
-                            style: TextStyleTheme.textStyle22Medium.copyWith(
-                              height: 1.4,
-                              letterSpacing: 0.3,
-                              fontWeight: FontWeight.w600,
-                              shadows: [
-                                Shadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  offset: const Offset(0, 1),
-                                  blurRadius: 2,
-                                ),
-                              ],
-                            ),
+                            style: TextStyleTheme.textStyle22Medium,
                             textAlign: TextAlign.center,
                           ),
                         ],
@@ -72,62 +62,25 @@ class SplashScreen extends StatelessWidget {
               ),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 24.w),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const HomeView(),
-                        ),
-                      );
-                    },
-                    splashColor: Colors.white.withOpacity(0.1),
-                    highlightColor: Colors.white.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(8.r),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8.r),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColor.primary.withOpacity(0.2),
-                            offset: const Offset(0, 3),
-                            blurRadius: 12,
-                            spreadRadius: 1,
-                          ),
-                        ],
+                child: AppButton(
+                  text: "ابحث عن مكانك الآن",
+                  onPress: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const HomeView(),
                       ),
-                      child: AppButton(
-                        text: "ابحث عن مكانك الآن",
-                        onPress: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const HomeView(),
-                            ),
-                          );
-                        },
-                        buttonStyle: ElevatedButton.styleFrom(
-                          fixedSize: Size(342.w, 55.h),
-                          backgroundColor: AppColor.primary,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                          elevation: 0,
-                          padding: EdgeInsets.symmetric(vertical: 16.h),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          animationDuration: const Duration(milliseconds: 150),
-                        ),
-                        textStyle: TextStyleTheme.textStyle20Medium.copyWith(
-                          color: AppColor.white,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5,
-                          height: 1.2,
-                        ),
-                      ),
+                    );
+                  },
+                  buttonStyle: ElevatedButton.styleFrom(
+                    fixedSize: Size(342.w, 55.h),
+                    backgroundColor: AppColor.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.r),
                     ),
+                  ),
+                  textStyle: TextStyleTheme.textStyle20Medium.copyWith(
+                    color: AppColor.white,
                   ),
                 ),
               ),

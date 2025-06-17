@@ -349,9 +349,6 @@ class _DetailsPageState extends State<DetailsPage> {
       if (!_isMounted) return;
 
       if (isPaymentSuccessful) {
-        // Add a longer delay to ensure payment page interaction is complete
-        await Future.delayed(const Duration(seconds: 2));
-        if (!_isMounted) return;
         _showSuccessOverlay();
       } else {
         _showSnackBar("فشل الدفع!", Colors.red);

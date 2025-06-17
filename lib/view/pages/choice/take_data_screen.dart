@@ -187,6 +187,8 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
                             verticalSpace(28),
                             _buildFormFields(),
                             verticalSpace(28),
+                            _buildSubmitButton(),
+                            verticalSpace(20),
                           ],
                         ),
                       ),
@@ -196,83 +198,6 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
               ),
             ),
           ),
-          bottomNavigationBar: Container(
-            height: 90.h,
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-            decoration: BoxDecoration(
-              color: AppColor.ofWhite,
-              border: Border(
-                top: BorderSide(
-                  color: AppColor.primary.withOpacity(0.15),
-                  width: 1.5,
-                ),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  offset: const Offset(0, -4),
-                  blurRadius: 20,
-                ),
-              ],
-            ),
-            child: _isLoading
-                ? Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(AppColor.primary),
-                    ),
-                  )
-                : Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: _addPlace,
-                      splashColor: Colors.white.withOpacity(0.1),
-                      highlightColor: Colors.white.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(14.r),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(14.r),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFFFF5C5C).withOpacity(0.15),
-                              offset: const Offset(0, 2),
-                              blurRadius: 8,
-                              spreadRadius: 0,
-                            ),
-                            BoxShadow(
-                              color: AppColor.primary.withOpacity(0.2),
-                              offset: const Offset(0, 3),
-                              blurRadius: 12,
-                              spreadRadius: 1,
-                            ),
-                          ],
-                        ),
-                        child: AppButton(
-                          text: "حفظ",
-                          textStyle: TextStyleTheme.textStyle20Medium.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 22.sp,
-                          ),
-                          buttonStyle: ElevatedButton.styleFrom(
-                            backgroundColor: AppColor.primary,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14.r),
-                            ),
-                            elevation: 0,
-                            padding: EdgeInsets.symmetric(vertical: 16.h),
-                            minimumSize: Size(double.infinity, 56.h),
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            animationDuration: const Duration(milliseconds: 150),
-                          ),
-                          onPress: _addPlace,
-                        ),
-                      ),
-                    ),
-                  ),
-          ),
-          resizeToAvoidBottomInset: true,
         ),
       ),
     );
@@ -446,6 +371,25 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
         ),
       ],
     );
+  }
+
+  Widget _buildSubmitButton() {
+    return _isLoading
+        ? const CircularProgressIndicator()
+        : AppButton(
+            text: "حفظ",
+            onPress: _addPlace,
+            buttonStyle: ElevatedButton.styleFrom(
+              fixedSize: Size(342.w, 55.h),
+              backgroundColor: AppColor.primary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+            ),
+            textStyle: TextStyleTheme.textStyle20Medium.copyWith(
+              color: AppColor.white,
+            ),
+          );
   }
 
   Widget _buildTextField({

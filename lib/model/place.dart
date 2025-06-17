@@ -66,20 +66,4 @@ class Place {
       placeId: json['PlaceID'],
     );
   }
-
-  // تحويل البيانات إلى JSON
-  Map<String, dynamic> toJson() {
-    return {
-      'PlaceName': name,
-      'Description': description,
-      'PriceRange': priceRange,
-      'budget': budget,
-      'Rating': rating,
-      'PlaceAddress': placeAddress,
-      'image_path': imageUrl,
-      'ActivityName': activityName,
-      'CityName': cityName,
-      'PlaceID': placeId,
-    };
-  }
 }

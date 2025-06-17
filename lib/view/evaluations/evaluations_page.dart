@@ -280,82 +280,78 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
           ),
         ),
       ),
-      body: Padding(
+      body: ListView(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 15.h),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    CustomTextWidget(
-                      label: "الكل",
-                      style: TextStyleTheme.textStyle18Medium.copyWith(
-                        fontWeight: FontWeightHelper.bold,
-                        height: 1.2,
+        //crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  CustomTextWidget(
+                    label: "الكل",
+                    style: TextStyleTheme.textStyle18Medium.copyWith(
+                      fontWeight: FontWeightHelper.bold,
+                      height: 1.2,
+                    ),
+                  ),
+                  horizontalSpace(5.w),
+                ],
+              ),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(8.r),
+                  onTap: () {},
+                  splashColor: AppColor.primary.withOpacity(0.1),
+                  highlightColor: AppColor.primary.withOpacity(0.05),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                    decoration: BoxDecoration(
+                      color: AppColor.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8.r),
+                      border: Border.all(
+                        color: AppColor.primary.withOpacity(0.2),
+                        width: 1,
                       ),
                     ),
-                    horizontalSpace(5.w),
-                  ],
-                ),
-                Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(8.r),
-                    onTap: () {},
-                    splashColor: AppColor.primary.withOpacity(0.1),
-                    highlightColor: AppColor.primary.withOpacity(0.05),
-                    child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-                      decoration: BoxDecoration(
-                        color: AppColor.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8.r),
-                        border: Border.all(
-                          color: AppColor.primary.withOpacity(0.2),
-                          width: 1,
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.filter_list_rounded,
+                          size: 20.w,
+                          color: AppColor.primary,
                         ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.filter_list_rounded,
-                            size: 20.w,
+                        horizontalSpace(6.w),
+                        CustomTextWidget(
+                          label: "الأكثر شعبية",
+                          style: TextStyleTheme.textStyle12Regular.copyWith(
                             color: AppColor.primary,
+                            height: 1.2,
+                            fontWeight: FontWeight.w500,
                           ),
-                          horizontalSpace(6.w),
-                          CustomTextWidget(
-                            label: "الأكثر شعبية",
-                            style: TextStyleTheme.textStyle12Regular.copyWith(
-                              color: AppColor.primary,
-                              height: 1.2,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ],
-            ),
-            verticalSpace(16.h),
-            Expanded(
-              child: evaluationsItemList.isEmpty
-                  ? _buildEmptyState()
-                  : ListView.builder(
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: evaluationsItemList.length,
-                      itemBuilder: (context, index) {
-                        final evaluation = evaluationsItemList[index];
-                        final String formattedDate = _formatDate(evaluation.date);
-                        return _buildEvaluationItem(evaluation, formattedDate);
-                      },
-                    ),
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+          verticalSpace(16.h),
+          evaluationsItemList.isEmpty
+              ? _buildEmptyState()
+              : ListView.builder(
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: evaluationsItemList.length,
+                  itemBuilder: (context, index) {
+                    final evaluation = evaluationsItemList[index];
+                    final String formattedDate = _formatDate(evaluation.date);
+                    return _buildEvaluationItem(evaluation, formattedDate);
+                  },
+                ),
+        ],
       ),
       bottomNavigationBar: Padding(
         padding: EdgeInsets.only(

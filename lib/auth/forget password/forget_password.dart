@@ -84,7 +84,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         title: Padding(
           padding: const EdgeInsets.only(left: 80.0),
           child: Text(
-            "نسيت كلمة المرور؟",
+            "نسيت كلمة المرور",
             style: TextStyleTheme.textStyle25Medium.copyWith(
               color: Colors.black,
             ),
@@ -92,104 +92,152 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         ),
       ),
       body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "أدخل بريدك الإلكتروني لإعادة التعيين",
-                style: TextStyleTheme.textStyle16Regular.copyWith(
-                  color: AppColor.black.withOpacity(0.7),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Header Section
+                Center(
+                  child: Container(
+                    width: 120.w,
+                    height: 120.w,
+                    decoration: BoxDecoration(
+                      color: AppColor.primary.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.lock_reset_rounded,
+                      size: 60.sp,
+                      color: AppColor.primary,
+                    ),
+                  ),
                 ),
-              ),
-              SizedBox(height: 40.h),
-              Form(
-                key: formKey,
-                child: Container(
+                SizedBox(height: 32.h),
+                Text(
+                  "إعادة تعيين كلمة المرور",
+                  style: TextStyleTheme.textStyle25Medium.copyWith(
+                    color: AppColor.black,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 16.h),
+                Text(
+                  "أدخل بريدك الإلكتروني لإعادة التعيين",
+                  style: TextStyleTheme.textStyle16Regular.copyWith(
+                    color: AppColor.black.withOpacity(0.7),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 40.h),
+                // Form Section
+                Form(
+                  key: formKey,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppColor.primary.withOpacity(0.03),
+                      borderRadius: BorderRadius.circular(20.r),
+                      border: Border.all(
+                        color: AppColor.primary.withOpacity(0.15),
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColor.primary.withOpacity(0.08),
+                          blurRadius: 15,
+                          offset: const Offset(0, 5),
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        AppInput(
+                          hintText: "البريد الإلكتروني",
+                          controller: emailController,
+                          textInputAction: TextInputAction.done,
+                          type: TextInputType.emailAddress,
+                          paddingBottom: 0,
+                          validator: (value) {
+                            if (value == null ||
+                                value.isEmpty ||
+                                !RegExp(r'^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z0-9]+')
+                                    .hasMatch(value)) {
+                              return "بريدك الالكتروني غير صحيح";
+                            }
+                            return null;
+                          },
+                          suffixIcon: Icon(
+                            Icons.email_outlined,
+                            color: AppColor.primary,
+                            size: 20.sp,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(height: 32.h),
+                // Button Section
+                Container(
+                  width: double.infinity,
+                  height: 55.h,
                   decoration: BoxDecoration(
-                    color: AppColor.ofWhite,
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColor.primary,
+                        AppColor.primary.withOpacity(0.8),
+                      ],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ),
                     borderRadius: BorderRadius.circular(15.r),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: AppColor.primary.withOpacity(0.3),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
                     ],
                   ),
-                  padding: EdgeInsets.all(20.w),
-                  child: Column(
-                    children: [
-                      AppInput(
-                        hintText: "البريد الإلكتروني",
-                        controller: emailController,
-                        textInputAction: TextInputAction.done,
-                        type: TextInputType.emailAddress,
-                        paddingBottom: 16.h,
-                        validator: (value) {
-                          if (value == null ||
-                              value.isEmpty ||
-                              !RegExp(r'^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z0-9]+')
-                                  .hasMatch(value)) {
-                            return "بريدك الالكتروني غير صحيح";
-                          }
-                          return null;
-                        },
-                        suffixIcon: Icon(
-                          Icons.email_outlined,
-                          color: AppColor.primary,
-                          size: 24.sp,
-                        ),
+                  child: AppButton(
+                    text: "إرسال",
+                    textStyle: TextStyleTheme.textStyle18Medium.copyWith(
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                    ),
+                    buttonStyle: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      elevation: 0,
+                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15.r),
                       ),
-                    ],
-                  ),
-                ),
-              ),
-              const Spacer(),
-              Container(
-                width: double.infinity,
-                height: 55.h,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColor.primary,
-                      AppColor.primary.withOpacity(0.8),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(12.r),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColor.primary.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
                     ),
-                  ],
-                ),
-                child: AppButton(
-                  text: "التالي",
-                  textStyle: TextStyleTheme.textStyle25Medium.copyWith(
-                    color: Colors.white,
-                    letterSpacing: 0.5,
+                    onPress: () {
+                      if (formKey.currentState != null &&
+                          formKey.currentState!.validate()) {
+                        resetPassword();
+                      }
+                    },
                   ),
-                  buttonStyle: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    elevation: 0,
-                    padding: EdgeInsets.symmetric(vertical: 12.h),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.r),
+                ),
+                SizedBox(height: 24.h),
+                // Help Text
+                Center(
+                  child: Text(
+                    "سيتم إرسال رمز التحقق لبريدك",
+                    style: TextStyleTheme.textStyle14Regular.copyWith(
+                      color: AppColor.black.withOpacity(0.6),
                     ),
                   ),
-                  onPress: () {
-                    if (formKey.currentState != null &&
-                        formKey.currentState!.validate()) {
-                      resetPassword();
-                    }
-                  },
                 ),
-              ),
-              SizedBox(height: 20.h),
-            ],
+              ],
+            ),
           ),
         ),
       ),

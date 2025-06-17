@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
-import 'package:circular_countdown_timer/circular_countdown_timer.dart'; // Correct import
+import 'package:circular_countdown_timer/circular_countdown_timer.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:rafiq_app/auth/forget%20password/reset_password.dart';
 import 'package:rafiq_app/core/utils/app_color.dart';
@@ -23,7 +23,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
   final formKey = GlobalKey<FormState>();
   final codeController = TextEditingController();
   bool isTimerFinished = false;
-  final int countdownDuration = 60; // 60 ثانية للعد التنازلي
+  final int countdownDuration = 60;
 
   Future<void> verifyCode() async {
     final String url = "http://${GlopalVariable.ipConfig}/Api/verify_code.php";
@@ -90,9 +90,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
         leading: Padding(
           padding: EdgeInsets.only(right: 12.w),
           child: GestureDetector(
-            onTap: () {
-              Navigator.pop(context);
-            },
+            onTap: () => Navigator.pop(context),
             child: Icon(
               Icons.arrow_back_ios_new,
               color: AppColor.black,
@@ -100,217 +98,277 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
             ),
           ),
         ),
-        title: Padding(
-          padding: const EdgeInsets.only(left: 80.0),
-          child: Text(
-            "رمز التحقق",
-            style: TextStyleTheme.textStyle25Medium.copyWith(
-              color: Colors.black,
-            ),
+        title: Text(
+          "رمز التحقق",
+          style: TextStyleTheme.textStyle20Medium.copyWith(
+            color: AppColor.black,
           ),
         ),
+        centerTitle: true,
       ),
       body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                padding: EdgeInsets.all(20.w),
-                decoration: BoxDecoration(
-                  color: AppColor.ofWhite,
-                  borderRadius: BorderRadius.circular(15.r),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Header Section
+                Container(
+                  padding: EdgeInsets.all(24.w),
+                  decoration: BoxDecoration(
+                    color: AppColor.primary.withOpacity(0.03),
+                    borderRadius: BorderRadius.circular(20.r),
+                    border: Border.all(
+                      color: AppColor.primary.withOpacity(0.15),
+                      width: 1,
                     ),
-                  ],
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColor.primary.withOpacity(0.05),
+                        blurRadius: 15,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(16.w),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColor.primary.withOpacity(0.1),
+                              AppColor.primary.withOpacity(0.2),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.mark_email_read_outlined,
+                          size: 32.sp,
+                          color: AppColor.primary,
+                        ),
+                      ),
+                      SizedBox(height: 16.h),
+                      Text(
+                        "تم إرسال الرمز",
+                        style: TextStyleTheme.textStyle16Regular.copyWith(
+                          color: AppColor.black.withOpacity(0.7),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 8.h),
+                      Text(
+                        widget.email,
+                        style: TextStyleTheme.textStyle16Medium.copyWith(
+                          color: AppColor.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
-                child: Column(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(12.w),
-                      decoration: BoxDecoration(
-                        color: AppColor.primary.withOpacity(0.1),
-                        shape: BoxShape.circle,
+                SizedBox(height: 40.h),
+                // Verification Code Section
+                Form(
+                  key: formKey,
+                  child: Directionality(
+                    textDirection: TextDirection.ltr,
+                    child: PinCodeTextField(
+                      controller: codeController,
+                      keyboardType: TextInputType.number,
+                      length: 4,
+                      obscureText: true,
+                      obscuringCharacter: "•",
+                      animationType: AnimationType.fade,
+                      pinTheme: PinTheme(
+                        shape: PinCodeFieldShape.box,
+                        borderRadius: BorderRadius.circular(12.r),
+                        fieldHeight: 55.h,
+                        fieldWidth: 55.h,
+                        borderWidth: 1,
+                        inactiveColor: AppColor.primary.withOpacity(0.2),
+                        activeColor: AppColor.primary,
+                        selectedColor: AppColor.primary,
+                        activeFillColor: AppColor.primary.withOpacity(0.03),
+                        inactiveFillColor: AppColor.primary.withOpacity(0.03),
+                        selectedFillColor: AppColor.primary.withOpacity(0.05),
                       ),
-                      child: Icon(
-                        Icons.mark_email_read_outlined,
-                        size: 32.sp,
-                        color: AppColor.primary,
-                      ),
+                      animationDuration: const Duration(milliseconds: 300),
+                      backgroundColor: Colors.transparent,
+                      enableActiveFill: true,
+                      appContext: context,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return "يرجى إدخال رمز التحقق";
+                        }
+                        return null;
+                      },
                     ),
-                    SizedBox(height: 16.h),
-                    Text(
-                      "تم إرسال الرمز إلى",
-                      style: TextStyleTheme.textStyle16Regular.copyWith(
-                        color: AppColor.black,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    SizedBox(height: 8.h),
-                    Text(
-                      widget.email,
-                      style: TextStyleTheme.textStyle16Medium.copyWith(
-                        color: AppColor.primary,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-              SizedBox(height: 40.h),
-              Form(
-                key: formKey,
-                child: Directionality(
-                  textDirection: TextDirection.ltr,
-                  child: PinCodeTextField(
-                    controller: codeController,
-                    keyboardType: TextInputType.number,
-                    length: 4,
-                    obscureText: true,
-                    obscuringCharacter: "*",
-                    animationType: AnimationType.fade,
-                    pinTheme: PinTheme(
-                      shape: PinCodeFieldShape.box,
-                      borderRadius: BorderRadius.circular(15.r),
-                      fieldHeight: 60.h,
-                      fieldWidth: 60.h,
-                      borderWidth: 1.5,
-                      inactiveColor: AppColor.primary.withOpacity(0.3),
-                      activeColor: AppColor.primary,
-                      selectedColor: AppColor.primary,
-                      activeFillColor: AppColor.ofWhite,
-                      inactiveFillColor: AppColor.ofWhite,
-                      selectedFillColor: AppColor.primary.withOpacity(0.1),
+                SizedBox(height: 32.h),
+                // Verify Button
+                Container(
+                  width: double.infinity,
+                  height: 55.h,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColor.primary,
+                        AppColor.primary.withOpacity(0.8),
+                      ],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
                     ),
-                    animationDuration: const Duration(milliseconds: 300),
-                    backgroundColor: Colors.transparent,
-                    enableActiveFill: true,
-                    appContext: context,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return "يرجى إدخال رمز التحقق";
+                    borderRadius: BorderRadius.circular(15.r),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColor.primary.withOpacity(0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: AppButton(
+                    text: "تحقق",
+                    textStyle: TextStyleTheme.textStyle18Medium.copyWith(
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                    ),
+                    buttonStyle: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      elevation: 0,
+                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15.r),
+                      ),
+                    ),
+                    onPress: () {
+                      if (formKey.currentState!.validate()) {
+                        verifyCode();
                       }
-                      return null;
                     },
                   ),
                 ),
-              ),
-              SizedBox(height: 32.h),
-              Container(
-                width: double.infinity,
-                height: 55.h,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColor.primary,
-                      AppColor.primary.withOpacity(0.8),
+                SizedBox(height: 32.h),
+                // Timer Section
+                Container(
+                  padding: EdgeInsets.all(24.w),
+                  decoration: BoxDecoration(
+                    color: AppColor.primary.withOpacity(0.03),
+                    borderRadius: BorderRadius.circular(20.r),
+                    border: Border.all(
+                      color: AppColor.primary.withOpacity(0.15),
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColor.primary.withOpacity(0.05),
+                        blurRadius: 15,
+                        offset: const Offset(0, 5),
+                      ),
                     ],
                   ),
-                  borderRadius: BorderRadius.circular(12.r),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColor.primary.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: AppButton(
-                  text: "تحقق",
-                  textStyle: TextStyleTheme.textStyle25Medium.copyWith(
-                    color: Colors.white,
-                    letterSpacing: 0.5,
+                  child: Column(
+                    children: [
+                      Text(
+                        "الوقت المتبقي",
+                        style: TextStyleTheme.textStyle16Regular.copyWith(
+                          color: AppColor.black.withOpacity(0.7),
+                        ),
+                      ),
+                      SizedBox(height: 16.h),
+                      Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          CircularCountDownTimer(
+                            duration: countdownDuration,
+                            initialDuration: 0,
+                            width: 70.w,
+                            height: 70.h,
+                            ringColor: AppColor.primary.withOpacity(0.2),
+                            fillColor: AppColor.primary,
+                            backgroundColor: Colors.transparent,
+                            textStyle: TextStyleTheme.textStyle16Medium.copyWith(
+                              color: AppColor.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            isReverse: true,
+                            isTimerTextShown: true,
+                            onComplete: () {
+                              setState(() {
+                                isTimerFinished = true;
+                              });
+                            },
+                          ),
+                          Container(
+                            width: 70.w,
+                            height: 70.h,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: RadialGradient(
+                                colors: [
+                                  AppColor.primary.withOpacity(0.1),
+                                  Colors.transparent,
+                                ],
+                                stops: const [0.0, 0.7],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  buttonStyle: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    elevation: 0,
-                    padding: EdgeInsets.symmetric(vertical: 12.h),
-                    shape: RoundedRectangleBorder(
+                ),
+                if (isTimerFinished) ...[
+                  SizedBox(height: 24.h),
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColor.primary.withOpacity(0.1),
+                          AppColor.primary.withOpacity(0.05),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
                       borderRadius: BorderRadius.circular(12.r),
-                    ),
-                  ),
-                  onPress: () {
-                    if (formKey.currentState!.validate()) {
-                      verifyCode();
-                    }
-                  },
-                ),
-              ),
-              SizedBox(height: 32.h),
-              Container(
-                padding: EdgeInsets.all(24.w),
-                decoration: BoxDecoration(
-                  color: AppColor.ofWhite,
-                  borderRadius: BorderRadius.circular(15.r),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      "المؤقت",
-                      style: TextStyleTheme.textStyle16Regular.copyWith(
-                        color: AppColor.black.withOpacity(0.7),
+                      border: Border.all(
+                        color: AppColor.primary.withOpacity(0.2),
+                        width: 1,
                       ),
                     ),
-                    SizedBox(height: 16.h),
-                    CircularCountDownTimer(
-                      duration: countdownDuration,
-                      initialDuration: 0,
-                      width: 80.w,
-                      height: 80.h,
-                      ringColor: AppColor.primary.withOpacity(0.2),
-                      fillColor: AppColor.primary,
-                      backgroundColor: AppColor.ofWhite,
-                      textStyle: TextStyleTheme.textStyle16Medium.copyWith(
-                        color: AppColor.primary,
-                      ),
-                      isReverse: true,
-                      isTimerTextShown: true,
-                      onComplete: () {
+                    child: OutlinedButton(
+                      onPressed: () {
                         setState(() {
-                          isTimerFinished = true;
+                          isTimerFinished = false;
                         });
                       },
-                    ),
-                  ],
-                ),
-              ),
-              if (isTimerFinished) ...[
-                SizedBox(height: 24.h),
-                OutlinedButton(
-                  onPressed: () {
-                    setState(() {
-                      isTimerFinished = false;
-                    });
-                  },
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: AppColor.primary, width: 1.5),
-                    padding: EdgeInsets.symmetric(horizontal: 32.w, vertical: 12.h),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    backgroundColor: AppColor.primary.withOpacity(0.05),
-                  ),
-                  child: Text(
-                    "إعادة إرسال",
-                    style: TextStyleTheme.textStyle16Medium.copyWith(
-                      color: AppColor.primary,
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: AppColor.primary, width: 1),
+                        padding: EdgeInsets.symmetric(horizontal: 32.w, vertical: 12.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        backgroundColor: Colors.transparent,
+                      ),
+                      child: Text(
+                        "إعادة الإرسال",
+                        style: TextStyleTheme.textStyle16Medium.copyWith(
+                          color: AppColor.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
