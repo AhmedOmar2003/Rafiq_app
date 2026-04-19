@@ -1,7 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:rafiq_app/core/config/supabase_config.dart';
 import 'package:rafiq_app/model/user_model.dart';
 import 'package:rafiq_app/service/api_service.dart';
 
@@ -41,6 +40,14 @@ class AuthService {
     }
     if (message.contains('email_not_confirmed')) {
       return 'الحساب يحتاج تأكيد بريد إلكتروني. أوقف Email Confirmation من Supabase لو تريد التسجيل الفوري.';
+    }
+    if (message.contains('invalid_grant') ||
+        message.contains('otp_expired') ||
+        message.contains('token_not_found')) {
+      return 'كود التحقق غير صحيح أو انتهت صلاحيته. اطلب كودًا جديدًا وحاول مرة أخرى.';
+    }
+    if (message.contains('user_not_found')) {
+      return 'لا يوجد حساب مرتبط بهذا البريد الإلكتروني.';
     }
     return message.replaceFirst('Exception: ', '');
   }
@@ -170,7 +177,7 @@ class AuthService {
     await prefs.setBool(_loggedInKey, false);
   }
 
-  Future<void> sendPasswordResetEmail(String email) async {
+  Future<void> sendPasswordResetOtp(String email) async {
     await ensureSupabaseInitialized();
 
     final normalizedEmail = email.trim().toLowerCase();
@@ -178,10 +185,45 @@ class AuthService {
       throw Exception('البريد الإلكتروني يجب أن ينتهي بـ @gmail.com.');
     }
 
-    await _client.auth.resetPasswordForEmail(
-      normalizedEmail,
-      redirectTo: SupabaseConfig.recoveryRedirectUrl,
-    );
+    try {
+      await _client.auth.signInWithOtp(
+        email: normalizedEmail,
+        shouldCreateUser: false,
+      );
+    } catch (e) {
+      throw Exception(_friendlyAuthError(e));
+    }
+  }
+
+  Future<void> verifyPasswordResetOtp({
+    required String email,
+    required String otpCode,
+  }) async {
+    await ensureSupabaseInitialized();
+
+    final normalizedEmail = email.trim().toLowerCase();
+    final token = otpCode.trim();
+
+    if (!isGmailEmail(normalizedEmail)) {
+      throw Exception('البريد الإلكتروني يجب أن ينتهي بـ @gmail.com.');
+    }
+    if (token.isEmpty) {
+      throw Exception('من فضلك أدخل كود التحقق.');
+    }
+
+    try {
+      await _client.auth.verifyOTP(
+        email: normalizedEmail,
+        token: token,
+        type: OtpType.email,
+      );
+    } catch (e) {
+      throw Exception(_friendlyAuthError(e));
+    }
+  }
+
+  Future<void> sendPasswordResetEmail(String email) {
+    return sendPasswordResetOtp(email);
   }
 
   Future<void> updatePassword(String newPassword) async {

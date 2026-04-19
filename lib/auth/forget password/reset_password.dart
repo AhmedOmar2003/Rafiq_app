@@ -1,28 +1,30 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:rafiq_app/core/utils/app_color.dart';
-import 'package:rafiq_app/core/design/app_input.dart';
-import 'package:rafiq_app/core/design/app_button.dart';
-import 'package:rafiq_app/core/utils/text_style_theme.dart';
 import 'package:rafiq_app/auth/login/login_screen.dart';
-import 'package:rafiq_app/core/config/api_config.dart';
-import 'package:rafiq_app/core/utils/assets.dart';
+import 'package:rafiq_app/core/design/app_button.dart';
+import 'package:rafiq_app/core/design/app_input.dart';
+import 'package:rafiq_app/core/utils/app_color.dart';
+import 'package:rafiq_app/core/utils/text_style_theme.dart';
+import 'package:rafiq_app/service/auth_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ResetPasswordPage extends StatefulWidget {
-  final String email;
-  final String otpCode;
+  final String? emailForOtpFlow;
+  final bool requiresOtpVerification;
 
-  ResetPasswordPage({Key? key, required this.email, required this.otpCode})
-      : super(key: key);
+  const ResetPasswordPage({
+    super.key,
+    this.emailForOtpFlow,
+    this.requiresOtpVerification = false,
+  });
 
   @override
-  _ResetPasswordPageState createState() => _ResetPasswordPageState();
+  State<ResetPasswordPage> createState() => _ResetPasswordPageState();
 }
 
-class _ResetPasswordPageState extends State<ResetPasswordPage> with SingleTickerProviderStateMixin {
+class _ResetPasswordPageState extends State<ResetPasswordPage> {
   final _formKey = GlobalKey<FormState>();
+  final _otpController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _isProcessing = false;
@@ -30,83 +32,69 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> with SingleTicker
 
   @override
   void dispose() {
+    _otpController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  void _showSuccess() {
-    setState(() {
-      _showSuccessOverlay = true;
-    });
-  }
-
   void _navigateToLogin() {
-    Navigator.pushReplacement(
-      context,
+    Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (context) => const LoginScreen()),
+      (route) => false,
     );
   }
 
-  Future<void> updatePassword() async {
-    if (!_formKey.currentState!.validate()) return;
+  Future<void> _updatePassword() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
-    setState(() {
-      _isProcessing = true;
-    });
-
-    final url = '${ApiConfig.baseUrl}/reset_password.php';
-    final body = {
-      'email': widget.email.trim(),
-      'otp_code': widget.otpCode.trim(),
-      'new_password': _passwordController.text.trim(),
-    };
-
+    setState(() => _isProcessing = true);
     try {
-      final response = await http.post(
-        Uri.parse(url),
-        body: body,
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      );
-
-      final result = jsonDecode(response.body);
-
-      if (response.statusCode == 200 && result['status'] == 'success') {
-        _showSuccess();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['message'] ?? "حدث خطأ غير متوقع"),
-            backgroundColor: Colors.red,
-          ),
+      if (widget.requiresOtpVerification) {
+        final email = widget.emailForOtpFlow?.trim() ?? '';
+        await AuthService().verifyPasswordResetOtp(
+          email: email,
+          otpCode: _otpController.text,
         );
       }
+      await AuthService().updatePassword(_passwordController.text);
+      await AuthService().signOut();
+      if (!mounted) {
+        return;
+      }
+      setState(() => _showSuccessOverlay = true);
     } catch (e) {
+      if (!mounted) {
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("حدث خطأ أثناء الاتصال بالخادم"),
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
           backgroundColor: Colors.red,
         ),
       );
     } finally {
       if (mounted) {
-        setState(() {
-          _isProcessing = false;
-        });
+        setState(() => _isProcessing = false);
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final explicitEmail = widget.emailForOtpFlow?.trim() ?? '';
+    final currentEmail = explicitEmail.isNotEmpty
+        ? explicitEmail
+        : (Supabase.instance.client.auth.currentUser?.email ?? '');
+
     return Stack(
       children: [
         Scaffold(
-          backgroundColor: AppColor.ofWhite,
+          backgroundColor: AppColor.primary,
           appBar: AppBar(
-            backgroundColor: AppColor.ofWhite,
+            backgroundColor: AppColor.primary,
             elevation: 0,
             leading: Padding(
               padding: EdgeInsets.only(right: 12.w),
@@ -114,7 +102,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> with SingleTicker
                 onTap: () => Navigator.pop(context),
                 child: Icon(
                   Icons.arrow_back_ios_new,
-                  color: AppColor.black,
+                  color: AppColor.white,
                   size: 24.sp,
                 ),
               ),
@@ -122,46 +110,51 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> with SingleTicker
             title: Text(
               "إعادة تعيين كلمة المرور",
               style: TextStyleTheme.textStyle20Medium.copyWith(
-                color: AppColor.black,
+                color: AppColor.white,
               ),
             ),
             centerTitle: true,
           ),
           body: SafeArea(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // Header Section
-                      Container(
-                        padding: EdgeInsets.all(24.w),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              AppColor.primary.withOpacity(0.05),
-                              AppColor.primary.withOpacity(0.02),
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(20.r),
-                          border: Border.all(
-                            color: AppColor.primary.withOpacity(0.15),
-                            width: 1,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColor.primary.withOpacity(0.05),
-                              blurRadius: 15,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
-                        ),
+            child: Column(
+              children: [
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24.h),
+                  child: Center(
+                    child: Container(
+                      width: 100.w,
+                      height: 100.w,
+                      decoration: BoxDecoration(
+                        color: AppColor.white.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.lock_reset_rounded,
+                        size: 50.sp,
+                        color: AppColor.white,
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: AppColor.ofWhite,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(36.r),
+                        topRight: Radius.circular(36.r),
+                      ),
+                    ),
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.symmetric(
+                        vertical: 32.h,
+                        horizontal: 24.w,
+                      ),
+                      child: Form(
+                        key: _formKey,
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             Container(
                               padding: EdgeInsets.all(16.w),
@@ -175,13 +168,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> with SingleTicker
                                   end: Alignment.bottomRight,
                                 ),
                                 shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppColor.primary.withOpacity(0.1),
-                                    blurRadius: 10,
-                                    spreadRadius: 2,
-                                  ),
-                                ],
                               ),
                               child: Icon(
                                 Icons.lock_reset_rounded,
@@ -200,65 +186,69 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> with SingleTicker
                             ),
                             SizedBox(height: 8.h),
                             Text(
-                              "يجب أن تكون ٦ أحرف على الأقل",
+                              currentEmail.isEmpty
+                                  ? "أدخل البيانات المطلوبة لإعادة تعيين كلمة المرور"
+                                  : (widget.requiresOtpVerification
+                                      ? "أدخل كود التحقق المرسل إلى: $currentEmail"
+                                      : currentEmail),
                               style: TextStyleTheme.textStyle16Regular.copyWith(
                                 color: AppColor.black.withOpacity(0.7),
                               ),
                               textAlign: TextAlign.center,
                             ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 40.h),
-                      // Password Fields Section
-                      Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              AppColor.primary.withOpacity(0.03),
-                              AppColor.primary.withOpacity(0.01),
+                            SizedBox(height: 40.h),
+                            if (widget.requiresOtpVerification) ...[
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.all(8.w),
+                                    decoration: BoxDecoration(
+                                      color: AppColor.primary.withOpacity(0.1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.verified_user_outlined,
+                                      color: AppColor.primary,
+                                      size: 20.sp,
+                                    ),
+                                  ),
+                                  SizedBox(width: 12.w),
+                                  Text(
+                                    "كود التحقق (OTP)",
+                                    style: TextStyleTheme.textStyle16Medium
+                                        .copyWith(
+                                      color: AppColor.black,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 16.h),
+                              AppInput(
+                                hintText: "ادخل كود التحقق (6 أرقام)",
+                                controller: _otpController,
+                                type: TextInputType.number,
+                                textInputAction: TextInputAction.next,
+                                paddingBottom: 24.h,
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return "يرجى إدخال كود التحقق";
+                                  }
+                                  if (!RegExp(r'^\d{6}$')
+                                      .hasMatch(value.trim())) {
+                                    return "كود التحقق يجب أن يكون 6 أرقام";
+                                  }
+                                  return null;
+                                },
+                              ),
                             ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(20.r),
-                          border: Border.all(
-                            color: AppColor.primary.withOpacity(0.15),
-                            width: 1,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColor.primary.withOpacity(0.05),
-                              blurRadius: 15,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        padding: EdgeInsets.all(24.w),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
                             Row(
                               children: [
                                 Container(
                                   padding: EdgeInsets.all(8.w),
                                   decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        AppColor.primary.withOpacity(0.1),
-                                        AppColor.primary.withOpacity(0.2),
-                                      ],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ),
+                                    color: AppColor.primary.withOpacity(0.1),
                                     shape: BoxShape.circle,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: AppColor.primary.withOpacity(0.1),
-                                        blurRadius: 8,
-                                        spreadRadius: 1,
-                                      ),
-                                    ],
                                   ),
                                   child: Icon(
                                     Icons.lock_outline,
@@ -268,8 +258,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> with SingleTicker
                                 ),
                                 SizedBox(width: 12.w),
                                 Text(
-                                  "كلمة المرور",
-                                  style: TextStyleTheme.textStyle16Medium.copyWith(
+                                  "كلمة المرور الجديدة",
+                                  style:
+                                      TextStyleTheme.textStyle16Medium.copyWith(
                                     color: AppColor.black,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -278,7 +269,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> with SingleTicker
                             ),
                             SizedBox(height: 16.h),
                             AppInput(
-                              hintText: "كلمة المرور",
+                              hintText: "كلمة المرور الجديدة",
                               controller: _passwordController,
                               textInputAction: TextInputAction.next,
                               isPassword: true,
@@ -286,8 +277,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> with SingleTicker
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return "يرجى إدخال كلمة المرور";
-                                } else if (value.length < 6) {
-                                  return "يجب أن تكون كلمة المرور على الأقل 6 أحرف";
+                                }
+                                if (!AuthService.isStrongPassword(value)) {
+                                  return "كلمة المرور يجب أن تكون قوية";
                                 }
                                 return null;
                               },
@@ -298,22 +290,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> with SingleTicker
                                 Container(
                                   padding: EdgeInsets.all(8.w),
                                   decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        AppColor.primary.withOpacity(0.1),
-                                        AppColor.primary.withOpacity(0.2),
-                                      ],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ),
+                                    color: AppColor.primary.withOpacity(0.1),
                                     shape: BoxShape.circle,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: AppColor.primary.withOpacity(0.1),
-                                        blurRadius: 8,
-                                        spreadRadius: 1,
-                                      ),
-                                    ],
                                   ),
                                   child: Icon(
                                     Icons.check_circle_outline,
@@ -324,7 +302,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> with SingleTicker
                                 SizedBox(width: 12.w),
                                 Text(
                                   "تأكيد كلمة المرور",
-                                  style: TextStyleTheme.textStyle16Medium.copyWith(
+                                  style:
+                                      TextStyleTheme.textStyle16Medium.copyWith(
                                     color: AppColor.black,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -341,76 +320,56 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> with SingleTicker
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return "يرجى تأكيد كلمة المرور";
-                                } else if (value != _passwordController.text) {
+                                }
+                                if (value != _passwordController.text) {
                                   return "كلمة المرور غير متطابقة";
                                 }
                                 return null;
                               },
                             ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 32.h),
-                      // Save Button
-                      Container(
-                        width: double.infinity,
-                        height: 55.h,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              AppColor.primary,
-                              AppColor.primary.withOpacity(0.8),
-                            ],
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                          ),
-                          borderRadius: BorderRadius.circular(15.r),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColor.primary.withOpacity(0.3),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: AppButton(
-                          text: _isProcessing ? "..." : "حفظ",
-                          textStyle: TextStyleTheme.textStyle18Medium.copyWith(
-                            color: Colors.white,
-                            letterSpacing: 0.5,
-                          ),
-                          buttonStyle: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.transparent,
-                            elevation: 0,
-                            padding: EdgeInsets.symmetric(vertical: 12.h),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15.r),
-                            ),
-                          ),
-                          onPress: _isProcessing
-                              ? () {}
-                              : () {
-                                  if (_formKey.currentState != null &&
-                                      _formKey.currentState!.validate()) {
-                                    updatePassword();
-                                  }
-                                },
-                          child: _isProcessing
-                              ? SizedBox(
-                                  height: 24.h,
-                                  width: 24.w,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2.5,
+                            SizedBox(height: 32.h),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 55.h,
+                              child: AppButton(
+                                text: _isProcessing
+                                    ? "..."
+                                    : (widget.requiresOtpVerification
+                                        ? "تأكيد وتغيير كلمة المرور"
+                                        : "حفظ"),
+                                textStyle:
+                                    TextStyleTheme.textStyle18Medium.copyWith(
+                                  color: Colors.white,
+                                  letterSpacing: 0.5,
+                                ),
+                                buttonStyle: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColor.primary,
+                                  padding: EdgeInsets.symmetric(vertical: 12.h),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(15.r),
                                   ),
-                                )
-                              : null,
+                                ),
+                                onPress:
+                                    _isProcessing ? () {} : _updatePassword,
+                                child: _isProcessing
+                                    ? SizedBox(
+                                        height: 24.h,
+                                        width: 24.w,
+                                        child: const CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2.5,
+                                        ),
+                                      )
+                                    : null,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
           ),
         ),
@@ -471,38 +430,34 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> with SingleTicker
                         textAlign: TextAlign.center,
                       ),
                       SizedBox(height: 32.h),
-                      Container(
+                      SizedBox(
                         width: double.infinity,
                         height: 50.h,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              AppColor.primary,
-                              AppColor.primary.withOpacity(0.8),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(12.r),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColor.primary.withOpacity(0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
                         child: Material(
                           color: Colors.transparent,
                           child: InkWell(
                             onTap: _navigateToLogin,
                             borderRadius: BorderRadius.circular(12.r),
-                            child: Center(
-                              child: Text(
-                                "تسجيل الدخول",
-                                style: TextStyleTheme.textStyle18Medium.copyWith(
-                                  color: Colors.white,
-                                  letterSpacing: 0.5,
-                                  decoration: TextDecoration.none,
-                                  decorationColor: Colors.transparent,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    AppColor.primary,
+                                    AppColor.primary.withOpacity(0.8),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(12.r),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  "تسجيل الدخول",
+                                  style:
+                                      TextStyleTheme.textStyle18Medium.copyWith(
+                                    color: Colors.white,
+                                    letterSpacing: 0.5,
+                                    decoration: TextDecoration.none,
+                                    decorationColor: Colors.transparent,
+                                  ),
                                 ),
                               ),
                             ),

@@ -1,13 +1,11 @@
-import 'dart:convert'; // لتحويل النصوص من وإلى JSON
-import 'package:http/http.dart' as http; // مكتبة HTTP
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:rafiq_app/auth/forget%20password/vriefy_code_page.dart';
-import 'package:rafiq_app/core/utils/app_color.dart';
-import 'package:rafiq_app/core/design/app_input.dart';
+import 'package:rafiq_app/auth/forget%20password/reset_password.dart';
 import 'package:rafiq_app/core/design/app_button.dart';
+import 'package:rafiq_app/core/design/app_input.dart';
+import 'package:rafiq_app/core/utils/app_color.dart';
 import 'package:rafiq_app/core/utils/text_style_theme.dart';
-import 'package:rafiq_app/core/config/api_config.dart';
+import 'package:rafiq_app/service/auth_service.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -17,228 +15,200 @@ class ForgotPasswordScreen extends StatefulWidget {
 }
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
-  final formKey = GlobalKey<FormState>(); // لتخزين حالة النموذج
+  final formKey = GlobalKey<FormState>();
   final emailController = TextEditingController();
+  bool _isLoading = false;
 
-  // الدالة لإعادة تعيين كلمة المرور
-  Future<void> resetPassword() async {
-    final String url = "${ApiConfig.baseUrl}/forgot_password.php";
-    final body = {
-      "email": emailController.text.trim(),
-    };
+  @override
+  void dispose() {
+    emailController.dispose();
+    super.dispose();
+  }
 
+  Future<void> _sendResetOtp() async {
+    if (!formKey.currentState!.validate()) {
+      return;
+    }
+
+    final normalizedEmail = emailController.text.trim().toLowerCase();
+
+    setState(() => _isLoading = true);
     try {
-      final response = await http.post(Uri.parse(url), body: body);
-
-      if (response.statusCode == 200) {
-        final result = jsonDecode(response.body);
-
-        // تأكد من أن النتيجة تحتوي على حالة success ورمز التحقق otp_code
-        if (result['status'] == 'success' && result['otp'] != null) {
-          // تمرير البريد الإلكتروني ورمز التحقق (otpCode) إلى صفحة VerifyCodeScreen
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => VerifyCodeScreen(
-                email: emailController.text.trim(), // تمرير البريد الإلكتروني
-              ),
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result['message'] ?? 'حدث خطأ غير معروف')),
-          );
-        }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("خطأ في الخادم: ${response.statusCode}")),
-        );
+      await AuthService().sendPasswordResetOtp(normalizedEmail);
+      if (!mounted) {
+        return;
       }
-    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("تعذر الاتصال بالخادم.")),
+        const SnackBar(
+          content: Text('تم إرسال كود إعادة التعيين إلى بريدك الإلكتروني'),
+          backgroundColor: Colors.green,
+        ),
       );
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ResetPasswordPage(
+            emailForOtpFlow: normalizedEmail,
+            requiresOtpVerification: true,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColor.ofWhite,
+      backgroundColor: AppColor.primary,
       appBar: AppBar(
-        backgroundColor: AppColor.ofWhite,
+        backgroundColor: AppColor.primary,
         elevation: 0,
         leading: Padding(
-          padding: EdgeInsets.only(right: 12.w), // لضبط المسافة للسهم
+          padding: EdgeInsets.only(right: 12.w),
           child: GestureDetector(
-            onTap: () {
-              Navigator.pop(context); // العودة إلى صفحة تسجيل الدخول
-            },
+            onTap: () => Navigator.pop(context),
             child: Icon(
               Icons.arrow_back_ios_new,
-              color: AppColor.black,
+              color: AppColor.white,
               size: 24.sp,
-            ),
-          ),
-        ),
-        title: Padding(
-          padding: const EdgeInsets.only(left: 80.0),
-          child: Text(
-            "نسيت كلمة المرور",
-            style: TextStyleTheme.textStyle25Medium.copyWith(
-              color: Colors.black,
             ),
           ),
         ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Header Section
-                Center(
-                  child: Container(
-                    width: 120.w,
-                    height: 120.w,
-                    decoration: BoxDecoration(
-                      color: AppColor.primary.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.lock_reset_rounded,
-                      size: 60.sp,
-                      color: AppColor.primary,
-                    ),
-                  ),
-                ),
-                SizedBox(height: 32.h),
-                Text(
-                  "إعادة تعيين كلمة المرور",
-                  style: TextStyleTheme.textStyle25Medium.copyWith(
-                    color: AppColor.black,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: 16.h),
-                Text(
-                  "أدخل بريدك الإلكتروني لإعادة التعيين",
-                  style: TextStyleTheme.textStyle16Regular.copyWith(
-                    color: AppColor.black.withOpacity(0.7),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: 40.h),
-                // Form Section
-                Form(
-                  key: formKey,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: AppColor.primary.withOpacity(0.03),
-                      borderRadius: BorderRadius.circular(20.r),
-                      border: Border.all(
-                        color: AppColor.primary.withOpacity(0.15),
-                        width: 1,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColor.primary.withOpacity(0.08),
-                          blurRadius: 15,
-                          offset: const Offset(0, 5),
-                          spreadRadius: 1,
+        child: CustomScrollView(
+          slivers: [
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24.h),
+                    child: Center(
+                      child: Container(
+                        width: 100.w,
+                        height: 100.w,
+                        decoration: BoxDecoration(
+                          color: AppColor.white.withOpacity(0.1),
+                          shape: BoxShape.circle,
                         ),
-                      ],
+                        child: Icon(
+                          Icons.lock_reset_rounded,
+                          size: 50.sp,
+                          color: AppColor.white,
+                        ),
+                      ),
                     ),
-                    padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        AppInput(
-                          hintText: "البريد الإلكتروني",
-                          controller: emailController,
-                          textInputAction: TextInputAction.done,
-                          type: TextInputType.emailAddress,
-                          paddingBottom: 0,
-                          validator: (value) {
-                            if (value == null ||
-                                value.isEmpty ||
-                                !RegExp(r'^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[a-zA-Z0-9]+')
-                                    .hasMatch(value)) {
-                              return "بريدك الالكتروني غير صحيح";
-                            }
-                            return null;
-                          },
-                          suffixIcon: Icon(
-                            Icons.email_outlined,
-                            color: AppColor.primary,
-                            size: 20.sp,
+                  ),
+                  Expanded(
+                    child: Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: AppColor.ofWhite,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(36.r),
+                          topRight: Radius.circular(36.r),
+                        ),
+                      ),
+                      padding: EdgeInsets.symmetric(
+                          vertical: 32.h, horizontal: 24.w),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          SizedBox(height: 16.h),
+                          Text(
+                            "نسيت كلمة المرور",
+                            style: TextStyleTheme.textStyle25Medium.copyWith(
+                              color: AppColor.black,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                SizedBox(height: 32.h),
-                // Button Section
-                Container(
-                  width: double.infinity,
-                  height: 55.h,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        AppColor.primary,
-                        AppColor.primary.withOpacity(0.8),
-                      ],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                    ),
-                    borderRadius: BorderRadius.circular(15.r),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColor.primary.withOpacity(0.3),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
+                          SizedBox(height: 12.h),
+                          Text(
+                            "أدخل بريد Gmail وسنرسل لك كود OTP لإعادة التعيين",
+                            style: TextStyleTheme.textStyle16Regular.copyWith(
+                              color: AppColor.black.withOpacity(0.7),
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          SizedBox(height: 32.h),
+                          Form(
+                            key: formKey,
+                            child: AppInput(
+                              hintText: "البريد الإلكتروني",
+                              controller: emailController,
+                              textInputAction: TextInputAction.done,
+                              type: TextInputType.emailAddress,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return "البريد الإلكتروني مطلوب";
+                                }
+                                if (!AuthService.isGmailEmail(value)) {
+                                  return "يجب أن ينتهي البريد بـ @gmail.com";
+                                }
+                                return null;
+                              },
+                              suffixIcon: Icon(
+                                Icons.email_outlined,
+                                color: AppColor.primary,
+                                size: 20.sp,
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 32.h),
+                          AppButton(
+                            text: _isLoading ? "..." : "إرسال الكود",
+                            textStyle:
+                                TextStyleTheme.textStyle20Medium.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            buttonStyle: ElevatedButton.styleFrom(
+                              backgroundColor: AppColor.primary,
+                              minimumSize: Size(double.infinity, 56.h),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16.r),
+                              ),
+                              elevation: 4,
+                              shadowColor: AppColor.primary.withOpacity(0.4),
+                              disabledBackgroundColor:
+                                  AppColor.primary.withOpacity(0.5),
+                            ),
+                            onPress: _isLoading ? () {} : _sendResetOtp,
+                          ),
+                          SizedBox(height: 24.h),
+                          Center(
+                            child: Text(
+                              "بعد استلام الكود، أدخله في الشاشة التالية ثم اختر كلمة مرور جديدة.",
+                              style: TextStyleTheme.textStyle14Regular.copyWith(
+                                color: AppColor.black.withOpacity(0.6),
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: AppButton(
-                    text: "إرسال",
-                    textStyle: TextStyleTheme.textStyle18Medium.copyWith(
-                      color: Colors.white,
-                      letterSpacing: 0.5,
-                    ),
-                    buttonStyle: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      elevation: 0,
-                      padding: EdgeInsets.symmetric(vertical: 12.h),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15.r),
-                      ),
-                    ),
-                    onPress: () {
-                      if (formKey.currentState != null &&
-                          formKey.currentState!.validate()) {
-                        resetPassword();
-                      }
-                    },
-                  ),
-                ),
-                SizedBox(height: 24.h),
-                // Help Text
-                Center(
-                  child: Text(
-                    "سيتم إرسال رمز التحقق لبريدك",
-                    style: TextStyleTheme.textStyle14Regular.copyWith(
-                      color: AppColor.black.withOpacity(0.6),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
