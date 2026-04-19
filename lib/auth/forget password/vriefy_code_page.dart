@@ -102,8 +102,11 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
+
     return Scaffold(
       backgroundColor: AppColor.primary,
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         backgroundColor: AppColor.primary,
         elevation: 0,
@@ -122,23 +125,28 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: 24.h),
-              child: Center(
-                child: Container(
-                  width: 100.w,
-                  height: 100.w,
-                  decoration: BoxDecoration(
-                    color: AppColor.white.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.mark_email_read_outlined,
-                    size: 50.sp,
-                    color: AppColor.white,
-                  ),
-                ),
-              ),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 180),
+              child: keyboardOpen
+                  ? SizedBox(height: 8.h)
+                  : Padding(
+                      padding: EdgeInsets.symmetric(vertical: 24.h),
+                      child: Center(
+                        child: Container(
+                          width: 100.w,
+                          height: 100.w,
+                          decoration: BoxDecoration(
+                            color: AppColor.white.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.mark_email_read_outlined,
+                            size: 50.sp,
+                            color: AppColor.white,
+                          ),
+                        ),
+                      ),
+                    ),
             ),
             Expanded(
               child: Container(
@@ -150,108 +158,134 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                     topRight: Radius.circular(36.r),
                   ),
                 ),
-                padding: EdgeInsets.symmetric(vertical: 32.h, horizontal: 24.w),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        "تحقق من الكود",
-                        style: TextStyleTheme.textStyle25Medium.copyWith(
-                          color: AppColor.black,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return SingleChildScrollView(
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
+                      padding: EdgeInsets.fromLTRB(
+                        24.w,
+                        keyboardOpen ? 16.h : 32.h,
+                        24.w,
+                        16.h,
                       ),
-                      SizedBox(height: 12.h),
-                      Text(
-                        "أدخل كود التحقق المكوّن من 6 أرقام المرسل إلى:",
-                        style: TextStyleTheme.textStyle16Regular.copyWith(
-                          color: AppColor.black.withOpacity(0.7),
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: 8.h),
-                      Text(
-                        widget.email,
-                        style: TextStyleTheme.textStyle16Medium.copyWith(
-                          color: AppColor.primary,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: 28.h),
-                      Directionality(
-                        textDirection: TextDirection.ltr,
-                        child: PinCodeTextField(
-                          appContext: context,
-                          controller: _codeController,
-                          length: 6,
-                          keyboardType: TextInputType.number,
-                          autoDisposeControllers: false,
-                          animationType: AnimationType.fade,
-                          pinTheme: PinTheme(
-                            shape: PinCodeFieldShape.box,
-                            borderRadius: BorderRadius.circular(12.r),
-                            fieldHeight: 52.h,
-                            fieldWidth: 46.w,
-                            borderWidth: 1,
-                            inactiveColor: AppColor.primary.withOpacity(0.25),
-                            activeColor: AppColor.primary,
-                            selectedColor: AppColor.primary,
-                            activeFillColor: AppColor.primary.withOpacity(0.04),
-                            inactiveFillColor:
-                                AppColor.primary.withOpacity(0.03),
-                            selectedFillColor:
-                                AppColor.primary.withOpacity(0.06),
+                      child: ConstrainedBox(
+                        constraints:
+                            BoxConstraints(minHeight: constraints.maxHeight),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text(
+                                "تحقق من الكود",
+                                style:
+                                    TextStyleTheme.textStyle25Medium.copyWith(
+                                  color: AppColor.black,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              SizedBox(height: keyboardOpen ? 8.h : 12.h),
+                              Text(
+                                "أدخل كود التحقق المكوّن من 6 أرقام المرسل إلى:",
+                                style:
+                                    TextStyleTheme.textStyle16Regular.copyWith(
+                                  color: AppColor.black.withOpacity(0.7),
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              SizedBox(height: 8.h),
+                              Text(
+                                widget.email,
+                                style:
+                                    TextStyleTheme.textStyle16Medium.copyWith(
+                                  color: AppColor.primary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              SizedBox(height: keyboardOpen ? 20.h : 28.h),
+                              Directionality(
+                                textDirection: TextDirection.ltr,
+                                child: PinCodeTextField(
+                                  appContext: context,
+                                  controller: _codeController,
+                                  length: 6,
+                                  keyboardType: TextInputType.number,
+                                  autoDisposeControllers: false,
+                                  animationType: AnimationType.fade,
+                                  pinTheme: PinTheme(
+                                    shape: PinCodeFieldShape.box,
+                                    borderRadius: BorderRadius.circular(12.r),
+                                    fieldHeight: 52.h,
+                                    fieldWidth: 46.w,
+                                    borderWidth: 1,
+                                    inactiveColor:
+                                        AppColor.primary.withOpacity(0.25),
+                                    activeColor: AppColor.primary,
+                                    selectedColor: AppColor.primary,
+                                    activeFillColor:
+                                        AppColor.primary.withOpacity(0.04),
+                                    inactiveFillColor:
+                                        AppColor.primary.withOpacity(0.03),
+                                    selectedFillColor:
+                                        AppColor.primary.withOpacity(0.06),
+                                  ),
+                                  enableActiveFill: true,
+                                  validator: (value) {
+                                    if (value == null || value.trim().isEmpty) {
+                                      return "يرجى إدخال كود التحقق";
+                                    }
+                                    if (!RegExp(r'^\d{6}$')
+                                        .hasMatch(value.trim())) {
+                                      return "الكود يجب أن يكون 6 أرقام";
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ),
+                              SizedBox(height: keyboardOpen ? 12.h : 18.h),
+                              AppButton(
+                                text: _isVerifying ? "..." : "تأكيد الكود",
+                                textStyle:
+                                    TextStyleTheme.textStyle20Medium.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                buttonStyle: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColor.primary,
+                                  minimumSize: Size(double.infinity, 56.h),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16.r),
+                                  ),
+                                  elevation: 4,
+                                  shadowColor:
+                                      AppColor.primary.withOpacity(0.4),
+                                  disabledBackgroundColor:
+                                      AppColor.primary.withOpacity(0.5),
+                                ),
+                                onPress: _isVerifying ? () {} : _verifyCode,
+                              ),
+                              SizedBox(height: 12.h),
+                              TextButton(
+                                onPressed: _isResending ? null : _resendCode,
+                                child: Text(
+                                  _isResending
+                                      ? "جارٍ إعادة الإرسال..."
+                                      : "إعادة إرسال الكود",
+                                  style:
+                                      TextStyleTheme.textStyle16Medium.copyWith(
+                                    color: AppColor.primary,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                          enableActiveFill: true,
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return "يرجى إدخال كود التحقق";
-                            }
-                            if (!RegExp(r'^\d{6}$').hasMatch(value.trim())) {
-                              return "الكود يجب أن يكون 6 أرقام";
-                            }
-                            return null;
-                          },
                         ),
                       ),
-                      SizedBox(height: 18.h),
-                      AppButton(
-                        text: _isVerifying ? "..." : "تأكيد الكود",
-                        textStyle: TextStyleTheme.textStyle20Medium.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        buttonStyle: ElevatedButton.styleFrom(
-                          backgroundColor: AppColor.primary,
-                          minimumSize: Size(double.infinity, 56.h),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16.r),
-                          ),
-                          elevation: 4,
-                          shadowColor: AppColor.primary.withOpacity(0.4),
-                          disabledBackgroundColor:
-                              AppColor.primary.withOpacity(0.5),
-                        ),
-                        onPress: _isVerifying ? () {} : _verifyCode,
-                      ),
-                      SizedBox(height: 14.h),
-                      TextButton(
-                        onPressed: _isResending ? null : _resendCode,
-                        child: Text(
-                          _isResending
-                              ? "جارٍ إعادة الإرسال..."
-                              : "إعادة إرسال الكود",
-                          style: TextStyleTheme.textStyle16Medium.copyWith(
-                            color: AppColor.primary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
               ),
             ),

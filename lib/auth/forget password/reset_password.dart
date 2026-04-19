@@ -88,11 +88,13 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     final currentEmail = explicitEmail.isNotEmpty
         ? explicitEmail
         : (Supabase.instance.client.auth.currentUser?.email ?? '');
+    final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
     return Stack(
       children: [
         Scaffold(
           backgroundColor: AppColor.primary,
+          resizeToAvoidBottomInset: true,
           appBar: AppBar(
             backgroundColor: AppColor.primary,
             elevation: 0,
@@ -118,23 +120,28 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
           body: SafeArea(
             child: Column(
               children: [
-                Padding(
-                  padding: EdgeInsets.symmetric(vertical: 24.h),
-                  child: Center(
-                    child: Container(
-                      width: 100.w,
-                      height: 100.w,
-                      decoration: BoxDecoration(
-                        color: AppColor.white.withOpacity(0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.lock_reset_rounded,
-                        size: 50.sp,
-                        color: AppColor.white,
-                      ),
-                    ),
-                  ),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 180),
+                  child: keyboardOpen
+                      ? SizedBox(height: 8.h)
+                      : Padding(
+                          padding: EdgeInsets.symmetric(vertical: 24.h),
+                          child: Center(
+                            child: Container(
+                              width: 100.w,
+                              height: 100.w,
+                              decoration: BoxDecoration(
+                                color: AppColor.white.withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.lock_reset_rounded,
+                                size: 50.sp,
+                                color: AppColor.white,
+                              ),
+                            ),
+                          ),
+                        ),
                 ),
                 Expanded(
                   child: Container(
@@ -146,16 +153,16 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         topRight: Radius.circular(36.r),
                       ),
                     ),
-                    child: SingleChildScrollView(
-                      padding: EdgeInsets.symmetric(
-                        vertical: 32.h,
-                        horizontal: 24.w,
-                      ),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
+                    padding: EdgeInsets.symmetric(
+                      vertical: keyboardOpen ? 16.h : 28.h,
+                      horizontal: 24.w,
+                    ),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (!keyboardOpen) ...[
                             Container(
                               padding: EdgeInsets.all(16.w),
                               decoration: BoxDecoration(
@@ -175,29 +182,31 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                 color: AppColor.primary,
                               ),
                             ),
-                            SizedBox(height: 16.h),
-                            Text(
-                              "إنشاء كلمة مرور جديدة",
-                              style: TextStyleTheme.textStyle20Medium.copyWith(
-                                color: AppColor.black,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.center,
+                            SizedBox(height: 14.h),
+                          ],
+                          Text(
+                            "إنشاء كلمة مرور جديدة",
+                            style: TextStyleTheme.textStyle20Medium.copyWith(
+                              color: AppColor.black,
+                              fontWeight: FontWeight.bold,
                             ),
-                            SizedBox(height: 8.h),
-                            Text(
-                              currentEmail.isEmpty
-                                  ? "أدخل البيانات المطلوبة لإعادة تعيين كلمة المرور"
-                                  : (widget.requiresOtpVerification
-                                      ? "أدخل كود التحقق المرسل إلى: $currentEmail"
-                                      : currentEmail),
-                              style: TextStyleTheme.textStyle16Regular.copyWith(
-                                color: AppColor.black.withOpacity(0.7),
-                              ),
-                              textAlign: TextAlign.center,
+                            textAlign: TextAlign.center,
+                          ),
+                          SizedBox(height: keyboardOpen ? 6.h : 8.h),
+                          Text(
+                            currentEmail.isEmpty
+                                ? "أدخل البيانات المطلوبة لإعادة تعيين كلمة المرور"
+                                : (widget.requiresOtpVerification
+                                    ? "أدخل كود التحقق المرسل إلى: $currentEmail"
+                                    : currentEmail),
+                            style: TextStyleTheme.textStyle16Regular.copyWith(
+                              color: AppColor.black.withOpacity(0.7),
                             ),
-                            SizedBox(height: 40.h),
-                            if (widget.requiresOtpVerification) ...[
+                            textAlign: TextAlign.center,
+                          ),
+                          SizedBox(height: keyboardOpen ? 14.h : 24.h),
+                          if (widget.requiresOtpVerification) ...[
+                            if (!keyboardOpen)
                               Row(
                                 children: [
                                   Container(
@@ -223,25 +232,26 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                   ),
                                 ],
                               ),
-                              SizedBox(height: 16.h),
-                              AppInput(
-                                hintText: "ادخل كود التحقق (6 أرقام)",
-                                controller: _otpController,
-                                type: TextInputType.number,
-                                textInputAction: TextInputAction.next,
-                                paddingBottom: 24.h,
-                                validator: (value) {
-                                  if (value == null || value.trim().isEmpty) {
-                                    return "يرجى إدخال كود التحقق";
-                                  }
-                                  if (!RegExp(r'^\d{6}$')
-                                      .hasMatch(value.trim())) {
-                                    return "كود التحقق يجب أن يكون 6 أرقام";
-                                  }
-                                  return null;
-                                },
-                              ),
-                            ],
+                            if (!keyboardOpen) SizedBox(height: 10.h),
+                            AppInput(
+                              hintText: "ادخل كود التحقق (6 أرقام)",
+                              controller: _otpController,
+                              type: TextInputType.number,
+                              textInputAction: TextInputAction.next,
+                              paddingBottom: keyboardOpen ? 10.h : 18.h,
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return "يرجى إدخال كود التحقق";
+                                }
+                                if (!RegExp(r'^\d{6}$')
+                                    .hasMatch(value.trim())) {
+                                  return "كود التحقق يجب أن يكون 6 أرقام";
+                                }
+                                return null;
+                              },
+                            ),
+                          ],
+                          if (!keyboardOpen)
                             Row(
                               children: [
                                 Container(
@@ -267,24 +277,24 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                 ),
                               ],
                             ),
-                            SizedBox(height: 16.h),
-                            AppInput(
-                              hintText: "كلمة المرور الجديدة",
-                              controller: _passwordController,
-                              textInputAction: TextInputAction.next,
-                              isPassword: true,
-                              paddingBottom: 24.h,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return "يرجى إدخال كلمة المرور";
-                                }
-                                if (!AuthService.isStrongPassword(value)) {
-                                  return "كلمة المرور يجب أن تكون قوية";
-                                }
-                                return null;
-                              },
-                            ),
-                            SizedBox(height: 16.h),
+                          if (!keyboardOpen) SizedBox(height: 10.h),
+                          AppInput(
+                            hintText: "كلمة المرور الجديدة",
+                            controller: _passwordController,
+                            textInputAction: TextInputAction.next,
+                            isPassword: true,
+                            paddingBottom: keyboardOpen ? 10.h : 18.h,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return "يرجى إدخال كلمة المرور";
+                              }
+                              if (!AuthService.isStrongPassword(value)) {
+                                return "كلمة المرور يجب أن تكون قوية";
+                              }
+                              return null;
+                            },
+                          ),
+                          if (!keyboardOpen)
                             Row(
                               children: [
                                 Container(
@@ -310,61 +320,59 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                 ),
                               ],
                             ),
-                            SizedBox(height: 16.h),
-                            AppInput(
-                              hintText: "تأكيد كلمة المرور",
-                              controller: _confirmPasswordController,
-                              textInputAction: TextInputAction.done,
-                              isPassword: true,
-                              paddingBottom: 0,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return "يرجى تأكيد كلمة المرور";
-                                }
-                                if (value != _passwordController.text) {
-                                  return "كلمة المرور غير متطابقة";
-                                }
-                                return null;
-                              },
-                            ),
-                            SizedBox(height: 32.h),
-                            SizedBox(
-                              width: double.infinity,
-                              height: 55.h,
-                              child: AppButton(
-                                text: _isProcessing
-                                    ? "..."
-                                    : (widget.requiresOtpVerification
-                                        ? "تأكيد وتغيير كلمة المرور"
-                                        : "حفظ"),
-                                textStyle:
-                                    TextStyleTheme.textStyle18Medium.copyWith(
-                                  color: Colors.white,
-                                  letterSpacing: 0.5,
-                                ),
-                                buttonStyle: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColor.primary,
-                                  padding: EdgeInsets.symmetric(vertical: 12.h),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(15.r),
-                                  ),
-                                ),
-                                onPress:
-                                    _isProcessing ? () {} : _updatePassword,
-                                child: _isProcessing
-                                    ? SizedBox(
-                                        height: 24.h,
-                                        width: 24.w,
-                                        child: const CircularProgressIndicator(
-                                          color: Colors.white,
-                                          strokeWidth: 2.5,
-                                        ),
-                                      )
-                                    : null,
+                          if (!keyboardOpen) SizedBox(height: 10.h),
+                          AppInput(
+                            hintText: "تأكيد كلمة المرور",
+                            controller: _confirmPasswordController,
+                            textInputAction: TextInputAction.done,
+                            isPassword: true,
+                            paddingBottom: 0,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return "يرجى تأكيد كلمة المرور";
+                              }
+                              if (value != _passwordController.text) {
+                                return "كلمة المرور غير متطابقة";
+                              }
+                              return null;
+                            },
+                          ),
+                          const Spacer(),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 55.h,
+                            child: AppButton(
+                              text: _isProcessing
+                                  ? "..."
+                                  : (widget.requiresOtpVerification
+                                      ? "تأكيد وتغيير كلمة المرور"
+                                      : "حفظ"),
+                              textStyle:
+                                  TextStyleTheme.textStyle18Medium.copyWith(
+                                color: Colors.white,
+                                letterSpacing: 0.5,
                               ),
+                              buttonStyle: ElevatedButton.styleFrom(
+                                backgroundColor: AppColor.primary,
+                                padding: EdgeInsets.symmetric(vertical: 12.h),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(15.r),
+                                ),
+                              ),
+                              onPress: _isProcessing ? () {} : _updatePassword,
+                              child: _isProcessing
+                                  ? SizedBox(
+                                      height: 24.h,
+                                      width: 24.w,
+                                      child: const CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2.5,
+                                      ),
+                                    )
+                                  : null,
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
