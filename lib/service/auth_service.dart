@@ -1,6 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:rafiq_app/core/config/supabase_config.dart';
 import 'package:rafiq_app/model/user_model.dart';
 import 'package:rafiq_app/service/api_service.dart';
 
@@ -186,9 +187,9 @@ class AuthService {
     }
 
     try {
-      await _client.auth.signInWithOtp(
-        email: normalizedEmail,
-        shouldCreateUser: false,
+      await _client.auth.resetPasswordForEmail(
+        normalizedEmail,
+        redirectTo: SupabaseConfig.recoveryRedirectUrl,
       );
     } catch (e) {
       throw Exception(_friendlyAuthError(e));
@@ -215,7 +216,7 @@ class AuthService {
       await _client.auth.verifyOTP(
         email: normalizedEmail,
         token: token,
-        type: OtpType.email,
+        type: OtpType.recovery,
       );
     } catch (e) {
       throw Exception(_friendlyAuthError(e));

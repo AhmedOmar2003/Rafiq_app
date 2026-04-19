@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:rafiq_app/auth/forget%20password/reset_password.dart';
+import 'package:rafiq_app/auth/forget%20password/vriefy_code_page.dart';
 import 'package:rafiq_app/core/design/app_button.dart';
 import 'package:rafiq_app/core/design/app_input.dart';
 import 'package:rafiq_app/core/utils/app_color.dart';
@@ -47,10 +47,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => ResetPasswordPage(
-            emailForOtpFlow: normalizedEmail,
-            requiresOtpVerification: true,
-          ),
+          builder: (context) => VerifyCodeScreen(email: normalizedEmail),
         ),
       );
     } catch (e) {
