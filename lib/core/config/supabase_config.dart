@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class SupabaseConfig {
   static const String url = String.fromEnvironment(
     'SUPABASE_URL',
@@ -10,10 +12,23 @@ class SupabaseConfig {
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0bG11bWxjdmN3cWllZXhjZ3V5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NDMwMTEsImV4cCI6MjA5MjExOTAxMX0.fvPB55Iedho6ABmMoVQ9M5xEPtNfSN7bwr6HYKL-Qkc',
   );
 
-  static const String recoveryRedirectUrl = String.fromEnvironment(
-    'SUPABASE_RECOVERY_REDIRECT_URL',
-    defaultValue: 'https://rafiq-master-zeta.vercel.app/app/',
-  );
+  static const String _webRecoveryRedirectFallback =
+      'https://rafiq-master-zeta.vercel.app/app/';
+  static const String _mobileRecoveryRedirectFallback =
+      'rafiqapp://reset-password';
+
+  static String get recoveryRedirectUrl {
+    final configured = const String.fromEnvironment(
+      'SUPABASE_RECOVERY_REDIRECT_URL',
+      defaultValue: '',
+    );
+    if (configured.isNotEmpty) {
+      return configured;
+    }
+    return kIsWeb
+        ? _webRecoveryRedirectFallback
+        : _mobileRecoveryRedirectFallback;
+  }
 
   static bool get isConfigured => url.isNotEmpty && anonKey.isNotEmpty;
 }
