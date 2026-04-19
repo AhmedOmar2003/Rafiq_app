@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
@@ -17,13 +19,48 @@ class VerifyCodeScreen extends StatefulWidget {
 }
 
 class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
+  static const int _otpCooldownSeconds = 60;
+
   final _formKey = GlobalKey<FormState>();
   final _codeController = TextEditingController();
   bool _isVerifying = false;
   bool _isResending = false;
+  int _secondsLeft = _otpCooldownSeconds;
+  Timer? _countdownTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startCooldown();
+  }
+
+  void _startCooldown() {
+    _countdownTimer?.cancel();
+    setState(() => _secondsLeft = _otpCooldownSeconds);
+
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (_secondsLeft <= 1) {
+        timer.cancel();
+        setState(() => _secondsLeft = 0);
+      } else {
+        setState(() => _secondsLeft -= 1);
+      }
+    });
+  }
+
+  String _formattedCountdown() {
+    final minutes = (_secondsLeft ~/ 60).toString().padLeft(2, '0');
+    final seconds = (_secondsLeft % 60).toString().padLeft(2, '0');
+    return "$minutes:$seconds";
+  }
 
   @override
   void dispose() {
+    _countdownTimer?.cancel();
     _codeController.dispose();
     super.dispose();
   }
@@ -71,12 +108,17 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
   }
 
   Future<void> _resendCode() async {
+    if (_secondsLeft > 0 || _isResending) {
+      return;
+    }
+
     setState(() => _isResending = true);
     try {
       await AuthService().sendPasswordResetOtp(widget.email);
       if (!mounted) {
         return;
       }
+      _startCooldown();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('تم إعادة إرسال كود التحقق'),
@@ -268,17 +310,43 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                                 onPress: _isVerifying ? () {} : _verifyCode,
                               ),
                               SizedBox(height: 12.h),
-                              TextButton(
-                                onPressed: _isResending ? null : _resendCode,
-                                child: Text(
-                                  _isResending
-                                      ? "جارٍ إعادة الإرسال..."
-                                      : "إعادة إرسال الكود",
-                                  style:
-                                      TextStyleTheme.textStyle16Medium.copyWith(
-                                    color: AppColor.primary,
-                                  ),
-                                ),
+                              AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 180),
+                                child: _secondsLeft > 0
+                                    ? Text(
+                                        "إعادة إرسال الكود خلال ${_formattedCountdown()}",
+                                        key: const ValueKey("cooldownText"),
+                                        style: TextStyleTheme.textStyle14Regular
+                                            .copyWith(
+                                          color:
+                                              AppColor.black.withOpacity(0.55),
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      )
+                                    : TextButton(
+                                        key: const ValueKey("resendButton"),
+                                        onPressed:
+                                            _isResending ? null : _resendCode,
+                                        style: TextButton.styleFrom(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: 12.w,
+                                            vertical: 8.h,
+                                          ),
+                                          foregroundColor: AppColor.primary
+                                              .withOpacity(0.85),
+                                        ),
+                                        child: Text(
+                                          _isResending
+                                              ? "جارٍ إعادة الإرسال..."
+                                              : "إعادة إرسال الكود",
+                                          style: TextStyleTheme
+                                              .textStyle15Medium
+                                              .copyWith(
+                                            color: AppColor.primary
+                                                .withOpacity(0.85),
+                                          ),
+                                        ),
+                                      ),
                               ),
                             ],
                           ),

@@ -162,28 +162,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          if (!keyboardOpen) ...[
-                            Container(
-                              padding: EdgeInsets.all(16.w),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    AppColor.primary.withOpacity(0.1),
-                                    AppColor.primary.withOpacity(0.2),
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.lock_reset_rounded,
-                                size: 32.sp,
-                                color: AppColor.primary,
-                              ),
-                            ),
-                            SizedBox(height: 14.h),
-                          ],
                           Text(
                             "إنشاء كلمة مرور جديدة",
                             style: TextStyleTheme.textStyle20Medium.copyWith(
