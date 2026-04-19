@@ -109,7 +109,6 @@ class SuggestionItem extends StatelessWidget {
                           context.read<FilterCubit>().updateCity(e);
                         } else if (model.text == "الميزانية") {
                           context.read<FilterCubit>().updateBudget(e);
-                          await context.read<FilterCubit>().applyFilters();
                         }
                         Navigator.pop(context);
                       },
@@ -162,54 +161,71 @@ class SuggestionItem extends StatelessWidget {
           },
         );
       },
-      child: Container(
-        margin: EdgeInsets.only(left: 16.w),
-        height: 40.h,
-        decoration: BoxDecoration(
-          color: AppColor.white,
-          borderRadius: BorderRadius.circular(20.r),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+      child: BlocBuilder<FilterCubit, FilterState>(
+        builder: (context, state) {
+          final selectedFilter = _getSelectedFilterFromState(model.text, state);
+          final isSelected = selectedFilter != null;
+          return Container(
+            margin: EdgeInsets.only(left: 12.w),
+            height: 44.h,
+            decoration: BoxDecoration(
+              color: isSelected ? AppColor.primary : AppColor.white,
+              borderRadius: BorderRadius.circular(24.r),
+              border: Border.all(
+                  color: isSelected ? AppColor.primary : Colors.grey.shade300,
+                  width: 1),
+              boxShadow: [
+                if (isSelected)
+                  BoxShadow(
+                    color: AppColor.primary.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  )
+                else
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+              ],
             ),
-          ],
-        ),
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 12.w),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AppImage(
-                model.icon,
-                height: 20.h,
-                width: 20.h,
-                color: AppColor.primary,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AppImage(
+                    model.icon,
+                    height: 20.h,
+                    width: 20.h,
+                    color: isSelected ? AppColor.white : AppColor.primary,
+                  ),
+                  SizedBox(width: 8.w),
+                  CustomTextWidget(
+                    label: selectedFilter ?? model.text,
+                    style: TextStyleTheme.textStyle16Regular.copyWith(
+                      color: isSelected ? AppColor.white : AppColor.black,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.w500,
+                    ),
+                  ),
+                  SizedBox(width: 4.w),
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: isSelected ? AppColor.white : AppColor.primary,
+                    size: 22.sp,
+                  ),
+                ],
               ),
-              SizedBox(width: 8.w),
-              CustomTextWidget(
-                label: model.text,
-                style: TextStyleTheme.textStyle16Regular.copyWith(
-                  color: AppColor.black,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              SizedBox(width: 4.w),
-              Icon(
-                Icons.keyboard_arrow_down_rounded,
-                color: AppColor.primary,
-                size: 22.sp,
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
 
-  String? _getSelectedFilter(String filterType, BuildContext context) {
-    final filterState = context.watch<FilterCubit>().state;
+  String? _getSelectedFilterFromState(
+      String filterType, FilterState filterState) {
     if (filterType == "النشاط") {
       return filterState.activity;
     } else if (filterType == "المكان") {
@@ -218,5 +234,10 @@ class SuggestionItem extends StatelessWidget {
       return filterState.budget;
     }
     return null;
+  }
+
+  String? _getSelectedFilter(String filterType, BuildContext context) {
+    final filterState = context.read<FilterCubit>().state;
+    return _getSelectedFilterFromState(filterType, filterState);
   }
 }
