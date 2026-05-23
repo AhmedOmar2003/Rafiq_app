@@ -7,6 +7,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ApiService {
   static Future<void>? _supabaseInitFuture;
+  static const int _placesPageSize = 80;
+  static const int _reviewsPageSize = 50;
+  static const Duration _networkTimeout = Duration(seconds: 12);
   static const Duration _placesCacheTtl = Duration(minutes: 3);
   static const Duration _reviewsCacheTtl = Duration(minutes: 2);
   static final Map<String, _TimedCache<List<Place>>> _placesCache = {};
@@ -139,10 +142,12 @@ class ApiService {
     }
 
     final response = await (isSurpriseActivity
-        ? query
-            .order('rating', ascending: false)
-            .order('created_at', ascending: false)
-        : query.order('place_id', ascending: false));
+            ? query
+                .order('rating', ascending: false)
+                .order('created_at', ascending: false)
+                .limit(_placesPageSize)
+            : query.order('place_id', ascending: false).limit(_placesPageSize))
+        .timeout(_networkTimeout);
     return response
         .map((row) => Place.fromJson(Map<String, dynamic>.from(row)))
         .toList();
@@ -183,7 +188,11 @@ class ApiService {
             imagePath != null && imagePath.isNotEmpty ? imagePath : null,
       };
 
-      final response = await _client.from('places').insert(payload).select();
+      final response = await _client
+          .from('places')
+          .insert(payload)
+          .select()
+          .timeout(_networkTimeout);
       if (response.isNotEmpty) {
         _invalidatePlacesCache();
         return Place.fromJson(Map<String, dynamic>.from(response.first));
@@ -232,7 +241,8 @@ class ApiService {
           .update(payload)
           .eq('place_id', placeId)
           .select()
-          .single();
+          .single()
+          .timeout(_networkTimeout);
 
       _invalidatePlacesCache();
       return Place.fromJson(Map<String, dynamic>.from(response));
@@ -246,7 +256,11 @@ class ApiService {
   Future<void> deletePlace(int placeId) async {
     try {
       await ensureSupabaseInitialized();
-      await _client.from('places').delete().eq('place_id', placeId);
+      await _client
+          .from('places')
+          .delete()
+          .eq('place_id', placeId)
+          .timeout(_networkTimeout);
       _invalidatePlacesCache();
     } on PostgrestException catch (e) {
       throw Exception('فشل في حذف المكان: ${e.message}');
@@ -299,7 +313,9 @@ class ApiService {
           'review_id,place_id,user_id,name,review_text,rating,image,created_at',
         )
         .eq('place_id', placeId)
-        .order('created_at', ascending: false);
+        .order('created_at', ascending: false)
+        .limit(_reviewsPageSize)
+        .timeout(_networkTimeout);
 
     return response
         .map((row) =>
@@ -317,7 +333,8 @@ class ApiService {
           )
           .eq('place_id', placeId)
           .order('created_at', ascending: false)
-          .limit(1);
+          .limit(1)
+          .timeout(_networkTimeout);
 
       if (response.isEmpty) {
         return null;
@@ -354,7 +371,8 @@ class ApiService {
             'image': image.trim(),
           })
           .select()
-          .single();
+          .single()
+          .timeout(_networkTimeout);
 
       final inserted = EvaluationsItemModel.fromJson(
         Map<String, dynamic>.from(response),
@@ -384,7 +402,8 @@ class ApiService {
           .from('reviews')
           .delete()
           .eq('review_id', reviewId)
-          .select('place_id');
+          .select('place_id')
+          .timeout(_networkTimeout);
 
       if (deletedRows.isNotEmpty) {
         final rawPlaceId = deletedRows.first['place_id'];

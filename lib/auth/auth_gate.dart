@@ -20,12 +20,18 @@ class AuthGate extends StatefulWidget {
 
 class _AuthGateState extends State<AuthGate> {
   StreamSubscription<AuthState>? _authSubscription;
+  late final Future<List<Object>> _bootstrapFuture;
   bool _openedRecoveryPage = false;
 
   @override
   void initState() {
     super.initState();
-    AuthService.ensureSupabaseInitialized().then((_) {
+    _bootstrapFuture = Future.wait<Object>([
+      AuthService.ensureSupabaseInitialized().then((_) => true),
+      CacheHelper.getOnBoardingSeen(),
+    ]);
+
+    _bootstrapFuture.then((_) {
       if (!mounted) {
         return;
       }
@@ -80,10 +86,7 @@ class _AuthGateState extends State<AuthGate> {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-      future: Future.wait([
-        AuthService.ensureSupabaseInitialized().then((_) => true),
-        CacheHelper.getOnBoardingSeen(),
-      ]),
+      future: _bootstrapFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return const Scaffold(

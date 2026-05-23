@@ -1,8 +1,7 @@
-import 'package:device_preview/device_preview.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:rafiq_app/auth/auth_gate.dart';
 import 'package:rafiq_app/core/logic/helper_methods.dart';
-import 'package:rafiq_app/on_boarding/on_boarding_screen.dart';
 import 'core/themes/theme_services.dart';
 import 'core/utils/app_strings.dart';
 
@@ -27,15 +26,16 @@ class RafiqApp extends StatelessWidget {
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) {
-        // Set up error handling
         ErrorWidget.builder = (FlutterErrorDetails details) {
+          final message = details.exception.toString();
           return Material(
             child: Container(
               color: Colors.red,
               child: Center(
                 child: Text(
-                  'An error occurred: ${details.exception}',
+                  'حدث خطأ غير متوقع${const bool.fromEnvironment('dart.vm.product') ? '' : ': $message'}',
                   style: const TextStyle(color: Colors.white),
+                  textAlign: TextAlign.center,
                 ),
               ),
             ),
@@ -58,12 +58,11 @@ class RafiqApp extends StatelessWidget {
               child: child,
             );
           },
-          locale: DevicePreview.locale(context),
           navigatorKey: navigatorKey,
           home: child,
         );
       },
-      child: const OnBoardingScreen(),
+      child: const AuthGate(),
     );
   }
 }

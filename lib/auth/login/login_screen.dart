@@ -1,7 +1,6 @@
-import 'dart:convert';
-
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rafiq_app/auth/forget%20password/forget_password.dart';
 import 'package:rafiq_app/auth/register/register_screen.dart';
 import 'package:rafiq_app/core/design/app_button.dart';
@@ -11,13 +10,9 @@ import 'package:rafiq_app/core/design/title_text.dart';
 import 'package:rafiq_app/core/logic/helper_methods.dart';
 import 'package:rafiq_app/core/utils/app_color.dart';
 import 'package:rafiq_app/core/utils/assets.dart';
-import 'package:rafiq_app/core/utils/spacing.dart';
 import 'package:rafiq_app/core/utils/text_style_theme.dart';
+import 'package:rafiq_app/service/auth_service.dart';
 import 'package:rafiq_app/view/pages/choice/choice_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http/http.dart' as http;
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:rafiq_app/core/config/api_config.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -41,17 +36,34 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleLogin() async {
-    if (formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
-      await loginUser();
-      setState(() => _isLoading = false);
+    if (!formKey.currentState!.validate()) {
+      return;
     }
-  }
 
-  void _showSuccess() {
-    setState(() {
-      _showSuccessOverlay = true;
-    });
+    setState(() => _isLoading = true);
+    try {
+      await AuthService().signIn(
+        email: emailController.text.trim(),
+        password: passwordController.text,
+      );
+      if (!mounted) {
+        return;
+      }
+      setState(() => _showSuccessOverlay = true);
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   void _navigateToChoiceScreen() {
@@ -67,85 +79,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Future<void> loginUser() async {
-    final body = {
-      "email": emailController.text.trim(),
-      "password": passwordController.text.trim(),
-    };
-
-    try {
-      final response = await http
-          .post(
-            Uri.parse(ApiConfig.loginUrl),
-            body: body,
-          )
-          .timeout(const Duration(seconds: 10));
-
-      final result = jsonDecode(response.body);
-
-      if (response.statusCode == 200 && result['status'] == 'success') {
-        await fetchUserData();
-        _showSuccess();
-      } else if (response.statusCode == 401) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('البريد الإلكتروني أو كلمة المرور غير صحيحة')),
-        );
-      } else if (response.statusCode == 404) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('المستخدم غير موجود')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['message'] ?? 'حدث خطأ في تسجيل الدخول')),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تعذر الاتصال بالخادم')),
-      );
-    }
-  }
-
-  Future<void> fetchUserData() async {
-    try {
-      final response = await http.post(
-        Uri.parse(ApiConfig.getUserUrl),
-        body: {"email": emailController.text.trim()},
-      ).timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        final result = jsonDecode(response.body);
-        final user = result['users'].firstWhere(
-          (user) => user['email'] == emailController.text.trim(),
-          orElse: () => null,
-        );
-
-        if (user != null) {
-          await _saveUserData(user);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('المستخدم غير موجود')),
-          );
-        }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في الخادم: ${response.statusCode}')),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تعذر الاتصال بالخادم')),
-      );
-    }
-  }
-
-  Future<void> _saveUserData(Map<String, dynamic> user) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('userId', int.parse(user['userId']));
-    await prefs.setString('userName', user['name']);
-    await prefs.setString('userEmail', user['email']);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -153,14 +86,23 @@ class _LoginScreenState extends State<LoginScreen> {
         Scaffold(
           backgroundColor: AppColor.primary,
           body: SafeArea(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  _buildLogo(),
-                  verticalSpace(70),
-                  _buildLoginForm(),
-                ],
-              ),
+            child: CustomScrollView(
+              slivers: [
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24.h),
+                        child: _buildLogo(),
+                      ),
+                      Expanded(
+                        child: _buildLoginForm(),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -261,41 +203,40 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildLogo() {
     return Center(
-      child: Padding(
-        padding: EdgeInsets.only(top: 40.h),
-        child: AppImage(
-          AppImages.logo,
-          height: 140.h,
-          width: 240.w,
-        ),
+      child: AppImage(
+        AppImages.logo,
+        height: 100.h,
+        width: 180.w,
       ),
     );
   }
 
   Widget _buildLoginForm() {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 50.h, horizontal: 30.w),
-      height: 538.h,
-      width: double.infinity.w,
+      padding: EdgeInsets.symmetric(vertical: 32.h, horizontal: 24.w),
+      width: double.infinity,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.only(
-          topRight: Radius.circular(30.r),
-          topLeft: Radius.circular(30.r),
-        ),
         color: AppColor.ofWhite,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(36.r),
+          topRight: Radius.circular(36.r),
+        ),
       ),
       child: Form(
         key: formKey,
-        child: ListView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildTitle(),
-            verticalSpace(30),
+            SizedBox(height: 24.h),
             _buildEmailInput(),
+            SizedBox(height: 16.h),
             _buildPasswordInput(),
+            SizedBox(height: 12.h),
             _buildForgotPassword(),
-            verticalSpace(50),
+            SizedBox(height: 32.h),
             _buildLoginButton(),
-            verticalSpace(30),
+            SizedBox(height: 24.h),
             _buildRegisterLink(),
           ],
         ),
@@ -307,7 +248,10 @@ class _LoginScreenState extends State<LoginScreen> {
     return Center(
       child: CustomTextWidget(
         label: "تسجيل الدخول",
-        style: TextStyleTheme.textStyle35Medium,
+        style: TextStyleTheme.textStyle35Medium.copyWith(
+          fontWeight: FontWeight.bold,
+          color: AppColor.black,
+        ),
       ),
     );
   }
@@ -318,9 +262,13 @@ class _LoginScreenState extends State<LoginScreen> {
       controller: emailController,
       suffixIcon: const Icon(Icons.email_outlined, color: AppColor.black),
       textInputAction: TextInputAction.next,
+      type: TextInputType.emailAddress,
       validator: (value) {
         if (value == null || value.isEmpty) {
           return "البريد الإلكتروني مطلوب";
+        }
+        if (!AuthService.isGmailEmail(value)) {
+          return "يجب أن ينتهي البريد بـ @gmail.com";
         }
         return null;
       },
@@ -356,21 +304,28 @@ class _LoginScreenState extends State<LoginScreen> {
     return Center(
       child: AppButton(
         text: _isLoading ? "" : "تسجيل الدخول",
-        textStyle: TextStyleTheme.textStyle25Medium.copyWith(
+        textStyle: TextStyleTheme.textStyle20Medium.copyWith(
           color: AppColor.white,
+          fontWeight: FontWeight.bold,
         ),
-        onPress: _isLoading ? () {} : () => _handleLogin(),
+        onPress: _isLoading ? () {} : _handleLogin,
         buttonStyle: ElevatedButton.styleFrom(
           backgroundColor: AppColor.primary,
+          minimumSize: Size(double.infinity, 56.h),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.r),
+          ),
+          elevation: 4,
+          shadowColor: AppColor.primary.withOpacity(0.4),
           disabledBackgroundColor: AppColor.primary.withOpacity(0.5),
         ),
         child: _isLoading
             ? SizedBox(
-                height: 20.h,
-                width: 20.w,
+                height: 24.h,
+                width: 24.w,
                 child: const CircularProgressIndicator(
                   color: AppColor.white,
-                  strokeWidth: 2,
+                  strokeWidth: 2.5,
                 ),
               )
             : null,

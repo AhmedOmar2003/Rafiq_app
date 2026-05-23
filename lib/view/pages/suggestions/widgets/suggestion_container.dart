@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:rafiq_app/core/design/app_image.dart';
 import 'package:rafiq_app/core/design/title_text.dart';
 import 'package:rafiq_app/core/utils/app_color.dart';
-import 'package:rafiq_app/core/utils/spacing.dart';
 import 'package:rafiq_app/core/utils/text_style_theme.dart';
 import 'package:rafiq_app/models/suggestion_item_model/suggestion_item.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 
 class CustomSuggestionContainer extends StatelessWidget {
   final SuggestionItemModel model;
@@ -45,41 +46,10 @@ class CustomSuggestionContainer extends StatelessWidget {
             Stack(
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+                  borderRadius:
+                      BorderRadius.vertical(top: Radius.circular(20.r)),
                   child: model.image.isNotEmpty
-                      ? Image.network(
-                          model.image,
-                          height: 220.h,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              height: 220.h,
-                              color: Colors.grey[100],
-                              child: Icon(
-                                Icons.image_not_supported_outlined,
-                                size: 40.sp,
-                                color: Colors.grey[400],
-                              ),
-                            );
-                          },
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Container(
-                              height: 220.h,
-                              color: Colors.grey[50],
-                              child: Center(
-                                child: CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation<Color>(AppColor.primary),
-                                  value: loadingProgress.expectedTotalBytes != null
-                                      ? loadingProgress.cumulativeBytesLoaded /
-                                          (loadingProgress.expectedTotalBytes ?? 1)
-                                      : null,
-                                ),
-                              ),
-                            );
-                          },
-                        )
+                      ? _buildImage(context, model.image)
                       : Container(
                           height: 220.h,
                           color: Colors.grey[100],
@@ -95,7 +65,8 @@ class CustomSuggestionContainer extends StatelessWidget {
                   top: 12.h,
                   right: 12.w,
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(25.r),
@@ -144,7 +115,8 @@ class CustomSuggestionContainer extends StatelessWidget {
                 children: [
                   // Category Badge
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12.r),
                       color: model.color.withOpacity(0.9),
@@ -216,7 +188,7 @@ class CustomSuggestionContainer extends StatelessWidget {
                           ),
                           SizedBox(height: 4.h),
                           CustomTextWidget(
-                            label: "${model.price} جنية مصري",
+                            label: _formatPriceLabel(model.price),
                             style: TextStyleTheme.textStyle16Medium.copyWith(
                               color: AppColor.primary,
                               fontWeight: FontWeight.w600,
@@ -246,5 +218,119 @@ class CustomSuggestionContainer extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _normalizeImageUrl(String rawUrl) {
+    final trimmed = rawUrl.trim();
+    if (trimmed.isEmpty) return '';
+
+    if (trimmed.startsWith('//')) {
+      return 'https:${Uri.encodeFull(trimmed)}';
+    }
+
+    if (trimmed.startsWith('www.')) {
+      return 'https://${Uri.encodeFull(trimmed)}';
+    }
+
+    if (trimmed.startsWith('http://') && kIsWeb) {
+      return Uri.encodeFull(trimmed.replaceFirst('http://', 'https://'));
+    }
+
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return Uri.encodeFull(trimmed);
+    }
+
+    return trimmed;
+  }
+
+  Widget _buildImage(BuildContext context, String imagePath) {
+    final normalizedPath = _normalizeImageUrl(imagePath);
+    final devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
+    final targetCacheWidth = !kIsWeb
+        ? (MediaQuery.sizeOf(context).width * devicePixelRatio).round()
+        : null;
+    final targetCacheHeight =
+        !kIsWeb ? (220.h * devicePixelRatio).round() : null;
+
+    if (!kIsWeb &&
+        normalizedPath.isNotEmpty &&
+        !normalizedPath.startsWith('http')) {
+      return Image.file(
+        File(normalizedPath),
+        height: 220.h,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        cacheWidth: targetCacheWidth,
+        cacheHeight: targetCacheHeight,
+        errorBuilder: (context, error, stackTrace) {
+          return _buildImageFallback();
+        },
+      );
+    } else if (normalizedPath.startsWith('http')) {
+      return Image.network(
+        normalizedPath,
+        height: 220.h,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        cacheWidth: targetCacheWidth,
+        cacheHeight: targetCacheHeight,
+        webHtmlElementStrategy: kIsWeb
+            ? WebHtmlElementStrategy.prefer
+            : WebHtmlElementStrategy.never,
+        errorBuilder: (context, error, stackTrace) {
+          return _buildImageFallback();
+        },
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            height: 220.h,
+            color: Colors.grey[50],
+            child: Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(AppColor.primary),
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                        (loadingProgress.expectedTotalBytes ?? 1)
+                    : null,
+              ),
+            ),
+          );
+        },
+      );
+    } else {
+      return Image.asset(
+        'assets/images/default_profile.png',
+        height: 220.h,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        cacheWidth: targetCacheWidth,
+        cacheHeight: targetCacheHeight,
+      );
+    }
+  }
+
+  Widget _buildImageFallback() {
+    return Container(
+      height: 220.h,
+      color: Colors.grey[100],
+      child: Icon(
+        Icons.image_not_supported_outlined,
+        size: 40.sp,
+        color: Colors.grey[400],
+      ),
+    );
+  }
+
+  String _formatPriceLabel(String value) {
+    final normalized = value.trim();
+    if (normalized.isEmpty) {
+      return "غير محدد";
+    }
+
+    if (normalized.contains("جنيه") || normalized.contains("جنية")) {
+      return normalized;
+    }
+
+    return "$normalized جنيه مصري";
   }
 }
