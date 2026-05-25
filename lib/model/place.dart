@@ -53,17 +53,47 @@ class Place {
 
   // تحويل البيانات من JSON
   factory Place.fromJson(Map<String, dynamic> json) {
+    final imageValue = json['image_path'] ??
+        json['image_url'] ??
+        json['ImagePath'] ??
+        json['ImageUrl'];
+
     return Place(
-      name: json['PlaceName']?.toString() ?? 'غير معروف',
-      description: json['Description']?.toString() ?? 'لا يوجد وصف متاح',
-      priceRange: json['PriceRange']?.toString() ?? 'غير محدد',
-      budget: json['budget']?.toString() ?? 'غير محدد',
-      rating: (json['Rating'] is num ? json['Rating'] : 0).toDouble(),
-      placeAddress: json['PlaceAddress']?.toString() ?? 'لا يوجد عنوان',
-      imageUrl: json['image_path']?.toString(),
-      activityName: json['ActivityName']?.toString() ?? 'غير معروف',
-      cityName: json['CityName']?.toString() ?? 'غير معروفة',
-      placeId: json['PlaceID'],
+      name: json['PlaceName']?.toString() ??
+          json['place_name']?.toString() ??
+          json['name']?.toString() ??
+          'غير معروف',
+      description: json['Description']?.toString() ??
+          json['description']?.toString() ??
+          'لا يوجد وصف متاح',
+      priceRange: json['PriceRange']?.toString() ??
+          json['price_range']?.toString() ??
+          json['budget']?.toString() ??
+          'غير محدد',
+      budget: json['budget']?.toString() ??
+          json['PriceRange']?.toString() ??
+          json['price_range']?.toString() ??
+          'غير محدد',
+      rating: (json['Rating'] ?? json['rating'] ?? 0).toDouble(),
+      placeAddress: json['PlaceAddress']?.toString() ??
+          json['place_address']?.toString() ??
+          'لا يوجد عنوان',
+      imageUrl: imageValue?.toString().isNotEmpty == true
+          ? imageValue.toString()
+          : null,
+      activityName: json['ActivityName']?.toString() ??
+          json['activity_name']?.toString() ??
+          'غير معروف',
+      cityName: json['CityName']?.toString() ??
+          json['city_name']?.toString() ??
+          'غير معروفة',
+      placeId: () {
+        final placeIdValue = json['PlaceID'] ?? json['place_id'] ?? json['id'];
+        if (placeIdValue is num) {
+          return placeIdValue.toInt();
+        }
+        return int.tryParse(placeIdValue?.toString() ?? '0') ?? 0;
+      }(),
     );
   }
 }

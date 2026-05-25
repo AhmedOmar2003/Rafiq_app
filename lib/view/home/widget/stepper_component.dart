@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/design/app_image.dart';
-import '../../../core/utils/app_color.dart';
+import '../../../core/design/tokens/tokens.dart';
 
 /// A custom stepper component that displays a series of steps with icons and connecting lines.
 /// Each step can be tapped to navigate to that step.
@@ -45,31 +45,33 @@ class StepperComponent extends StatelessWidget {
     this.isLast = false,
     this.stepSize = 50,
     this.activeColor = AppColor.primary,
-    this.inactiveColor = AppColor.ofWhite,
+    this.inactiveColor = AppColor.surfaceCard,
     this.activeLineColor = AppColor.primary,
-    this.inactiveLineColor = AppColor.lightGray,
+    this.inactiveLineColor = AppColor.border,
   });
 
   /// Builds the step circle with the icon
   Widget _buildStepCircle(BuildContext context) {
     final bool isActive = currentIndex >= index;
-    final bool isCurrent = index == currentIndex;
 
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
         height: stepSize.h,
         width: stepSize.h,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(100.r),
+          shape: BoxShape.circle,
           color: isActive ? activeColor : inactiveColor,
           border: Border.all(
             color: isActive ? activeColor : inactiveLineColor,
           ),
+          boxShadow: isActive ? AppShadows.primaryGlow : AppShadows.level0,
         ),
         child: AppImage(
           icon,
-          color: isCurrent ? AppColor.ofWhite : AppColor.white,
+          color: isActive ? AppColor.white : AppColor.textTertiary,
         ),
       ),
     );

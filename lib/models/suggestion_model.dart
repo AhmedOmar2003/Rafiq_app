@@ -19,10 +19,11 @@ final List<SuggestionModel> suggestionList = [
     text: "النشاط",
     icon: AppImages.activitie,
     answer: [
-      "ترفيه",
       "طعام",
+      "ترفيه",
       "سياحي",
-      "فعايات ثقافية",
+      "رياضة",
+      "فاجئني",
     ],
   ),
   SuggestionModel(
@@ -30,9 +31,10 @@ final List<SuggestionModel> suggestionList = [
     icon: AppImages.mapPin,
     answer: [
       "القاهرة",
-      "الإسكندرية",
       "المنصورة",
+      "الإسكندرية",
       "طنطا",
+      "أي حتة",
     ],
   ),
   SuggestionModel(
@@ -43,6 +45,7 @@ final List<SuggestionModel> suggestionList = [
       "100 إلى 500 جنيه",
       "500 إلى 1000 جنيه",
       "1000 إلى 1500 جنيه",
+      "لسه محددتش",
     ],
   ),
 ];

@@ -1,10 +1,8 @@
+import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/design/app_image.dart';
-import '../../../core/design/title_text.dart';
-import '../../../core/utils/app_color.dart';
 import '../../../core/utils/spacing.dart';
-import '../../../core/utils/text_style_theme.dart';
 import '../../../models/payments/payments_model.dart';
 
 class Payments extends StatelessWidget {
@@ -47,9 +45,9 @@ class Payments extends StatelessWidget {
             ),
           ),
           horizontalSpace(7),
-          CustomTextWidget(
-            label: model.text,
-            style: TextStyleTheme.textStyle16Medium.copyWith(
+          Text(
+            model.text,
+            style: AppText.titleMd.copyWith(
               color: AppColor.black,
             ),
           ),

@@ -1,8 +1,6 @@
+import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../core/design/title_text.dart';
-import '../../../core/utils/app_color.dart';
-import '../../../core/utils/text_style_theme.dart';
 import '../../../models/evaluations_model/evaluations_model.dart';
 
 class CustomEvaluation extends StatelessWidget {
@@ -42,9 +40,9 @@ class CustomEvaluation extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                CustomTextWidget(
-                  label: model.text,
-                  style: TextStyleTheme.textStyle16Regular.copyWith(
+                Text(
+                  model.text,
+                  style: AppText.bodyLg.copyWith(
                     height: 1.2,
                   ),
                 ),

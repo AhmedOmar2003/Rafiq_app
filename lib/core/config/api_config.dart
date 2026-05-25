@@ -7,7 +7,7 @@ class ApiConfig {
   static String get registerUrl => "$baseUrl/register_user.php";
   static const String geminiApiKey = String.fromEnvironment(
     'AIzaSyAQ_mE8k4FQNQw2ZFbGt-1QSb1XzpSJTZI',
-    defaultValue: 'AIzaSyAQ_mE8k4FQNQw2ZFbGt-1QSb1XzpSJTZI', // Replace with your actual API key
+    defaultValue: 'AIzaSyAQ_mE8k4FQNQw2ZFbGt-1QSb1XzpSJTZI',
   );
 
   // Default Values

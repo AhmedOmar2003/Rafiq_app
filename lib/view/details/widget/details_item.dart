@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/design/app_image.dart';
-import '../../../core/design/title_text.dart';
 import '../../../core/utils/app_color.dart';
 import '../../../core/utils/spacing.dart';
 import '../../../core/utils/text_style_theme.dart';
@@ -30,6 +29,29 @@ class DetailsItem extends StatelessWidget {
     }
   }
 
+  String _normalizeImageUrl(String rawUrl) {
+    final trimmed = rawUrl.trim();
+    if (trimmed.isEmpty) return '';
+
+    if (trimmed.startsWith('//')) {
+      return 'https:${Uri.encodeFull(trimmed)}';
+    }
+
+    if (trimmed.startsWith('www.')) {
+      return 'https://${Uri.encodeFull(trimmed)}';
+    }
+
+    if (trimmed.startsWith('http://')) {
+      return Uri.encodeFull(trimmed.replaceFirst('http://', 'https://'));
+    }
+
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return Uri.encodeFull(trimmed);
+    }
+
+    return trimmed;
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -44,7 +66,7 @@ class DetailsItem extends StatelessWidget {
               borderRadius: BorderRadius.circular(20.r),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: AppColor.black.withOpacity(0.1),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -57,8 +79,10 @@ class DetailsItem extends StatelessWidget {
                 children: [
                   model.image.isNotEmpty
                       ? Image.network(
-                          model.image,
+                          _normalizeImageUrl(model.image),
                           fit: BoxFit.cover,
+                          webHtmlElementStrategy:
+                              WebHtmlElementStrategy.prefer,
                           errorBuilder: (context, error, stackTrace) {
                             return _buildPlaceholder();
                           },
@@ -85,7 +109,7 @@ class DetailsItem extends StatelessWidget {
                           end: Alignment.bottomCenter,
                           colors: [
                             Colors.transparent,
-                            Colors.black.withOpacity(0.7),
+                            AppColor.black.withOpacity(0.7),
                           ],
                         ),
                       ),
@@ -98,11 +122,11 @@ class DetailsItem extends StatelessWidget {
                     child: Container(
                       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColor.surfaceCard,
                         borderRadius: BorderRadius.circular(20.r),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: AppColor.black.withOpacity(0.1),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           ),
@@ -120,7 +144,7 @@ class DetailsItem extends StatelessWidget {
                           Text(
                             model.rate.toString(),
                             style: TextStyleTheme.textStyle12Medium.copyWith(
-                              color: Colors.black87,
+                              color: AppColor.textPrimary,
                             ),
                           ),
                         ],
@@ -161,7 +185,7 @@ class DetailsItem extends StatelessWidget {
                 Text(
                   model.suggestionText,
                   style: TextStyleTheme.textStyle16Medium.copyWith(
-                    color: Colors.white,
+                    color: AppColor.surfaceCard,
                     fontSize: 14.sp,
                   ),
                 ),
@@ -175,7 +199,7 @@ class DetailsItem extends StatelessWidget {
           Text(
             model.text,
             style: TextStyleTheme.textStyle20Bold.copyWith(
-              color: Colors.black87,
+              color: AppColor.textPrimary,
               height: 1.3,
               fontSize: 24.sp,
             ),
@@ -187,7 +211,7 @@ class DetailsItem extends StatelessWidget {
           Text(
             model.body.toString(),
             style: TextStyleTheme.textStyle16Medium.copyWith(
-              color: Colors.black54,
+              color: AppColor.textSecondary,
               height: 1.6,
             ),
           ),
@@ -198,9 +222,9 @@ class DetailsItem extends StatelessWidget {
           Container(
             padding: EdgeInsets.all(16.w),
             decoration: BoxDecoration(
-              color: Colors.grey[50],
+              color: AppColor.neutral50,
               borderRadius: BorderRadius.circular(12.r),
-              border: Border.all(color: Colors.grey[200]!),
+              border: Border.all(color: AppColor.neutral200!),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -227,7 +251,7 @@ class DetailsItem extends StatelessWidget {
                           Text(
                             "الموقع",
                             style: TextStyleTheme.textStyle16Medium.copyWith(
-                              color: Colors.black54,
+                              color: AppColor.textSecondary,
                               fontSize: 14.sp,
                             ),
                           ),
@@ -235,7 +259,7 @@ class DetailsItem extends StatelessWidget {
                           Text(
                             model.address,
                             style: TextStyleTheme.textStyle16Medium.copyWith(
-                              color: Colors.black87,
+                              color: AppColor.textPrimary,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -286,13 +310,13 @@ class DetailsItem extends StatelessWidget {
                     Text(
                       "السعر يبدأ من",
                       style: TextStyleTheme.textStyle16Medium.copyWith(
-                        color: Colors.black54,
+                        color: AppColor.textSecondary,
                         fontSize: 14.sp,
                       ),
                     ),
                     verticalSpace(4),
                     Text(
-                      "${model.price} جنية مصري",
+                      _formatPriceLabel(model.price),
                       style: TextStyleTheme.textStyle20Bold.copyWith(
                         color: AppColor.primary,
                       ),
@@ -302,7 +326,7 @@ class DetailsItem extends StatelessWidget {
                 Container(
                   padding: EdgeInsets.all(8.w),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColor.surfaceCard,
                     borderRadius: BorderRadius.circular(8.r),
                   ),
                   child: Row(
@@ -316,7 +340,7 @@ class DetailsItem extends StatelessWidget {
                       Text(
                         "${model.rate} (4.1k)",
                         style: TextStyleTheme.textStyle16Medium.copyWith(
-                          color: Colors.black87,
+                          color: AppColor.textPrimary,
                           fontSize: 14.sp,
                         ),
                       ),
@@ -333,14 +357,27 @@ class DetailsItem extends StatelessWidget {
 
   Widget _buildPlaceholder() {
     return Container(
-      color: Colors.grey[200],
+      color: AppColor.neutral200,
       child: Center(
         child: Icon(
           Icons.image_not_supported_outlined,
           size: 40.sp,
-          color: Colors.grey[400],
+          color: AppColor.textTertiary,
         ),
       ),
     );
+  }
+
+  String _formatPriceLabel(String value) {
+    final normalized = value.trim();
+    if (normalized.isEmpty) {
+      return "غير محدد";
+    }
+
+    if (normalized.contains("جنيه") || normalized.contains("جنية")) {
+      return normalized;
+    }
+
+    return "$normalized جنيه مصري";
   }
 }

@@ -4,9 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:rafiq_app/auth/forget%20password/reset_password.dart';
-import 'package:rafiq_app/core/design/app_button.dart';
-import 'package:rafiq_app/core/utils/app_color.dart';
-import 'package:rafiq_app/core/utils/text_style_theme.dart';
+import 'package:rafiq_app/core/design/components/components.dart';
+import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:rafiq_app/service/auth_service.dart';
 
 class VerifyCodeScreen extends StatefulWidget {
@@ -94,12 +93,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AppFeedback.error(e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) {
         setState(() => _isVerifying = false);
@@ -119,22 +113,12 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
         return;
       }
       _startCooldown();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('تم إعادة إرسال كود التحقق'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      AppFeedback.success('بعتنالك الكود تاني');
     } catch (e) {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AppFeedback.error(e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) {
         setState(() => _isResending = false);
@@ -222,7 +206,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                               Text(
                                 "تحقق من الكود",
                                 style:
-                                    TextStyleTheme.textStyle25Medium.copyWith(
+                                    AppText.headingLg.copyWith(
                                   color: AppColor.black,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -232,7 +216,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                               Text(
                                 "أدخل كود التحقق المكوّن من 6 أرقام المرسل إلى:",
                                 style:
-                                    TextStyleTheme.textStyle16Regular.copyWith(
+                                    AppText.bodyLg.copyWith(
                                   color: AppColor.black.withOpacity(0.7),
                                 ),
                                 textAlign: TextAlign.center,
@@ -241,7 +225,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                               Text(
                                 widget.email,
                                 style:
-                                    TextStyleTheme.textStyle16Medium.copyWith(
+                                    AppText.titleMd.copyWith(
                                   color: AppColor.primary,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -291,7 +275,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                               AppButton(
                                 text: _isVerifying ? "..." : "تأكيد الكود",
                                 textStyle:
-                                    TextStyleTheme.textStyle20Medium.copyWith(
+                                    AppText.headingSm.copyWith(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -316,7 +300,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                                     ? Text(
                                         "إعادة إرسال الكود خلال ${_formattedCountdown()}",
                                         key: const ValueKey("cooldownText"),
-                                        style: TextStyleTheme.textStyle14Regular
+                                        style: AppText.bodyMd
                                             .copyWith(
                                           color:
                                               AppColor.black.withOpacity(0.55),
@@ -339,9 +323,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                                           _isResending
                                               ? "جارٍ إعادة الإرسال..."
                                               : "إعادة إرسال الكود",
-                                          style: TextStyleTheme
-                                              .textStyle15Medium
-                                              .copyWith(
+                                          style: AppText.labelMd.copyWith(
                                             color: AppColor.primary
                                                 .withOpacity(0.85),
                                           ),

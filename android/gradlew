@@ -59,6 +59,9 @@ SAVED="`pwd`"
 cd "`dirname \"$PRG\"`/" >/dev/null
 APP_HOME="`pwd -P`"
 cd "$SAVED" >/dev/null
+if [ -z "$GRADLE_USER_HOME" ] ; then
+    GRADLE_USER_HOME="$APP_HOME/.gradle-home"
+fi
 
 CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
 

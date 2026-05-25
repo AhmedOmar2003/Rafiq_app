@@ -13,5 +13,5 @@ List<StepOneModel> stepOneList = [
   StepOneModel(text: "المنصورة"),
   StepOneModel(text: "الإسكندرية"),
   StepOneModel(text: "طنطا"),
-  StepOneModel(text: "اي حتة"),
+  StepOneModel(text: "أي حتة"),
 ];

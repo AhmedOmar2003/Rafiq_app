@@ -1,10 +1,10 @@
+import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:rafiq_app/core/design/app_button.dart';
 import 'package:rafiq_app/core/paymob/paymob_manager.dart';
 
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import '../../core/utils/text_style_theme.dart';
 
 class PayMobPay extends StatelessWidget {
   final double price;
@@ -29,12 +29,12 @@ class PayMobPay extends StatelessWidget {
           children: [
             Text(
               "المبلغ المطلوب: ${price.toStringAsFixed(2)} جنيه",
-              style: TextStyleTheme.textStyle20Bold,
+              style: AppText.headingSm,
             ),
             SizedBox(height: 20.h),
             AppButton(
               text: "ادفع الآن",
-              textStyle: TextStyleTheme.textStyle18Medium,
+              textStyle: AppText.titleLg,
               buttonStyle: ElevatedButton.styleFrom(
                 backgroundColor: Color(0xff0AA7CB),
                 fixedSize: Size(300.w, 50.h),

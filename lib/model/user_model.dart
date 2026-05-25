@@ -1,5 +1,5 @@
 class UserModel {
-  final int id;
+  final String id;
   final String name;
   final String email;
 
@@ -21,7 +21,7 @@ class UserModel {
   // لتحويل JSON إلى موديل
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      id: int.parse(json['userId']),
+      id: json['userId'].toString(),
       name: json['name'],
       email: json['email'],
     );

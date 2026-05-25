@@ -1,10 +1,8 @@
+import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rafiq_app/model/review_model.dart';
-import '../../../core/design/title_text.dart';
-import '../../../core/utils/app_color.dart';
 import '../../../core/utils/spacing.dart';
-import '../../../core/utils/text_style_theme.dart';
 
 class EvaluationItem extends StatelessWidget {
   final EvaluationsItemModel model;
@@ -16,11 +14,11 @@ class EvaluationItem extends StatelessWidget {
       margin: EdgeInsets.symmetric(vertical: 8.h),
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColor.surfaceCard,
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: AppColor.black.withOpacity(0.05),
             blurRadius: 10,
             spreadRadius: 1,
             offset: const Offset(0, 2),
@@ -40,7 +38,7 @@ class EvaluationItem extends StatelessWidget {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: AppColor.black.withOpacity(0.1),
                         blurRadius: 8,
                         spreadRadius: 1,
                       ),
@@ -57,9 +55,9 @@ class EvaluationItem extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CustomTextWidget(
-                      label: model.name,
-                      style: TextStyleTheme.textStyle16Medium.copyWith(
+                    Text(
+                      model.name,
+                      style: AppText.titleMd.copyWith(
                         color: AppColor.black,
                         height: 1.2,
                       ),
@@ -81,9 +79,9 @@ class EvaluationItem extends StatelessWidget {
                           ),
                         ),
                         horizontalSpace(12.w),
-                        CustomTextWidget(
-                          label: model.date,
-                          style: TextStyleTheme.textStyle11Medium.copyWith(
+                        Text(
+                          model.date,
+                          style: AppText.caption.copyWith(
                             color: AppColor.black.withOpacity(0.6),
                             height: 1.2,
                           ),
@@ -96,9 +94,9 @@ class EvaluationItem extends StatelessWidget {
             ],
           ),
           verticalSpace(16.h),
-          CustomTextWidget(
-            label: model.body,
-            style: TextStyleTheme.textStyle12Regular.copyWith(
+          Text(
+            model.body,
+            style: AppText.bodySm.copyWith(
               height: 1.6,
               color: AppColor.black.withOpacity(0.8),
               letterSpacing: 0.2,

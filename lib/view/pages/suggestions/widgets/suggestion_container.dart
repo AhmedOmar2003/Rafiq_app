@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rafiq_app/core/design/app_image.dart';
-import 'package:rafiq_app/core/design/title_text.dart';
-import 'package:rafiq_app/core/utils/app_color.dart';
-import 'package:rafiq_app/core/utils/text_style_theme.dart';
+import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:rafiq_app/models/suggestion_item_model/suggestion_item.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'dart:io';
@@ -28,16 +26,9 @@ class CustomSuggestionContainer extends StatelessWidget {
           vertical: 12.h,
         ),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20.r),
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              offset: const Offset(0, 4),
-              blurRadius: 20,
-              spreadRadius: 0,
-            ),
-          ],
+          borderRadius: AppRadii.rXl,
+          color: AppColor.surfaceCard,
+          boxShadow: AppShadows.level2,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -46,17 +37,16 @@ class CustomSuggestionContainer extends StatelessWidget {
             Stack(
               children: [
                 ClipRRect(
-                  borderRadius:
-                      BorderRadius.vertical(top: Radius.circular(20.r)),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.xl.r)),
                   child: model.image.isNotEmpty
                       ? _buildImage(context, model.image)
                       : Container(
                           height: 220.h,
-                          color: Colors.grey[100],
+                          color: AppColor.neutral100,
                           child: Icon(
                             Icons.image_not_supported_outlined,
                             size: 40.sp,
-                            color: Colors.grey[400],
+                            color: AppColor.textTertiary,
                           ),
                         ),
                 ),
@@ -68,15 +58,9 @@ class CustomSuggestionContainer extends StatelessWidget {
                     padding:
                         EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(25.r),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+                      color: AppColor.surfaceCard,
+                      borderRadius: AppRadii.rPill,
+                      boxShadow: AppShadows.level1,
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -87,19 +71,14 @@ class CustomSuggestionContainer extends StatelessWidget {
                           size: 18.sp,
                         ),
                         SizedBox(width: 4.w),
-                        CustomTextWidget(
-                          label: model.rate.toString(),
-                          style: TextStyleTheme.textStyle12Regular.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          ),
+                        Text(
+                          model.rate.toString(),
+                          style: AppText.labelSm.copyWith(fontWeight: FontWeight.w700),
                         ),
                         SizedBox(width: 4.w),
-                        CustomTextWidget(
-                          label: "(4.8)",
-                          style: TextStyleTheme.textStyle11Medium.copyWith(
-                            color: Colors.black54,
-                          ),
+                        Text(
+                          "(4.8)",
+                          style: AppText.caption,
                         ),
                       ],
                     ),
@@ -118,7 +97,7 @@ class CustomSuggestionContainer extends StatelessWidget {
                     padding:
                         EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12.r),
+                      borderRadius: AppRadii.rMd,
                       color: model.color.withOpacity(0.9),
                     ),
                     child: Row(
@@ -131,44 +110,33 @@ class CustomSuggestionContainer extends StatelessWidget {
                           width: 18.w,
                         ),
                         SizedBox(width: 8.w),
-                        CustomTextWidget(
-                          label: model.suggestionText,
-                          style: TextStyleTheme.textStyle12Regular.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w500,
-                          ),
+                        Text(
+                          model.suggestionText,
+                          style: AppText.labelSm.copyWith(color: AppColor.white),
                         ),
                       ],
                     ),
                   ),
                   SizedBox(height: 16.h),
                   // Title
-                  CustomTextWidget(
-                    label: model.text,
-                    style: TextStyleTheme.textStyle18Medium.copyWith(
-                      color: Colors.black87,
-                      height: 1.3,
-                    ),
+                  Text(
+                    model.text,
+                    style: AppText.titleLg,
                     maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: 14.h),
+                  gapV(AppSpacing.md),
                   // Location
                   Row(
                     children: [
-                      Icon(
-                        Icons.location_on_outlined,
-                        color: AppColor.primary,
-                        size: 22.sp,
-                      ),
-                      SizedBox(width: 8.w),
+                      Icon(Icons.location_on_outlined, color: AppColor.primary, size: 20.sp),
+                      gapH(AppSpacing.sm),
                       Expanded(
-                        child: CustomTextWidget(
-                          label: model.address,
-                          style: TextStyleTheme.textStyle14Regular.copyWith(
-                            color: Colors.black54,
-                          ),
+                        child: Text(
+                          model.address,
+                          style: AppText.bodyMd,
                           maxLines: 1,
-                          textAlign: TextAlign.start,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
@@ -180,18 +148,13 @@ class CustomSuggestionContainer extends StatelessWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          CustomTextWidget(
-                            label: "تبدأ من",
-                            style: TextStyleTheme.textStyle12Regular.copyWith(
-                              color: Colors.black54,
-                            ),
-                          ),
-                          SizedBox(height: 4.h),
-                          CustomTextWidget(
-                            label: _formatPriceLabel(model.price),
-                            style: TextStyleTheme.textStyle16Medium.copyWith(
+                          Text("تبدأ من", style: AppText.bodySm),
+                          gapV(AppSpacing.xs),
+                          Text(
+                            _formatPriceLabel(model.price),
+                            style: AppText.titleMd.copyWith(
                               color: AppColor.primary,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ],
@@ -284,7 +247,7 @@ class CustomSuggestionContainer extends StatelessWidget {
           if (loadingProgress == null) return child;
           return Container(
             height: 220.h,
-            color: Colors.grey[50],
+            color: AppColor.neutral50,
             child: Center(
               child: CircularProgressIndicator(
                 valueColor: AlwaysStoppedAnimation<Color>(AppColor.primary),
@@ -312,11 +275,11 @@ class CustomSuggestionContainer extends StatelessWidget {
   Widget _buildImageFallback() {
     return Container(
       height: 220.h,
-      color: Colors.grey[100],
+      color: AppColor.neutral100,
       child: Icon(
         Icons.image_not_supported_outlined,
         size: 40.sp,
-        color: Colors.grey[400],
+        color: AppColor.textTertiary,
       ),
     );
   }

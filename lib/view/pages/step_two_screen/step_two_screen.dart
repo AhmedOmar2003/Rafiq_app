@@ -1,167 +1,129 @@
-// import 'package:flutter/material.dart';
-// import 'package:flutter_screenutil/flutter_screenutil.dart';
-// import '../../../core/design/title_text.dart';
-// import '../../../core/utils/app_color.dart';
-// import '../../../core/utils/spacing.dart';
-// import '../../../core/utils/text_style_theme.dart';
-// import '../../../models/step_two_model/step_two_model.dart';
-
-// class StepTwo extends StatefulWidget {
-//   // إضافة دالة Callback لتمرير الميزانية المختارة
-//   final Function(String) onBudgetSelected;
-
-//   const StepTwo({super.key, required this.onBudgetSelected});
-
-//   @override
-//   State<StepTwo> createState() => _StepTwoState();
-// }
-
-// class _StepTwoState extends State<StepTwo> {
-//   int currentIndex = -1;
-//   String selectedBudget = ''; // متغير لتخزين الميزانية المختارة
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return ListView(
-//       padding: EdgeInsets.symmetric(horizontal: 24.w),
-//       children: [
-//         CustomTextWidget(
-//           label: "ميزانيتك كام ؟",
-//           style: TextStyleTheme.textStyle30Medium,
-//         ),
-//         verticalSpace(50),
-//         ...List.generate(
-//           stepTwoList.length,
-//           (index) {
-//             return GestureDetector(
-//               onTap: () {
-//                 setState(() {
-//                   currentIndex = index;
-//                   selectedBudget =
-//                       stepTwoList[index].text; // تخزين الميزانية المختارة
-//                 });
-//                 // استدعاء دالة Callback لتمرير الميزانية المختارة
-//                 widget.onBudgetSelected(selectedBudget);
-//               },
-//               child: Container(
-//                 padding: EdgeInsets.only(right: 20.w, top: 15.h),
-//                 margin: EdgeInsets.only(bottom: 20.h),
-//                 height: 60.h,
-//                 width: 342.w,
-//                 decoration: BoxDecoration(
-//                   borderRadius: BorderRadius.circular(15.r),
-//                   color:
-//                       currentIndex == index ? AppColor.primary : AppColor.white,
-//                   border: Border.all(
-//                     color: currentIndex == index
-//                         ? AppColor.primary
-//                         : const Color(0xff000000),
-//                     width: 0.3,
-//                   ),
-//                 ),
-//                 child: CustomTextWidget(
-//                   label: stepTwoList[index].text,
-//                   style: TextStyleTheme.textStyle20Medium.copyWith(
-//                     color: currentIndex == index
-//                         ? AppColor.white
-//                         : const Color(0xff000000),
-//                   ),
-//                 ),
-//               ),
-//             );
-//           },
-//         ),
-//       ],
-//     );
-//   }
-// }
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../core/design/title_text.dart';
-import '../../../core/utils/app_color.dart';
-import '../../../core/utils/spacing.dart';
-import '../../../core/utils/text_style_theme.dart';
+import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import '../../../models/step_two_model/step_two_model.dart';
 
 class StepTwo extends StatefulWidget {
   final Function(String) onBudgetSelected;
-
   const StepTwo({super.key, required this.onBudgetSelected});
 
   @override
   State<StepTwo> createState() => _StepTwoState();
 }
 
-class _StepTwoState extends State<StepTwo> {
+class _StepTwoState extends State<StepTwo> with AutomaticKeepAliveClientMixin {
   int currentIndex = -1;
-  String selectedBudget = ''; // لتخزين الميزانية المختارة
+  String selectedBudget = '';
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Directionality(
-      textDirection: TextDirection.rtl, // جعل النصوص والعناصر من اليمين لليسار
-      child: Padding(
+      textDirection: TextDirection.rtl,
+      child: ListView(
         padding: EdgeInsets.symmetric(horizontal: 24.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            CustomTextWidget(
-              label: "ميزانيتك كام؟",
-              style: TextStyleTheme.textStyle30Medium,
-            ),
-            verticalSpace(50),
-            ListView.builder(
-              itemCount: stepTwoList.length,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemBuilder: (context, index) {
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      currentIndex = index;
-                      selectedBudget = stepTwoList[index].text;
-                    });
-
-                    // التحقق من صحة القيمة وتمريرها
-                    if (selectedBudget.isNotEmpty) {
-                      widget.onBudgetSelected(selectedBudget);
-                      print("الميزانية المختارة: $selectedBudget");
-                    } else {
-                      print("لم يتم اختيار ميزانية.");
-                    }
-                  },
-                  child: Container(
-                    padding:
-                        EdgeInsets.symmetric(horizontal: 20.w, vertical: 15.h),
-                    margin: EdgeInsets.only(bottom: 20.h),
-                    height: 60.h,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(15.r),
-                      color: currentIndex == index
-                          ? AppColor.primary
-                          : AppColor.white,
-                      border: Border.all(
-                        color: currentIndex == index
-                            ? AppColor.primary
-                            : const Color(0xff000000),
-                        width: 0.3,
-                      ),
-                    ),
-                    child: CustomTextWidget(
-                      label: stepTwoList[index].text,
-                      style: TextStyleTheme.textStyle20Medium.copyWith(
-                        color: currentIndex == index
-                            ? AppColor.white
-                            : const Color(0xff000000),
-                      ),
-                    ),
-                  ),
-                );
+        children: [
+          SizedBox(height: 16.h),
+          Text("ميزانيتك كام؟", style: AppText.displayMd),
+          gapV(AppSpacing.sm),
+          Text(
+            "اختار الميزانية المناسبة لك",
+            style: AppText.bodyLg.copyWith(color: AppColor.textSecondary),
+          ),
+          SizedBox(height: 28.h),
+          ...List.generate(
+            stepTwoList.length,
+            (index) => _BudgetOptionCard(
+              label: stepTwoList[index].text,
+              isSelected: currentIndex == index,
+              onTap: () {
+                setState(() {
+                  currentIndex = index;
+                  selectedBudget = stepTwoList[index].text;
+                });
+                if (selectedBudget.isNotEmpty) {
+                  widget.onBudgetSelected(selectedBudget);
+                }
               },
             ),
-          ],
+          ),
+          SizedBox(height: 8.h),
+        ],
+      ),
+    );
+  }
+}
+
+class _BudgetOptionCard extends StatelessWidget {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _BudgetOptionCard({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 14.h),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14.r),
+        splashColor: AppColor.primary.withOpacity(0.1),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutCubic,
+          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14.r),
+            color: isSelected ? AppColor.primary : AppColor.surfaceCard,
+            border: Border.all(
+              color: isSelected ? AppColor.primary : AppColor.border,
+              width: isSelected ? 1.5 : 1.0,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: isSelected
+                    ? AppColor.primary.withOpacity(0.15)
+                    : AppColor.black.withOpacity(0.04),
+                blurRadius: isSelected ? 12 : 6,
+                offset: Offset(0, isSelected ? 4 : 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                width: 8.w,
+                height: 8.w,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isSelected
+                      ? AppColor.white
+                      : AppColor.primary.withOpacity(0.3),
+                ),
+              ),
+              SizedBox(width: 14.w),
+              Expanded(
+                child: Text(
+                  label,
+                  style: AppText.headingSm.copyWith(
+                    color: isSelected ? AppColor.white : AppColor.textPrimary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              if (isSelected)
+                Icon(Icons.check_circle_rounded, color: AppColor.surfaceCard, size: 20.w),
+            ],
+          ),
         ),
       ),
     );

@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rafiq_app/core/design/app_button.dart';
 import 'package:rafiq_app/core/design/app_image.dart';
-import 'package:rafiq_app/core/design/title_text.dart';
-import 'package:rafiq_app/core/utils/app_color.dart';
+import 'package:rafiq_app/core/design/components/components.dart';
+import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:rafiq_app/core/utils/assets.dart';
-import 'package:rafiq_app/core/utils/spacing.dart';
-import 'package:rafiq_app/core/utils/text_style_theme.dart';
 import 'package:rafiq_app/view/pages/cubit.dart';
 
 class SuggestionModel {
@@ -68,38 +65,45 @@ class SuggestionItem extends StatelessWidget {
       onTap: () async {
         await showModalBottomSheet(
           context: context,
+          backgroundColor: AppColor.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: AppRadii.topOnly(AppRadii.xl),
+          ),
           builder: (context) {
-            return Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 32.h),
-              height: 460.h,
-              decoration: BoxDecoration(
-                color: AppColor.ofWhite,
-                borderRadius: BorderRadius.only(
-                  topRight: Radius.circular(15.r),
-                  topLeft: Radius.circular(15.r),
-                ),
+            return Padding(
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.xxl.w, AppSpacing.xxl.h,
+                AppSpacing.xxl.w, AppSpacing.xxl.h,
               ),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
+                  Container(
+                    width: 36.w, height: 4.h,
+                    margin: EdgeInsets.only(bottom: AppSpacing.xl.h),
+                    decoration: BoxDecoration(
+                      color: AppColor.border,
+                      borderRadius: AppRadii.rPill,
+                    ),
+                  ),
                   Row(
                     children: [
-                      CustomTextWidget(
-                        label: model.text,
-                        style: TextStyleTheme.textStyle22Medium,
-                      ),
+                      Text(model.text, style: AppText.headingMd),
                       const Spacer(),
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: CustomTextWidget(
-                          label: "شيل الفلتر",
-                          style: TextStyleTheme.textStyle22Medium.copyWith(
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(
+                          "شيل الفلتر",
+                          style: AppText.labelMd.copyWith(
+                            color: AppColor.primary,
                             decoration: TextDecoration.underline,
+                            decorationColor: AppColor.primary,
                           ),
                         ),
                       ),
                     ],
                   ),
-                  verticalSpace(16),
+                  gapV(AppSpacing.lg),
                   ...model.answer.map(
                     (e) => GestureDetector(
                       onTap: () async {
@@ -113,48 +117,37 @@ class SuggestionItem extends StatelessWidget {
                         Navigator.pop(context);
                       },
                       child: Container(
-                        padding: EdgeInsets.symmetric(
-                            vertical: 10.h, horizontal: 16.w),
-                        margin: EdgeInsets.only(bottom: 20.h),
-                        height: 52.h,
-                        width: 358.w,
+                        padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: AppSpacing.lg.w),
+                        margin: EdgeInsets.only(bottom: AppSpacing.md.h),
+                        width: double.infinity,
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(15.r),
+                          borderRadius: AppRadii.rMd,
                           color: _getSelectedFilter(model.text, context) == e
                               ? AppColor.primary
-                              : AppColor.white,
-                          border: Border.all(
-                              color: const Color(0xff000000), width: 0.3),
+                              : AppColor.surfaceCard,
+                          border: Border.all(color: AppColor.border, width: 1),
                         ),
-                        child: CustomTextWidget(
-                          label: e,
-                          style: TextStyleTheme.textStyle20Medium.copyWith(
+                        child: Text(
+                          e,
+                          style: AppText.headingSm.copyWith(
+                            fontWeight: FontWeight.w500,
                             color: _getSelectedFilter(model.text, context) == e
-                                ? Colors.white
-                                : const Color(0xff000000),
+                                ? AppColor.white
+                                : AppColor.textPrimary,
                           ),
                         ),
                       ),
                     ),
                   ),
+                  gapV(AppSpacing.sm),
                   AppButton(
-                    text: "تطبيق",
-                    textStyle: TextStyleTheme.textStyle24Medium,
-                    buttonStyle: ElevatedButton.styleFrom(
-                      fixedSize: Size(342.w, 55.h),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                      ),
-                    ),
+                    text: "تطبيق الفلتر",
                     onPress: () async {
                       await context.read<FilterCubit>().applyFilters();
                       Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text("تم تطبيق الفلاتر بنجاح!")),
-                      );
+                      AppFeedback.success("تم تطبيق الفلاتر");
                     },
-                  )
+                  ),
                 ],
               ),
             );
@@ -172,7 +165,7 @@ class SuggestionItem extends StatelessWidget {
               color: isSelected ? AppColor.primary : AppColor.white,
               borderRadius: BorderRadius.circular(24.r),
               border: Border.all(
-                  color: isSelected ? AppColor.primary : Colors.grey.shade300,
+                  color: isSelected ? AppColor.primary : AppColor.border,
                   width: 1),
               boxShadow: [
                 if (isSelected)
@@ -183,7 +176,7 @@ class SuggestionItem extends StatelessWidget {
                   )
                 else
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: AppColor.black.withOpacity(0.04),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -201,12 +194,11 @@ class SuggestionItem extends StatelessWidget {
                     color: isSelected ? AppColor.white : AppColor.primary,
                   ),
                   SizedBox(width: 8.w),
-                  CustomTextWidget(
-                    label: selectedFilter ?? model.text,
-                    style: TextStyleTheme.textStyle16Regular.copyWith(
-                      color: isSelected ? AppColor.white : AppColor.black,
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.w500,
+                  Text(
+                    selectedFilter ?? model.text,
+                    style: AppText.labelMd.copyWith(
+                      color: isSelected ? AppColor.white : AppColor.textPrimary,
+                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     ),
                   ),
                   SizedBox(width: 4.w),

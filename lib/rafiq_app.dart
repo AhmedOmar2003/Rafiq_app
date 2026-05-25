@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rafiq_app/auth/auth_gate.dart';
+import 'package:rafiq_app/core/design/components/app_offline_banner.dart';
 import 'package:rafiq_app/core/logic/helper_methods.dart';
 import 'core/themes/theme_services.dart';
 import 'core/utils/app_strings.dart';
@@ -45,9 +46,10 @@ class RafiqApp extends StatelessWidget {
         return MaterialApp(
           title: AppStrings.appName,
           theme: ThemeServices().lightTheme,
-          //  darkTheme: ThemeServices().darkTheme,
-          themeMode: ThemeMode
-              .system, // Automatically switch between light and dark theme
+          darkTheme: ThemeServices().darkTheme,
+          // Brand light theme is canonical. Dark theme is fully token-wired and
+          // ready — flip to ThemeMode.system once screens are dark-audited.
+          themeMode: ThemeMode.light,
           debugShowCheckedModeBanner: false,
           builder: (context, child) {
             if (child == null) {
@@ -55,7 +57,7 @@ class RafiqApp extends StatelessWidget {
             }
             return Directionality(
               textDirection: TextDirection.rtl,
-              child: child,
+              child: AppConnectivityScope(child: child),
             );
           },
           navigatorKey: navigatorKey,

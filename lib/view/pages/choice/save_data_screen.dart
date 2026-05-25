@@ -1,9 +1,7 @@
+import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:rafiq_app/core/design/title_text.dart';
-import 'package:rafiq_app/core/utils/app_color.dart';
 import 'package:rafiq_app/core/utils/spacing.dart';
-import 'package:rafiq_app/core/utils/text_style_theme.dart';
 import 'package:rafiq_app/core/design/app_button.dart';
 import 'package:rafiq_app/view/home/home_view.dart';
 
@@ -28,9 +26,9 @@ class SplashScreen extends StatelessWidget {
                       padding: EdgeInsets.symmetric(horizontal: 24.w),
                       child: Column(
                         children: [
-                          CustomTextWidget(
-                            label: "\"مبروك عليك تم حفظ بيانات مكانك بنجاح\"",
-                            style: TextStyleTheme.textStyle22Medium,
+                          Text(
+                            "\"مبروك عليك تم حفظ بيانات مكانك بنجاح\"",
+                            style: AppText.headingMd,
                             textAlign: TextAlign.center,
                           ),
                         ],
@@ -79,7 +77,7 @@ class SplashScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8.r),
                     ),
                   ),
-                  textStyle: TextStyleTheme.textStyle20Medium.copyWith(
+                  textStyle: AppText.headingSm.copyWith(
                     color: AppColor.white,
                   ),
                 ),

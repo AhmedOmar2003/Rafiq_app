@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:rafiq_app/core/design/app_button.dart';
+import 'package:rafiq_app/core/design/components/components.dart';
+import 'package:rafiq_app/core/design/tokens/tokens.dart';
+import 'package:rafiq_app/core/utils/app_microcopy.dart';
 import 'package:rafiq_app/core/utils/assets.dart';
-import 'package:rafiq_app/core/utils/spacing.dart';
-import 'package:rafiq_app/core/utils/text_style_theme.dart';
 import 'package:rafiq_app/model/place.dart';
 import 'package:rafiq_app/service/api_service.dart';
 import 'package:rafiq_app/view/home/chat.dart';
@@ -28,14 +28,12 @@ class HomeView extends StatefulWidget {
 class _HomeViewState extends State<HomeView> {
   // Constants
   static const int _totalSteps = 3;
-  static const double _buttonHeight = 55.0;
-  static const double _buttonWidth = 342.0;
   static const double _horizontalPadding = 24.0;
-  static const double _verticalPadding = 47.0;
-  static const double _bottomMargin = 25.0;
+  static const double _bottomMargin = 20.0;
 
   // Controllers and state variables
   final PageController _pageController = PageController();
+  final ApiService _apiService = ApiService();
   int _currentIndex = 0;
   bool _isLoading = false;
 
@@ -101,15 +99,13 @@ class _HomeViewState extends State<HomeView> {
     return _cityName.isNotEmpty && _budget.isNotEmpty && _activity.isNotEmpty;
   }
 
-  /// Shows an error message using SnackBar
-  void _showErrorMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
-  }
+  /// Shows a friendly message using the unified feedback system.
+  void _showErrorMessage(String message) => AppFeedback.warning(message);
 
   /// Navigates to the suggestions screen with the selected preferences
   Future<void> _navigateToSuggestions() async {
+    if (_isLoading) return;
+
     if (!_isFormValid()) {
       _showErrorMessage("تأكد من إدخال جميع البيانات!");
       return;
@@ -118,14 +114,14 @@ class _HomeViewState extends State<HomeView> {
     setState(() => _isLoading = true);
 
     try {
-      final List<Place> places = await ApiService().fetchPlaces(
+      final List<Place> places = await _apiService.fetchPlaces(
         cityName: _cityName,
         budget: _budget,
         activity: _activity,
       );
 
       if (places.isEmpty) {
-        _showErrorMessage("لا توجد أماكن متاحة تتطابق مع معايير البحث.");
+        AppFeedback.info(AppCopy.emptyResultsBody);
         return;
       }
 
@@ -143,7 +139,7 @@ class _HomeViewState extends State<HomeView> {
         ),
       );
     } catch (e) {
-      _showErrorMessage("حدث خطأ أثناء تحميل الأماكن: $e");
+      AppFeedback.error(AppCopy.errorGeneric);
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -153,6 +149,8 @@ class _HomeViewState extends State<HomeView> {
 
   /// Handles the next button press
   void _handleNextButtonPress() {
+    if (_isLoading) return;
+
     if (_currentIndex < _totalSteps - 1) {
       setState(() => _currentIndex++);
       _pageController.jumpToPage(_currentIndex);
@@ -162,7 +160,7 @@ class _HomeViewState extends State<HomeView> {
   }
 
   /// Handles the back button press to navigate to ChoiceScreen
-  Future<bool> _onWillPop() async {
+  void _goBackToChoice() {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -173,58 +171,65 @@ class _HomeViewState extends State<HomeView> {
         ),
       ),
     );
-    return false;
   }
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: _onWillPop,
-      child: Stack(
-        children: [
-          Scaffold(
-            bottomNavigationBar: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: _horizontalPadding.w,
-                vertical: _verticalPadding.h,
-              ),
-              child: AppButton(
-                text: _currentIndex == _totalSteps - 1 ? "فسحني!" : "اللي بعده",
-                textStyle: TextStyleTheme.textStyle24Medium,
-                buttonStyle: ElevatedButton.styleFrom(
-                  fixedSize: Size(_buttonWidth.w, _buttonHeight.h),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.r),
-                  ),
-                ),
-                onPress: _handleNextButtonPress,
-              ),
-            ),
-            body: SafeArea(
-              child: Column(
-                children: [
-                  verticalSpace(15),
-                  _buildStepper(),
-                  Expanded(
-                    child: _buildPageView(),
-                  ),
-                ],
-              ),
-            ),
-            floatingActionButton: FloatingActionButton(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) _goBackToChoice();
+      },
+      child: LoadingManager(
+        isLoading: _isLoading,
+        message: AppCopy.loadingSuggestions,
+        child: Scaffold(
+          backgroundColor: AppColor.surface,
+          resizeToAvoidBottomInset: true,
+          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+          floatingActionButton: Padding(
+            padding: EdgeInsets.only(bottom: 90.h),
+            child: FloatingActionButton(
               onPressed: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => BotScreen()),
+                MaterialPageRoute(builder: (context) => const BotScreen()),
               ),
-              child: const Icon(Icons.chat),
-              backgroundColor: Colors.blueAccent,
+              backgroundColor: AppColor.primary,
+              elevation: 4,
+              child: Icon(Icons.chat_bubble_rounded, color: AppColor.white),
             ),
           ),
-          if (_isLoading)
-            const Center(
-              child: CircularProgressIndicator(),
+          body: SafeArea(
+            child: Column(
+              children: [
+                gapV(AppSpacing.md),
+                _buildStepper(),
+                Expanded(child: _buildPageView()),
+                _buildBottomButton(),
+              ],
             ),
-        ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomButton() {
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        _horizontalPadding.w,
+        AppSpacing.md.h,
+        _horizontalPadding.w,
+        _bottomMargin.h,
+      ),
+      decoration: BoxDecoration(
+        color: AppColor.surfaceCard,
+        boxShadow: AppShadows.level2,
+      ),
+      child: AppButton(
+        text: _currentIndex == _totalSteps - 1 ? 'فسحني!' : AppCopy.next,
+        onPress: _handleNextButtonPress,
+        isEnabled: !_isLoading,
       ),
     );
   }
@@ -243,6 +248,7 @@ class _HomeViewState extends State<HomeView> {
             icon: _stepIcons[index],
             isLast: index == _totalSteps - 1,
             onTap: () {
+              if (_isLoading) return;
               setState(() => _currentIndex = index);
               _pageController.jumpToPage(index);
             },

@@ -36,7 +36,7 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   dio: ^5.7.0
-  intl: ^0.19.0
+  intl: ^0.20.2
   flutter_bloc: ^8.1.6
   flutter_svg: ^2.0.15
   shared_preferences: ^2.3.3
@@ -47,11 +47,11 @@ dependencies:
   dialogs: ^0.0.7
   country_picker: ^2.0.27
   device_preview: ^1.2.0
-  google_fonts: ^6.2.1
   smooth_page_indicator: ^1.2.0+3
   http: ^1.2.2
   connectivity_plus: ^6.1.0
   image_picker: ^1.0.7
+  path_provider: ^2.1.4
   permission_handler: ^11.4.0 
   url_launcher: ^6.3.1
   dart_openai: ^5.1.0
@@ -62,6 +62,8 @@ dependencies:
   smart_countdown: ^1.0.1
   circular_countdown_timer: ^0.2.4
   provider: ^6.1.1
+  google_fonts: ^8.0.2
+  supabase_flutter: ^2.12.4
 
 dev_dependencies:
   flutter_test:
@@ -73,6 +75,16 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/images/app_icon_location.png
+  min_sdk_android: 21
+  adaptive_icon_background: "#F2EFD6"
+  adaptive_icon_foreground: assets/images/app_icon_location_foreground.png
+  remove_alpha_ios: true
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

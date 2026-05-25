@@ -1,11 +1,11 @@
+import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
-import '../../../core/design/title_text.dart';
-import '../../../core/utils/app_color.dart';
 import '../../../core/utils/spacing.dart';
-import '../../../core/utils/text_style_theme.dart';
 import '../../evaluations/evaluations_page.dart';
 import '../../../model/review_model.dart';
 
@@ -34,6 +34,43 @@ class CustomEvaluations extends StatelessWidget {
     }
   }
 
+  ImageProvider? _resolveAvatarProvider() {
+    if (kIsWeb) {
+      if (userImage != null && userImage!.isNotEmpty) {
+        try {
+          return MemoryImage(base64Decode(userImage!));
+        } catch (_) {}
+      }
+      if (lastEvaluation != null && lastEvaluation!.image.isNotEmpty) {
+        if (lastEvaluation!.image.startsWith('http')) {
+          return NetworkImage(lastEvaluation!.image);
+        }
+        if (lastEvaluation!.image.contains("assets")) {
+          return AssetImage(lastEvaluation!.image);
+        }
+      }
+      return null;
+    }
+
+    if (userImage != null &&
+        userImage!.isNotEmpty &&
+        File(userImage!).existsSync()) {
+      return FileImage(File(userImage!));
+    }
+    if (lastEvaluation != null && lastEvaluation!.image.isNotEmpty) {
+      if (lastEvaluation!.image.startsWith('http')) {
+        return NetworkImage(lastEvaluation!.image);
+      }
+      if (lastEvaluation!.image.contains("assets")) {
+        return AssetImage(lastEvaluation!.image);
+      }
+      if (File(lastEvaluation!.image).existsSync()) {
+        return FileImage(File(lastEvaluation!.image));
+      }
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     print(
@@ -49,14 +86,14 @@ class CustomEvaluations extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  CustomTextWidget(
-                    label: "التقييمات",
-                    style: TextStyleTheme.textStyle18Medium,
+                  Text(
+                    "التقييمات",
+                    style: AppText.titleLg,
                   ),
                   horizontalSpace(5),
-                  CustomTextWidget(
-                    label: "(تقييم 4.1K)", // عدد التقييمات
-                    style: TextStyleTheme.textStyle12Regular,
+                  Text(
+                    "(تقييم 4.1K)", // عدد التقييمات
+                    style: AppText.bodySm,
                   ),
                 ],
               ),
@@ -68,9 +105,9 @@ class CustomEvaluations extends StatelessWidget {
                     color: AppColor.black,
                   ),
                   horizontalSpace(5),
-                  CustomTextWidget(
-                    label: "الأكثر شعبية",
-                    style: TextStyleTheme.textStyle12Regular.copyWith(
+                  Text(
+                    "الأكثر شعبية",
+                    style: AppText.bodySm.copyWith(
                       color: AppColor.black,
                     ),
                   ),
@@ -91,30 +128,19 @@ class CustomEvaluations extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         /// صورة المستخدم
-                        CircleAvatar(
-                          backgroundImage: userImage != null &&
-                                  userImage!.isNotEmpty &&
-                                  File(userImage!).existsSync()
-                              ? FileImage(File(userImage!))
-                              : lastEvaluation!.image.isNotEmpty &&
-                                      lastEvaluation!.image.contains("assets")
-                                  ? AssetImage(lastEvaluation!.image)
-                                      as ImageProvider
-                                  : lastEvaluation!.image.isNotEmpty
-                                      ? FileImage(File(lastEvaluation!.image))
-                                          as ImageProvider
-                                      : AssetImage(
-                                              'assets/images/default_profile.png')
-                                          as ImageProvider,
-                          radius: 20.w,
-                          child: (userImage == null ||
-                                      userImage!.isEmpty ||
-                                      !File(userImage!).existsSync()) &&
-                                  (lastEvaluation!.image.isEmpty ||
-                                      !File(lastEvaluation!.image).existsSync())
-                              ? Icon(Icons.person, color: AppColor.white)
-                              : null,
-                        ),
+                        Builder(builder: (context) {
+                          final avatarProvider = _resolveAvatarProvider();
+                          return CircleAvatar(
+                            backgroundImage: avatarProvider ??
+                                const AssetImage(
+                                        'assets/images/default_profile.png')
+                                    as ImageProvider,
+                            radius: 20.w,
+                            child: avatarProvider == null
+                                ? Icon(Icons.person, color: AppColor.white)
+                                : null,
+                          );
+                        }),
                         horizontalSpace(12.w),
 
                         /// تفاصيل التقييم (اسم المستخدم، تقييم النجوم، التاريخ)
@@ -122,9 +148,9 @@ class CustomEvaluations extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             /// **اسم المستخدم**
-                            CustomTextWidget(
-                              label: lastEvaluation!.name,
-                              style: TextStyleTheme.textStyle16Medium.copyWith(
+                            Text(
+                              lastEvaluation!.name,
+                              style: AppText.titleMd.copyWith(
                                 color: AppColor.black,
                               ),
                             ),
@@ -142,9 +168,9 @@ class CustomEvaluations extends StatelessWidget {
                                   ),
                                 ),
                                 horizontalSpace(8.w),
-                                CustomTextWidget(
-                                  label: formatDate(lastEvaluation!.date),
-                                  style: TextStyleTheme.textStyle11Medium,
+                                Text(
+                                  formatDate(lastEvaluation!.date),
+                                  style: AppText.caption,
                                 ),
                               ],
                             ),
@@ -155,9 +181,9 @@ class CustomEvaluations extends StatelessWidget {
                     verticalSpace(17),
 
                     /// **نص التقييم**
-                    CustomTextWidget(
-                      label: lastEvaluation!.body,
-                      style: TextStyleTheme.textStyle12Regular,
+                    Text(
+                      lastEvaluation!.body,
+                      style: AppText.bodySm,
                     ),
                   ],
                 )
@@ -166,9 +192,9 @@ class CustomEvaluations extends StatelessWidget {
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CustomTextWidget(
-                      label: "لا توجد تقييمات بعد.",
-                      style: TextStyleTheme.textStyle16Medium.copyWith(
+                    Text(
+                      "لا توجد تقييمات بعد.",
+                      style: AppText.titleMd.copyWith(
                         color: AppColor.black,
                         fontWeight: FontWeight.bold,
                       ),
@@ -189,9 +215,9 @@ class CustomEvaluations extends StatelessWidget {
                   ),
                 );
               },
-              child: CustomTextWidget(
-                label: "شوف كل التقييمات",
-                style: TextStyleTheme.textStyle18Medium.copyWith(
+              child: Text(
+                "شوف كل التقييمات",
+                style: AppText.titleLg.copyWith(
                   decoration: TextDecoration.underline,
                   color: AppColor.black,
                 ),

@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rafiq_app/auth/login/login_screen.dart';
-import 'package:rafiq_app/core/design/app_button.dart';
-import 'package:rafiq_app/core/design/app_input.dart';
-import 'package:rafiq_app/core/utils/app_color.dart';
-import 'package:rafiq_app/core/utils/text_style_theme.dart';
+import 'package:rafiq_app/core/design/components/components.dart';
+import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:rafiq_app/service/auth_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -69,12 +67,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AppFeedback.error(e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) {
         setState(() => _isProcessing = false);
@@ -111,7 +104,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
             ),
             title: Text(
               "إعادة تعيين كلمة المرور",
-              style: TextStyleTheme.textStyle20Medium.copyWith(
+              style: AppText.headingSm.copyWith(
                 color: AppColor.white,
               ),
             ),
@@ -164,7 +157,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         children: [
                           Text(
                             "إنشاء كلمة مرور جديدة",
-                            style: TextStyleTheme.textStyle20Medium.copyWith(
+                            style: AppText.headingSm.copyWith(
                               color: AppColor.black,
                               fontWeight: FontWeight.bold,
                             ),
@@ -177,7 +170,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                 : (widget.requiresOtpVerification
                                     ? "أدخل كود التحقق المرسل إلى: $currentEmail"
                                     : currentEmail),
-                            style: TextStyleTheme.textStyle16Regular.copyWith(
+                            style: AppText.bodyLg.copyWith(
                               color: AppColor.black.withOpacity(0.7),
                             ),
                             textAlign: TextAlign.center,
@@ -202,7 +195,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                   SizedBox(width: 12.w),
                                   Text(
                                     "كود التحقق (OTP)",
-                                    style: TextStyleTheme.textStyle16Medium
+                                    style: AppText.titleMd
                                         .copyWith(
                                       color: AppColor.black,
                                       fontWeight: FontWeight.w600,
@@ -248,7 +241,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                 Text(
                                   "كلمة المرور الجديدة",
                                   style:
-                                      TextStyleTheme.textStyle16Medium.copyWith(
+                                      AppText.titleMd.copyWith(
                                     color: AppColor.black,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -291,7 +284,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                 Text(
                                   "تأكيد كلمة المرور",
                                   style:
-                                      TextStyleTheme.textStyle16Medium.copyWith(
+                                      AppText.titleMd.copyWith(
                                     color: AppColor.black,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -326,7 +319,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                       ? "تأكيد وتغيير كلمة المرور"
                                       : "حفظ"),
                               textStyle:
-                                  TextStyleTheme.textStyle18Medium.copyWith(
+                                  AppText.titleLg.copyWith(
                                 color: Colors.white,
                                 letterSpacing: 0.5,
                               ),
@@ -360,101 +353,10 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
           ),
         ),
         if (_showSuccessOverlay)
-          Positioned.fill(
-            child: Container(
-              color: Colors.black54,
-              child: Center(
-                child: Container(
-                  width: 320.w,
-                  padding: EdgeInsets.all(24.w),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24.r),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        blurRadius: 20,
-                        spreadRadius: 5,
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 80.w,
-                        height: 80.w,
-                        decoration: BoxDecoration(
-                          color: AppColor.primary.withOpacity(0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.check_circle,
-                          color: AppColor.primary,
-                          size: 50.sp,
-                        ),
-                      ),
-                      SizedBox(height: 24.h),
-                      Text(
-                        "تم تغيير كلمة المرور بنجاح",
-                        style: TextStyleTheme.textStyle20Medium.copyWith(
-                          color: AppColor.primary,
-                          fontWeight: FontWeight.bold,
-                          decoration: TextDecoration.none,
-                          decorationColor: Colors.transparent,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: 12.h),
-                      Text(
-                        "يمكنك الآن تسجيل الدخول بكلمة المرور الجديدة",
-                        style: TextStyleTheme.textStyle16Regular.copyWith(
-                          color: AppColor.black.withOpacity(0.7),
-                          decoration: TextDecoration.none,
-                          decorationColor: Colors.transparent,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: 32.h),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50.h,
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: _navigateToLogin,
-                            borderRadius: BorderRadius.circular(12.r),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    AppColor.primary,
-                                    AppColor.primary.withOpacity(0.8),
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(12.r),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  "تسجيل الدخول",
-                                  style:
-                                      TextStyleTheme.textStyle18Medium.copyWith(
-                                    color: Colors.white,
-                                    letterSpacing: 0.5,
-                                    decoration: TextDecoration.none,
-                                    decorationColor: Colors.transparent,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+          AppSuccessView(
+            title: 'تمام! اتغيّرت كلمة السر',
+            message: 'تقدر دلوقتي تسجّل دخولك بكلمة السر الجديدة',
+            onContinue: _navigateToLogin,
           ),
       ],
     );

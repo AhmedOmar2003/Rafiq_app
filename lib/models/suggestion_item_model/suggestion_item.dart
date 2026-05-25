@@ -37,7 +37,9 @@ class SuggestionItemModel {
       image: place.imageUrl ?? AppImages.activities,
       icon: _mapCategoryToIcon(place.activityName),
       suggestionText: place.activityName,
-      price: place.priceRange,
+      price: place.budget.isNotEmpty && place.budget != 'غير محدد'
+          ? place.budget
+          : place.priceRange,
       rate: place.rating,
       color: _mapCategoryToColor(place.activityName),
       city: place.cityName,
@@ -47,16 +49,21 @@ class SuggestionItemModel {
 
   // دالة لتحويل price إلى double وإرجاع القيمة الأكبر في حالة النطاق
   double getPrice() {
-    if (price == 'غير محدد' || price.isEmpty) {
+    final normalized = price.trim();
+    if (normalized.isEmpty || normalized == 'غير محدد') {
       return 0.0;
     }
-    if (price.contains('-')) {
-      final parts = price.split('-');
-      final minPrice = double.tryParse(parts[0].trim()) ?? 0.0;
-      final maxPrice = double.tryParse(parts[1].trim()) ?? minPrice;
-      return maxPrice; // إرجاع القيمة الأكبر بدلاً من المتوسط
+
+    final rangeMatches = RegExp(r'\d+').allMatches(normalized);
+    final numbers = rangeMatches
+        .map((match) => double.tryParse(match.group(0) ?? ''))
+        .whereType<double>()
+        .toList();
+    if (numbers.isNotEmpty) {
+      return numbers.last;
     }
-    return double.tryParse(price) ?? 0.0; // إرجاع القيمة المفردة
+
+    return double.tryParse(normalized.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
   }
 
   static String _mapCategoryToIcon(String description) {

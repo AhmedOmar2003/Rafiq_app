@@ -1,11 +1,11 @@
 {
-    "name": "rafiq_app",
-    "short_name": "rafiq_app",
+    "name": "رفيق- أماكن",
+    "short_name": "رفيق",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#F2EFD6",
+    "theme_color": "#681F00",
+    "description": "Rafiq mobile web app",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rafiq_app/auth/forget%20password/vriefy_code_page.dart';
-import 'package:rafiq_app/core/design/app_button.dart';
-import 'package:rafiq_app/core/design/app_input.dart';
-import 'package:rafiq_app/core/utils/app_color.dart';
-import 'package:rafiq_app/core/utils/text_style_theme.dart';
+import 'package:rafiq_app/core/design/components/components.dart';
+import 'package:rafiq_app/core/design/tokens/tokens.dart';
+import 'package:rafiq_app/core/utils/app_microcopy.dart';
 import 'package:rafiq_app/service/auth_service.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -26,44 +25,23 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   Future<void> _sendResetOtp() async {
-    if (!formKey.currentState!.validate()) {
-      return;
-    }
+    if (!formKey.currentState!.validate()) return;
 
     final normalizedEmail = emailController.text.trim().toLowerCase();
-
     setState(() => _isLoading = true);
     try {
       await AuthService().sendPasswordResetOtp(normalizedEmail);
-      if (!mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('تم إرسال كود إعادة التعيين إلى بريدك الإلكتروني'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      if (!mounted) return;
+      AppFeedback.success('بعتنالك كود التأكيد على بريدك');
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (context) => VerifyCodeScreen(email: normalizedEmail),
-        ),
+        MaterialPageRoute(builder: (context) => VerifyCodeScreen(email: normalizedEmail)),
       );
     } catch (e) {
-      if (!mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (!mounted) return;
+      AppFeedback.error(e.toString().replaceFirst('Exception: ', ''));
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -74,16 +52,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       appBar: AppBar(
         backgroundColor: AppColor.primary,
         elevation: 0,
-        leading: Padding(
-          padding: EdgeInsets.only(right: 12.w),
-          child: GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Icon(
-              Icons.arrow_back_ios_new,
-              color: AppColor.white,
-              size: 24.sp,
-            ),
-          ),
+        leading: IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: Icon(Icons.arrow_back_ios_new, color: AppColor.white, size: 22.sp),
         ),
       ),
       body: SafeArea(
@@ -94,7 +65,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               child: Column(
                 children: [
                   Padding(
-                    padding: EdgeInsets.symmetric(vertical: 24.h),
+                    padding: EdgeInsets.symmetric(vertical: AppSpacing.xxl.h),
                     child: Center(
                       child: Container(
                         width: 100.w,
@@ -103,11 +74,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           color: AppColor.white.withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(
-                          Icons.lock_reset_rounded,
-                          size: 50.sp,
-                          color: AppColor.white,
-                        ),
+                        child: Icon(Icons.lock_reset_rounded, size: 50.sp, color: AppColor.white),
                       ),
                     ),
                   ),
@@ -115,86 +82,48 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     child: Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
-                        color: AppColor.ofWhite,
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(36.r),
-                          topRight: Radius.circular(36.r),
-                        ),
+                        color: AppColor.surface,
+                        borderRadius: AppRadii.topOnly(AppRadii.xxl),
                       ),
-                      padding: EdgeInsets.symmetric(
-                          vertical: 32.h, horizontal: 24.w),
+                      padding: EdgeInsets.symmetric(vertical: AppSpacing.xxxl.h, horizontal: AppSpacing.xxl.w),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          SizedBox(height: 16.h),
+                          gapV(AppSpacing.lg),
                           Text(
-                            "نسيت كلمة المرور",
-                            style: TextStyleTheme.textStyle25Medium.copyWith(
-                              color: AppColor.black,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            'نسيت كلمة المرور',
+                            style: AppText.headingMd.copyWith(color: AppColor.textPrimary, fontWeight: FontWeight.w700),
                             textAlign: TextAlign.center,
                           ),
-                          SizedBox(height: 12.h),
+                          gapV(AppSpacing.md),
                           Text(
-                            "أدخل بريد Gmail وسنرسل لك كود OTP لإعادة التعيين",
-                            style: TextStyleTheme.textStyle16Regular.copyWith(
-                              color: AppColor.black.withOpacity(0.7),
-                            ),
+                            'اكتب بريد Gmail وهنبعتلك كود تأكيد عشان تعمل كلمة سر جديدة',
+                            style: AppText.bodyMd,
                             textAlign: TextAlign.center,
                           ),
-                          SizedBox(height: 32.h),
+                          gapV(AppSpacing.xxxl),
                           Form(
                             key: formKey,
                             child: AppInput(
-                              hintText: "البريد الإلكتروني",
+                              hintText: 'البريد الإلكتروني',
                               controller: emailController,
                               textInputAction: TextInputAction.done,
                               type: TextInputType.emailAddress,
+                              suffixIcon: Icon(Icons.email_outlined, color: AppColor.primary, size: 20.sp),
                               validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return "البريد الإلكتروني مطلوب";
-                                }
-                                if (!AuthService.isGmailEmail(value)) {
-                                  return "يجب أن ينتهي البريد بـ @gmail.com";
-                                }
+                                if (value == null || value.isEmpty) return AppCopy.fieldRequired;
+                                if (!AuthService.isGmailEmail(value)) return AppCopy.emailGmailOnly;
                                 return null;
                               },
-                              suffixIcon: Icon(
-                                Icons.email_outlined,
-                                color: AppColor.primary,
-                                size: 20.sp,
-                              ),
                             ),
                           ),
-                          SizedBox(height: 32.h),
-                          AppButton(
-                            text: _isLoading ? "..." : "إرسال الكود",
-                            textStyle:
-                                TextStyleTheme.textStyle20Medium.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            buttonStyle: ElevatedButton.styleFrom(
-                              backgroundColor: AppColor.primary,
-                              minimumSize: Size(double.infinity, 56.h),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16.r),
-                              ),
-                              elevation: 4,
-                              shadowColor: AppColor.primary.withOpacity(0.4),
-                              disabledBackgroundColor:
-                                  AppColor.primary.withOpacity(0.5),
-                            ),
-                            onPress: _isLoading ? () {} : _sendResetOtp,
-                          ),
-                          SizedBox(height: 24.h),
+                          gapV(AppSpacing.xl),
+                          AppButton(text: 'إرسال الكود', onPress: _sendResetOtp, isLoading: _isLoading),
+                          gapV(AppSpacing.xxl),
                           Center(
                             child: Text(
-                              "بعد استلام الكود، أدخله في الشاشة التالية ثم اختر كلمة مرور جديدة.",
-                              style: TextStyleTheme.textStyle14Regular.copyWith(
-                                color: AppColor.black.withOpacity(0.6),
-                              ),
+                              'أول ما يوصلك الكود، اكتبه في الشاشة اللي بعدها واختار كلمة سر جديدة.',
+                              style: AppText.bodySm,
                               textAlign: TextAlign.center,
                             ),
                           ),

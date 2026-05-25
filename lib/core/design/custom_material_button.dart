@@ -1,8 +1,6 @@
+import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:rafiq_app/core/design/title_text.dart';
-import 'package:rafiq_app/core/utils/app_color.dart';
-import 'package:rafiq_app/core/utils/text_style_theme.dart';
 
 class CustomStartButtonQuestionScreen extends StatelessWidget {
   const CustomStartButtonQuestionScreen({
@@ -40,9 +38,9 @@ class CustomStartButtonQuestionScreen extends StatelessWidget {
                     : AppColor.gray,
             borderRadius: BorderRadius.circular(8.r),
           ),
-          child: CustomTextWidget(
-            label: text,
-            style: TextStyleTheme.textStyle24Medium,
+          child: Text(
+            text,
+            style: AppText.headingLg,
           ),
         ),
       ),

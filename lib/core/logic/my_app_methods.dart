@@ -1,10 +1,9 @@
+import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../../core/design/app_image.dart';
 import '../../../../../core/utils/spacing.dart';
-import '../design/title_text.dart';
 import '../utils/assets.dart';
-import '../utils/text_style_theme.dart';
 
 class MyAppMethods {
   static Future<void> showErrorORWarningDialog({
@@ -30,9 +29,9 @@ class MyAppMethods {
                 width: 190.w,
               ),
               verticalSpace(16),
-              CustomTextWidget(
-                label: subtitle,
-                style: TextStyleTheme.textStyle18Medium,
+              Text(
+                subtitle,
+                style: AppText.titleLg,
               ),
               verticalSpace(16),
               Row(
@@ -44,9 +43,9 @@ class MyAppMethods {
                       onPressed: () {
                         Navigator.pop(context);
                       },
-                      child: CustomTextWidget(
-                        label: "إلغاء",
-                        style: TextStyleTheme.textStyle18Medium.copyWith(
+                      child: Text(
+                        "إلغاء",
+                        style: AppText.titleLg.copyWith(
                           color: Colors.black,
                         ),
                       ),
@@ -55,9 +54,9 @@ class MyAppMethods {
                   horizontalSpace(20),
                   TextButton(
                     onPressed: onPress,
-                    child: CustomTextWidget(
-                      label: "تسجيل الخروج",
-                      style: TextStyleTheme.textStyle18Medium.copyWith(
+                    child: Text(
+                      "تسجيل الخروج",
+                      style: AppText.titleLg.copyWith(
                         color: Colors.red,
                       ),
                     ),

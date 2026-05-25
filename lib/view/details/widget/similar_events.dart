@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/design/app_image.dart';
-import '../../../core/design/title_text.dart';
 import '../../../core/utils/app_color.dart';
 import '../../../core/utils/spacing.dart';
 import '../../../core/utils/text_style_theme.dart';
@@ -58,11 +57,11 @@ class SimilarEventsItem extends StatelessWidget {
         height: 280.h,
         margin: EdgeInsetsDirectional.only(end: 12.w),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColor.surfaceCard,
           borderRadius: BorderRadius.circular(16.r),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: AppColor.black.withOpacity(0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -108,11 +107,11 @@ class SimilarEventsItem extends StatelessWidget {
                       padding:
                           EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColor.surfaceCard,
                         borderRadius: BorderRadius.circular(20.r),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: AppColor.black.withOpacity(0.1),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           ),
@@ -130,7 +129,7 @@ class SimilarEventsItem extends StatelessWidget {
                           Text(
                             model.rate.toString(),
                             style: TextStyleTheme.textStyle12Medium.copyWith(
-                              color: Colors.black87,
+                              color: AppColor.textPrimary,
                               fontSize: 10.sp,
                             ),
                           ),
@@ -171,7 +170,7 @@ class SimilarEventsItem extends StatelessWidget {
                             child: Text(
                               model.suggestionText,
                               style: TextStyleTheme.textStyle12Medium.copyWith(
-                                color: Colors.white,
+                                color: AppColor.surfaceCard,
                                 fontSize: 11.sp,
                               ),
                               maxLines: 1,
@@ -187,7 +186,7 @@ class SimilarEventsItem extends StatelessWidget {
                       child: Text(
                         model.text,
                         style: TextStyleTheme.textStyle16Medium.copyWith(
-                          color: Colors.black87,
+                          color: AppColor.textPrimary,
                           height: 1.2,
                           fontSize: 15.sp,
                         ),
@@ -208,7 +207,7 @@ class SimilarEventsItem extends StatelessWidget {
                               Text(
                                 "يبدأ من",
                                 style: TextStyleTheme.textStyle12Medium.copyWith(
-                                  color: Colors.black54,
+                                  color: AppColor.textSecondary,
                                   fontSize: 11.sp,
                                 ),
                               ),
@@ -251,12 +250,12 @@ class SimilarEventsItem extends StatelessWidget {
 
   Widget _buildPlaceholder() {
     return Container(
-      color: Colors.grey[200],
+      color: AppColor.neutral200,
       child: Center(
         child: Icon(
           Icons.image_not_supported_outlined,
           size: 30.sp,
-          color: Colors.grey[400],
+          color: AppColor.textTertiary,
         ),
       ),
     );

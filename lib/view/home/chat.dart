@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter_tts/flutter_tts.dart'; // ✅ استيراد مكتبة تحويل النص إلى صوت
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:rafiq_app/core/design/custom_app_bar.dart';
-import 'package:rafiq_app/core/design/title_text.dart';
-import 'package:rafiq_app/core/utils/app_color.dart';
-import 'package:rafiq_app/core/utils/text_style_theme.dart';
-import 'package:rafiq_app/core/config/api_config.dart'; // Add this import
+import 'package:rafiq_app/core/design/tokens/tokens.dart';
+import 'package:rafiq_app/core/config/api_config.dart';
 
 class BotScreen extends StatefulWidget {
   const BotScreen({super.key});
@@ -131,16 +129,14 @@ class _BotScreenState extends State<BotScreen> {
     return Scaffold(
       appBar: CustomAppBar(
         backgroundColor: AppColor.primary,
-        backIconColor: Colors.white,
+        backIconColor: AppColor.white,
         title: Align(
           alignment: AlignmentDirectional.center,
           child: Padding(
             padding: const EdgeInsets.only(left: 40.0),
-            child: CustomTextWidget(
-              label: "Rafiq Chat",
-              style: TextStyleTheme.textStyle20Medium.copyWith(
-                color: AppColor.white,
-              ),
+            child: Text(
+              "رفيق الذكي 🤖",
+              style: AppText.headingSm.copyWith(color: AppColor.white),
             ),
           ),
         ),
@@ -162,47 +158,82 @@ class _BotScreenState extends State<BotScreen> {
             ),
           ),
           if (_isLoading)
-            const Padding(
-              padding: EdgeInsets.all(8.0),
-              child: CircularProgressIndicator(),
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: AppSpacing.sm.h),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 20.w,
+                    height: 20.w,
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColor.primary),
+                      strokeWidth: 2,
+                    ),
+                  ),
+                  gapH(AppSpacing.sm),
+                  Text("رفيق بيفكر...", style: AppText.bodySm),
+                ],
+              ),
             ),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8.0.w, vertical: 15.h),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 15,
-                  child: TextFormField(
-                    controller: _userMessage,
-                    decoration: InputDecoration(
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: AppColor.primary),
-                        borderRadius: BorderRadius.circular(50.r),
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg.w,
+              vertical: AppSpacing.sm.h,
+            ),
+            decoration: BoxDecoration(
+              color: AppColor.surface,
+              boxShadow: AppShadows.level2,
+            ),
+            child: SafeArea(
+              top: false,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _userMessage,
+                      style: AppText.bodyLg,
+                      decoration: InputDecoration(
+                        hintText: "اسأل رفيق عن أي مكان...",
+                        hintStyle: AppText.bodyLg.copyWith(color: AppColor.textTertiary),
+                        filled: true,
+                        fillColor: AppColor.surfaceCard,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: AppSpacing.lg.w,
+                          vertical: AppSpacing.md.h,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: AppColor.border),
+                          borderRadius: AppRadii.rPill,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: AppColor.primary, width: 1.5),
+                          borderRadius: AppRadii.rPill,
+                        ),
+                        border: OutlineInputBorder(borderRadius: AppRadii.rPill),
                       ),
-                      border: OutlineInputBorder(
-                        borderSide: const BorderSide(color: AppColor.primary),
-                        borderRadius: BorderRadius.circular(50.r),
-                      ),
-                      label: const Text("...Ask Now"),
+                      onSubmitted: _isLoading ? null : (_) => sendMessage(),
+                      textInputAction: TextInputAction.send,
                     ),
                   ),
-                ),
-                const Spacer(),
-                IconButton(
-                  padding: EdgeInsets.all(15.h),
-                  iconSize: 30,
-                  style: ButtonStyle(
-                    backgroundColor:
-                        MaterialStateProperty.all(AppColor.primary),
-                    foregroundColor: MaterialStateProperty.all(Colors.white),
-                    shape: MaterialStateProperty.all(
-                      const CircleBorder(),
+                  gapH(AppSpacing.sm),
+                  Material(
+                    color: _isLoading
+                        ? AppColor.primary.withOpacity(0.4)
+                        : AppColor.primary,
+                    borderRadius: AppRadii.rPill,
+                    child: InkWell(
+                      borderRadius: AppRadii.rPill,
+                      onTap: _isLoading ? null : sendMessage,
+                      child: SizedBox(
+                        width: 46.w,
+                        height: 46.w,
+                        child: Icon(Icons.send_rounded, color: AppColor.white, size: 20.sp),
+                      ),
                     ),
                   ),
-                  onPressed: _isLoading ? null : sendMessage,
-                  icon: const Icon(Icons.send, color: AppColor.ofWhite),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
@@ -227,17 +258,18 @@ class Messages extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(15.h),
-      margin: EdgeInsets.symmetric(vertical: 15.h).copyWith(
-        left: isUser ? 100 : 10,
-        right: isUser ? 10 : 100,
+      margin: EdgeInsets.symmetric(vertical: 10.h).copyWith(
+        left: isUser ? 80.w : 10.w,
+        right: isUser ? 10.w : 80.w,
       ),
       decoration: BoxDecoration(
-        color: isUser ? AppColor.primary : Colors.grey.shade200,
+        color: isUser ? AppColor.primary : AppColor.neutral100,
+        boxShadow: AppShadows.level1,
         borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(30.r),
-          bottomLeft: isUser ? Radius.circular(30.r) : Radius.zero,
-          topRight: Radius.circular(30.r),
-          bottomRight: isUser ? Radius.zero : Radius.circular(30.r),
+          topLeft: Radius.circular(AppRadii.xl.r),
+          bottomLeft: isUser ? Radius.circular(AppRadii.xl.r) : Radius.zero,
+          topRight: Radius.circular(AppRadii.xl.r),
+          bottomRight: isUser ? Radius.zero : Radius.circular(AppRadii.xl.r),
         ),
       ),
       child: Column(
@@ -245,11 +277,18 @@ class Messages extends StatelessWidget {
         children: [
           Text(
             message,
-            style: TextStyle(color: isUser ? Colors.white : Colors.black),
+            style: AppText.bodyLg.copyWith(
+              color: isUser ? AppColor.white : AppColor.textPrimary,
+            ),
           ),
+          gapV(AppSpacing.xs),
           Text(
             date,
-            style: TextStyle(color: isUser ? Colors.white : Colors.black),
+            style: AppText.caption.copyWith(
+              color: isUser
+                  ? AppColor.white.withOpacity(0.7)
+                  : AppColor.textTertiary,
+            ),
           ),
         ],
       ),

@@ -1,9 +1,10 @@
 import 'dart:io';
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rafiq_app/core/design/title_text.dart';
-import 'package:rafiq_app/core/utils/app_color.dart';
-import 'package:rafiq_app/core/utils/text_style_theme.dart';
+import 'package:rafiq_app/core/design/components/components.dart';
+import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:rafiq_app/models/suggestion_item_model/suggestion_item.dart';
 import 'package:rafiq_app/view/details/details_page.dart';
 import 'package:rafiq_app/view/pages/cubit.dart';
@@ -27,8 +28,11 @@ class SuggestionsScreen extends StatefulWidget {
 }
 
 class _SuggestionsScreenState extends State<SuggestionsScreen> {
+  static const String _profileImageKey = 'profile_image';
+  static const String _profileImageWebKey = 'profile_image_base64';
   List<SuggestionItemModel> filteredSuggestions = [];
   File? _profileImage;
+  Uint8List? _profileImageBytes;
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -46,11 +50,41 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
 
   Future<void> _loadProfileImage() async {
     final prefs = await SharedPreferences.getInstance();
-    final savedPath = prefs.getString('profile_image');
-    if (savedPath != null) {
+
+    if (kIsWeb) {
+      final base64Value = prefs.getString(_profileImageWebKey);
+      if (base64Value == null || base64Value.isEmpty) {
+        if (!mounted) return;
+        setState(() {
+          _profileImageBytes = null;
+          _profileImage = null;
+        });
+        return;
+      }
+      try {
+        final bytes = base64Decode(base64Value);
+        if (!mounted) return;
+        setState(() {
+          _profileImageBytes = bytes;
+          _profileImage = null;
+        });
+      } catch (_) {
+        await prefs.remove(_profileImageWebKey);
+      }
+      return;
+    }
+
+    final savedPath = prefs.getString(_profileImageKey);
+    if (savedPath == null || savedPath.isEmpty) return;
+
+    final file = File(savedPath);
+    if (await file.exists()) {
+      if (!mounted) return;
       setState(() {
-        _profileImage = File(savedPath);
+        _profileImage = file;
       });
+    } else {
+      await prefs.remove(_profileImageKey);
     }
   }
 
@@ -67,7 +101,7 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: Colors.grey[50],
+        backgroundColor: AppColor.ofWhite,
         appBar: _buildAppBar(),
         body: CustomScrollView(
           controller: _scrollController,
@@ -87,42 +121,37 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
 
   PreferredSize _buildAppBar() {
     return PreferredSize(
-      preferredSize: Size.fromHeight(90.h),
+      preferredSize: Size.fromHeight(80.h),
       child: Container(
         decoration: BoxDecoration(
-          color: AppColor.ofWhite,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          color: AppColor.primary,
+          boxShadow: AppShadows.level2,
         ),
         child: AppBar(
           backgroundColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
           elevation: 0,
           leading: Padding(
-            padding: EdgeInsets.only(top: 24.h),
+            padding: EdgeInsets.only(top: AppSpacing.lg.h),
             child: IconButton(
               icon: Icon(
-                Icons.arrow_back,
-                color: AppColor.black,
-                size: 24.sp,
+                Icons.arrow_back_ios_new_rounded,
+                color: AppColor.white,
+                size: 22.sp,
               ),
               onPressed: () => Navigator.pop(context),
             ),
           ),
           title: Padding(
-            padding: EdgeInsets.only(top: 20.h),
+            padding: EdgeInsets.only(top: AppSpacing.lg.h),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                CustomTextWidget(
-                  label: "الاقتراحات",
-                  style: TextStyleTheme.textStyle24Medium.copyWith(
-                    color: AppColor.black,
-                    fontWeight: FontWeight.w600,
+                Text(
+                  "الاقتراحات",
+                  style: AppText.headingLg.copyWith(
+                    color: AppColor.white,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 _buildProfileAvatar(),
@@ -140,7 +169,7 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: AppColor.black.withOpacity(0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -153,12 +182,15 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
         ).then((_) => _loadProfileImage()),
         child: CircleAvatar(
           radius: 22.w,
-          backgroundColor: Colors.white,
+          backgroundColor: AppColor.white,
           child: CircleAvatar(
             radius: 20.w,
-            backgroundImage: _profileImage != null
-                ? FileImage(_profileImage!)
-                : const AssetImage('assets/images/default_profile.png') as ImageProvider,
+            backgroundImage: _profileImageBytes != null
+                ? MemoryImage(_profileImageBytes!)
+                : _profileImage != null
+                    ? FileImage(_profileImage!)
+                    : const AssetImage('assets/images/default_profile.png')
+                        as ImageProvider,
           ),
         ),
       ),
@@ -167,20 +199,17 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
 
   Widget _buildFilterBar() {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 8.w),
-      margin: EdgeInsets.only(bottom: 8.h),
+      padding: EdgeInsets.symmetric(vertical: AppSpacing.lg.h, horizontal: AppSpacing.sm.w),
+      margin: EdgeInsets.only(bottom: AppSpacing.md.h),
       decoration: BoxDecoration(
-        color: AppColor.primary,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: AppColor.surface,
+        border: Border(
+          bottom: BorderSide(color: AppColor.border, width: 1),
+        ),
+        boxShadow: AppShadows.level1,
       ),
       child: SizedBox(
-        height: 40.h,
+        height: 44.h,
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
           itemCount: suggestionList.length,
@@ -207,28 +236,7 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
             ),
           )
         : SliverFillRemaining(
-            child: Center(
-              child: Padding(
-                padding: EdgeInsets.all(20.h),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.search_off_rounded,
-                      size: 48.sp,
-                      color: Colors.grey[400],
-                    ),
-                    SizedBox(height: 16.h),
-                    CustomTextWidget(
-                      label: "لا توجد اقتراحات متاحة حالياً.",
-                      style: TextStyleTheme.textStyle20Bold.copyWith(
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            child: AppStateView.search(),
           );
   }
 

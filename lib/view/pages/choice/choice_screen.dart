@@ -3,11 +3,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rafiq_app/auth/login/login_screen.dart';
 import 'package:rafiq_app/view/home/home_view.dart';
 import 'package:rafiq_app/view/pages/choice/take_data_screen.dart';
-import '../../../core/design/title_text.dart';
-import '../../../core/utils/app_color.dart';
-import '../../../core/utils/spacing.dart';
-import '../../../core/utils/text_style_theme.dart';
-import '../../../core/design/app_button.dart';
+import 'package:rafiq_app/core/design/components/components.dart';
+import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import '../../../core/utils/assets.dart';
 
 /// A screen that allows users to choose between being a regular user or a service provider.
@@ -36,18 +33,6 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
   /// Tracks which option is selected (0 for regular user, 1 for service provider)
   int? _selectedIndex;
 
-  /// Message shown when no option is selected
-  static const String _noSelectionMessage = "الرجاء اختيار خيار قبل المتابعة";
-
-  /// Handle back button press
-  Future<bool> _onWillPop() async {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
-    );
-    return false;
-  }
-
   /// Navigate to the appropriate screen based on selection
   void _handleNavigation() {
     if (_selectedIndex == 0) {
@@ -61,20 +46,24 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
         MaterialPageRoute(builder: (context) => const AddPlaceScreen()),
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(_noSelectionMessage),
-          duration: Duration(seconds: 2),
-        ),
-      );
+      AppFeedback.warning("اختار أولاً هل أنت مستخدم ولا صاحب مكان");
+      return;
     }
     widget.onNext();
   }
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: _onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
+          );
+        }
+      },
       child: Directionality(
         textDirection: TextDirection.rtl,
         child: Scaffold(
@@ -100,7 +89,7 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
                                 borderRadius: BorderRadius.circular(20.r),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.04),
+                                    color: AppColor.black.withOpacity(0.04),
                                     blurRadius: 8,
                                     offset: const Offset(0, 4),
                                   ),
@@ -123,13 +112,9 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
                                   offset: Offset(0, 20 * (1 - value)),
                                   child: Opacity(
                                     opacity: value,
-                                    child: CustomTextWidget(
-                                      label: "هل أنت مستخدم عادي ولا مقدم خدمة (صاحب مكان)؟",
-                                      style: TextStyleTheme.textStyle22Medium.copyWith(
-                                        height: 1.5,
-                                        color: const Color(0xFF2B2B2B),
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                    child: Text(
+                                      "هل أنت مستخدم عادي ولا مقدم خدمة (صاحب مكان)؟",
+                                      style: AppText.headingMd,
                                       textAlign: TextAlign.center,
                                     ),
                                   ),
@@ -166,7 +151,7 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
                       color: AppColor.ofWhite,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.04),
+                          color: AppColor.black.withOpacity(0.04),
                           blurRadius: 6,
                           offset: const Offset(0, -2),
                         ),
@@ -175,19 +160,6 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
                     child: AppButton(
                       text: "اللي بعده",
                       onPress: _handleNavigation,
-                      buttonStyle: ElevatedButton.styleFrom(
-                        fixedSize: Size(342.w, 55.h),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                        elevation: 0,
-                        backgroundColor: AppColor.primary,
-                        shadowColor: Colors.transparent,
-                      ),
-                      textStyle: TextStyleTheme.textStyle20Medium.copyWith(
-                        color: Colors.white,
-                        height: 1.2,
-                      ),
                     ),
                   ),
                 ],
@@ -223,7 +195,7 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
               padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16.r),
-                color: Color.lerp(Colors.white, AppColor.primary, value),
+                color: Color.lerp(AppColor.white, AppColor.primary, value),
                 border: Border.all(
                   color: Color.lerp(
                     const Color(0xFF000000).withOpacity(0.1),
@@ -236,7 +208,7 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
                   BoxShadow(
                     color: isSelected 
                       ? AppColor.primary.withOpacity(0.1)
-                      : Colors.black.withOpacity(0.04),
+                      : AppColor.black.withOpacity(0.04),
                     blurRadius: isSelected ? 12 : 6,
                     offset: Offset(0, isSelected ? 4 : 2),
                     spreadRadius: isSelected ? 0.5 : 0,
@@ -250,14 +222,14 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
                     decoration: BoxDecoration(
                       color: Color.lerp(
                         AppColor.primary.withOpacity(0.1),
-                        Colors.white.withOpacity(0.2),
+                        AppColor.white.withOpacity(0.2),
                         value,
                       ),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       icon,
-                      color: Color.lerp(AppColor.primary, Colors.white, value),
+                      color: Color.lerp(AppColor.primary, AppColor.white, value),
                       size: 22.w,
                     ),
                   ),
@@ -266,35 +238,31 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        CustomTextWidget(
-                          label: label,
-                          style: TextStyleTheme.textStyle18Medium.copyWith(
-                            color: Color.lerp(const Color(0xFF2B2B2B), Colors.white, value),
-                            height: 1.2,
+                        Text(
+                          label,
+                          style: AppText.titleLg.copyWith(
+                            color: Color.lerp(AppColor.textPrimary, AppColor.white, value),
                           ),
-                          textAlign: TextAlign.start,
                         ),
-                        SizedBox(height: 4.h),
-                        CustomTextWidget(
-                          label: index == 0 
+                        gapV(AppSpacing.xs),
+                        Text(
+                          index == 0
                               ? "استكشف الأماكن وشارك تجاربك"
                               : "أضف مكانك وابدأ في استقبال الزوار",
-                          style: TextStyleTheme.textStyle14Regular.copyWith(
+                          style: AppText.bodyMd.copyWith(
                             color: Color.lerp(
-                              const Color(0xFF666666),
-                              Colors.white.withOpacity(0.8),
+                              AppColor.textSecondary,
+                              AppColor.white.withOpacity(0.8),
                               value,
                             ),
-                            height: 1.2,
                           ),
-                          textAlign: TextAlign.start,
                         ),
                       ],
                     ),
                   ),
                   Icon(
                     Icons.arrow_forward_ios_rounded,
-                    color: Color.lerp(AppColor.primary.withOpacity(0.3), Colors.white, value),
+                    color: Color.lerp(AppColor.primary.withOpacity(0.3), AppColor.white, value),
                     size: 16.w,
                   ),
                 ],

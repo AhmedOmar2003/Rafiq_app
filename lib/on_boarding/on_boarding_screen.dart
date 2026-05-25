@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rafiq_app/auth/login/login_screen.dart';
-import 'package:rafiq_app/core/design/app_button.dart';
 import 'package:rafiq_app/core/design/app_image.dart';
-import 'package:rafiq_app/core/design/title_text.dart';
+import 'package:rafiq_app/core/design/components/components.dart';
+import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:rafiq_app/core/logic/helper_methods.dart';
-import 'package:rafiq_app/core/utils/app_color.dart';
-import 'package:rafiq_app/core/utils/spacing.dart';
-import 'package:rafiq_app/core/utils/text_style_theme.dart';
+import 'package:rafiq_app/on_boarding/cashe_helper.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'model.dart';
 
@@ -37,25 +35,28 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
     });
   }
 
-  void _navigateToLogin() {
+  Future<void> _navigateToLogin() async {
+    await CacheHelper.setOnBoardingSeen(true);
     navigateTo(const LoginScreen());
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: PageView.builder(
-        itemCount: onBoardingList.length,
-        controller: _pageController,
-        onPageChanged: _handlePageChanged,
-        itemBuilder: (context, index) {
-          return _OnBoardingItem(
-            model: onBoardingList[index],
-            pageController: _pageController,
-            isLastPage: _isLastPage,
-            onLoginPressed: _navigateToLogin,
-          );
-        },
+      body: SafeArea(
+        child: PageView.builder(
+          itemCount: onBoardingList.length,
+          controller: _pageController,
+          onPageChanged: _handlePageChanged,
+          itemBuilder: (context, index) {
+            return _OnBoardingItem(
+              model: onBoardingList[index],
+              pageController: _pageController,
+              isLastPage: _isLastPage,
+              onLoginPressed: _navigateToLogin,
+            );
+          },
+        ),
       ),
     );
   }
@@ -85,34 +86,31 @@ class _OnBoardingItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(
-        top: 71.h,
-        bottom: 58.h,
-        left: 15.w,
-        right: 15.w,
+      padding: EdgeInsets.symmetric(
+        horizontal: 20.w,
+        vertical: 24.h,
       ),
       child: Column(
         children: [
           Expanded(
+            flex: 5,
             child: AppImage(
               model.image,
-              height: 360.h,
-              width: 360.h,
             ),
           ),
-          verticalSpace(30),
-          CustomTextWidget(
+          gapV(AppSpacing.xxxl),
+          Text(
+            model.text,
             textAlign: TextAlign.center,
-            label: model.text,
-            style: TextStyleTheme.textStyle30Medium,
+            style: AppText.displayMd,
           ),
-          verticalSpace(16),
-          CustomTextWidget(
+          gapV(AppSpacing.lg),
+          Text(
+            model.body ?? "",
             textAlign: TextAlign.center,
-            label: model.body ?? "",
-            style: TextStyleTheme.textStyle20Regular,
+            style: AppText.headingSm.copyWith(fontWeight: FontWeight.w400),
           ),
-          verticalSpace(90),
+          const Spacer(flex: 2),
           isLastPage ? _buildLastPageControls() : _buildNavigationControls(),
         ],
       ),
@@ -122,14 +120,8 @@ class _OnBoardingItem extends StatelessWidget {
   Widget _buildLastPageControls() {
     return Column(
       children: [
-        AppButton(
-          text: "يلا نبدا",
-          textStyle: TextStyleTheme.textStyle25Medium.copyWith(
-            color: AppColor.white,
-          ),
-          onPress: onLoginPressed,
-        ),
-        verticalSpace(70),
+        AppButton(text: "يلا نبدا", onPress: onLoginPressed),
+        gapV(AppSpacing.huge),
         _buildPageIndicator(),
       ],
     );
@@ -141,20 +133,14 @@ class _OnBoardingItem extends StatelessWidget {
       children: [
         TextButton(
           onPressed: _handleNextPage,
-          child: CustomTextWidget(
-            label: "التالي",
-            style: TextStyleTheme.textStyle25Medium,
-          ),
+          child: Text("التالي", style: AppText.headingLg),
         ),
         const Spacer(),
         _buildPageIndicator(),
         const Spacer(),
         TextButton(
           onPressed: onLoginPressed,
-          child: CustomTextWidget(
-            label: "تخطي",
-            style: TextStyleTheme.textStyle25Medium,
-          ),
+          child: Text("تخطي", style: AppText.headingLg.copyWith(color: AppColor.textSecondary)),
         ),
       ],
     );

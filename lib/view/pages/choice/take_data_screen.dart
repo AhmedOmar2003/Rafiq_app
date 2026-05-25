@@ -1,15 +1,18 @@
+import 'package:rafiq_app/core/design/tokens/tokens.dart';
+import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:rafiq_app/models/Api_model/api_model.dart';
+import 'dart:convert';
+import 'package:rafiq_app/service/api_service.dart';
 import 'package:rafiq_app/view/pages/choice/choice_screen.dart';
 import 'package:rafiq_app/view/pages/choice/save_data_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../core/utils/app_color.dart';
 import '../../../core/utils/spacing.dart';
-import '../../../core/utils/text_style_theme.dart';
 import '../../../core/design/app_button.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AddPlaceScreen extends StatefulWidget {
   const AddPlaceScreen({super.key});
@@ -21,7 +24,6 @@ class AddPlaceScreen extends StatefulWidget {
 class _AddPlaceScreenState extends State<AddPlaceScreen> {
   // Controllers
   final _placeNameController = TextEditingController();
-  final _priceController = TextEditingController(text: "100");
   final _descriptionController = TextEditingController();
   final _addressController = TextEditingController();
 
@@ -31,47 +33,53 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
   // Selected values
   String? _selectedPlaceType;
   String? _selectedCity;
-  String? _selectedPriceRange;
+  String? _selectedBudget;
 
   // Loading state
   bool _isLoading = false;
   bool _isMounted = true;
 
+  // Image picker state
+  File? _image;
+  final ImagePicker _picker = ImagePicker();
+
   // Constants
   static const List<String> _placeTypes = [
     "طعام",
     "ترفيه",
-    "فعاليات ثقافية",
-    "سياحي"
+    "سياحي",
+    "رياضة",
+    "فاجئني",
   ];
 
   static const List<String> _cities = [
     "القاهرة",
     "المنصورة",
     "الإسكندرية",
-    "طنطا"
+    "طنطا",
+    "أي حتة",
   ];
 
-  static const List<String> _priceRange = [
+  static const List<String> _budgets = [
     "أقل من 100 جنيه",
     "100 إلى 500 جنيه",
     "500 إلى 1000 جنيه",
     "1000 إلى 1500 جنيه",
-    "لسه محددتش"
+    "لسه محددتش",
   ];
 
   static const Map<String, int> _activityMap = {
     "طعام": 1,
     "ترفيه": 2,
-    "فعاليات ثقافية": 3,
-    "سياحي": 4,
+    "سياحي": 3,
+    "رياضة": 4,
+    "فاجئني": 5,
   };
 
   @override
   void dispose() {
     _isMounted = false;
     _placeNameController.dispose();
-    _priceController.dispose();
     _descriptionController.dispose();
     _addressController.dispose();
     super.dispose();
@@ -79,62 +87,67 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
 
   void _showSnackBar(String message, {bool isError = false}) {
     if (!_isMounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.red : Colors.green,
-      ),
-    );
+    isError ? AppFeedback.error(message) : AppFeedback.success(message);
   }
 
   Future<void> _addPlace() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session == null) {
+      _showSnackBar(
+        'انتهت جلسة تسجيل الدخول. سجل دخولك مرة أخرى ثم حاول إضافة المكان.',
+        isError: true,
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
-
     try {
-      final url =
-          Uri.parse('http://${GlopalVariable.ipConfig}/Api/add_place.php');
-      final body = {
-        'placeName': _placeNameController.text.trim(),
-        'activityId': _activityMap[_selectedPlaceType].toString(),
-        'budget': _selectedPriceRange,
-        'priceRange': _priceController.text.trim(),
-        'address': _addressController.text.trim(),
-        'cityName': _selectedCity,
-        'description': _descriptionController.text.trim(),
-      };
-
-      final response = await http
-          .post(
-            url,
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode(body),
-          )
-          .timeout(const Duration(seconds: 10));
+      await ApiService().addPlace(
+        placeName: _placeNameController.text.trim(),
+        activityName: _selectedPlaceType ?? '',
+        budget: _selectedBudget ?? '',
+        address: _addressController.text.trim(),
+        cityName: _selectedCity ?? '',
+        description: _descriptionController.text.trim(),
+        imagePath: _image?.path,
+      );
 
       if (!_isMounted) return;
 
-      final result = jsonDecode(response.body);
-
-      if (response.statusCode == 200 && result['success'] != null) {
-        _showSnackBar(result['success']);
-        _navigateToSplashScreen();
-      } else {
-        _showSnackBar(
-          result['error'] ?? 'حدث خطأ أثناء إضافة المكان',
-          isError: true,
-        );
-      }
-    } on http.ClientException {
-      _showSnackBar('تعذر الاتصال بالخادم', isError: true);
+      await _saveUserPlaceLocally();
+      _showSnackBar('تم إضافة المكان بنجاح');
+      _navigateToSplashScreen();
     } catch (e) {
-      _showSnackBar('حدث خطأ غير متوقع', isError: true);
+      _showSnackBar(
+        e.toString().replaceFirst('Exception: ', ''),
+        isError: true,
+      );
     } finally {
       if (_isMounted) {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  Future<void> _saveUserPlaceLocally() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userPlacesJson = prefs.getStringList('user_places') ?? [];
+      final newPlace = {
+        'name': _placeNameController.text.trim(),
+        'description': _descriptionController.text.trim(),
+        'priceRange': _selectedBudget ?? '',
+        'budget': _selectedBudget ?? '',
+        'rating': 5.0,
+        'placeAddress': _addressController.text.trim(),
+        'imageUrl': _image?.path ?? '',
+      'activityName': _selectedPlaceType ?? '',
+      'cityName': _selectedCity ?? '',
+      'placeId': DateTime.now().millisecondsSinceEpoch, // unique id
+    };
+    userPlacesJson.add(jsonEncode(newPlace));
+    await prefs.setStringList('user_places', userPlacesJson);
   }
 
   void _navigateToSplashScreen() {
@@ -159,6 +172,19 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
     );
   }
 
+  Future<void> _pickImage() async {
+    try {
+      final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+      if (pickedFile != null) {
+        setState(() {
+          _image = File(pickedFile.path);
+        });
+      }
+    } catch (e) {
+      _showSnackBar('حدث خطأ أثناء اختيار الصورة', isError: true);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -169,28 +195,32 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
       child: Directionality(
         textDirection: TextDirection.rtl,
         child: Scaffold(
+          backgroundColor: AppColor.ofWhite,
           body: SafeArea(
             child: Form(
               key: _formKey,
               child: Column(
                 children: [
                   _buildAppBar(),
-                  _buildBackgroundImage(),
                   Expanded(
                     child: SingleChildScrollView(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 24.w),
-                        child: Column(
-                          children: [
-                            verticalSpace(16),
-                            _buildImageUploadButton(),
-                            verticalSpace(28),
-                            _buildFormFields(),
-                            verticalSpace(28),
-                            _buildSubmitButton(),
-                            verticalSpace(20),
-                          ],
-                        ),
+                      physics: const BouncingScrollPhysics(),
+                      child: Column(
+                        children: [
+                          verticalSpace(16),
+                          _buildTopImage(),
+                          verticalSpace(24),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 24.w),
+                            child: _buildFormFields(),
+                          ),
+                          verticalSpace(36),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 24.w),
+                            child: _buildSubmitButton(),
+                          ),
+                          verticalSpace(40),
+                        ],
                       ),
                     ),
                   ),
@@ -204,71 +234,116 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
   }
 
   Widget _buildAppBar() {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 10.h),
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black),
-            onPressed: _navigateToChoiceScreen,
-          ),
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(right: 4.w),
-              child: Text(
-                "أضف بيانات مكانك",
-                style: TextStyleTheme.textStyle22Medium,
-              ),
-            ),
-          ),
-          SizedBox(width: 24.w),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBackgroundImage() {
     return Container(
-      height: 200.h,
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage('assets/images/padel.png'),
-          fit: BoxFit.cover,
-        ),
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+      color: AppColor.ofWhite,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: AppColor.white,
+              borderRadius: BorderRadius.circular(12.r),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColor.black.withOpacity(0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: IconButton(
+              padding: EdgeInsets.only(right: 6.w),
+              icon: Icon(Icons.arrow_back_ios, color: AppColor.black, size: 20.sp),
+              onPressed: _navigateToChoiceScreen,
+            ),
+          ),
+          Text(
+            "أضف بيانات مكانك",
+            style: AppText.headingSm.copyWith(
+               fontWeight: FontWeight.w700,
+               color: AppColor.black,
+            ),
+          ),
+          SizedBox(width: 48.w), // Spacer to balance the row
+        ],
       ),
     );
   }
 
-  Widget _buildImageUploadButton() {
-    return ElevatedButton(
-      onPressed: () {
-        _showSnackBar("تم اختيار صورة (محاكاة)");
-      },
-      style: ElevatedButton.styleFrom(
-        minimumSize: Size(132, 75),
-        backgroundColor: AppColor.primary,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8.r),
-        ),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(
-            Icons.camera_alt,
-            color: Color.fromARGB(255, 252, 252, 195),
-            size: 28,
-          ),
-          verticalSpace(5),
-          Text(
-            "أضف صورة",
-            style: TextStyleTheme.textStyle18Medium.copyWith(
-              color: AppColor.white,
+  Widget _buildTopImage() {
+    return GestureDetector(
+      onTap: _pickImage,
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 24.w),
+        height: 200.h,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: AppColor.white,
+          borderRadius: BorderRadius.circular(20.r),
+          border: _image == null 
+              ? Border.all(color: AppColor.primary.withOpacity(0.3), width: 1.5)
+              : Border.all(color: Colors.transparent),
+          boxShadow: [
+            BoxShadow(
+              color: AppColor.black.withOpacity(0.04),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
             ),
-          ),
-        ],
+          ],
+          image: _image != null
+              ? DecorationImage(
+                  image: FileImage(_image!),
+                  fit: BoxFit.cover,
+                )
+              : null,
+        ),
+        child: _image == null
+            ? Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(18.w),
+                    decoration: BoxDecoration(
+                      color: AppColor.primary.withOpacity(0.08),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.add_photo_alternate_rounded, color: AppColor.primary, size: 40.w),
+                  ),
+                  SizedBox(height: 16.h),
+                  Text(
+                    "إضافة صورة الغلاف للمكان",
+                    style: AppText.titleMd.copyWith(
+                      color: AppColor.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+                  Text(
+                    "يفضل أن تكون صورة عرضية بجودة عالية",
+                    style: AppText.bodySm.copyWith(
+                      color: AppColor.textTertiary,
+                    ),
+                  ),
+                ],
+              )
+            : Stack(
+                children: [
+                  Positioned(
+                    bottom: 12.h,
+                    right: 12.w,
+                    child: Container(
+                      padding: EdgeInsets.all(10.w),
+                      decoration: BoxDecoration(
+                        color: AppColor.black.withOpacity(0.65),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColor.white.withOpacity(0.5), width: 1),
+                      ),
+                      child: Icon(Icons.edit_rounded, color: AppColor.white, size: 20.w),
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }
@@ -279,6 +354,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
         _buildTextField(
           controller: _placeNameController,
           label: "اسم المكان",
+          icon: Icons.storefront_outlined,
           validator: (value) {
             if (value == null || value.isEmpty) {
               return 'الرجاء إدخال اسم المكان';
@@ -288,65 +364,10 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
         ),
         verticalSpace(16),
         _buildDropdown(
-          label: "نوع المكان",
-          value: _selectedPlaceType,
-          items: _placeTypes,
-          onChanged: (value) {
-            setState(() => _selectedPlaceType = value);
-          },
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'الرجاء اختيار نوع المكان';
-            }
-            return null;
-          },
-        ),
-        verticalSpace(16),
-        _buildDropdown(
-          label: "نطاق الأسعار",
-          value: _selectedPriceRange,
-          items: _priceRange,
-          onChanged: (value) {
-            setState(() => _selectedPriceRange = value);
-          },
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'الرجاء اختيار نطاق الأسعار';
-            }
-            return null;
-          },
-        ),
-        verticalSpace(16),
-        _buildTextField(
-          controller: _priceController,
-          label: "بداية الأسعار",
-          keyboardType: TextInputType.number,
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'الرجاء إدخال بداية الأسعار';
-            }
-            if (int.tryParse(value) == null) {
-              return 'الرجاء إدخال رقم صحيح';
-            }
-            return null;
-          },
-        ),
-        verticalSpace(16),
-        _buildTextField(
-          controller: _addressController,
-          label: "العنوان",
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'الرجاء إدخال العنوان';
-            }
-            return null;
-          },
-        ),
-        verticalSpace(16),
-        _buildDropdown(
-          label: "المدينة التي يوجد بها المكان",
+          label: "المدينة",
           value: _selectedCity,
           items: _cities,
+          icon: Icons.location_city_outlined,
           onChanged: (value) {
             setState(() => _selectedCity = value);
           },
@@ -358,10 +379,55 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
           },
         ),
         verticalSpace(16),
+        _buildDropdown(
+          label: "نوع النشاط",
+          value: _selectedPlaceType,
+          items: _placeTypes,
+          icon: Icons.category_outlined,
+          onChanged: (value) {
+            setState(() => _selectedPlaceType = value);
+          },
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'الرجاء اختيار نوع النشاط';
+            }
+            return null;
+          },
+        ),
+        verticalSpace(16),
+        _buildDropdown(
+          label: "الميزانية",
+          value: _selectedBudget,
+          items: _budgets,
+          icon: Icons.account_balance_wallet_outlined,
+          onChanged: (value) {
+            setState(() => _selectedBudget = value);
+          },
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'الرجاء اختيار الميزانية';
+            }
+            return null;
+          },
+        ),
+        verticalSpace(16),
+        _buildTextField(
+          controller: _addressController,
+          label: "العنوان التفصيلي",
+          icon: Icons.map_outlined,
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'الرجاء إدخال العنوان';
+            }
+            return null;
+          },
+        ),
+        verticalSpace(16),
         _buildTextField(
           controller: _descriptionController,
-          label: "وصف عن المكان",
-          maxLines: 3,
+          label: "وصف عن المكان ومميزاته",
+          icon: Icons.description_outlined,
+          maxLines: 4,
           validator: (value) {
             if (value == null || value.isEmpty) {
               return 'الرجاء إدخال وصف عن المكان';
@@ -373,66 +439,64 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
     );
   }
 
-  Widget _buildSubmitButton() {
-    return _isLoading
-        ? const CircularProgressIndicator()
-        : AppButton(
-            text: "حفظ",
-            onPress: _addPlace,
-            buttonStyle: ElevatedButton.styleFrom(
-              fixedSize: Size(342.w, 55.h),
-              backgroundColor: AppColor.primary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.r),
-              ),
-            ),
-            textStyle: TextStyleTheme.textStyle20Medium.copyWith(
-              color: AppColor.white,
-            ),
-          );
-  }
-
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
+    required IconData icon,
     TextInputType keyboardType = TextInputType.text,
     int maxLines = 1,
     String? Function(String?)? validator,
   }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      maxLines: maxLines,
-      textAlign: TextAlign.right,
-      validator: validator,
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyleTheme.textStyle20Medium.copyWith(
-          fontSize: 18.sp,
-          color: Colors.grey,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.r),
-          borderSide: const BorderSide(color: Colors.grey, width: 1),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.r),
-          borderSide: const BorderSide(color: Colors.grey, width: 1),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.r),
-          borderSide: const BorderSide(color: AppColor.primary, width: 1),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.r),
-          borderSide: const BorderSide(color: Colors.red, width: 1),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.r),
-          borderSide: const BorderSide(color: Colors.red, width: 1),
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColor.white,
+        borderRadius: BorderRadius.circular(16.r),
+        boxShadow: [
+          BoxShadow(
+            color: AppColor.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      style: TextStyleTheme.textStyle20Medium,
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        maxLines: maxLines,
+        textAlign: TextAlign.right,
+        validator: validator,
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: AppText.bodyLg.copyWith(
+            color: AppColor.textTertiary,
+            fontSize: 16.sp,
+          ),
+          prefixIcon: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w),
+            child: Icon(icon, color: AppColor.primary, size: 24.sp),
+          ),
+          contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: maxLines > 1 ? 20.h : 18.h),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16.r),
+            borderSide: BorderSide(color: AppColor.border, width: 1),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16.r),
+            borderSide: BorderSide(color: AppColor.border, width: 1),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16.r),
+            borderSide: BorderSide(color: AppColor.primary, width: 1.5),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16.r),
+            borderSide: const BorderSide(color: AppColor.error, width: 1),
+          ),
+          filled: true,
+          fillColor: AppColor.white,
+        ),
+        style: AppText.titleMd.copyWith(color: AppColor.black),
+      ),
     );
   }
 
@@ -440,50 +504,92 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
     required String label,
     required String? value,
     required List<String> items,
+    required IconData icon,
     required ValueChanged<String?> onChanged,
     String? Function(String?)? validator,
   }) {
-    return DropdownButtonFormField<String>(
-      value: value,
-      onChanged: onChanged,
-      validator: validator,
-      items: items.map((String item) {
-        return DropdownMenuItem<String>(
-          value: item,
-          child: Text(item, style: TextStyleTheme.textStyle20Medium),
-        );
-      }).toList(),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyleTheme.textStyle20Medium.copyWith(
-          fontSize: 18.sp,
-          color: Colors.grey,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.r),
-          borderSide: const BorderSide(color: Colors.grey, width: 1),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.r),
-          borderSide: const BorderSide(color: Colors.grey, width: 1),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.r),
-          borderSide: const BorderSide(color: AppColor.primary, width: 1),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.r),
-          borderSide: const BorderSide(color: Colors.red, width: 1),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.r),
-          borderSide: const BorderSide(color: Colors.red, width: 1),
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColor.white,
+        borderRadius: BorderRadius.circular(16.r),
+        boxShadow: [
+          BoxShadow(
+            color: AppColor.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      style: TextStyleTheme.textStyle20Medium,
-      icon: const Icon(Icons.arrow_drop_down),
-      isExpanded: true,
-      alignment: Alignment.centerRight,
+      child: DropdownButtonFormField<String>(
+        value: value,
+        onChanged: onChanged,
+        validator: validator,
+        icon: Icon(Icons.keyboard_arrow_down_rounded, color: AppColor.textSecondary),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: AppText.bodyLg.copyWith(
+            color: AppColor.textTertiary,
+            fontSize: 16.sp,
+          ),
+          prefixIcon: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w),
+            child: Icon(icon, color: AppColor.primary, size: 24.sp),
+          ),
+          contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 18.h),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16.r),
+            borderSide: BorderSide(color: AppColor.border, width: 1),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16.r),
+            borderSide: BorderSide(color: AppColor.border, width: 1),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16.r),
+            borderSide: BorderSide(color: AppColor.primary, width: 1.5),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16.r),
+            borderSide: const BorderSide(color: AppColor.error, width: 1),
+          ),
+          filled: true,
+          fillColor: AppColor.white,
+        ),
+        dropdownColor: AppColor.white,
+        style: AppText.titleMd.copyWith(color: AppColor.black),
+        items: items.map((String item) {
+          return DropdownMenuItem<String>(
+            value: item,
+            child: Text(item),
+          );
+        }).toList(),
+      ),
     );
+  }
+
+  Widget _buildSubmitButton() {
+    return _isLoading
+        ? Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(AppColor.primary),
+            ),
+          )
+        : AppButton(
+            text: "حفظ البيانات",
+            onPress: _addPlace,
+            buttonStyle: ElevatedButton.styleFrom(
+              minimumSize: Size(double.infinity, 56.h),
+              backgroundColor: AppColor.primary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16.r),
+              ),
+              elevation: 4,
+              shadowColor: AppColor.primary.withOpacity(0.4),
+            ),
+            textStyle: AppText.titleLg.copyWith(
+              color: AppColor.white,
+              fontWeight: FontWeight.w700,
+            ),
+          );
   }
 }

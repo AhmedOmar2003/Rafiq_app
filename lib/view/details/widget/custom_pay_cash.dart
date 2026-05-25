@@ -1,3 +1,4 @@
+import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rafiq_app/core/logic/helper_methods.dart';
@@ -5,10 +6,7 @@ import 'package:rafiq_app/models/payments/payments_model.dart';
 import 'package:rafiq_app/view/details/widget/payments.dart';
 import 'package:rafiq_app/view/pages/cash/cash_page.dart';
 import '../../../core/design/app_button.dart';
-import '../../../core/design/title_text.dart';
-import '../../../core/utils/app_color.dart';
 import '../../../core/utils/spacing.dart';
-import '../../../core/utils/text_style_theme.dart';
 
 class CustomPayCash extends StatefulWidget {
   const CustomPayCash({
@@ -35,17 +33,17 @@ class _CustomPayCashState extends State<CustomPayCash> {
           children: [
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.w),
-              child: CustomTextWidget(
-                label: "اختار طريقة الدفع",
-                style: TextStyleTheme.textStyle20Bold,
+              child: Text(
+                "اختار طريقة الدفع",
+                style: AppText.headingSm,
               ),
             ),
             verticalSpace(15),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 33.w),
-              child: CustomTextWidget(
-                label: "المحافظ الإلكترونية او البطاقات البنكية",
-                style: TextStyleTheme.textStyle18Medium,
+              child: Text(
+                "المحافظ الإلكترونية او البطاقات البنكية",
+                style: AppText.titleLg,
               ),
             ),
             verticalSpace(16),
@@ -60,7 +58,7 @@ class _CustomPayCashState extends State<CustomPayCash> {
                   },
                   child: Payments(
                     model: paymentsList[index],
-                    color: currentIndex == index ? Colors.green : Colors.white,
+                    color: currentIndex == index ? AppColor.success : AppColor.white,
                   ),
                 );
               },
@@ -69,7 +67,7 @@ class _CustomPayCashState extends State<CustomPayCash> {
               padding: EdgeInsets.symmetric(horizontal: 24.w),
               child: AppButton(
                 text: "اللي بعده",
-                textStyle: TextStyleTheme.textStyle24Medium,
+                textStyle: AppText.headingLg,
                 buttonStyle: ElevatedButton.styleFrom(
                   fixedSize: Size(342.w, 55.h),
                   shape: RoundedRectangleBorder(

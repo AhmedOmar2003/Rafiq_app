@@ -2,6 +2,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:rafiq_app/core/utils/app_color.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();
 
@@ -25,10 +26,10 @@ void showToast(
     gravity: ToastGravity.BOTTOM,
     timeInSecForIosWeb: 1,
     backgroundColor: state == ToastStates.fail
-        ? Colors.red
+        ? AppColor.error
         : state == ToastStates.warning
-        ? Colors.yellow
-        : Colors.green,
+        ? AppColor.warning
+        : AppColor.success,
     textColor: Colors.white,
     fontSize: 16.sp,
   );
@@ -43,19 +44,13 @@ void showMessage(String message, {MessageType type = MessageType.fail}) {
     ).showSnackBar(
       SnackBar(
         backgroundColor: type == MessageType.fail
-            ? Colors.red
+            ? AppColor.error
             : type == MessageType.warning
-            ? Colors.yellow
-            : Colors.green,
+            ? AppColor.warning
+            : AppColor.success,
         content: Text(
           message,
-          style: TextStyle(
-            color: type == MessageType.fail
-                ? Colors.white
-                : type == MessageType.warning
-                ? Colors.black
-                : Colors.white,
-          ),
+          style: const TextStyle(color: Colors.white),
         ),
       ),
     );
