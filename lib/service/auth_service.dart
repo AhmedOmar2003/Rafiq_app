@@ -318,6 +318,20 @@ class AuthService {
       throw Exception('كلمة المرور مطلوبة.');
     }
 
+    final loginState = await _lookupLoginEmailState(normalizedEmail);
+    final accountExists = loginState['exists'] == true;
+    final emailConfirmed = loginState['confirmed'] == true;
+    if (!accountExists) {
+      throw Exception(
+        'هذا البريد غير مسجل. أنشئ حسابًا جديدًا أولًا، أو استخدم البريد الصحيح إذا كان لديك حساب سابق.',
+      );
+    }
+    if (!emailConfirmed) {
+      throw Exception(
+        'هذا الحساب موجود لكنه غير مؤكد بعد. افتح رسالة تأكيد الحساب في بريدك، أو أعد إرسال كود التأكيد من شاشة إنشاء الحساب.',
+      );
+    }
+
     late final AuthResponse response;
     try {
       response = await _client.auth.signInWithPassword(
@@ -350,6 +364,25 @@ class AuthService {
       name: fallbackName,
       email: profile?['email']?.toString() ?? normalizedEmail,
     );
+  }
+
+  Future<Map<String, dynamic>> _lookupLoginEmailState(String email) async {
+    try {
+      final response = await _client.rpc(
+        'lookup_auth_email_state',
+        params: {'p_email': email},
+      );
+
+      if (response is Map<String, dynamic>) {
+        return response;
+      }
+      if (response is Map) {
+        return Map<String, dynamic>.from(response);
+      }
+    } catch (_) {
+      // If the lookup RPC is unavailable, fall back to the normal sign-in flow.
+    }
+    return const <String, dynamic>{};
   }
 
   Future<void> signOut() async {
