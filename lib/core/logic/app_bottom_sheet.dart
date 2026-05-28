@@ -21,6 +21,11 @@ class AppBottomSheet {
       isScrollControlled: isScrollControlled,
       backgroundColor: AppColor.surfaceCard,
       barrierColor: AppColor.overlay,
+      useSafeArea: true,
+      // Drag handle is delivered by the global BottomSheetThemeData
+      // (`showDragHandle: true`). Suppress it here when callers explicitly
+      // pass `showHandle: false` so the helper still wins.
+      showDragHandle: showHandle,
       shape: RoundedRectangleBorder(borderRadius: AppRadii.topOnly(AppRadii.xl)),
       builder: (context) {
         return SafeArea(
@@ -36,18 +41,6 @@ class AppBottomSheet {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (showHandle)
-                  Center(
-                    child: Container(
-                      width: 40.w,
-                      height: 4.h,
-                      margin: EdgeInsets.only(bottom: AppSpacing.lg.h),
-                      decoration: BoxDecoration(
-                        color: AppColor.borderStrong,
-                        borderRadius: AppRadii.rPill,
-                      ),
-                    ),
-                  ),
                 if (title != null) ...[
                   Text(title, style: AppText.headingSm, textAlign: TextAlign.center),
                   gapV(AppSpacing.lg),

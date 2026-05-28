@@ -8,6 +8,7 @@ import 'package:rafiq_app/view/pages/choice/choice_screen.dart';
 import 'package:rafiq_app/view/pages/choice/save_data_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/utils/app_microcopy.dart';
 import '../../../core/utils/spacing.dart';
 import '../../../core/design/app_button.dart';
 import 'dart:io';
@@ -95,10 +96,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
 
     final session = Supabase.instance.client.auth.currentSession;
     if (session == null) {
-      _showSnackBar(
-        'انتهت جلسة تسجيل الدخول. سجل دخولك مرة أخرى ثم حاول إضافة المكان.',
-        isError: true,
-      );
+      _showSnackBar(AppCopy.providerSessionExpired, isError: true);
       return;
     }
 
@@ -117,7 +115,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
       if (!_isMounted) return;
 
       await _saveUserPlaceLocally();
-      _showSnackBar('تم إضافة المكان بنجاح');
+      _showSnackBar(AppCopy.providerAddedSuccess);
       _navigateToSplashScreen();
     } catch (e) {
       _showSnackBar(
@@ -181,7 +179,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
         });
       }
     } catch (e) {
-      _showSnackBar('حدث خطأ أثناء اختيار الصورة', isError: true);
+      _showSnackBar(AppCopy.providerImagePickError, isError: true);
     }
   }
 
@@ -259,7 +257,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
             ),
           ),
           Text(
-            "أضف بيانات مكانك",
+            AppCopy.providerFormTitle,
             style: AppText.headingSm.copyWith(
                fontWeight: FontWeight.w700,
                color: AppColor.black,

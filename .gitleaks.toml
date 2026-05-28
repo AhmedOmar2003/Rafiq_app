@@ -1,0 +1,32 @@
+title = "Rafiq gitleaks policy"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "supabase-service-role"
+description = "Supabase service role key"
+regex = '''SUPABASE_SERVICE_ROLE_KEY\s*[:=]\s*['"]?[A-Za-z0-9._-]{40,}'''
+
+[[rules]]
+id = "supabase-db-password"
+description = "Supabase remote DB password"
+regex = '''SUPABASE_DB_PASSWORD\s*[:=]\s*['"]?.{8,}'''
+
+[[rules]]
+id = "google-client-secret"
+description = "Google OAuth client secret"
+regex = '''GOOGLE_CLIENT_SECRET\s*[:=]\s*['"]?.{8,}'''
+
+[[rules]]
+id = "smtp-password"
+description = "SMTP password"
+regex = '''SMTP_(PASSWORD|PASS|SECRET)\s*[:=]\s*['"]?.{8,}'''
+
+[[allowlists]]
+description = "Examples and docs can mention secret names without values"
+paths = [
+  '''(^|/)docs/''',
+  '''(^|/)\.github/''',
+  '''(^|/).*\.example$''',
+]

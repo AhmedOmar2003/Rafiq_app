@@ -5,6 +5,7 @@ import 'package:rafiq_app/view/home/home_view.dart';
 import 'package:rafiq_app/view/pages/choice/take_data_screen.dart';
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
+import '../../../core/utils/app_microcopy.dart';
 import '../../../core/utils/assets.dart';
 
 /// A screen that allows users to choose between being a regular user or a service provider.
@@ -46,7 +47,7 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
         MaterialPageRoute(builder: (context) => const AddPlaceScreen()),
       );
     } else {
-      AppFeedback.warning("اختار أولاً هل أنت مستخدم ولا صاحب مكان");
+      AppFeedback.warning(AppCopy.choicePickFirst);
       return;
     }
     widget.onNext();
@@ -113,7 +114,7 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
                                   child: Opacity(
                                     opacity: value,
                                     child: Text(
-                                      "هل أنت مستخدم عادي ولا مقدم خدمة (صاحب مكان)؟",
+                                      AppCopy.choiceQuestion,
                                       style: AppText.headingMd,
                                       textAlign: TextAlign.center,
                                     ),
@@ -123,7 +124,7 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
                             ),
                             SizedBox(height: 30.h),
                             _buildOptionButton(
-                              label: "مستخدم عادي",
+                              label: AppCopy.choiceRoleUser,
                               index: 0,
                               icon: Icons.person_outline_rounded,
                               onTap: () {
@@ -132,7 +133,7 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
                               },
                             ),
                             _buildOptionButton(
-                              label: "مقدم خدمة",
+                              label: AppCopy.choiceRoleProvider,
                               index: 1,
                               icon: Icons.store_rounded,
                               onTap: () {
@@ -158,7 +159,7 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
                       ],
                     ),
                     child: AppButton(
-                      text: "اللي بعده",
+                      text: AppCopy.next,
                       onPress: _handleNavigation,
                     ),
                   ),
@@ -247,8 +248,8 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
                         gapV(AppSpacing.xs),
                         Text(
                           index == 0
-                              ? "استكشف الأماكن وشارك تجاربك"
-                              : "أضف مكانك وابدأ في استقبال الزوار",
+                              ? AppCopy.choiceUserSubtitle
+                              : AppCopy.choiceProviderSubtitle,
                           style: AppText.bodyMd.copyWith(
                             color: Color.lerp(
                               AppColor.textSecondary,

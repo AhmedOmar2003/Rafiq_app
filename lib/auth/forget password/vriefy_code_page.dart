@@ -6,6 +6,7 @@ import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:rafiq_app/auth/forget%20password/reset_password.dart';
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
+import 'package:rafiq_app/core/utils/app_microcopy.dart';
 import 'package:rafiq_app/service/auth_service.dart';
 
 class VerifyCodeScreen extends StatefulWidget {
@@ -113,7 +114,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
         return;
       }
       _startCooldown();
-      AppFeedback.success('بعتنالك الكود تاني');
+      AppFeedback.success(AppCopy.forgotCodeSent);
     } catch (e) {
       if (!mounted) {
         return;
@@ -204,7 +205,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               Text(
-                                "تحقق من الكود",
+                                AppCopy.verifyTitle,
                                 style:
                                     AppText.headingLg.copyWith(
                                   color: AppColor.black,
@@ -214,7 +215,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                               ),
                               SizedBox(height: keyboardOpen ? 8.h : 12.h),
                               Text(
-                                "أدخل كود التحقق المكوّن من 6 أرقام المرسل إلى:",
+                                AppCopy.verifyBodyPrefix.trim(),
                                 style:
                                     AppText.bodyLg.copyWith(
                                   color: AppColor.black.withOpacity(0.7),
@@ -261,11 +262,11 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                                   enableActiveFill: true,
                                   validator: (value) {
                                     if (value == null || value.trim().isEmpty) {
-                                      return "يرجى إدخال كود التحقق";
+                                      return AppCopy.fieldRequired;
                                     }
                                     if (!RegExp(r'^\d{6}$')
                                         .hasMatch(value.trim())) {
-                                      return "الكود يجب أن يكون 6 أرقام";
+                                      return AppCopy.verifyCodeWrongLength;
                                     }
                                     return null;
                                   },
@@ -273,7 +274,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                               ),
                               SizedBox(height: keyboardOpen ? 12.h : 18.h),
                               AppButton(
-                                text: _isVerifying ? "..." : "تأكيد الكود",
+                                text: _isVerifying ? "..." : AppCopy.verifyCta,
                                 textStyle:
                                     AppText.headingSm.copyWith(
                                   color: Colors.white,
@@ -298,7 +299,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                                 duration: const Duration(milliseconds: 180),
                                 child: _secondsLeft > 0
                                     ? Text(
-                                        "إعادة إرسال الكود خلال ${_formattedCountdown()}",
+                                        "${AppCopy.verifyResendIn} ${_formattedCountdown()}",
                                         key: const ValueKey("cooldownText"),
                                         style: AppText.bodyMd
                                             .copyWith(
@@ -321,8 +322,8 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                                         ),
                                         child: Text(
                                           _isResending
-                                              ? "جارٍ إعادة الإرسال..."
-                                              : "إعادة إرسال الكود",
+                                              ? AppCopy.loading
+                                              : AppCopy.verifyResend,
                                           style: AppText.labelMd.copyWith(
                                             color: AppColor.primary
                                                 .withOpacity(0.85),

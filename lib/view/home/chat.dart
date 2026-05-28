@@ -3,7 +3,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_tts/flutter_tts.dart';
-import 'package:rafiq_app/core/design/custom_app_bar.dart';
+import 'package:rafiq_app/core/design/components/components.dart';
+import 'package:rafiq_app/core/design/components/app_page_header.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:rafiq_app/core/config/api_config.dart';
 
@@ -127,19 +128,10 @@ class _BotScreenState extends State<BotScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(
-        backgroundColor: AppColor.primary,
-        backIconColor: AppColor.white,
-        title: Align(
-          alignment: AlignmentDirectional.center,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 40.0),
-            child: Text(
-              "رفيق الذكي 🤖",
-              style: AppText.headingSm.copyWith(color: AppColor.white),
-            ),
-          ),
-        ),
+      appBar: const AppPageHeader(
+        title: 'رفيق الذكي 🤖',
+        tone: AppHeaderTone.brand,
+        centerTitle: true,
       ),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.end,

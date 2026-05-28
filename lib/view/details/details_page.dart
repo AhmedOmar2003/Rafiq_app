@@ -8,7 +8,6 @@ import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:rafiq_app/model/review_model.dart';
 import 'package:rafiq_app/service/api_service.dart';
 import 'package:rafiq_app/view/evaluations/evaluations_page.dart';
-import '../../core/design/custom_app_bar.dart';
 import '../../core/utils/app_microcopy.dart';
 import '../../models/suggestion_item_model/suggestion_item.dart';
 import 'widget/custom_divider.dart';
@@ -144,11 +143,11 @@ class _DetailsPageState extends State<DetailsPage> {
       if (isPaymentSuccessful) {
         _showSuccessOverlay();
       } else {
-        AppFeedback.error("فشل الدفع، حاول تاني");
+        AppFeedback.error(AppCopy.paymentFailed);
       }
     } catch (_) {
       if (!_isMounted) return;
-      AppFeedback.error("حصل خطأ في الدفع، حاول تاني");
+      AppFeedback.error(AppCopy.paymentError);
     } finally {
       if (_isMounted) {
         setState(() => _isPaymentLoading = false);
@@ -162,255 +161,311 @@ class _DetailsPageState extends State<DetailsPage> {
         .where((item) => item != currentModel)
         .toList();
 
-    return Stack(
-      children: [
-      Scaffold(
-      backgroundColor: AppColor.surface,
-      appBar: CustomAppBar(
-        backgroundColor: AppColor.surface,
-        title: Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: Text(
-            "التفاصيل",
-            style: AppText.headingLg,
-          ),
+    return AppPageScaffold(
+      unpadded: true,
+      header: const AppPageHeader(title: AppCopy.detailsTitle),
+      floatingOverlay: _showPaymentSuccess
+          ? AppSuccessView(
+              title: AppCopy.paymentSuccessTitle,
+              message: AppCopy.paymentSuccessBody,
+              onContinue: () {
+                if (_isMounted) setState(() => _showPaymentSuccess = false);
+              },
+            )
+          : null,
+      footer: AppStickyFooter(
+        child: AppButton(
+          text: AppCopy.bookNow,
+          onPress: _handlePayment,
+          isLoading: _isPaymentLoading,
         ),
       ),
       body: Stack(
         children: [
           SafeArea(
             child: ListView(
-              padding: EdgeInsets.only(top: 24.h, bottom: 100.h),
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.lg.w,
+                AppSpacing.xxl.h,
+                AppSpacing.lg.w,
+                AppSpacing.huge.h * 2, // room for sticky footer
+              ),
               children: [
-                // Details Section
-                Container(
-                  margin: EdgeInsets.symmetric(horizontal: 16.w),
-                  decoration: BoxDecoration(
-                    color: AppColor.surfaceCard,
-                    borderRadius: BorderRadius.circular(16.r),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColor.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      DetailsItem(model: currentModel),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16.w),
-                        child: const CustomDivider(),
-                      ),
-                    ],
-                  ),
+                _DetailsSection(model: currentModel),
+                gapV(AppSpacing.xxl),
+                _ReviewsSection(
+                  placeId: currentModel.placeId,
+                  isLoading: _isReviewLoading && lastEvaluation == null,
+                  lastEvaluation: lastEvaluation,
+                  userImage: userImage,
+                  onOpenAll: _openEvaluationsPage,
                 ),
-
-                // Evaluations Section
-                if (lastEvaluation != null || true)
-                  Container(
-                    margin: EdgeInsets.only(top: 24.h, left: 16.w, right: 16.w),
-                    decoration: BoxDecoration(
-                      color: AppColor.surfaceCard,
-                      borderRadius: BorderRadius.circular(16.r),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColor.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.all(16.w),
-                          child: _isReviewLoading && lastEvaluation == null
-                              ? SizedBox(
-                                  height: 120.h,
-                                  child: Center(
-                                    child: CircularProgressIndicator(
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        AppColor.primary,
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              : lastEvaluation != null
-                                  ? CustomEvaluations(
-                                      placeId: currentModel.placeId,
-                                      lastEvaluation: lastEvaluation,
-                                      userImage: userImage,
-                                    )
-                                  : GestureDetector(
-                                      onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                EvaluationsPage(
-                                              placeId: currentModel.placeId,
-                                            ),
-                                          ),
-                                        ).then((_) {
-                                          if (!_isMounted) return;
-                                          _fetchLastEvaluationFromAPI(
-                                              currentModel.placeId);
-                                        });
-                                      },
-                                      child: Column(
-                                        children: [
-                                          Icon(Icons.rate_review_outlined, size: 48.sp, color: AppColor.textTertiary),
-                                          gapV(AppSpacing.md),
-                                          Text(
-                                            "كن أول من يعلق",
-                                            style: AppText.bodyLg.copyWith(color: AppColor.textSecondary),
-                                          ),
-                                          gapV(AppSpacing.md),
-                                          Container(
-                                            padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w, vertical: AppSpacing.sm.h),
-                                            decoration: BoxDecoration(
-                                              color: AppColor.primary.withOpacity(0.1),
-                                              borderRadius: AppRadii.rPill,
-                                            ),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Icon(Icons.add_comment_outlined, size: 16.sp, color: AppColor.primary),
-                                                gapH(AppSpacing.sm),
-                                                Text(
-                                                  "أضف تعليقك",
-                                                  style: AppText.labelMd.copyWith(color: AppColor.primary),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                // Similar Events Section
+                gapV(AppSpacing.xxl),
                 if (filteredSuggestions.isNotEmpty)
-                  Container(
-                    margin: EdgeInsets.only(top: 24.h),
-                    decoration: BoxDecoration(
-                      color: AppColor.surfaceCard,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(20.r),
-                        topRight: Radius.circular(20.r),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColor.black.withOpacity(0.05),
-                          offset: const Offset(0, -4),
-                          blurRadius: 15,
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.all(16.w),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text("فعاليات مشابهة", style: AppText.headingSm),
-                              Container(
-                                padding: EdgeInsets.symmetric(horizontal: AppSpacing.md.w, vertical: AppSpacing.xs.h),
-                                decoration: BoxDecoration(
-                                  color: AppColor.primary.withOpacity(0.1),
-                                  borderRadius: AppRadii.rPill,
-                                  border: Border.all(color: AppColor.primary.withOpacity(0.2), width: 1),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.place_outlined, size: 14.sp, color: AppColor.primary),
-                                    gapH(AppSpacing.xs),
-                                    Text(
-                                      filteredSuggestions.length.toString(),
-                                      style: AppText.labelMd.copyWith(color: AppColor.primary, fontWeight: FontWeight.w700),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SimilarEvents(
-                          suggestionItemList: filteredSuggestions,
-                          onItemSelected: updateModel,
-                        ),
-                      ],
-                    ),
+                  _SimilarSection(
+                    items: filteredSuggestions,
+                    onItemSelected: updateModel,
                   )
                 else
-                  Container(
-                    margin: EdgeInsets.only(top: 24.h, left: 16.w, right: 16.w),
-                    padding: EdgeInsets.all(16.w),
-                    decoration: BoxDecoration(
-                      color: AppColor.surfaceCard,
-                      borderRadius: BorderRadius.circular(16.r),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColor.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        Icon(Icons.event_busy_outlined, size: 48.sp, color: AppColor.textTertiary),
-                        gapV(AppSpacing.md),
-                        Text("مفيش أماكن مشابهة دلوقتي", style: AppText.bodyLg.copyWith(color: AppColor.textSecondary)),
-                      ],
-                    ),
-                  ),
+                  const _NoSimilarSection(),
               ],
             ),
           ),
-          if (_isPaymentLoading)
-            Container(
-              color: AppColor.overlaySoft,
-              child: Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColor.primary),
-                  strokeWidth: 3,
-                ),
-              ),
-            ),
+          if (_isPaymentLoading) const _PaymentScrim(),
         ],
       ),
-      bottomNavigationBar: SafeArea(
-        child: Container(
-          padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w, vertical: AppSpacing.md.h),
-          decoration: BoxDecoration(
-            color: AppColor.surface,
-            boxShadow: AppShadows.level2,
+    );
+  }
+
+  void _openEvaluationsPage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EvaluationsPage(placeId: currentModel.placeId),
+      ),
+    ).then((_) {
+      if (!_isMounted) return;
+      _fetchLastEvaluationFromAPI(currentModel.placeId);
+    });
+  }
+}
+
+// ===========================================================================
+// Sections
+// ===========================================================================
+
+class _DetailsSection extends StatelessWidget {
+  const _DetailsSection({required this.model});
+
+  final SuggestionItemModel model;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          DetailsItem(model: model),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
+            child: const CustomDivider(),
           ),
-          child: AppButton(
-            text: "احجز دلوقتي",
-            onPress: _handlePayment,
-            isLoading: _isPaymentLoading,
+        ],
+      ),
+    );
+  }
+}
+
+class _ReviewsSection extends StatelessWidget {
+  const _ReviewsSection({
+    required this.placeId,
+    required this.isLoading,
+    required this.lastEvaluation,
+    required this.userImage,
+    required this.onOpenAll,
+  });
+
+  final int placeId;
+  final bool isLoading;
+  final EvaluationsItemModel? lastEvaluation;
+  final String? userImage;
+  final VoidCallback onOpenAll;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget child;
+    if (isLoading) {
+      child = SizedBox(
+        height: 120.h,
+        child: Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppColor.primary),
           ),
         ),
+      );
+    } else if (lastEvaluation != null) {
+      child = CustomEvaluations(
+        placeId: placeId,
+        lastEvaluation: lastEvaluation,
+        userImage: userImage,
+      );
+    } else {
+      child = _EmptyReviews(onTap: onOpenAll);
+    }
+
+    return AppCard(
+      padding: EdgeInsets.all(AppSpacing.lg.w),
+      child: child,
+    );
+  }
+}
+
+class _EmptyReviews extends StatelessWidget {
+  const _EmptyReviews({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: AppRadii.rLg,
+      child: Padding(
+        padding: EdgeInsets.all(AppSpacing.md.w),
+        child: Column(
+          children: [
+            Icon(
+              Icons.rate_review_outlined,
+              size: 48.sp,
+              color: AppColor.textTertiary,
+            ),
+            gapV(AppSpacing.md),
+            Text(
+              AppCopy.detailsBeFirstReview,
+              style: AppText.bodyLg.copyWith(color: AppColor.textSecondary),
+            ),
+            gapV(AppSpacing.md),
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg.w,
+                vertical: AppSpacing.sm.h,
+              ),
+              decoration: BoxDecoration(
+                color: AppColor.primary50,
+                borderRadius: AppRadii.rPill,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.add_comment_outlined,
+                    size: 16.sp,
+                    color: AppColor.primary,
+                  ),
+                  gapH(AppSpacing.sm),
+                  Text(
+                    AppCopy.detailsAddYourComment,
+                    style: AppText.labelMd.copyWith(color: AppColor.primary),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
-    if (_showPaymentSuccess)
-      AppSuccessView(
-        title: 'تم الحجز بنجاح! 🎉',
-        message: 'ميّرتنا الاختيار\nنتمنالك وقت ممتع',
-        onContinue: () {
-          if (_isMounted) setState(() => _showPaymentSuccess = false);
-        },
+    );
+  }
+}
+
+class _SimilarSection extends StatelessWidget {
+  const _SimilarSection({required this.items, required this.onItemSelected});
+
+  final List<SuggestionItemModel> items;
+  final ValueChanged<SuggestionItemModel> onItemSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      padding: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.all(AppSpacing.lg.w),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  AppCopy.detailsSimilarHeading,
+                  style: AppText.headingSm,
+                ),
+                _CountChip(count: items.length),
+              ],
+            ),
+          ),
+          SimilarEvents(
+            suggestionItemList: items,
+            onItemSelected: onItemSelected,
+          ),
+        ],
       ),
-    ],
+    );
+  }
+}
+
+class _CountChip extends StatelessWidget {
+  const _CountChip({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.md.w,
+        vertical: AppSpacing.xs.h,
+      ),
+      decoration: BoxDecoration(
+        color: AppColor.primary50,
+        borderRadius: AppRadii.rPill,
+        border: Border.all(color: AppColor.primary.withOpacity(0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.place_outlined, size: 14.sp, color: AppColor.primary),
+          gapH(AppSpacing.xs),
+          Text(
+            '$count',
+            style: AppText.labelMd.copyWith(
+              color: AppColor.primary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NoSimilarSection extends StatelessWidget {
+  const _NoSimilarSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      padding: EdgeInsets.all(AppSpacing.lg.w),
+      child: Column(
+        children: [
+          Icon(
+            Icons.event_busy_outlined,
+            size: 48.sp,
+            color: AppColor.textTertiary,
+          ),
+          gapV(AppSpacing.md),
+          Text(
+            AppCopy.detailsNoSimilar,
+            style: AppText.bodyLg.copyWith(color: AppColor.textSecondary),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PaymentScrim extends StatelessWidget {
+  const _PaymentScrim();
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: AppColor.overlaySoft,
+      child: Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(AppColor.primary),
+          strokeWidth: 3,
+        ),
+      ),
     );
   }
 }

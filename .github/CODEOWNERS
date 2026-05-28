@@ -1,0 +1,12 @@
+# Replace placeholders with your real GitHub handles or teams before enforcing.
+# Security-sensitive areas require review from the platform/security owners.
+
+* @your-org/platform-team
+
+/supabase/ @your-org/security-team @your-org/backend-team
+/supabase/functions/ @your-org/security-team @your-org/backend-team
+/supabase/migrations/ @your-org/security-team @your-org/backend-team
+/admin-dashboard-rafiq-app/ @your-org/security-team @your-org/frontend-team
+/lib/ @your-org/security-team @your-org/mobile-team
+/.github/ @your-org/security-team
+/docs/ @your-org/security-team

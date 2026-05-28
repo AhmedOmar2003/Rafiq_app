@@ -1,43 +1,99 @@
-# Miscellaneous
-*.class
-*.log
-*.pyc
-*.swp
-.DS_Store
-.atom/
-.buildlog/
-.history
-.svn/
-migrate_working_dir/
+# -----------------------------------------------------------------------------
+# Rafiq production .gitignore
+# -----------------------------------------------------------------------------
+# Secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.*.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.mobileprovision
+*.cer
+*.crt
+*.der
+*.p7b
+*.p7c
 
-# IntelliJ related
+# Logs and crash dumps
+*.log
+*.trace
+*.dmp
+hs_err_pid*
+replay_pid*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
 *.iml
 *.ipr
 *.iws
-.idea/
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
-
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
+# Dart / Flutter
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
-/build/
+build/
+coverage/
+.packages
+**/doc/api/
+**/ios/Flutter/.last_build_id
+*.symbols
+*.map.json
 
-# Symbolication related
-app.*.symbols
+# Android / iOS build artifacts
+android/.gradle-home/
+android/local.properties
+android/key.properties
+android/app/debug/
+android/app/profile/
+android/app/release/
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/App.framework
 
-# Obfuscation related
-app.*.map.json
+# Node / Next.js / dashboard
+node_modules/
+**/node_modules/
+.next/
+out/
+dist/
+turbo/
+.turbo/
+vercel-debug.log
+.vercel/
+*.tsbuildinfo
+next-env.d.ts
 
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
+# Supabase
+supabase/.temp/
+supabase/.branches/
+supabase/.cache/
+supabase_remote_schema.sql
+
+# Misc generated artifacts
+*.sqlite
+*.sqlite3
+*.db
+*.bak
+*.tmp
+*.swp
+*.swo
+
+# Keep local examples checked in
+!.env.example
+!**/.env.example

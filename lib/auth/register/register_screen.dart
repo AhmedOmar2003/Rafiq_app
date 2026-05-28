@@ -53,6 +53,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  Future<void> _handleGoogleRegister() async {
+    setState(() => _isLoading = true);
+    try {
+      final completed = await AuthService().signInWithGoogle();
+      if (!mounted || !completed) return;
+      setState(() => _showSuccessOverlay = true);
+    } catch (e) {
+      if (!mounted) return;
+      AppFeedback.error(e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   void _navigateToHomeScreen() {
     Navigator.pushAndRemoveUntil(
       context,
@@ -81,7 +95,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: Column(
                     children: [
                       Padding(
-                        padding: EdgeInsets.symmetric(vertical: AppSpacing.xxl.h),
+                        padding:
+                            EdgeInsets.symmetric(vertical: AppSpacing.xxl.h),
                         child: _buildLogo(),
                       ),
                       Expanded(child: _buildRegisterForm()),
@@ -95,7 +110,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         if (_showSuccessOverlay)
           AppSuccessView(
             title: AppCopy.successGeneric,
-            message: 'تم إنشاء حسابك بنجاح',
+            message: AppCopy.registerSuccess,
             imageAsset: AppImages.loginSuccess,
             onContinue: () {
               setState(() => _showSuccessOverlay = false);
@@ -112,7 +127,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Widget _buildRegisterForm() {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: AppSpacing.xxxl.h, horizontal: AppSpacing.xxl.w),
+      padding: EdgeInsets.symmetric(
+          vertical: AppSpacing.xxxl.h, horizontal: AppSpacing.xxl.w),
       width: double.infinity,
       decoration: BoxDecoration(
         color: AppColor.surface,
@@ -125,17 +141,42 @@ class _RegisterScreenState extends State<RegisterScreen> {
           children: [
             Center(
               child: Text(
-                'إنشاء حساب',
-                style: AppText.displayMd.copyWith(color: AppColor.textPrimary, fontWeight: FontWeight.w700),
+                AppCopy.registerTitle,
+                style: AppText.displayMd.copyWith(
+                    color: AppColor.textPrimary, fontWeight: FontWeight.w700),
               ),
             ),
             gapV(AppSpacing.xxl),
+            AppButton(
+              text: AppCopy.registerGoogle,
+              onPress: _handleGoogleRegister,
+              isLoading: _isLoading,
+              variant: AppButtonVariant.outline,
+              icon: Icons.g_mobiledata_rounded,
+            ),
+            gapV(AppSpacing.lg),
+            Row(
+              children: [
+                const Expanded(child: Divider(height: 1)),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: AppSpacing.md.w),
+                  child: Text(AppCopy.authSeparatorOr,
+                      style: AppText.labelMd
+                          .copyWith(color: AppColor.textSecondary)),
+                ),
+                const Expanded(child: Divider(height: 1)),
+              ],
+            ),
+            gapV(AppSpacing.lg),
             _buildUsernameInput(),
             _buildEmailInput(),
             _buildPasswordInput(),
             _buildPasswordRules(),
             gapV(AppSpacing.lg),
-            AppButton(text: 'تسجيل', onPress: _handleRegister, isLoading: _isLoading),
+            AppButton(
+                text: AppCopy.registerCta,
+                onPress: _handleRegister,
+                isLoading: _isLoading),
             gapV(AppSpacing.xxl),
             _buildLoginLink(),
           ],
@@ -146,20 +187,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Widget _buildUsernameInput() {
     return AppInput(
-      hintText: 'اسم المستخدم',
+      label: AppCopy.registerNameLabel,
+      hintText: AppCopy.registerNameHint,
       controller: userNameController,
-      suffixIcon: const Icon(Icons.person_outline_rounded, color: AppColor.textSecondary),
+      suffixIcon: const Icon(Icons.person_outline_rounded,
+          color: AppColor.textSecondary),
       textInputAction: TextInputAction.next,
-      validator: (value) =>
-          (value == null || value.trim().isEmpty) ? AppCopy.fieldRequired : null,
+      validator: (value) => (value == null || value.trim().isEmpty)
+          ? AppCopy.fieldRequired
+          : null,
     );
   }
 
   Widget _buildEmailInput() {
     return AppInput(
-      hintText: 'البريد الإلكتروني',
+      label: AppCopy.authEmailLabel,
+      hintText: AppCopy.authEmailHint,
       controller: emailController,
-      suffixIcon: const Icon(Icons.email_outlined, color: AppColor.textSecondary),
+      suffixIcon:
+          const Icon(Icons.email_outlined, color: AppColor.textSecondary),
       textInputAction: TextInputAction.next,
       type: TextInputType.emailAddress,
       validator: (value) {
@@ -172,7 +218,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Widget _buildPasswordInput() {
     return AppInput(
-      hintText: 'كلمة المرور',
+      label: AppCopy.authPasswordLabel,
+      hintText: AppCopy.authPasswordHint,
       controller: passwordController,
       isPassword: true,
       textInputAction: TextInputAction.done,
@@ -187,7 +234,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget _buildPasswordRules() {
     return Padding(
       padding: EdgeInsets.only(top: AppSpacing.xs.h, bottom: AppSpacing.sm.h),
-      child: Text(AuthService.passwordRequirementMessage(), style: AppText.bodySm),
+      child:
+          Text(AuthService.passwordRequirementMessage(), style: AppText.bodySm),
     );
   }
 
@@ -196,13 +244,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
       child: RichText(
         text: TextSpan(
           children: [
-            TextSpan(text: 'بالفعل لديك حساب؟ ', style: AppText.bodyMd.copyWith(color: AppColor.textPrimary)),
             TextSpan(
-              text: 'تسجيل الدخول',
+                text: AppCopy.registerHasAccountPrefix,
+                style: AppText.bodyMd.copyWith(color: AppColor.textPrimary)),
+            TextSpan(
+              text: AppCopy.registerGoToLogin,
               recognizer: TapGestureRecognizer()
                 ..onTap = () => Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const LoginScreen()),
+                      MaterialPageRoute(
+                          builder: (context) => const LoginScreen()),
                     ),
               style: AppText.labelMd.copyWith(color: AppColor.primary),
             ),

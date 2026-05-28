@@ -1,3 +1,6 @@
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kIsWeb, TargetPlatform;
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -11,6 +14,7 @@ class AuthService {
   static const String _userNameKey = 'userName';
   static const String _userEmailKey = 'userEmail';
   static const String _profileImageKey = 'profile_image';
+  static Future<void>? _googleSignInInitFuture;
 
   static Future<void> ensureSupabaseInitialized() {
     return ApiService.ensureSupabaseInitialized();
@@ -35,6 +39,11 @@ class AuthService {
 
   String _friendlyAuthError(Object error) {
     final message = error.toString();
+    if (message.contains('sign_in_canceled') ||
+        message.contains('sign-in-canceled') ||
+        message.contains('canceled by user')) {
+      return 'تم إلغاء تسجيل الدخول عبر Google.';
+    }
     if (message.contains('over_email_send_rate_limit') ||
         message.contains('AuthApiException') && message.contains('429')) {
       return 'Supabase ما زال يحاول إرسال email confirmation. لو تريد تسجيلًا مباشرًا بدون أي تأكيد، أوقف Email Confirmation من Supabase Auth > Providers > Email ثم جرّب مرة أخرى.';
@@ -53,7 +62,21 @@ class AuthService {
     return message.replaceFirst('Exception: ', '');
   }
 
-  Future<UserModel> signUp({
+  /// Sign-up step 1 — collect user details and trigger the 6-digit OTP email.
+  ///
+  /// After this call Supabase has created an unconfirmed `auth.users` row
+  /// and dispatched a 6-digit code via the "Confirm signup" email template.
+  /// The session is intentionally `null` — the account is NOT logged in until
+  /// [verifySignUpOtp] succeeds.
+  ///
+  /// Prerequisites (one-time, in Supabase dashboard):
+  ///   Auth -> Providers -> Email   -> Enable email confirmations: ON
+  ///   Auth -> Email templates -> Confirm signup
+  ///     Subject: "كود رفيق"
+  ///     Body MUST contain `{{ .Token }}` (6-digit code), not `{{ .ConfirmationURL }}`.
+  ///
+  /// Throws [Exception] with a friendly Arabic message on failure.
+  Future<void> signUpWithEmailOtp({
     required String name,
     required String email,
     required String password,
@@ -62,23 +85,21 @@ class AuthService {
 
     final normalizedEmail = email.trim().toLowerCase();
     final normalizedName = name.trim();
-    final normalizedPassword = password;
 
     if (normalizedName.isEmpty) {
-      throw Exception('اسم المستخدم مطلوب.');
+      throw Exception('اسمك مطلوب.');
     }
     if (!isGmailEmail(normalizedEmail)) {
-      throw Exception('البريد الإلكتروني يجب أن ينتهي بـ @gmail.com.');
+      throw Exception('لازم يكون بريد @gmail.com.');
     }
-    if (!isStrongPassword(normalizedPassword)) {
+    if (!isStrongPassword(password)) {
       throw Exception(passwordRequirementMessage());
     }
 
-    late final AuthResponse response;
     try {
-      response = await _client.auth.signUp(
+      await _client.auth.signUp(
         email: normalizedEmail,
-        password: normalizedPassword,
+        password: password,
         data: {
           'full_name': normalizedName,
           'name': normalizedName,
@@ -87,31 +108,187 @@ class AuthService {
     } catch (e) {
       throw Exception(_friendlyAuthError(e));
     }
+  }
 
-    final user = response.user;
-    if (user == null) {
-      throw Exception(
-        'فشل إنشاء الحساب. تأكد أن تأكيد البريد الإلكتروني معطل من Supabase حتى يتم التسجيل مباشرة.',
-      );
+  /// Sign-up step 2 — exchange the 6-digit code for an active session.
+  ///
+  /// On success the user is fully logged in; the local session cache is
+  /// populated and the [UserModel] is returned for UI use.
+  Future<UserModel> verifySignUpOtp({
+    required String email,
+    required String code,
+  }) async {
+    await ensureSupabaseInitialized();
+
+    final normalizedEmail = email.trim().toLowerCase();
+    final token = code.trim();
+
+    if (!isGmailEmail(normalizedEmail)) {
+      throw Exception('بريد غير مظبوط.');
+    }
+    if (!RegExp(r'^\d{6}$').hasMatch(token)) {
+      throw Exception('الكود لازم يكون 6 أرقام.');
     }
 
-    if (response.session == null) {
-      throw Exception(
-        'تم إنشاء الحساب لكن لم يتم تسجيل الدخول تلقائيًا. عطّل Email Confirmation من Supabase Auth > Providers > Email لإتاحة التسجيل الفوري.',
+    late final AuthResponse response;
+    try {
+      response = await _client.auth.verifyOTP(
+        email: normalizedEmail,
+        token: token,
+        type: OtpType.signup,
       );
+    } catch (e) {
+      throw Exception(_friendlyAuthError(e));
+    }
+
+    final user = response.user ?? _client.auth.currentUser;
+    if (user == null) {
+      throw Exception('تعذر تأكيد الحساب. جرّب تاني.');
     }
 
     final profile = await _loadProfile(user.id);
+    final fallbackName = profile?['full_name']?.toString() ??
+        user.userMetadata?['full_name']?.toString() ??
+        user.userMetadata?['name']?.toString() ??
+        normalizedEmail.split('@').first;
+
     await _cacheUserSession(
       id: user.id,
-      name: profile?['full_name']?.toString() ?? normalizedName,
+      name: fallbackName,
       email: profile?['email']?.toString() ?? normalizedEmail,
     );
 
     return UserModel(
       id: user.id,
-      name: profile?['full_name']?.toString() ?? normalizedName,
+      name: fallbackName,
       email: profile?['email']?.toString() ?? normalizedEmail,
+    );
+  }
+
+  /// Re-send the 6-digit signup OTP if the first email was lost.
+  Future<void> resendSignUpOtp(String email) async {
+    await ensureSupabaseInitialized();
+    final normalizedEmail = email.trim().toLowerCase();
+    if (!isGmailEmail(normalizedEmail)) {
+      throw Exception('لازم يكون بريد @gmail.com.');
+    }
+    try {
+      await _client.auth.resend(
+        type: OtpType.signup,
+        email: normalizedEmail,
+      );
+    } catch (e) {
+      throw Exception(_friendlyAuthError(e));
+    }
+  }
+
+  Future<void> _ensureGoogleSignInInitialized() {
+    if (kIsWeb) {
+      return Future.value();
+    }
+
+    final webClientId = SupabaseConfig.googleWebClientId;
+    if (webClientId.isEmpty) {
+      throw Exception('Google Sign-In غير مفعّل في إعدادات التطبيق.');
+    }
+
+    final iosClientId = SupabaseConfig.googleIosClientId;
+    final initFuture = _googleSignInInitFuture;
+    if (initFuture != null) {
+      return initFuture;
+    }
+
+    final googleSignIn = GoogleSignIn.instance;
+    _googleSignInInitFuture = googleSignIn
+        .initialize(
+          clientId: (defaultTargetPlatform == TargetPlatform.iOS ||
+                      defaultTargetPlatform == TargetPlatform.macOS) &&
+                  iosClientId.isNotEmpty
+              ? iosClientId
+              : null,
+          serverClientId: webClientId,
+        )
+        .catchError((error) {
+          _googleSignInInitFuture = null;
+          throw error;
+        });
+    return _googleSignInInitFuture!;
+  }
+
+  /// Google sign-in.
+  ///
+  /// Web uses Supabase OAuth in the browser.
+  /// Mobile uses the official Google Sign-In SDK and exchanges the resulting
+  /// ID token with Supabase.
+  Future<bool> signInWithGoogle() async {
+    await ensureSupabaseInitialized();
+    try {
+      if (kIsWeb) {
+        await _client.auth.signInWithOAuth(
+          OAuthProvider.google,
+          redirectTo: SupabaseConfig.googleWebRedirectUrl,
+          authScreenLaunchMode: LaunchMode.platformDefault,
+        );
+        return false;
+      }
+
+      await _ensureGoogleSignInInitialized();
+      final googleSignIn = GoogleSignIn.instance;
+      final googleUser = await googleSignIn.authenticate();
+      final googleAuthentication = googleUser.authentication;
+      final googleAuthorization =
+          await googleUser.authorizationClient.authorizationForScopes([]);
+
+      final idToken = googleAuthentication.idToken;
+      if (idToken == null) {
+        throw Exception('تعذر الحصول على رموز Google الآمنة.');
+      }
+
+      final response = await _client.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+        accessToken: googleAuthorization?.accessToken,
+      );
+
+      final user = response.user ?? _client.auth.currentUser;
+      if (user == null) {
+        throw Exception('تعذر تسجيل الدخول عبر Google.');
+      }
+
+      final profile = await _loadProfile(user.id);
+      final fallbackName = profile?['full_name']?.toString() ??
+          user.userMetadata?['full_name']?.toString() ??
+          user.userMetadata?['name']?.toString() ??
+          user.email?.split('@').first ??
+          'مستخدم';
+      final email =
+          profile?['email']?.toString() ?? user.email ?? googleUser.email;
+
+      await _cacheUserSession(
+        id: user.id,
+        name: fallbackName,
+        email: email,
+      );
+      return true;
+    } catch (e) {
+      throw Exception(_friendlyAuthError(e));
+    }
+  }
+
+  /// Legacy synchronous signUp kept for callers that don't yet use the OTP
+  /// verification screen. Equivalent to [signUpWithEmailOtp] without the
+  /// verification step — the user must still verify before they can sign in
+  /// (Supabase's email confirmation requirement is now ON by design).
+  Future<UserModel> signUp({
+    required String name,
+    required String email,
+    required String password,
+  }) async {
+    await signUpWithEmailOtp(name: name, email: email, password: password);
+    return UserModel(
+      id: '',
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
     );
   }
 

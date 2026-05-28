@@ -26,55 +26,85 @@ class AppSuccessView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    // Card can use at most 85% of the visible viewport height (after insets),
+    // so long messages on small phones scroll inside the card instead of
+    // overflowing the screen.
+    final maxCardHeight = (media.size.height - media.padding.vertical) * 0.85;
+
     return Positioned.fill(
       child: Material(
         type: MaterialType.transparency,
         child: GestureDetector(
-        onTap: onContinue,
-        child: Container(
-          color: AppColor.overlay,
-          alignment: Alignment.center,
+          onTap: onContinue,
+          behavior: HitTestBehavior.opaque,
           child: Container(
-            width: 320.w,
-            padding: EdgeInsets.all(AppSpacing.xxl.w),
-            decoration: BoxDecoration(
-              color: AppColor.surfaceCard,
-              borderRadius: AppRadii.rXl,
-              boxShadow: AppShadows.level3,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (imageAsset != null)
-                  AppImage(imageAsset!, width: 150.w, height: 150.w)
-                else
-                  Container(
-                    width: 96.w,
-                    height: 96.w,
-                    decoration: const BoxDecoration(color: AppColor.successBg, shape: BoxShape.circle),
-                    child: Icon(Icons.check_rounded, size: 52.sp, color: AppColor.success),
+            color: AppColor.overlay,
+            alignment: Alignment.center,
+            child: GestureDetector(
+              // Swallow taps on the card itself so they don't dismiss.
+              onTap: () {},
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: 340.w,
+                  maxHeight: maxCardHeight,
+                ),
+                child: Container(
+                  margin: EdgeInsets.all(AppSpacing.xxl.w),
+                  decoration: BoxDecoration(
+                    color: AppColor.surfaceElevated,
+                    borderRadius: AppRadii.rXl,
+                    boxShadow: AppShadows.level3,
                   ),
-                gapV(AppSpacing.xl),
-                Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: AppText.headingMd.copyWith(color: AppColor.primary, fontWeight: FontWeight.w700),
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.all(AppSpacing.xxl.w),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (imageAsset != null)
+                          AppImage(imageAsset!, width: 140.w, height: 140.w)
+                        else
+                          Container(
+                            width: 96.w,
+                            height: 96.w,
+                            decoration: const BoxDecoration(
+                              color: AppColor.successBg,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(Icons.check_rounded,
+                                size: 52.sp, color: AppColor.statusSuccess),
+                          ),
+                        gapV(AppSpacing.xl),
+                        Text(
+                          title,
+                          textAlign: TextAlign.center,
+                          style: AppText.headingMd.copyWith(
+                            color: AppColor.actionPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        if (message != null) ...[
+                          gapV(AppSpacing.sm),
+                          Text(
+                            message!,
+                            textAlign: TextAlign.center,
+                            style: AppText.bodyMd,
+                          ),
+                        ],
+                        gapV(AppSpacing.xxl),
+                        AppButton(
+                          text: AppCopy.done,
+                          onPress: onContinue,
+                          icon: Icons.arrow_forward_rounded,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                if (message != null) ...[
-                  gapV(AppSpacing.sm),
-                  Text(message!, textAlign: TextAlign.center, style: AppText.bodyMd),
-                ],
-                gapV(AppSpacing.xxl),
-                AppButton(
-                  text: AppCopy.done,
-                  onPress: onContinue,
-                  icon: Icons.arrow_forward_rounded,
-                ),
-              ],
+              ),
             ),
           ),
         ),
-      ),
       ),
     );
   }

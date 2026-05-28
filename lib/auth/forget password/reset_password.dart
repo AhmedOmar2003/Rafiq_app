@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rafiq_app/auth/login/login_screen.dart';
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
+import 'package:rafiq_app/core/utils/app_microcopy.dart';
 import 'package:rafiq_app/service/auth_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -103,7 +104,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
               ),
             ),
             title: Text(
-              "إعادة تعيين كلمة المرور",
+              AppCopy.resetTitle,
               style: AppText.headingSm.copyWith(
                 color: AppColor.white,
               ),
@@ -156,7 +157,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Text(
-                            "إنشاء كلمة مرور جديدة",
+                            AppCopy.resetTitle,
                             style: AppText.headingSm.copyWith(
                               color: AppColor.black,
                               fontWeight: FontWeight.bold,
@@ -166,9 +167,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                           SizedBox(height: keyboardOpen ? 6.h : 8.h),
                           Text(
                             currentEmail.isEmpty
-                                ? "أدخل البيانات المطلوبة لإعادة تعيين كلمة المرور"
+                                ? AppCopy.resetBody
                                 : (widget.requiresOtpVerification
-                                    ? "أدخل كود التحقق المرسل إلى: $currentEmail"
+                                    ? '${AppCopy.verifyBodyPrefix.trim()} $currentEmail'
                                     : currentEmail),
                             style: AppText.bodyLg.copyWith(
                               color: AppColor.black.withOpacity(0.7),
@@ -176,134 +177,54 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                             textAlign: TextAlign.center,
                           ),
                           SizedBox(height: keyboardOpen ? 14.h : 24.h),
-                          if (widget.requiresOtpVerification) ...[
-                            if (!keyboardOpen)
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: EdgeInsets.all(8.w),
-                                    decoration: BoxDecoration(
-                                      color: AppColor.primary.withOpacity(0.1),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(
-                                      Icons.verified_user_outlined,
-                                      color: AppColor.primary,
-                                      size: 20.sp,
-                                    ),
-                                  ),
-                                  SizedBox(width: 12.w),
-                                  Text(
-                                    "كود التحقق (OTP)",
-                                    style: AppText.titleMd
-                                        .copyWith(
-                                      color: AppColor.black,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            if (!keyboardOpen) SizedBox(height: 10.h),
+                          if (widget.requiresOtpVerification)
                             AppInput(
-                              hintText: "ادخل كود التحقق (6 أرقام)",
+                              label: AppCopy.verifyTitle,
+                              hintText: AppCopy.resetOtpHint,
                               controller: _otpController,
                               type: TextInputType.number,
                               textInputAction: TextInputAction.next,
-                              paddingBottom: keyboardOpen ? 10.h : 18.h,
+                              paddingBottom: AppSpacing.md,
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
-                                  return "يرجى إدخال كود التحقق";
+                                  return AppCopy.fieldRequired;
                                 }
-                                if (!RegExp(r'^\d{6}$')
-                                    .hasMatch(value.trim())) {
-                                  return "كود التحقق يجب أن يكون 6 أرقام";
+                                if (!RegExp(r'^\d{6}$').hasMatch(value.trim())) {
+                                  return AppCopy.verifyCodeWrongLength;
                                 }
                                 return null;
                               },
                             ),
-                          ],
-                          if (!keyboardOpen)
-                            Row(
-                              children: [
-                                Container(
-                                  padding: EdgeInsets.all(8.w),
-                                  decoration: BoxDecoration(
-                                    color: AppColor.primary.withOpacity(0.1),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    Icons.lock_outline,
-                                    color: AppColor.primary,
-                                    size: 20.sp,
-                                  ),
-                                ),
-                                SizedBox(width: 12.w),
-                                Text(
-                                  "كلمة المرور الجديدة",
-                                  style:
-                                      AppText.titleMd.copyWith(
-                                    color: AppColor.black,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          if (!keyboardOpen) SizedBox(height: 10.h),
                           AppInput(
-                            hintText: "كلمة المرور الجديدة",
+                            label: AppCopy.changePwNew,
+                            hintText: "6 حروف على الأقل",
                             controller: _passwordController,
                             textInputAction: TextInputAction.next,
                             isPassword: true,
-                            paddingBottom: keyboardOpen ? 10.h : 18.h,
+                            paddingBottom: AppSpacing.md,
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return "يرجى إدخال كلمة المرور";
+                                return AppCopy.passwordRequired;
                               }
                               if (!AuthService.isStrongPassword(value)) {
-                                return "كلمة المرور يجب أن تكون قوية";
+                                return AppCopy.passwordShort;
                               }
                               return null;
                             },
                           ),
-                          if (!keyboardOpen)
-                            Row(
-                              children: [
-                                Container(
-                                  padding: EdgeInsets.all(8.w),
-                                  decoration: BoxDecoration(
-                                    color: AppColor.primary.withOpacity(0.1),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    Icons.check_circle_outline,
-                                    color: AppColor.primary,
-                                    size: 20.sp,
-                                  ),
-                                ),
-                                SizedBox(width: 12.w),
-                                Text(
-                                  "تأكيد كلمة المرور",
-                                  style:
-                                      AppText.titleMd.copyWith(
-                                    color: AppColor.black,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          if (!keyboardOpen) SizedBox(height: 10.h),
                           AppInput(
-                            hintText: "تأكيد كلمة المرور",
+                            label: AppCopy.changePwConfirm,
+                            hintText: AppCopy.resetConfirmHint,
                             controller: _confirmPasswordController,
                             textInputAction: TextInputAction.done,
                             isPassword: true,
                             paddingBottom: 0,
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return "يرجى تأكيد كلمة المرور";
+                                return AppCopy.fieldRequired;
                               }
                               if (value != _passwordController.text) {
-                                return "كلمة المرور غير متطابقة";
+                                return AppCopy.passwordsMismatch;
                               }
                               return null;
                             },
@@ -316,8 +237,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                               text: _isProcessing
                                   ? "..."
                                   : (widget.requiresOtpVerification
-                                      ? "تأكيد وتغيير كلمة المرور"
-                                      : "حفظ"),
+                                      ? AppCopy.resetCta
+                                      : AppCopy.done),
                               textStyle:
                                   AppText.titleLg.copyWith(
                                 color: Colors.white,
@@ -354,8 +275,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
         ),
         if (_showSuccessOverlay)
           AppSuccessView(
-            title: 'تمام! اتغيّرت كلمة السر',
-            message: 'تقدر دلوقتي تسجّل دخولك بكلمة السر الجديدة',
+            title: AppCopy.resetSuccess,
+            message: AppCopy.resetSuccessBody,
             onContinue: _navigateToLogin,
           ),
       ],

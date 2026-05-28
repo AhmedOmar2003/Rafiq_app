@@ -30,5 +30,26 @@ class SupabaseConfig {
         : _mobileRecoveryRedirectFallback;
   }
 
+  static const String googleWebClientId = String.fromEnvironment(
+    'GOOGLE_WEB_CLIENT_ID',
+    defaultValue: '',
+  );
+
+  static const String googleIosClientId = String.fromEnvironment(
+    'GOOGLE_IOS_CLIENT_ID',
+    defaultValue: '',
+  );
+
+  static String get googleWebRedirectUrl {
+    const configured = String.fromEnvironment(
+      'GOOGLE_WEB_OAUTH_REDIRECT_URL',
+      defaultValue: '',
+    );
+    if (configured.isNotEmpty) {
+      return configured;
+    }
+    return _webRecoveryRedirectFallback;
+  }
+
   static bool get isConfigured => url.isNotEmpty && anonKey.isNotEmpty;
 }

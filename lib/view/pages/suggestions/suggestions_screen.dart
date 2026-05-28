@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
+import 'package:rafiq_app/core/utils/app_microcopy.dart';
 import 'package:rafiq_app/models/suggestion_item_model/suggestion_item.dart';
 import 'package:rafiq_app/view/details/details_page.dart';
 import 'package:rafiq_app/view/pages/cubit.dart';
@@ -100,15 +101,20 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
           });
         }
       },
-      child: Scaffold(
-        backgroundColor: AppColor.ofWhite,
-        appBar: _buildAppBar(),
+      child: AppPageScaffold(
+        unpadded: true,
+        header: AppPageHeader(
+          title: AppCopy.suggestionsTitle,
+          subtitle: filteredSuggestions.length == 1
+              ? AppCopy.suggestionsCountOne
+              : AppCopy.suggestionsCountMany
+                  .replaceFirst('%n', '${filteredSuggestions.length}'),
+          actions: [_buildProfileAvatar()],
+        ),
         body: CustomScrollView(
           controller: _scrollController,
           slivers: [
-            SliverToBoxAdapter(
-              child: _buildFilterBar(),
-            ),
+            SliverToBoxAdapter(child: _buildFilterBar()),
             SliverPadding(
               padding: EdgeInsets.symmetric(vertical: 8.h),
               sliver: _buildSuggestionsList(),
@@ -119,79 +125,23 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
     );
   }
 
-  PreferredSize _buildAppBar() {
-    return PreferredSize(
-      preferredSize: Size.fromHeight(80.h),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColor.primary,
-          boxShadow: AppShadows.level2,
-        ),
-        child: AppBar(
-          backgroundColor: Colors.transparent,
-          surfaceTintColor: Colors.transparent,
-          elevation: 0,
-          leading: Padding(
-            padding: EdgeInsets.only(top: AppSpacing.lg.h),
-            child: IconButton(
-              icon: Icon(
-                Icons.arrow_back_ios_new_rounded,
-                color: AppColor.white,
-                size: 22.sp,
-              ),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ),
-          title: Padding(
-            padding: EdgeInsets.only(top: AppSpacing.lg.h),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  "الاقتراحات",
-                  style: AppText.headingLg.copyWith(
-                    color: AppColor.white,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                _buildProfileAvatar(),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildProfileAvatar() {
-    return Container(
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: AppColor.black.withOpacity(0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: GestureDetector(
+    return Padding(
+      padding: EdgeInsets.only(right: AppSpacing.sm.w),
+      child: InkResponse(
+        radius: 24.w,
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const ProfilePage()),
         ).then((_) => _loadProfileImage()),
         child: CircleAvatar(
-          radius: 22.w,
-          backgroundColor: AppColor.white,
-          child: CircleAvatar(
-            radius: 20.w,
-            backgroundImage: _profileImageBytes != null
-                ? MemoryImage(_profileImageBytes!)
-                : _profileImage != null
-                    ? FileImage(_profileImage!)
-                    : const AssetImage('assets/images/default_profile.png')
-                        as ImageProvider,
-          ),
+          radius: 18.w,
+          backgroundColor: AppColor.surfaceMuted,
+          backgroundImage: _profileImageBytes != null
+              ? MemoryImage(_profileImageBytes!) as ImageProvider
+              : _profileImage != null
+                  ? FileImage(_profileImage!)
+                  : const AssetImage('assets/images/default_profile.png'),
         ),
       ),
     );

@@ -52,6 +52,20 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _handleGoogleLogin() async {
+    setState(() => _isLoading = true);
+    try {
+      final completed = await AuthService().signInWithGoogle();
+      if (!mounted || !completed) return;
+      setState(() => _showSuccessOverlay = true);
+    } catch (e) {
+      if (!mounted) return;
+      AppFeedback.error(e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   void _navigateToChoiceScreen() {
     Navigator.pushReplacement(
       context,
@@ -79,7 +93,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     children: [
                       Padding(
-                        padding: EdgeInsets.symmetric(vertical: AppSpacing.xxl.h),
+                        padding:
+                            EdgeInsets.symmetric(vertical: AppSpacing.xxl.h),
                         child: _buildLogo(),
                       ),
                       Expanded(child: _buildLoginForm()),
@@ -93,7 +108,7 @@ class _LoginScreenState extends State<LoginScreen> {
         if (_showSuccessOverlay)
           AppSuccessView(
             title: AppCopy.welcomeBack,
-            message: 'تم تسجيل دخولك بنجاح',
+            message: AppCopy.loginSuccess,
             imageAsset: AppImages.loginSuccess,
             onContinue: () {
               setState(() => _showSuccessOverlay = false);
@@ -110,7 +125,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildLoginForm() {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: AppSpacing.xxxl.h, horizontal: AppSpacing.xxl.w),
+      padding: EdgeInsets.symmetric(
+          vertical: AppSpacing.xxxl.h, horizontal: AppSpacing.xxl.w),
       width: double.infinity,
       decoration: BoxDecoration(
         color: AppColor.surface,
@@ -123,16 +139,41 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             Center(
               child: Text(
-                'تسجيل الدخول',
-                style: AppText.displayMd.copyWith(color: AppColor.textPrimary, fontWeight: FontWeight.w700),
+                AppCopy.loginTitle,
+                style: AppText.displayMd.copyWith(
+                    color: AppColor.textPrimary, fontWeight: FontWeight.w700),
               ),
             ),
             gapV(AppSpacing.xxl),
+            AppButton(
+              text: AppCopy.loginGoogle,
+              onPress: _handleGoogleLogin,
+              isLoading: _isLoading,
+              variant: AppButtonVariant.outline,
+              icon: Icons.g_mobiledata_rounded,
+            ),
+            gapV(AppSpacing.lg),
+            Row(
+              children: [
+                const Expanded(child: Divider(height: 1)),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: AppSpacing.md.w),
+                  child: Text(AppCopy.authSeparatorOr,
+                      style: AppText.labelMd
+                          .copyWith(color: AppColor.textSecondary)),
+                ),
+                const Expanded(child: Divider(height: 1)),
+              ],
+            ),
+            gapV(AppSpacing.lg),
             _buildEmailInput(),
             _buildPasswordInput(),
             _buildForgotPassword(),
             gapV(AppSpacing.xl),
-            AppButton(text: 'تسجيل الدخول', onPress: _handleLogin, isLoading: _isLoading),
+            AppButton(
+                text: AppCopy.loginCta,
+                onPress: _handleLogin,
+                isLoading: _isLoading),
             gapV(AppSpacing.xxl),
             _buildRegisterLink(),
           ],
@@ -143,9 +184,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildEmailInput() {
     return AppInput(
-      hintText: 'ادخل البريد الالكتروني',
+      label: AppCopy.authEmailLabel,
+      hintText: AppCopy.authEmailHint,
       controller: emailController,
-      suffixIcon: const Icon(Icons.email_outlined, color: AppColor.textSecondary),
+      suffixIcon:
+          const Icon(Icons.email_outlined, color: AppColor.textSecondary),
       textInputAction: TextInputAction.next,
       type: TextInputType.emailAddress,
       validator: (value) {
@@ -158,7 +201,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildPasswordInput() {
     return AppInput(
-      hintText: 'كلمة المرور',
+      label: AppCopy.authPasswordLabel,
+      hintText: AppCopy.authPasswordHint,
       controller: passwordController,
       isPassword: true,
       textInputAction: TextInputAction.done,
@@ -174,7 +218,8 @@ class _LoginScreenState extends State<LoginScreen> {
         onTap: () => navigateTo(const ForgotPasswordScreen()),
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: AppSpacing.sm.h),
-          child: Text('هل نسيت كلمة المرور؟', style: AppText.labelMd.copyWith(color: AppColor.primary)),
+          child: Text(AppCopy.authForgotPasswordLink,
+              style: AppText.labelMd.copyWith(color: AppColor.primary)),
         ),
       ),
     );
@@ -185,13 +230,16 @@ class _LoginScreenState extends State<LoginScreen> {
       child: RichText(
         text: TextSpan(
           children: [
-            TextSpan(text: 'ليس لديك حساب؟ ', style: AppText.bodyMd.copyWith(color: AppColor.textPrimary)),
             TextSpan(
-              text: 'سجل الآن',
+                text: AppCopy.loginNoAccountPrefix,
+                style: AppText.bodyMd.copyWith(color: AppColor.textPrimary)),
+            TextSpan(
+              text: AppCopy.loginGoToRegister,
               recognizer: TapGestureRecognizer()
                 ..onTap = () => Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                      MaterialPageRoute(
+                          builder: (context) => const RegisterScreen()),
                     ),
               style: AppText.labelMd.copyWith(color: AppColor.primary),
             ),

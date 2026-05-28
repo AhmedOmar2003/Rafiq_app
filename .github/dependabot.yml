@@ -1,0 +1,32 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/admin-dashboard-rafiq-app"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      dashboard-runtime:
+        patterns:
+          - "next"
+          - "react"
+          - "react-dom"
+          - "@supabase/*"
+      dashboard-devtools:
+        patterns:
+          - "eslint*"
+          - "typescript"
+          - "husky"
+          - "lint-staged"
+          - "@commitlint/*"
+
+  - package-ecosystem: "pub"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

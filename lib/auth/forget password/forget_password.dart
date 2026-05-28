@@ -32,7 +32,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     try {
       await AuthService().sendPasswordResetOtp(normalizedEmail);
       if (!mounted) return;
-      AppFeedback.success('بعتنالك كود التأكيد على بريدك');
+      AppFeedback.success(AppCopy.forgotCodeSent);
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => VerifyCodeScreen(email: normalizedEmail)),
@@ -91,13 +91,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         children: [
                           gapV(AppSpacing.lg),
                           Text(
-                            'نسيت كلمة المرور',
+                            AppCopy.forgotTitle,
                             style: AppText.headingMd.copyWith(color: AppColor.textPrimary, fontWeight: FontWeight.w700),
                             textAlign: TextAlign.center,
                           ),
                           gapV(AppSpacing.md),
                           Text(
-                            'اكتب بريد Gmail وهنبعتلك كود تأكيد عشان تعمل كلمة سر جديدة',
+                            AppCopy.forgotBody,
                             style: AppText.bodyMd,
                             textAlign: TextAlign.center,
                           ),
@@ -105,7 +105,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           Form(
                             key: formKey,
                             child: AppInput(
-                              hintText: 'البريد الإلكتروني',
+                              label: AppCopy.authEmailLabel,
+                              hintText: AppCopy.authEmailHint,
                               controller: emailController,
                               textInputAction: TextInputAction.done,
                               type: TextInputType.emailAddress,
@@ -118,11 +119,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             ),
                           ),
                           gapV(AppSpacing.xl),
-                          AppButton(text: 'إرسال الكود', onPress: _sendResetOtp, isLoading: _isLoading),
+                          AppButton(text: AppCopy.forgotSendCode, onPress: _sendResetOtp, isLoading: _isLoading),
                           gapV(AppSpacing.xxl),
                           Center(
                             child: Text(
-                              'أول ما يوصلك الكود، اكتبه في الشاشة اللي بعدها واختار كلمة سر جديدة.',
+                              AppCopy.forgotHint,
                               style: AppText.bodySm,
                               textAlign: TextAlign.center,
                             ),

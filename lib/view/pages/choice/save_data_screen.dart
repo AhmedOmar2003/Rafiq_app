@@ -1,6 +1,7 @@
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:rafiq_app/core/utils/app_microcopy.dart';
 import 'package:rafiq_app/core/utils/spacing.dart';
 import 'package:rafiq_app/core/design/app_button.dart';
 import 'package:rafiq_app/view/home/home_view.dart';
@@ -27,7 +28,7 @@ class SplashScreen extends StatelessWidget {
                       child: Column(
                         children: [
                           Text(
-                            "\"مبروك عليك تم حفظ بيانات مكانك بنجاح\"",
+                            AppCopy.providerSavedTitle,
                             style: AppText.headingMd,
                             textAlign: TextAlign.center,
                           ),
@@ -61,7 +62,7 @@ class SplashScreen extends StatelessWidget {
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 24.w),
                 child: AppButton(
-                  text: "ابحث عن مكانك الآن",
+                  text: AppCopy.findMyPlace,
                   onPress: () {
                     Navigator.push(
                       context,

@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:rafiq_app/core/design/tokens/tokens.dart';
 
+/// Hairline divider tuned for in-card section breaks.
 class CustomDivider extends StatelessWidget {
   const CustomDivider({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 7.h),
+      padding: EdgeInsets.symmetric(vertical: AppSpacing.sm.h),
       child: Divider(
-        color: const Color(0xff00004D).withOpacity(.30),
-        height: 5,
-        thickness: 1.5,
+        color: AppColor.border,
+        height: 1,
+        thickness: 1,
       ),
     );
   }

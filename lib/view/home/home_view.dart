@@ -1,23 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:rafiq_app/core/utils/app_microcopy.dart';
 import 'package:rafiq_app/core/utils/assets.dart';
 import 'package:rafiq_app/model/place.dart';
+import 'package:rafiq_app/models/suggestion_item_model/suggestion_item.dart';
 import 'package:rafiq_app/service/api_service.dart';
 import 'package:rafiq_app/view/home/chat.dart';
 import 'package:rafiq_app/view/home/widget/stepper_component.dart';
+import 'package:rafiq_app/view/pages/choice/choice_screen.dart';
 import 'package:rafiq_app/view/pages/step_one_screen/step_one_screen.dart';
 import 'package:rafiq_app/view/pages/step_two_screen/step_two_screen.dart';
 import 'package:rafiq_app/view/pages/step_three_screen/step_three_screen.dart';
-import 'package:rafiq_app/models/suggestion_item_model/suggestion_item.dart';
 import 'package:rafiq_app/view/pages/suggestions/suggestions_screen.dart';
-import '../pages/choice/choice_screen.dart';
 
-/// A widget that displays a multi-step form for selecting travel preferences.
-/// Users can select their city, budget, and activity preferences through a
-/// step-by-step process.
+/// Multi-step preference picker (city → budget → activity → suggestions).
+///
+/// UX rules:
+///   * Hardware back returns to the `ChoiceScreen` (instead of killing the app).
+///   * The bottom CTA is sticky and safe-area aware; copy changes on the last step.
+///   * Steps animate via [AppMotion.base] instead of jumping.
+///   * Users can jump backward/forward by tapping the step indicator.
+///   * A floating chat FAB is always reachable but never overlaps the CTA.
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
 
@@ -26,66 +32,46 @@ class HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<HomeView> {
-  // Constants
   static const int _totalSteps = 3;
-  static const double _horizontalPadding = 24.0;
-  static const double _bottomMargin = 20.0;
 
-  // Controllers and state variables
   final PageController _pageController = PageController();
   final ApiService _apiService = ApiService();
+
   int _currentIndex = 0;
   bool _isLoading = false;
 
-  // Form data
-  String _cityName = "";
-  String _budget = "";
-  String _activity = "";
+  String _cityName = '';
+  String _budget = '';
+  String _activity = '';
 
-  // Step icons
-  final List<String> _stepIcons = [
-    AppImages.location,
-    AppImages.dollar,
-    AppImages.entertainment,
-  ];
-
-  // Step pages
-  late final List<Widget> _pages;
+  late final List<_StepDef> _steps;
 
   @override
   void initState() {
     super.initState();
-    _initializePages();
-  }
-
-  void _initializePages() {
-    _pages = [
-      StepOne(
-        onCitySelected: (value) => _updateFormData('city', value),
+    _steps = [
+      _StepDef(
+        icon: AppImages.location,
+        label: AppCopy.stepCity,
+        builder: () => StepOne(
+          onCitySelected: (v) => _setField(_Field.city, v),
+        ),
       ),
-      StepTwo(
-        onBudgetSelected: (value) => _updateFormData('budget', value),
+      _StepDef(
+        icon: AppImages.dollar,
+        label: AppCopy.stepBudget,
+        builder: () => StepTwo(
+          onBudgetSelected: (v) => _setField(_Field.budget, v),
+        ),
       ),
-      StepThree(
-        onActivitySelected: (value) => _updateFormData('activity', value),
+      _StepDef(
+        icon: AppImages.entertainment,
+        label: AppCopy.stepActivity,
+        builder: () => StepThree(
+          onActivitySelected: (v) => _setField(_Field.activity, v),
+        ),
       ),
     ];
-  }
-
-  void _updateFormData(String field, String value) {
-    setState(() {
-      switch (field) {
-        case 'city':
-          _cityName = value.trim();
-          break;
-        case 'budget':
-          _budget = value.trim();
-          break;
-        case 'activity':
-          _activity = value.trim();
-          break;
-      }
-    });
   }
 
   @override
@@ -94,77 +80,88 @@ class _HomeViewState extends State<HomeView> {
     super.dispose();
   }
 
-  /// Validates if all required form fields are filled
-  bool _isFormValid() {
-    return _cityName.isNotEmpty && _budget.isNotEmpty && _activity.isNotEmpty;
+  // ---------------------------------------------------------------------------
+  // State
+  // ---------------------------------------------------------------------------
+  void _setField(_Field field, String raw) {
+    final value = raw.trim();
+    setState(() {
+      switch (field) {
+        case _Field.city:
+          _cityName = value;
+        case _Field.budget:
+          _budget = value;
+        case _Field.activity:
+          _activity = value;
+      }
+    });
   }
 
-  /// Shows a friendly message using the unified feedback system.
-  void _showErrorMessage(String message) => AppFeedback.warning(message);
+  bool get _isFormValid =>
+      _cityName.isNotEmpty && _budget.isNotEmpty && _activity.isNotEmpty;
 
-  /// Navigates to the suggestions screen with the selected preferences
-  Future<void> _navigateToSuggestions() async {
+  bool get _isLastStep => _currentIndex == _totalSteps - 1;
+
+  // ---------------------------------------------------------------------------
+  // Navigation
+  // ---------------------------------------------------------------------------
+  void _goToStep(int index) {
     if (_isLoading) return;
+    if (index < 0 || index >= _totalSteps) return;
+    setState(() => _currentIndex = index);
+    _pageController.animateToPage(
+      index,
+      duration: AppMotion.base,
+      curve: AppMotion.standard,
+    );
+  }
 
-    if (!_isFormValid()) {
-      _showErrorMessage("تأكد من إدخال جميع البيانات!");
+  void _handlePrimaryCta() {
+    if (!_isLastStep) {
+      _goToStep(_currentIndex + 1);
       return;
     }
+    if (!_isFormValid) {
+      AppFeedback.warning(AppCopy.homeIncomplete);
+      return;
+    }
+    _fetchSuggestions();
+  }
 
+  Future<void> _fetchSuggestions() async {
+    if (_isLoading) return;
     setState(() => _isLoading = true);
-
     try {
       final List<Place> places = await _apiService.fetchPlaces(
         cityName: _cityName,
         budget: _budget,
         activity: _activity,
       );
-
       if (places.isEmpty) {
         AppFeedback.info(AppCopy.emptyResultsBody);
         return;
       }
-
-      final suggestionItems =
-          places.map((place) => SuggestionItemModel.fromPlace(place)).toList();
-
+      final items =
+          places.map((p) => SuggestionItemModel.fromPlace(p)).toList();
       if (!mounted) return;
-
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => SuggestionsScreen(
-            suggestionItemList: suggestionItems,
-          ),
+          builder: (_) => SuggestionsScreen(suggestionItemList: items),
         ),
       );
-    } catch (e) {
+    } catch (_) {
       AppFeedback.error(AppCopy.errorGeneric);
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  /// Handles the next button press
-  void _handleNextButtonPress() {
-    if (_isLoading) return;
-
-    if (_currentIndex < _totalSteps - 1) {
-      setState(() => _currentIndex++);
-      _pageController.jumpToPage(_currentIndex);
-    } else {
-      _navigateToSuggestions();
-    }
-  }
-
-  /// Handles the back button press to navigate to ChoiceScreen
-  void _goBackToChoice() {
+  void _exitToChoice() {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => ChoiceScreen(
+        builder: (_) => ChoiceScreen(
           onPlanSelected: () {},
           onNoPlanSelected: () {},
           onNext: () {},
@@ -173,12 +170,22 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
+  void _openChatBot() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const BotScreen()),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Build
+  // ---------------------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) _goBackToChoice();
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _exitToChoice();
       },
       child: LoadingManager(
         isLoading: _isLoading,
@@ -186,26 +193,34 @@ class _HomeViewState extends State<HomeView> {
         child: Scaffold(
           backgroundColor: AppColor.surface,
           resizeToAvoidBottomInset: true,
-          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-          floatingActionButton: Padding(
-            padding: EdgeInsets.only(bottom: 90.h),
-            child: FloatingActionButton(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const BotScreen()),
-              ),
-              backgroundColor: AppColor.primary,
-              elevation: 4,
-              child: Icon(Icons.chat_bubble_rounded, color: AppColor.white),
-            ),
-          ),
           body: SafeArea(
             child: Column(
               children: [
                 gapV(AppSpacing.md),
-                _buildStepper(),
-                Expanded(child: _buildPageView()),
-                _buildBottomButton(),
+                _StepHeader(
+                  steps: _steps,
+                  currentIndex: _currentIndex,
+                  onTap: _goToStep,
+                ),
+                gapV(AppSpacing.md),
+                Expanded(
+                  child: PageView.builder(
+                    controller: _pageController,
+                    onPageChanged: (i) => setState(() => _currentIndex = i),
+                    itemCount: _steps.length,
+                    itemBuilder: (_, i) => _steps[i].builder(),
+                  ),
+                ),
+                _BottomBar(
+                  currentIndex: _currentIndex,
+                  totalSteps: _totalSteps,
+                  isLastStep: _isLastStep,
+                  isLoading: _isLoading,
+                  onBack:
+                      _currentIndex == 0 ? null : () => _goToStep(_currentIndex - 1),
+                  onNext: _handlePrimaryCta,
+                  onChatTap: _openChatBot,
+                ),
               ],
             ),
           ),
@@ -213,59 +228,183 @@ class _HomeViewState extends State<HomeView> {
       ),
     );
   }
+}
 
-  Widget _buildBottomButton() {
+// ===========================================================================
+// Internals
+// ===========================================================================
+
+enum _Field { city, budget, activity }
+
+class _StepDef {
+  const _StepDef({
+    required this.icon,
+    required this.label,
+    required this.builder,
+  });
+
+  final String icon;
+  final String label;
+  final Widget Function() builder;
+}
+
+/// Step indicator row + "step N of T" caption.
+class _StepHeader extends StatelessWidget {
+  const _StepHeader({
+    required this.steps,
+    required this.currentIndex,
+    required this.onTap,
+  });
+
+  final List<_StepDef> steps;
+  final int currentIndex;
+  final ValueChanged<int> onTap;
+
+  String _counterText() => AppCopy.homeStepCounter
+      .replaceFirst('%d', '${currentIndex + 1}')
+      .replaceFirst('%t', '${steps.length}');
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: AppSpacing.xxl.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(_counterText(), style: AppText.caption),
+          gapV(AppSpacing.sm),
+          Row(
+            children: List.generate(
+              steps.length,
+              (i) => StepperComponent(
+                index: i,
+                currentIndex: currentIndex,
+                icon: steps[i].icon,
+                label: steps[i].label,
+                isLast: i == steps.length - 1,
+                onTap: () => onTap(i),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Sticky bottom bar: back (when applicable) + primary CTA + chat FAB.
+class _BottomBar extends StatelessWidget {
+  const _BottomBar({
+    required this.currentIndex,
+    required this.totalSteps,
+    required this.isLastStep,
+    required this.isLoading,
+    required this.onBack,
+    required this.onNext,
+    required this.onChatTap,
+  });
+
+  final int currentIndex;
+  final int totalSteps;
+  final bool isLastStep;
+  final bool isLoading;
+  final VoidCallback? onBack;
+  final VoidCallback onNext;
+  final VoidCallback onChatTap;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.fromLTRB(
-        _horizontalPadding.w,
+        AppSpacing.xxl.w,
         AppSpacing.md.h,
-        _horizontalPadding.w,
-        _bottomMargin.h,
+        AppSpacing.xxl.w,
+        AppSpacing.lg.h,
       ),
       decoration: BoxDecoration(
         color: AppColor.surfaceCard,
         boxShadow: AppShadows.level2,
       ),
-      child: AppButton(
-        text: _currentIndex == _totalSteps - 1 ? 'فسحني!' : AppCopy.next,
-        onPress: _handleNextButtonPress,
-        isEnabled: !_isLoading,
+      child: Row(
+        children: [
+          if (onBack != null) ...[
+            _BackIconButton(onTap: onBack!),
+            gapH(AppSpacing.md),
+          ],
+          Expanded(
+            child: AppButton(
+              text: isLastStep ? AppCopy.homeCtaFinal : AppCopy.next,
+              onPress: onNext,
+              isEnabled: !isLoading,
+            ),
+          ),
+          gapH(AppSpacing.md),
+          _ChatFab(onTap: onChatTap),
+        ],
       ),
     );
   }
+}
 
-  Widget _buildStepper() {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: _horizontalPadding.w),
-      margin: EdgeInsets.only(bottom: _bottomMargin.h),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: List.generate(
-          _totalSteps,
-          (index) => StepperComponent(
-            currentIndex: _currentIndex,
-            index: index,
-            icon: _stepIcons[index],
-            isLast: index == _totalSteps - 1,
-            onTap: () {
-              if (_isLoading) return;
-              setState(() => _currentIndex = index);
-              _pageController.jumpToPage(index);
-            },
+class _BackIconButton extends StatelessWidget {
+  const _BackIconButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: AppCopy.back,
+      child: Material(
+        color: AppColor.surface,
+        shape: const CircleBorder(),
+        child: InkResponse(
+          onTap: onTap,
+          radius: 28.w,
+          child: SizedBox(
+            width: 52.w,
+            height: 52.w,
+            child: Icon(
+              Icons.arrow_forward, // RTL: forward icon points "back"
+              color: AppColor.textPrimary,
+              size: 22.sp,
+            ),
           ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildPageView() {
-    return PageView.builder(
-      controller: _pageController,
-      onPageChanged: (index) {
-        setState(() => _currentIndex = index);
-      },
-      itemCount: _pages.length,
-      itemBuilder: (context, index) => _pages[index],
+class _ChatFab extends StatelessWidget {
+  const _ChatFab({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: AppCopy.chatTitle,
+      child: Material(
+        color: AppColor.primary,
+        shape: const CircleBorder(),
+        elevation: 2,
+        child: InkResponse(
+          onTap: onTap,
+          radius: 28.w,
+          child: SizedBox(
+            width: 52.w,
+            height: 52.w,
+            child: Icon(
+              Icons.chat_bubble_rounded,
+              color: AppColor.white,
+              size: 22.sp,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

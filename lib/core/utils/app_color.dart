@@ -101,6 +101,29 @@ class AppColor {
   static const overlaySoft = Color(0x52000000); // @ 32%
 
   // ---------------------------------------------------------------------------
+  // Semantic aliases (spec-aligned naming for component code).
+  //   color.action.primary / actionPrimaryHover
+  //   color.status.success / warning / danger / info
+  //   color.surface.default / elevated
+  //   color.text.primary / secondary / muted
+  // These are pure aliases — same values as above, just spec-named.
+  // ---------------------------------------------------------------------------
+  static const actionPrimary = primary500; // brand action
+  static const actionPrimaryHover = primary600;
+  static const actionPrimaryActive = primary700;
+
+  static const statusSuccess = success;
+  static const statusWarning = warning;
+  static const statusDanger = error;
+  static const statusInfo = info;
+
+  static const surfaceDefault = surface; // cream page bg
+  static const surfaceElevated = surfaceCard; // white card bg
+  static const surfaceMuted = sand200; // subtle alt panel
+
+  static const textMuted = textTertiary;
+
+  // ---------------------------------------------------------------------------
   // Role tokens (dark theme readiness) — referenced by the dark ThemeData.
   // ---------------------------------------------------------------------------
   static const darkSurface = Color(0xff14110E);

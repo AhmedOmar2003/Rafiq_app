@@ -10,7 +10,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../auth/login/login_screen.dart';
 import '../../service/auth_service.dart';
 import '../../core/design/components/components.dart';
-import '../../core/design/custom_app_bar.dart';
+import '../../core/design/components/app_page_header.dart';
 import '../../core/utils/app_microcopy.dart';
 import '../../core/utils/spacing.dart';
 import '../../core/config/api_config.dart';
@@ -91,8 +91,8 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      userName = prefs.getString('userName') ?? "اسم غير متوفر";
-      userEmail = prefs.getString('userEmail') ?? "بريد إلكتروني غير متوفر";
+      userName = prefs.getString('userName') ?? AppCopy.profileNameFallback;
+      userEmail = prefs.getString('userEmail') ?? AppCopy.profileEmailFallback;
     });
   }
 
@@ -149,7 +149,7 @@ class _ProfilePageState extends State<ProfilePage> {
       return persistedFile.path;
     } catch (e) {
       if (!mounted) return null;
-      AppFeedback.error('معرفناش نحفظ الصورة دلوقتي، جرّب تاني');
+      AppFeedback.error(AppCopy.profileImageSaveError);
       return null;
     }
   }
@@ -167,9 +167,8 @@ class _ProfilePageState extends State<ProfilePage> {
     } catch (_) {}
   }
 
-  Future<void> _handleLogoutConfirmed(BuildContext dialogContext) async {
+  Future<void> _handleLogoutConfirmedDirect() async {
     if (_isLoading) return;
-    Navigator.of(dialogContext).pop();
 
     if (!mounted) return;
     setState(() => _isLoading = true);
@@ -191,7 +190,7 @@ class _ProfilePageState extends State<ProfilePage> {
       unawaited(_sendLegacyLogoutSignal(email));
     } catch (e) {
       if (!mounted) return;
-      AppFeedback.error('معرفناش نسجّل خروجك دلوقتي، جرّب تاني');
+      AppFeedback.error(AppCopy.logoutError);
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -217,7 +216,7 @@ class _ProfilePageState extends State<ProfilePage> {
         final prefs = await SharedPreferences.getInstance();
         final email = prefs.getString('userEmail');
         if (email == null) {
-          errorMessage.value = "تعذر العثور على البريد الإلكتروني للمستخدم.";
+          errorMessage.value = AppCopy.changePwMissingEmail;
           isLoading.value = false;
           return;
         }
@@ -232,9 +231,9 @@ class _ProfilePageState extends State<ProfilePage> {
         final result = jsonDecode(response.body);
         if (response.statusCode == 200 && result['status'] == 'success') {
           Navigator.of(context).pop();
-          AppFeedback.success(result['message'] ?? 'اتغيّرت كلمة السر بنجاح');
+          AppFeedback.success(result['message'] ?? AppCopy.changePwSuccess);
         } else {
-          errorMessage.value = result['message'] ?? 'معرفناش نغيّر كلمة السر، راجع بياناتك';
+          errorMessage.value = result['message'] ?? AppCopy.changePwGenericFail;
         }
       } catch (e) {
         errorMessage.value = AppCopy.offlineBody;
@@ -269,7 +268,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           Expanded(
                             child: Center(
                               child: Text(
-                                "تغيير كلمة المرور",
+                                AppCopy.changePwTitle,
                                 style:
                                     AppText.titleLg.copyWith(
                                   color: AppColor.primary,
@@ -295,7 +294,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         controller: currentPasswordController,
                         obscureText: true,
                         decoration: InputDecoration(
-                          labelText: "كلمة المرور الحالية",
+                          labelText: AppCopy.changePwCurrent,
                           prefixIcon:
                               Icon(Icons.lock_outline, color: AppColor.primary),
                           border: OutlineInputBorder(
@@ -315,7 +314,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         controller: newPasswordController,
                         obscureText: true,
                         decoration: InputDecoration(
-                          labelText: "كلمة المرور الجديدة",
+                          labelText: AppCopy.changePwNew,
                           prefixIcon:
                               Icon(Icons.lock_outline, color: AppColor.primary),
                           border: OutlineInputBorder(
@@ -335,7 +334,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         controller: confirmPasswordController,
                         obscureText: true,
                         decoration: InputDecoration(
-                          labelText: "تأكيد كلمة المرور الجديدة",
+                          labelText: AppCopy.changePwConfirm,
                           prefixIcon:
                               Icon(Icons.lock_outline, color: AppColor.primary),
                           border: OutlineInputBorder(
@@ -421,7 +420,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(),
                         child: Text(
-                          "إلغاء",
+                          AppCopy.cancel,
                           style: AppText.bodyLg.copyWith(
                             color: AppColor.primary,
                             fontWeight: FontWeight.bold,
@@ -442,75 +441,30 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColor.surface, // Better separation for bottom list
-      appBar: CustomAppBar(
-        backgroundColor: AppColor.primary,
-        backIconColor: AppColor.white,
-        title: Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: Text(
-            "الملف الشخصي",
-            style: AppText.headingLg.copyWith(
-              color: AppColor.white,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
+      backgroundColor: AppColor.surface,
+      appBar: const AppPageHeader(
+        title: AppCopy.profileTitle,
+        tone: AppHeaderTone.brand,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           child: Column(
             children: [
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.only(top: 32.h, bottom: 32.h),
-                decoration: BoxDecoration(
-                  color: AppColor.primary,
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(36.r),
-                    bottomRight: Radius.circular(36.r),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColor.primary.withOpacity(0.3),
-                      blurRadius: 15,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    _buildProfileImage(),
-                    verticalSpace(16),
-                    Text(
-                      userName ?? "اسم المستخدم",
-                      textAlign: TextAlign.center,
-                      style: AppText.headingSm.copyWith(
-                        color: AppColor.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    verticalSpace(8),
-                    Text(
-                      userEmail ?? "البريد الإلكتروني",
-                      textAlign: TextAlign.center,
-                      style: AppText.bodyLg.copyWith(
-                        color: AppColor.white.withOpacity(0.8),
-                      ),
-                    ),
-                  ],
-                ),
+              _ProfileHero(
+                name: userName,
+                email: userEmail,
+                child: _buildProfileImage(),
               ),
-              verticalSpace(24),
+              gapV(AppSpacing.xxl),
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.w),
+                padding: EdgeInsets.symmetric(horizontal: AppSpacing.xl.w),
                 child: Column(
                   children: [
                     _buildInfoSection(),
-                    verticalSpace(32),
+                    gapV(AppSpacing.xxxl),
                     _buildLogoutButton(),
-                    verticalSpace(40),
+                    gapV(AppSpacing.huge),
                   ],
                 ),
               ),
@@ -571,107 +525,34 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildInfoSection() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColor.white,
-        borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color: AppColor.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    return AppCard(
+      padding: EdgeInsets.zero,
       child: Column(
         children: [
-          _buildInfoField(
+          _ProfileInfoRow(
             icon: Icons.person_2_outlined,
-            value: userName ?? "اسم المستخدم",
-            isFirst: true,
+            label: AppCopy.profileNameLabel,
+            value: userName ?? AppCopy.profileNameFallback,
           ),
           Divider(height: 1, color: AppColor.border),
-          _buildInfoField(
+          _ProfileInfoRow(
             icon: Icons.email_outlined,
-            value: userEmail ?? "البريد الإلكتروني",
+            label: AppCopy.profileEmailLabel,
+            value: userEmail ?? AppCopy.profileEmailFallback,
           ),
           Divider(height: 1, color: AppColor.border),
-          _buildPasswordField(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoField({
-    required IconData icon,
-    required String value,
-    bool isFirst = false,
-  }) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 18.h),
-      decoration: BoxDecoration(
-        borderRadius:
-            isFirst ? BorderRadius.vertical(top: Radius.circular(16.r)) : null,
-      ),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            color: AppColor.primary,
-            size: 24.sp,
-          ),
-          SizedBox(width: 16.w),
-          Expanded(
-            child: Text(
-              value,
-              style: AppText.bodyLg.copyWith(
-                color: AppColor.textPrimary,
+          _ProfileInfoRow(
+            icon: Icons.lock_outline,
+            label: AppCopy.profilePasswordLabel,
+            value: '••••••••',
+            trailing: IconButton(
+              icon: Icon(
+                Icons.edit_outlined,
+                color: AppColor.primary,
+                size: 22.sp,
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPasswordField() {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 18.h),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(16.r)),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.lock_outline,
-            color: AppColor.primary,
-            size: 24.sp,
-          ),
-          SizedBox(width: 16.w),
-          Expanded(
-            child: Text(
-              "••••••••",
-              style: AppText.bodyLg.copyWith(
-                color: AppColor.textPrimary,
-                letterSpacing: 2,
-              ),
-            ),
-          ),
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(30.r),
-              onTap: () {
-                showChangePasswordDialog(context);
-              },
-              child: Padding(
-                padding: EdgeInsets.all(8.w),
-                child: Icon(
-                  Icons.edit_outlined,
-                  color: AppColor.primary,
-                  size: 24.sp,
-                ),
-              ),
+              onPressed: () => showChangePasswordDialog(context),
+              tooltip: AppCopy.changePwTitle,
             ),
           ),
         ],
@@ -680,159 +561,148 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildLogoutButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: () async {
+          if (_isLoading) return;
+          final confirmed = await AppConfirmDialog.show(
+            context,
+            title: AppCopy.logoutTitle,
+            message: AppCopy.logoutMessage,
+            confirmLabel: AppCopy.logoutConfirm,
+            cancelLabel: AppCopy.cancel,
+            tone: AppConfirmTone.danger,
+            icon: Icons.logout_rounded,
+          );
+          if (!mounted) return;
+          if (confirmed) await _handleLogoutConfirmedDirect();
+        },
+        icon: Icon(Icons.logout_rounded, color: AppColor.error, size: 22.sp),
+        label: Text(
+          AppCopy.logoutCta,
+          style: AppText.titleMd.copyWith(
+            color: AppColor.error,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        style: OutlinedButton.styleFrom(
+          minimumSize: Size.fromHeight(52.h),
+          backgroundColor: AppColor.surfaceCard,
+          side: const BorderSide(color: AppColor.error, width: 1.5),
+          shape: RoundedRectangleBorder(borderRadius: AppRadii.rMd),
+        ),
+      ),
+    );
+  }
+}
+
+// ===========================================================================
+// Profile internals
+// ===========================================================================
+
+/// Brand hero block at the top of the profile screen.
+class _ProfileHero extends StatelessWidget {
+  const _ProfileHero({
+    required this.name,
+    required this.email,
+    required this.child,
+  });
+
+  final String? name;
+  final String? email;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      height: 52.h,
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.xxl.w,
+        vertical: AppSpacing.xxxl.h,
+      ),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14.r),
-        boxShadow: [
-          BoxShadow(
-            color: AppColor.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+        color: AppColor.primary,
+        borderRadius: BorderRadius.vertical(
+          bottom: Radius.circular(AppRadii.xxl.r),
+        ),
+        boxShadow: AppShadows.primaryGlow,
+      ),
+      child: Column(
+        children: [
+          child,
+          gapV(AppSpacing.lg),
+          Text(
+            name ?? AppCopy.profileNameFallback,
+            textAlign: TextAlign.center,
+            style: AppText.headingSm.copyWith(
+              color: AppColor.white,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          gapV(AppSpacing.xs),
+          Text(
+            email ?? AppCopy.profileEmailFallback,
+            textAlign: TextAlign.center,
+            style: AppText.bodyLg.copyWith(
+              color: AppColor.white.withOpacity(0.85),
+            ),
           ),
         ],
       ),
-      child: ElevatedButton(
-        onPressed: () {
-          if (_isLoading) return;
+    );
+  }
+}
 
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (BuildContext dialogContext) {
-              return Dialog(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20.r),
-                ),
-                elevation: 0,
-                backgroundColor: Colors.transparent,
-                child: Container(
-                  padding: EdgeInsets.all(20.w),
-                  decoration: BoxDecoration(
-                    color: AppColor.white,
-                    shape: BoxShape.rectangle,
-                    borderRadius: BorderRadius.circular(20.r),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColor.textTertiary,
-                        blurRadius: 10.0,
-                        offset: const Offset(0.0, 10.0),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Container(
-                        padding: EdgeInsets.all(15.w),
-                        decoration: BoxDecoration(
-                          color: AppColor.error.withOpacity(0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.logout_rounded,
-                          size: 40.sp,
-                          color: AppColor.error,
-                        ),
-                      ),
-                      SizedBox(height: 20.h),
-                      Text(
-                        "تأكيد تسجيل الخروج",
-                        style: AppText.headingSm.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: AppColor.textPrimary,
-                        ),
-                      ),
-                      SizedBox(height: 10.h),
-                      Text(
-                        "هل أنت متأكد أنك تريد تسجيل الخروج من التطبيق؟",
-                        textAlign: TextAlign.center,
-                        style: AppText.bodyLg.copyWith(
-                          color: AppColor.textSecondary,
-                        ),
-                      ),
-                      SizedBox(height: 24.h),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: _isLoading
-                                  ? null
-                                  : () => Navigator.of(dialogContext).pop(),
-                              style: OutlinedButton.styleFrom(
-                                padding: EdgeInsets.symmetric(vertical: 12.h),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10.r),
-                                ),
-                                side: BorderSide(color: AppColor.primary),
-                              ),
-                              child: Text(
-                                "إلغاء",
-                                style:
-                                    AppText.titleMd.copyWith(
-                                  color: AppColor.primary,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: 15.w),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: _isLoading
-                                  ? null
-                                  : () => _handleLogoutConfirmed(dialogContext),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColor.error,
-                                padding: EdgeInsets.symmetric(vertical: 12.h),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10.r),
-                                ),
-                                elevation: 0,
-                              ),
-                              child: Text(
-                                "تأكيد",
-                                style:
-                                    AppText.titleMd.copyWith(
-                                  color: AppColor.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          );
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColor.surfaceCard,
-          foregroundColor: AppColor.error,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14.r),
-          ),
-          side: const BorderSide(color: AppColor.error, width: 1.5),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.logout_rounded, color: AppColor.error, size: 24.sp),
-            SizedBox(width: 12.w),
-            Text(
-              "تسجيل الخروج",
-              style: AppText.titleLg.copyWith(
-                color: AppColor.error,
-                fontWeight: FontWeight.w600,
-              ),
+/// Single row inside the profile info card.
+class _ProfileInfoRow extends StatelessWidget {
+  const _ProfileInfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.trailing,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl.w,
+        vertical: AppSpacing.lg.h,
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(AppSpacing.sm.w),
+            decoration: BoxDecoration(
+              color: AppColor.primary50,
+              shape: BoxShape.circle,
             ),
-          ],
-        ),
+            child: Icon(icon, color: AppColor.primary, size: 20.sp),
+          ),
+          gapH(AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: AppText.caption),
+                gapV(AppSpacing.xs / 2),
+                Text(
+                  value,
+                  style: AppText.bodyLg.copyWith(color: AppColor.textPrimary),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          if (trailing != null) trailing!,
+        ],
       ),
     );
   }

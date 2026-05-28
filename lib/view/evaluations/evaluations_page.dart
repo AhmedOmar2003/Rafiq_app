@@ -7,7 +7,6 @@ import 'package:intl/intl.dart';
 import 'package:rafiq_app/model/review_model.dart';
 import 'package:rafiq_app/service/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../core/design/custom_app_bar.dart';
 import '../../core/design/components/components.dart';
 import '../../core/design/tokens/tokens.dart';
 import '../../core/utils/app_microcopy.dart';
@@ -94,10 +93,10 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
   /// **تنسيق التاريخ بشكل آمن**
   String _formatDate(String? date) {
     try {
-      if (date == null || date.isEmpty) return "تاريخ غير متاح";
+      if (date == null || date.isEmpty) return AppCopy.reviewDateUnknown;
       return DateFormat('yyyy-MM-dd').format(DateTime.parse(date));
     } catch (e) {
-      return "تاريخ غير متاح";
+      return AppCopy.reviewDateUnknown;
     }
   }
 
@@ -134,10 +133,10 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
     final prefs = await SharedPreferences.getInstance();
     final userId =
         prefs.getString('authUserId') ?? prefs.getInt('userId')?.toString();
-    final userName = prefs.getString('userName') ?? 'مستخدم مجهول';
+    final userName = prefs.getString('userName') ?? AppCopy.reviewAuthorAnonymous;
 
     if (userId == null || textController.text.isEmpty) {
-      AppFeedback.warning("اكتب تقييمك الأول وبعدين ابعته");
+      AppFeedback.warning(AppCopy.reviewEmptyText);
       setState(() => isLoading = false);
       return;
     }
@@ -171,76 +170,36 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: true,
-      backgroundColor: AppColor.surface,
-      appBar: CustomAppBar(
-        backgroundColor: AppColor.surface,
-        title: Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: Text("التقييمات", style: AppText.headingLg),
-        ),
+    return AppPageScaffold(
+      header: AppPageHeader(
+        title: AppCopy.reviewsTitle,
+        subtitle: evaluationsItemList.isEmpty
+            ? null
+            : "${evaluationsItemList.length} تقييم",
       ),
-      body: Stack(
-        children: [
-          Column(
-            children: [
-              Expanded(
-                child: ListView(
-                  padding: EdgeInsets.fromLTRB(
-                    AppSpacing.lg.w, AppSpacing.lg.h, AppSpacing.lg.w, AppSpacing.lg.h),
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text("كل التقييمات",
-                            style: AppText.titleLg.copyWith(fontWeight: FontWeight.w700)),
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: AppSpacing.md.w, vertical: AppSpacing.xs.h),
-                          decoration: BoxDecoration(
-                            color: AppColor.primary.withOpacity(0.08),
-                            borderRadius: AppRadii.rPill,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.reviews_outlined, size: 16.w, color: AppColor.primary),
-                              gapH(AppSpacing.xs),
-                              Text("${evaluationsItemList.length}",
-                                  style: AppText.labelSm.copyWith(color: AppColor.primary)),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    gapV(AppSpacing.lg),
-                    if (isLoading && evaluationsItemList.isEmpty)
-                      Padding(
-                        padding: EdgeInsets.only(top: AppSpacing.giant.h),
-                        child: Center(
-                          child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(AppColor.primary),
-                          ),
-                        ),
-                      )
-                    else if (evaluationsItemList.isEmpty)
-                      _buildEmptyState()
-                    else
-                      ...evaluationsItemList.map((evaluation) =>
-                          _buildEvaluationItem(evaluation, _formatDate(evaluation.date))),
-                  ],
-                ),
-              ),
-              _buildCommentBar(),
-            ],
-          ),
-          if (_showSuccessView)
-            AppSuccessView(
-              title: 'وصلنا رأيك! شكراً',
-              message: 'تقييمك هيساعد ناس تانيين يختاروا صح',
+      unpadded: true,
+      footer: _buildCommentBar(),
+      floatingOverlay: _showSuccessView
+          ? AppSuccessView(
+              title: AppCopy.reviewThanksTitle,
+              message: AppCopy.reviewThanksBody,
               onContinue: () => setState(() => _showSuccessView = false),
-            ),
+            )
+          : null,
+      body: ListView(
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.lg.w, AppSpacing.lg.h, AppSpacing.lg.w, AppSpacing.lg.h),
+        children: [
+          if (isLoading && evaluationsItemList.isEmpty)
+            ...List.generate(3, (i) => Padding(
+              padding: EdgeInsets.only(bottom: AppSpacing.md.h),
+              child: AppSkeleton.card(),
+            ))
+          else if (evaluationsItemList.isEmpty)
+            _buildEmptyState()
+          else
+            ...evaluationsItemList.map((evaluation) =>
+                _buildEvaluationItem(evaluation, _formatDate(evaluation.date))),
         ],
       ),
     );
@@ -284,7 +243,7 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
                     contentPadding: EdgeInsets.zero,
-                    hintText: "اكتب رأيك في المكان...",
+                    hintText: AppCopy.reviewInputHint,
                     hintStyle: AppText.bodyLg.copyWith(color: AppColor.textTertiary),
                   ),
                 ),
@@ -346,7 +305,7 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
               builder: (context, value, child) => Transform.scale(
                 scale: value,
                 child: Text(
-                  "كن أول من يشارك رأيه!",
+                  AppCopy.reviewsEmptyHeadline,
                   style: AppText.headingLg.copyWith(color: AppColor.primary),
                 ),
               ),
@@ -361,11 +320,11 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
               ),
               child: Column(
                 children: [
-                  _buildEmptyStateItem("شارك تجربتك مع الآخرين", Icons.share_outlined),
+                  _buildEmptyStateItem(AppCopy.reviewsEmptyShare, Icons.share_outlined),
                   gapV(AppSpacing.lg),
-                  _buildEmptyStateItem("ساعد الآخرين يختاروا صح", Icons.lightbulb_outline),
+                  _buildEmptyStateItem(AppCopy.reviewsEmptyHelp, Icons.lightbulb_outline),
                   gapV(AppSpacing.lg),
-                  _buildEmptyStateItem("اكتشف أماكن جديدة مع الجميع", Icons.explore_outlined),
+                  _buildEmptyStateItem(AppCopy.reviewsEmptyDiscover, Icons.explore_outlined),
                 ],
               ),
             ),

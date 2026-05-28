@@ -1,116 +1,131 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+
 import '../../../core/design/app_image.dart';
 import '../../../core/design/tokens/tokens.dart';
 
-/// A custom stepper component that displays a series of steps with icons and connecting lines.
-/// Each step can be tapped to navigate to that step.
+/// One node + connector in the home step indicator.
+///
+/// Visual states:
+///   * `done`     → filled brand circle, white icon, brand connector ahead.
+///   * `current`  → filled brand circle with soft glow + scale-up.
+///   * `upcoming` → cream surface circle, muted icon, faint connector.
+///
+/// Optional [label] appears under the circle as `labelSm`.
 class StepperComponent extends StatelessWidget {
-  /// The index of this step in the sequence
-  final int index;
-
-  /// The icon to display for this step
-  final String icon;
-
-  /// The current active step index
-  final int currentIndex;
-
-  /// Callback function when the step is tapped
-  final VoidCallback onTap;
-
-  /// Whether this is the last step in the sequence
-  final bool isLast;
-
-  /// The size of the step circle
-  final double stepSize;
-
-  /// The color of the active step
-  final Color activeColor;
-
-  /// The color of the inactive step
-  final Color inactiveColor;
-
-  /// The color of the active line
-  final Color activeLineColor;
-
-  /// The color of the inactive line
-  final Color inactiveLineColor;
-
   const StepperComponent({
     super.key,
     required this.index,
     required this.currentIndex,
     required this.onTap,
     required this.icon,
+    this.label,
     this.isLast = false,
-    this.stepSize = 50,
-    this.activeColor = AppColor.primary,
-    this.inactiveColor = AppColor.surfaceCard,
-    this.activeLineColor = AppColor.primary,
-    this.inactiveLineColor = AppColor.border,
+    this.stepSize = 52,
   });
 
-  /// Builds the step circle with the icon
-  Widget _buildStepCircle(BuildContext context) {
-    final bool isActive = currentIndex >= index;
+  final int index;
+  final int currentIndex;
+  final VoidCallback onTap;
+  final String icon;
+  final String? label;
+  final bool isLast;
+  final double stepSize;
 
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOutCubic,
-        height: stepSize.h,
-        width: stepSize.h,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: isActive ? activeColor : inactiveColor,
-          border: Border.all(
-            color: isActive ? activeColor : inactiveLineColor,
+  bool get _isDone => currentIndex > index;
+  bool get _isCurrent => currentIndex == index;
+  bool get _isActive => _isDone || _isCurrent;
+
+  Widget _buildCircle() {
+    final activeColor = AppColor.primary;
+    return Semantics(
+      button: true,
+      label: label,
+      selected: _isCurrent,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: AnimatedScale(
+          scale: _isCurrent ? 1.05 : 1.0,
+          duration: AppMotion.base,
+          curve: AppMotion.standard,
+          child: AnimatedContainer(
+            duration: AppMotion.base,
+            curve: AppMotion.standard,
+            height: stepSize.h,
+            width: stepSize.h,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: _isActive ? activeColor : AppColor.surfaceCard,
+              border: Border.all(
+                color: _isActive ? activeColor : AppColor.border,
+                width: 1.5,
+              ),
+              boxShadow: _isCurrent ? AppShadows.primaryGlow : AppShadows.level0,
+            ),
+            child: Center(
+              child: _isDone
+                  ? Icon(
+                      Icons.check_rounded,
+                      color: AppColor.white,
+                      size: 22.sp,
+                    )
+                  : AppImage(
+                      icon,
+                      color: _isActive ? AppColor.white : AppColor.textTertiary,
+                      height: 22.h,
+                      width: 22.w,
+                    ),
+            ),
           ),
-          boxShadow: isActive ? AppShadows.primaryGlow : AppShadows.level0,
-        ),
-        child: AppImage(
-          icon,
-          color: isActive ? AppColor.white : AppColor.textTertiary,
         ),
       ),
     );
   }
 
-  /// Builds the connecting line between steps
-  Widget _buildConnectingLine() {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 5.w),
-      height: 2.h,
-      color: currentIndex >= index + 1 ? activeLineColor : inactiveLineColor,
+  Widget _buildConnector() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs.w),
+      child: AnimatedContainer(
+        duration: AppMotion.base,
+        curve: AppMotion.standard,
+        height: 2.h,
+        color: _isDone ? AppColor.primary : AppColor.border,
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    if (isLast) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              _buildStepCircle(context),
-              _buildConnectingLine(),
-            ],
+    final node = Column(
+      children: [
+        _buildCircle(),
+        if (label != null) ...[
+          gapV(AppSpacing.xs),
+          AnimatedDefaultTextStyle(
+            duration: AppMotion.base,
+            style: AppText.labelSm.copyWith(
+              color: _isActive ? AppColor.textPrimary : AppColor.textTertiary,
+              fontWeight: _isCurrent ? FontWeight.w700 : FontWeight.w500,
+            ),
+            child: Text(label!, maxLines: 1, overflow: TextOverflow.ellipsis),
           ),
         ],
-      );
-    }
+      ],
+    );
+
+    if (isLast) return node;
 
     return Expanded(
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              _buildStepCircle(context),
-              Expanded(child: _buildConnectingLine()),
-            ],
+          node,
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(top: (stepSize / 2).h - 1),
+              child: _buildConnector(),
+            ),
           ),
         ],
       ),
