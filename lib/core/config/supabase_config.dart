@@ -33,7 +33,7 @@ class SupabaseConfig {
   static const String googleWebClientId = String.fromEnvironment(
     'GOOGLE_WEB_CLIENT_ID',
     defaultValue:
-        '15647293384-9albfrqg5h84e4jfbnbto2ms3nhhg4td.apps.googleusercontent.com',
+        '394232805216-l09psi0t8g911m0d0p2j777hpiib6ng3.apps.googleusercontent.com',
   );
 
   static const String googleIosClientId = String.fromEnvironment(

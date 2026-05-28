@@ -27,11 +27,11 @@ file_size_limit = "50MiB"
 
 [auth]
 enabled = true
-site_url      = "http://localhost:3000"
+site_url      = "https://rafiq-master-zeta.vercel.app/app/"
 additional_redirect_urls = [
   "rafiqapp://reset-password",
   "rafiqapp://oauth-callback",
-  "http://localhost:3000/auth/callback",
+  "https://rafiq-master-zeta.vercel.app/app/*",
 ]
 jwt_expiry            = 3600        # 1 hour access token
 enable_refresh_token_rotation = true
