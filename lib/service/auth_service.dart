@@ -15,6 +15,10 @@ class AuthService {
   static const String _userEmailKey = 'userEmail';
   static const String _profileImageKey = 'profile_image';
   static Future<void>? _googleSignInInitFuture;
+  static const String _debugApkSha1 =
+      '18:F5:9B:36:DB:62:46:91:1C:7E:AF:84:A7:FE:ED:0F:4C:68:D0:94';
+  static const String _debugApkSha256 =
+      '28:D2:CB:18:50:97:DE:27:31:5D:C4:D7:41:D7:A8:2D:66:BC:58:C4:FB:BD:77:BB:2C:20:1E:F5:B7:7F:A6:38';
 
   static Future<void> ensureSupabaseInitialized() {
     return ApiService.ensureSupabaseInitialized();
@@ -63,7 +67,7 @@ class AuthService {
         message.contains('clientConfigurationError') ||
         message.contains('GoogleSignInExceptionCode.unknownError') ||
         message.contains('Developer console')) {
-      return 'إعداد Google Sign-In غير مكتمل. فعّل Google Sign-In في Firebase أو Google Cloud، وأضف SHA-1 و SHA-256 لتوقيع التطبيق، ثم أعد تنزيل google-services.json بحيث يحتوي على oauth_client من نوع web.';
+      return 'إعداد Google Sign-In غير مكتمل. هذا الـ APK موقّع حاليًا بشهادة Android Debug، لذلك أضف SHA-1 و SHA-256 التاليين في Firebase/Google Cloud ثم أعد تنزيل google-services.json: SHA-1 = $_debugApkSha1, SHA-256 = $_debugApkSha256. كذلك تأكد أن Google Sign-In مفعّل وأن الملف يحتوي على oauth_client من نوع web.';
     }
     return message.replaceFirst('Exception: ', '');
   }
