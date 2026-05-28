@@ -60,6 +60,12 @@ class AuthService {
         message.contains('token_not_found')) {
       return 'كود التحقق غير صحيح أو انتهت صلاحيته. اطلب كودًا جديدًا وحاول مرة أخرى.';
     }
+    if (message.contains('Invalid login credentials') ||
+        message.contains('invalid login credentials') ||
+        message.contains('wrong password') ||
+        message.contains('password authentication failed')) {
+      return 'البريد الإلكتروني أو كلمة المرور غير صحيحة. تأكد أنك سجلت الحساب من شاشة إنشاء حساب، أو استخدم "نسيت كلمة السر؟" إذا كنت لا تتذكرها.';
+    }
     if (message.contains('user_not_found')) {
       return 'لا يوجد حساب مرتبط بهذا البريد الإلكتروني.';
     }
