@@ -16,7 +16,7 @@ const stagedFiles = execFileSync(
 
 const blockedPathPatterns = [
   /\.(env|pem|p12|pfx|key|jks|keystore|mobileprovision)$/i,
-  /(^|\/)\.env(\..+)?$/i,
+  /(^|\/)\.env(?!\.example$)(\..+)?$/i,
   /(^|\/)\.env\.local$/i,
   /(^|\/)\.next($|\/)/i,
   /(^|\/)node_modules($|\/)/i,
