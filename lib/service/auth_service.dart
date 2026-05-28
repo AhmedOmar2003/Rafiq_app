@@ -239,8 +239,6 @@ class AuthService {
       final googleSignIn = GoogleSignIn.instance;
       final googleUser = await googleSignIn.authenticate();
       final googleAuthentication = googleUser.authentication;
-      final googleAuthorization =
-          await googleUser.authorizationClient.authorizationForScopes([]);
 
       final idToken = googleAuthentication.idToken;
       if (idToken == null) {
@@ -250,7 +248,6 @@ class AuthService {
       final response = await _client.auth.signInWithIdToken(
         provider: OAuthProvider.google,
         idToken: idToken,
-        accessToken: googleAuthorization?.accessToken,
       );
 
       final user = response.user ?? _client.auth.currentUser;
