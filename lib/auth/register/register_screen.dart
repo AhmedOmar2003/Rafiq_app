@@ -147,27 +147,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
             gapV(AppSpacing.xxl),
-            AppButton(
-              text: AppCopy.registerGoogle,
-              onPress: _handleGoogleRegister,
-              isLoading: _isLoading,
-              variant: AppButtonVariant.outline,
-              icon: Icons.g_mobiledata_rounded,
-            ),
-            gapV(AppSpacing.lg),
-            Row(
-              children: [
-                const Expanded(child: Divider(height: 1)),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: AppSpacing.md.w),
-                  child: Text(AppCopy.authSeparatorOr,
-                      style: AppText.labelMd
-                          .copyWith(color: AppColor.textSecondary)),
-                ),
-                const Expanded(child: Divider(height: 1)),
-              ],
-            ),
-            gapV(AppSpacing.lg),
             _buildUsernameInput(),
             _buildEmailInput(),
             _buildPasswordInput(),
@@ -177,6 +156,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 text: AppCopy.registerCta,
                 onPress: _handleRegister,
                 isLoading: _isLoading),
+            gapV(AppSpacing.lg),
+            AppButton(
+              text: AppCopy.registerGoogle,
+              onPress: _handleGoogleRegister,
+              isLoading: _isLoading,
+              variant: AppButtonVariant.outline,
+              icon: Icons.g_mobiledata_rounded,
+            ),
             gapV(AppSpacing.xxl),
             _buildLoginLink(),
           ],

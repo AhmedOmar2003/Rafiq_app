@@ -18,7 +18,7 @@ class SupabaseConfig {
       'rafiqapp://reset-password';
 
   static String get recoveryRedirectUrl {
-    final configured = const String.fromEnvironment(
+    const configured = String.fromEnvironment(
       'SUPABASE_RECOVERY_REDIRECT_URL',
       defaultValue: '',
     );
@@ -32,7 +32,8 @@ class SupabaseConfig {
 
   static const String googleWebClientId = String.fromEnvironment(
     'GOOGLE_WEB_CLIENT_ID',
-    defaultValue: '',
+    defaultValue:
+        '394232805216-ff8dq66p9k76kn9dkaqlu5tu7jnvla54.apps.googleusercontent.com',
   );
 
   static const String googleIosClientId = String.fromEnvironment(

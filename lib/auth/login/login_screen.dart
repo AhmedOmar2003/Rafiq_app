@@ -145,27 +145,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             gapV(AppSpacing.xxl),
-            AppButton(
-              text: AppCopy.loginGoogle,
-              onPress: _handleGoogleLogin,
-              isLoading: _isLoading,
-              variant: AppButtonVariant.outline,
-              icon: Icons.g_mobiledata_rounded,
-            ),
-            gapV(AppSpacing.lg),
-            Row(
-              children: [
-                const Expanded(child: Divider(height: 1)),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: AppSpacing.md.w),
-                  child: Text(AppCopy.authSeparatorOr,
-                      style: AppText.labelMd
-                          .copyWith(color: AppColor.textSecondary)),
-                ),
-                const Expanded(child: Divider(height: 1)),
-              ],
-            ),
-            gapV(AppSpacing.lg),
             _buildEmailInput(),
             _buildPasswordInput(),
             _buildForgotPassword(),
@@ -174,6 +153,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 text: AppCopy.loginCta,
                 onPress: _handleLogin,
                 isLoading: _isLoading),
+            gapV(AppSpacing.lg),
+            AppButton(
+              text: AppCopy.loginGoogle,
+              onPress: _handleGoogleLogin,
+              isLoading: _isLoading,
+              variant: AppButtonVariant.outline,
+              icon: Icons.g_mobiledata_rounded,
+            ),
             gapV(AppSpacing.xxl),
             _buildRegisterLink(),
           ],
