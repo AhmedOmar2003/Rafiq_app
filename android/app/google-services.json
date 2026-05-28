@@ -12,7 +12,12 @@
           "package_name": "com.example.rafiq_master"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "15647293384-9albfrqg5h84e4jfbnbto2ms3nhhg4td.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCiUOeaT-XGrYDpuJfjFdHjPmMMGj9tMI4"
@@ -20,7 +25,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "15647293384-9albfrqg5h84e4jfbnbto2ms3nhhg4td.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
