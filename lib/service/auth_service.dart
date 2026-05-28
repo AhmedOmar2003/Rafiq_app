@@ -59,6 +59,12 @@ class AuthService {
     if (message.contains('user_not_found')) {
       return 'لا يوجد حساب مرتبط بهذا البريد الإلكتروني.';
     }
+    if (message.contains('Developer console is not set up correctly') ||
+        message.contains('clientConfigurationError') ||
+        message.contains('GoogleSignInExceptionCode.unknownError') ||
+        message.contains('Developer console')) {
+      return 'إعداد Google Sign-In غير مكتمل. فعّل Google Sign-In في Firebase أو Google Cloud، وأضف SHA-1 و SHA-256 لتوقيع التطبيق، ثم أعد تنزيل google-services.json بحيث يحتوي على oauth_client من نوع web.';
+    }
     return message.replaceFirst('Exception: ', '');
   }
 
@@ -187,12 +193,9 @@ class AuthService {
       return Future.value();
     }
 
-    final webClientId = SupabaseConfig.googleWebClientId;
-    if (webClientId.isEmpty) {
-      throw Exception('Google Sign-In غير مفعّل في إعدادات التطبيق.');
-    }
+    final webClientId = SupabaseConfig.googleWebClientId.trim();
 
-    final iosClientId = SupabaseConfig.googleIosClientId;
+    const iosClientId = SupabaseConfig.googleIosClientId;
     final initFuture = _googleSignInInitFuture;
     if (initFuture != null) {
       return initFuture;
@@ -201,17 +204,17 @@ class AuthService {
     final googleSignIn = GoogleSignIn.instance;
     _googleSignInInitFuture = googleSignIn
         .initialize(
-          clientId: (defaultTargetPlatform == TargetPlatform.iOS ||
-                      defaultTargetPlatform == TargetPlatform.macOS) &&
-                  iosClientId.isNotEmpty
-              ? iosClientId
-              : null,
-          serverClientId: webClientId,
-        )
+      clientId: (defaultTargetPlatform == TargetPlatform.iOS ||
+                  defaultTargetPlatform == TargetPlatform.macOS) &&
+              iosClientId.isNotEmpty
+          ? iosClientId
+          : null,
+      serverClientId: webClientId.isNotEmpty ? webClientId : null,
+    )
         .catchError((error) {
-          _googleSignInInitFuture = null;
-          throw error;
-        });
+      _googleSignInInitFuture = null;
+      throw error;
+    });
     return _googleSignInInitFuture!;
   }
 
