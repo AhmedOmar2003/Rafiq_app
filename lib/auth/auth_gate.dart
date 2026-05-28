@@ -19,6 +19,11 @@ class AuthGate extends StatefulWidget {
 }
 
 class _AuthGateState extends State<AuthGate> {
+  /// Max time the splash will wait for Supabase/local prefs before falling
+  /// back. After this, we let the user proceed (treat them as logged out)
+  /// instead of spinning forever on a bad network.
+  static const Duration _bootstrapTimeout = Duration(seconds: 10);
+
   StreamSubscription<AuthState>? _authSubscription;
   late final Future<List<Object>> _bootstrapFuture;
   bool _openedRecoveryPage = false;
@@ -29,7 +34,10 @@ class _AuthGateState extends State<AuthGate> {
     _bootstrapFuture = Future.wait<Object>([
       AuthService.ensureSupabaseInitialized().then((_) => true),
       CacheHelper.getOnBoardingSeen(),
-    ]);
+    ]).timeout(
+      _bootstrapTimeout,
+      onTimeout: () => const <Object>[false, false],
+    );
 
     _bootstrapFuture.then((_) {
       if (!mounted) {

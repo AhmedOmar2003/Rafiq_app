@@ -1,12 +1,12 @@
-import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+
 import 'package:rafiq_app/core/paymob/paymob_manager.dart';
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:rafiq_app/model/review_model.dart';
 import 'package:rafiq_app/service/api_service.dart';
+import 'package:rafiq_app/service/profile_image_store.dart';
 import 'package:rafiq_app/view/evaluations/evaluations_page.dart';
 import '../../core/utils/app_microcopy.dart';
 import '../../models/suggestion_item_model/suggestion_item.dart';
@@ -14,7 +14,6 @@ import 'widget/custom_divider.dart';
 import 'widget/custom_evaluations.dart';
 import 'widget/details_item.dart';
 import 'widget/similar_events.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class DetailsPage extends StatefulWidget {
   final SuggestionItemModel model;
@@ -34,7 +33,6 @@ class _DetailsPageState extends State<DetailsPage> {
   final ApiService _apiService = ApiService();
   late SuggestionItemModel currentModel;
   EvaluationsItemModel? lastEvaluation;
-  String? userImage;
   bool _isReviewLoading = false;
   bool _isPaymentLoading = false;
   bool _showPaymentSuccess = false;
@@ -44,49 +42,15 @@ class _DetailsPageState extends State<DetailsPage> {
   void initState() {
     super.initState();
     currentModel = widget.model;
-    _initializeData();
-  }
-
-  Future<void> _initializeData() async {
-    await Future.wait([
-      _loadUserImage(),
-      _fetchLastEvaluationFromAPI(currentModel.placeId),
-    ]);
+    // Profile image is now owned by ProfileImageStore — just nudge it.
+    ProfileImageStore.instance.ensureLoaded();
+    _fetchLastEvaluationFromAPI(currentModel.placeId);
   }
 
   @override
   void dispose() {
     _isMounted = false;
     super.dispose();
-  }
-
-  Future<void> _loadUserImage() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      if (kIsWeb) {
-        final imageBase64 = prefs.getString('profile_image_base64');
-        if (!_isMounted) return;
-        setState(() => userImage = imageBase64);
-        return;
-      }
-
-      final imagePath = prefs.getString('profile_image');
-
-      if (!_isMounted) return;
-
-      if (imagePath != null && imagePath.isNotEmpty) {
-        final file = File(imagePath);
-        if (await file.exists()) {
-          setState(() => userImage = imagePath);
-        } else {
-          setState(() => userImage = null);
-        }
-      } else {
-        setState(() => userImage = null);
-      }
-    } catch (_) {
-      // Silent — profile image is decorative; don't distract user
-    }
   }
 
   Future<void> _fetchLastEvaluationFromAPI(int placeId) async {
@@ -197,7 +161,6 @@ class _DetailsPageState extends State<DetailsPage> {
                   placeId: currentModel.placeId,
                   isLoading: _isReviewLoading && lastEvaluation == null,
                   lastEvaluation: lastEvaluation,
-                  userImage: userImage,
                   onOpenAll: _openEvaluationsPage,
                 ),
                 gapV(AppSpacing.xxl),
@@ -261,14 +224,12 @@ class _ReviewsSection extends StatelessWidget {
     required this.placeId,
     required this.isLoading,
     required this.lastEvaluation,
-    required this.userImage,
     required this.onOpenAll,
   });
 
   final int placeId;
   final bool isLoading;
   final EvaluationsItemModel? lastEvaluation;
-  final String? userImage;
   final VoidCallback onOpenAll;
 
   @override
@@ -287,7 +248,6 @@ class _ReviewsSection extends StatelessWidget {
       child = CustomEvaluations(
         placeId: placeId,
         lastEvaluation: lastEvaluation,
-        userImage: userImage,
       );
     } else {
       child = _EmptyReviews(onTap: onOpenAll);

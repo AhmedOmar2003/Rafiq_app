@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+
 import '../../../core/design/app_image.dart';
+import '../../../core/design/cached_network_image.dart';
 import '../../../core/utils/app_color.dart';
 import '../../../core/utils/spacing.dart';
 import '../../../core/utils/text_style_theme.dart';
@@ -82,20 +84,17 @@ class SimilarEventsItem extends StatelessWidget {
                   ClipRRect(
                     borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
                     child: model.image.isNotEmpty
-                        ? Image.network(
-                            model.image,
+                        ? CachedNetworkImage(
+                            url: model.image,
+                            height: 130.h,
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                _buildPlaceholder(),
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Center(
-                                child: CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                      AppColor.primary),
-                                ),
-                              );
-                            },
+                            placeholder: (_) => Center(
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                    AppColor.primary),
+                              ),
+                            ),
+                            errorWidget: (_) => _buildPlaceholder(),
                           )
                         : _buildPlaceholder(),
                   ),

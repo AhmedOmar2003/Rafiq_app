@@ -37,23 +37,30 @@ class SplashScreen extends StatelessWidget {
                     ),
                     verticalSpace(50),
                     Center(
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Image.asset(
-                            'assets/images/Screenshot 2024-12-15 181624-Photoroom 1.png',
-                            height: 280.h,
-                            fit: BoxFit.contain,
-                          ),
-                          Positioned(
-                            top: -30.h,
-                            child: Image.asset(
-                              'assets/images/Screenshot 2024-12-15 185838-Photoroom 1.png',
-                              height: 120.h,
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                        ],
+                      child: Builder(
+                        builder: (context) {
+                          final dpr = MediaQuery.devicePixelRatioOf(context);
+                          return Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Image.asset(
+                                'assets/images/Screenshot 2024-12-15 181624-Photoroom 1.png',
+                                height: 280.h,
+                                fit: BoxFit.contain,
+                                cacheHeight: (280 * dpr).round(),
+                              ),
+                              Positioned(
+                                top: -30.h,
+                                child: Image.asset(
+                                  'assets/images/Screenshot 2024-12-15 185838-Photoroom 1.png',
+                                  height: 120.h,
+                                  fit: BoxFit.contain,
+                                  cacheHeight: (120 * dpr).round(),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     ),
                   ],

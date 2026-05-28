@@ -1,12 +1,11 @@
-import 'dart:io';
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:rafiq_app/model/review_model.dart';
 import 'package:rafiq_app/service/api_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:rafiq_app/service/profile_image_store.dart';
 import '../../core/design/components/components.dart';
 import '../../core/design/tokens/tokens.dart';
 import '../../core/utils/app_microcopy.dart';
@@ -21,73 +20,26 @@ class EvaluationsPage extends StatefulWidget {
 
 class _EvaluationsPageState extends State<EvaluationsPage> {
   final ApiService _apiService = ApiService();
-  final textController = TextEditingController();
+  final TextEditingController textController = TextEditingController();
   final List<EvaluationsItemModel> evaluationsItemList = [];
   bool isLoading = false;
   bool _showSuccessView = false;
-  String? _userImagePath;
-  File? _userImageFile;
-  Uint8List? _userImageBytes;
 
   @override
   void initState() {
     super.initState();
-    _loadUserImage();
+    // Profile image now flows through ProfileImageStore — no more
+    // per-screen disk reads.
+    ProfileImageStore.instance.ensureLoaded();
     fetchReviews();
   }
 
-  /// **تحميل الصورة الشخصية من SharedPreferences**
-  Future<void> _loadUserImage() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    if (kIsWeb) {
-      final base64Image = prefs.getString('profile_image_base64');
-      if (base64Image == null || base64Image.isEmpty) {
-        setState(() {
-          _userImagePath = null;
-          _userImageFile = null;
-          _userImageBytes = null;
-        });
-        return;
-      }
-      try {
-        final bytes = base64Decode(base64Image);
-        setState(() {
-          _userImagePath = null;
-          _userImageFile = null;
-          _userImageBytes = bytes;
-        });
-      } catch (_) {
-        await prefs.remove('profile_image_base64');
-      }
-      return;
-    }
-
-    final savedPath = prefs.getString('profile_image');
-    if (savedPath == null || savedPath.isEmpty) {
-      setState(() {
-        _userImagePath = null;
-        _userImageFile = null;
-        _userImageBytes = null;
-      });
-      return;
-    }
-
-    final file = File(savedPath);
-    if (await file.exists()) {
-      setState(() {
-        _userImagePath = savedPath;
-        _userImageFile = file;
-        _userImageBytes = null;
-      });
-    } else {
-      await prefs.remove('profile_image');
-      setState(() {
-        _userImagePath = null;
-        _userImageFile = null;
-        _userImageBytes = null;
-      });
-    }
+  @override
+  void dispose() {
+    // PERFORMANCE / CORRECTNESS: TextEditingController owns a ChangeNotifier
+    // that leaks if not disposed when the widget tree tears down.
+    textController.dispose();
+    super.dispose();
   }
 
   /// **تنسيق التاريخ بشكل آمن**
@@ -102,33 +54,29 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
 
   /// **تحميل التقييمات من الخادم**
   Future<void> fetchReviews() async {
-    setState(() {
-      isLoading = true;
-    });
+    if (!mounted) return;
+    setState(() => isLoading = true);
 
     try {
       final reviews = await _apiService.fetchReviews(placeId: widget.placeId);
-
+      if (!mounted) return;
       setState(() {
         evaluationsItemList
           ..clear()
           ..addAll(reviews);
       });
-
     } catch (_) {
+      if (!mounted) return;
       AppFeedback.error(AppCopy.errorGeneric);
     } finally {
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
   /// **إرسال التقييم**
   Future<void> submitReview() async {
-    setState(() {
-      isLoading = true;
-    });
+    if (!mounted) return;
+    setState(() => isLoading = true);
 
     final prefs = await SharedPreferences.getInstance();
     final userId =
@@ -142,28 +90,27 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
     }
 
     try {
+      final imagePath = ProfileImageStore.instance.value.file?.path ?? '';
       final insertedReview = await _apiService.submitReview(
         placeId: widget.placeId,
         userId: userId,
         name: userName,
         reviewText: textController.text.trim(),
         rating: 5,
-        image: _userImagePath ?? "",
+        image: imagePath,
       );
 
+      if (!mounted) return;
       setState(() {
         evaluationsItemList.insert(0, insertedReview);
         textController.clear();
         _showSuccessView = true;
       });
     } catch (_) {
+      if (!mounted) return;
       AppFeedback.error(AppCopy.errorGeneric);
     } finally {
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
@@ -404,18 +351,26 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
           ),
         ],
       ),
-      child: CircleAvatar(
-        backgroundImage: _userImageBytes != null
-            ? MemoryImage(_userImageBytes!)
-            : _userImageFile != null
-                ? FileImage(_userImageFile!)
-                : const AssetImage('assets/images/default_profile.png')
-                    as ImageProvider,
-        radius: 26.r,
-        backgroundColor: AppColor.primary.withOpacity(0.1),
-        child: _userImageFile == null && _userImageBytes == null
-            ? Icon(Icons.person, color: AppColor.primary, size: 26.w)
-            : null,
+      // Only the avatar rebuilds when the user changes their picture; the
+      // surrounding evaluation row stays cached.
+      child: ValueListenableBuilder<ProfileImageState>(
+        valueListenable: ProfileImageStore.instance,
+        builder: (_, snap, __) {
+          final ImageProvider provider = snap.bytes != null
+              ? MemoryImage(snap.bytes!)
+              : snap.file != null
+                  ? FileImage(snap.file!)
+                  : const AssetImage('assets/images/default_profile.png')
+                      as ImageProvider;
+          return CircleAvatar(
+            backgroundImage: provider,
+            radius: 26.r,
+            backgroundColor: AppColor.primary.withOpacity(0.1),
+            child: snap.hasImage
+                ? null
+                : Icon(Icons.person, color: AppColor.primary, size: 26.w),
+          );
+        },
       ),
     );
   }

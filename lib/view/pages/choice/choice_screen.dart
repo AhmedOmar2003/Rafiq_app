@@ -98,9 +98,19 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
                               ),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(20.r),
-                                child: Image.asset(
-                                  AppImages.choice,
-                                  fit: BoxFit.contain,
+                                child: Builder(
+                                  builder: (context) {
+                                    final dpr =
+                                        MediaQuery.devicePixelRatioOf(context);
+                                    return Image.asset(
+                                      AppImages.choice,
+                                      fit: BoxFit.contain,
+                                      // Cap decoded size at the hero's visible
+                                      // resolution × DPR. Otherwise a 4K asset
+                                      // is decoded full-size into RAM.
+                                      cacheHeight: (220 * dpr).round(),
+                                    );
+                                  },
                                 ),
                               ),
                             ),

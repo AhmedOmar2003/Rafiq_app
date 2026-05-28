@@ -1,22 +1,25 @@
-import 'package:rafiq_app/core/design/tokens/tokens.dart';
-import 'dart:io';
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
+
+import 'package:rafiq_app/core/design/tokens/tokens.dart';
+
 import '../../auth/login/login_screen.dart';
-import '../../service/auth_service.dart';
-import '../../core/design/components/components.dart';
+import '../../core/config/api_config.dart';
 import '../../core/design/components/app_page_header.dart';
+import '../../core/design/components/components.dart';
 import '../../core/utils/app_microcopy.dart';
 import '../../core/utils/spacing.dart';
-import '../../core/config/api_config.dart';
-
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import '../../service/auth_service.dart';
+import '../../service/profile_image_store.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -26,10 +29,6 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  static const String _profileImageKey = 'profile_image';
-  static const String _profileImageWebKey = 'profile_image_base64';
-  File? _image;
-  Uint8List? _webImageBytes;
   String? userName;
   String? userEmail;
   bool _isLoading = false;
@@ -38,54 +37,10 @@ class _ProfilePageState extends State<ProfilePage> {
   void initState() {
     super.initState();
     _loadUserData();
-    _loadImage();
-  }
-
-  Future<void> _saveImage(String path) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_profileImageKey, path);
-    await prefs.remove(_profileImageWebKey);
-  }
-
-  Future<void> _loadImage() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    if (kIsWeb) {
-      final base64Image = prefs.getString(_profileImageWebKey);
-      if (base64Image == null || base64Image.isEmpty) {
-        if (!mounted) return;
-        setState(() {
-          _webImageBytes = null;
-          _image = null;
-        });
-        return;
-      }
-
-      try {
-        final bytes = base64Decode(base64Image);
-        if (!mounted) return;
-        setState(() {
-          _webImageBytes = bytes;
-          _image = null;
-        });
-      } catch (_) {
-        await prefs.remove(_profileImageWebKey);
-      }
-      return;
-    }
-
-    final savedPath = prefs.getString(_profileImageKey);
-    if (savedPath == null || savedPath.isEmpty) return;
-
-    final file = File(savedPath);
-    if (await file.exists()) {
-      if (!mounted) return;
-      setState(() {
-        _image = file;
-      });
-    } else {
-      await prefs.remove(_profileImageKey);
-    }
+    // ProfileImageStore is the single source of truth — just make sure it's
+    // loaded. The hero image listens to its ValueNotifier so we never need
+    // local setState plumbing for the picture.
+    ProfileImageStore.instance.ensureLoaded();
   }
 
   Future<void> _loadUserData() async {
@@ -103,31 +58,18 @@ class _ProfilePageState extends State<ProfilePage> {
       imageQuality: 85,
       maxWidth: 1200,
     );
-    if (pickedFile != null) {
-      if (kIsWeb) {
-        final bytes = await pickedFile.readAsBytes();
-        if (bytes.isEmpty) return;
+    if (pickedFile == null) return;
 
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(_profileImageWebKey, base64Encode(bytes));
-        await prefs.remove(_profileImageKey);
-
-        if (!mounted) return;
-        setState(() {
-          _webImageBytes = bytes;
-          _image = null;
-        });
-        return;
-      }
-
-      final persistedPath = await _persistProfileImage(File(pickedFile.path));
-      if (persistedPath == null) return;
-
-      setState(() {
-        _image = File(persistedPath);
-      });
-      await _saveImage(persistedPath);
+    if (kIsWeb) {
+      final bytes = await pickedFile.readAsBytes();
+      if (bytes.isEmpty) return;
+      await ProfileImageStore.instance.setWebBytes(bytes);
+      return;
     }
+
+    final persistedPath = await _persistProfileImage(File(pickedFile.path));
+    if (persistedPath == null) return;
+    await ProfileImageStore.instance.setMobileImage(File(persistedPath));
   }
 
   Future<String?> _persistProfileImage(File sourceImage) async {
@@ -205,8 +147,19 @@ class _ProfilePageState extends State<ProfilePage> {
     final TextEditingController newPasswordController = TextEditingController();
     final TextEditingController confirmPasswordController =
         TextEditingController();
-    ValueNotifier<bool> isLoading = ValueNotifier(false);
-    ValueNotifier<String?> errorMessage = ValueNotifier(null);
+    final ValueNotifier<bool> isLoading = ValueNotifier(false);
+    final ValueNotifier<String?> errorMessage = ValueNotifier(null);
+
+    // PERFORMANCE / CORRECTNESS: dialog-scoped controllers must be disposed
+    // when the dialog closes, otherwise they leak ChangeNotifier subscribers
+    // for the lifetime of the app.
+    void _disposeResources() {
+      currentPasswordController.dispose();
+      newPasswordController.dispose();
+      confirmPasswordController.dispose();
+      isLoading.dispose();
+      errorMessage.dispose();
+    }
 
     Future<void> changePassword() async {
       if (!_formKey.currentState!.validate()) return;
@@ -242,7 +195,7 @@ class _ProfilePageState extends State<ProfilePage> {
       }
     }
 
-    showDialog(
+    showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (context) {
@@ -435,7 +388,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         );
       },
-    );
+    ).whenComplete(_disposeResources);
   }
 
   @override
@@ -476,35 +429,38 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildProfileImage() {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: AppColor.black.withOpacity(0.1),
-                blurRadius: 20,
-                spreadRadius: 5,
-              ),
-            ],
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: AppColor.black.withOpacity(0.1),
+            blurRadius: 20,
+            spreadRadius: 5,
           ),
-          child: GestureDetector(
-            onTap: _pickImage,
-            child: CircleAvatar(
+        ],
+      ),
+      child: GestureDetector(
+        onTap: _pickImage,
+        child: ValueListenableBuilder<ProfileImageState>(
+          valueListenable: ProfileImageStore.instance,
+          builder: (_, snap, __) {
+            final ImageProvider provider = snap.bytes != null
+                ? MemoryImage(snap.bytes!)
+                : snap.file != null
+                    ? FileImage(snap.file!)
+                    : const AssetImage(
+                            'assets/images/default_profile.png')
+                        as ImageProvider;
+            return CircleAvatar(
               radius: 70.w,
               backgroundColor: AppColor.surfaceCard,
               child: CircleAvatar(
                 radius: 67.w,
-                backgroundImage: _webImageBytes != null
-                    ? MemoryImage(_webImageBytes!)
-                    : _image != null
-                        ? FileImage(_image!)
-                        : const AssetImage('assets/images/default_profile.png')
-                            as ImageProvider,
-                child: (_image == null && _webImageBytes == null)
-                    ? Container(
+                backgroundImage: provider,
+                child: snap.hasImage
+                    ? null
+                    : Container(
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: AppColor.black.withOpacity(0.4),
@@ -514,13 +470,12 @@ class _ProfilePageState extends State<ProfilePage> {
                           color: AppColor.white,
                           size: 35.w,
                         ),
-                      )
-                    : null,
+                      ),
               ),
-            ),
-          ),
+            );
+          },
         ),
-      ],
+      ),
     );
   }
 

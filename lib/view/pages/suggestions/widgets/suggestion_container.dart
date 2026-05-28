@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:rafiq_app/core/design/app_image.dart';
+import 'package:rafiq_app/core/design/cached_network_image.dart';
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:rafiq_app/core/utils/app_microcopy.dart';
@@ -284,34 +285,26 @@ class _SmartImage extends StatelessWidget {
     final normalized = _normalize(path);
     if (normalized.isEmpty) return const _ImageFallback();
 
-    final dpr = MediaQuery.devicePixelRatioOf(context);
-    final cacheWidth = !kIsWeb
-        ? (MediaQuery.sizeOf(context).width * dpr).round()
-        : null;
-    final cacheHeight = !kIsWeb
-        ? (CustomSuggestionContainer._heroHeight.h * dpr).round()
-        : null;
-
+    // Remote image → goes through the persistent disk cache. This is the
+    // hot path for the suggestions feed and the biggest perf win: scrolling
+    // back and forth no longer redownloads, and second-launch is offline-fast.
     if (normalized.startsWith('http')) {
-      return Image.network(
-        normalized,
-        height: CustomSuggestionContainer._heroHeight.h,
+      return CachedNetworkImage(
+        url: normalized,
         width: double.infinity,
+        height: CustomSuggestionContainer._heroHeight.h,
         fit: BoxFit.cover,
-        cacheWidth: cacheWidth,
-        cacheHeight: cacheHeight,
-        webHtmlElementStrategy: kIsWeb
-            ? WebHtmlElementStrategy.prefer
-            : WebHtmlElementStrategy.never,
-        errorBuilder: (_, __, ___) => const _ImageFallback(),
-        loadingBuilder: (_, child, progress) {
-          if (progress == null) return child;
-          return _ImageLoading(progress: progress);
-        },
+        placeholder: (_) => const _ImageLoadingPlaceholder(),
+        errorWidget: (_) => const _ImageFallback(),
       );
     }
 
     if (!kIsWeb) {
+      final dpr = MediaQuery.devicePixelRatioOf(context);
+      final cacheWidth =
+          (MediaQuery.sizeOf(context).width * dpr).round();
+      final cacheHeight =
+          (CustomSuggestionContainer._heroHeight.h * dpr).round();
       return Image.file(
         File(normalized),
         height: CustomSuggestionContainer._heroHeight.h,
@@ -319,6 +312,7 @@ class _SmartImage extends StatelessWidget {
         fit: BoxFit.cover,
         cacheWidth: cacheWidth,
         cacheHeight: cacheHeight,
+        gaplessPlayback: true,
         errorBuilder: (_, __, ___) => const _ImageFallback(),
       );
     }
@@ -345,21 +339,25 @@ class _ImageFallback extends StatelessWidget {
   }
 }
 
-class _ImageLoading extends StatelessWidget {
-  const _ImageLoading({required this.progress});
-
-  final ImageChunkEvent progress;
+/// Indeterminate placeholder shown while the disk cache resolves / downloads.
+/// No progress fraction because [CachedNetworkImage] uses `http.get` (not
+/// streamed), so a percentage would just freeze at 0 then snap to 100.
+class _ImageLoadingPlaceholder extends StatelessWidget {
+  const _ImageLoadingPlaceholder();
 
   @override
   Widget build(BuildContext context) {
-    final total = progress.expectedTotalBytes;
     return Container(
       height: CustomSuggestionContainer._heroHeight.h,
       color: AppColor.neutral50,
       alignment: Alignment.center,
-      child: CircularProgressIndicator(
-        valueColor: AlwaysStoppedAnimation<Color>(AppColor.primary),
-        value: total != null ? progress.cumulativeBytesLoaded / total : null,
+      child: SizedBox(
+        width: 28,
+        height: 28,
+        child: CircularProgressIndicator(
+          strokeWidth: 2.4,
+          valueColor: AlwaysStoppedAnimation<Color>(AppColor.primary),
+        ),
       ),
     );
   }

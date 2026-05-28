@@ -1,230 +1,220 @@
-import 'package:rafiq_app/core/design/tokens/tokens.dart';
-import 'dart:io';
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
+
+import 'package:rafiq_app/core/design/tokens/tokens.dart';
+import 'package:rafiq_app/core/utils/app_microcopy.dart';
+import 'package:rafiq_app/model/review_model.dart';
+import 'package:rafiq_app/service/profile_image_store.dart';
 import '../../../core/utils/spacing.dart';
 import '../../evaluations/evaluations_page.dart';
-import '../../../model/review_model.dart';
 
+/// Last-review preview embedded on the place details screen.
+///
+/// PERFORMANCE NOTES:
+///   * No more `File.existsSync()` / `base64Decode()` in `build()` — the
+///     old `userImage` String path forced both. The avatar now reads from
+///     [ProfileImageStore], which decoded once (off-isolate) at startup.
+///   * No more `print()` in the build path.
+///   * Star icons are `const` so the 5-icon row is reused across rebuilds.
 class CustomEvaluations extends StatelessWidget {
-  final int placeId;
-  final EvaluationsItemModel? lastEvaluation; // تعريف lastEvaluation هنا.
-  final String? userImage; // إضافة معلمة userImage
-
   const CustomEvaluations({
-    Key? key,
+    super.key,
     required this.placeId,
-    this.lastEvaluation, // يجب أن يكون معاملًا اختياريًا.
-    this.userImage, // معلمة اختيارية لصورة المستخدم
-  }) : super(key: key);
+    this.lastEvaluation,
+    @Deprecated('Avatar now reads from ProfileImageStore.') this.userImage,
+  });
 
-  /// **تنسيق التاريخ بشكل آمن**
-  String formatDate(String? date) {
-    if (date == null || date.isEmpty) {
-      return "تاريخ غير متاح";
-    }
+  final int placeId;
+  final EvaluationsItemModel? lastEvaluation;
+  final String? userImage;
+
+  static String _formatDate(String? date) {
+    if (date == null || date.isEmpty) return AppCopy.reviewDateUnknown;
     try {
-      DateTime parsedDate = DateTime.parse(date);
-      return DateFormat('yyyy-MM-dd').format(parsedDate);
-    } catch (e) {
-      return "تاريخ غير متاح";
+      return DateFormat('yyyy-MM-dd').format(DateTime.parse(date));
+    } catch (_) {
+      return AppCopy.reviewDateUnknown;
     }
-  }
-
-  ImageProvider? _resolveAvatarProvider() {
-    if (kIsWeb) {
-      if (userImage != null && userImage!.isNotEmpty) {
-        try {
-          return MemoryImage(base64Decode(userImage!));
-        } catch (_) {}
-      }
-      if (lastEvaluation != null && lastEvaluation!.image.isNotEmpty) {
-        if (lastEvaluation!.image.startsWith('http')) {
-          return NetworkImage(lastEvaluation!.image);
-        }
-        if (lastEvaluation!.image.contains("assets")) {
-          return AssetImage(lastEvaluation!.image);
-        }
-      }
-      return null;
-    }
-
-    if (userImage != null &&
-        userImage!.isNotEmpty &&
-        File(userImage!).existsSync()) {
-      return FileImage(File(userImage!));
-    }
-    if (lastEvaluation != null && lastEvaluation!.image.isNotEmpty) {
-      if (lastEvaluation!.image.startsWith('http')) {
-        return NetworkImage(lastEvaluation!.image);
-      }
-      if (lastEvaluation!.image.contains("assets")) {
-        return AssetImage(lastEvaluation!.image);
-      }
-      if (File(lastEvaluation!.image).existsSync()) {
-        return FileImage(File(lastEvaluation!.image));
-      }
-    }
-    return null;
   }
 
   @override
   Widget build(BuildContext context) {
-    print(
-        "Building CustomEvaluations, userImage: $userImage, lastEvaluation.image: ${lastEvaluation?.image}");
     return SizedBox(
       width: 358.w,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          /// **العنوان وتصنيف التقييمات**
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    "التقييمات",
-                    style: AppText.titleLg,
-                  ),
-                  horizontalSpace(5),
-                  Text(
-                    "(تقييم 4.1K)", // عدد التقييمات
-                    style: AppText.bodySm,
-                  ),
-                ],
-              ),
-              Row(
-                children: [
-                  const Icon(
-                    Icons.filter_list_outlined,
-                    size: 19,
-                    color: AppColor.black,
-                  ),
-                  horizontalSpace(5),
-                  Text(
-                    "الأكثر شعبية",
-                    style: AppText.bodySm.copyWith(
-                      color: AppColor.black,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-
-          /// **المسافة بين العنوان وآخر تقييم**
+          _Header(),
           verticalSpace(16),
-
-          /// **عرض آخر تقييم إذا كان متوفراً**
-          lastEvaluation != null
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        /// صورة المستخدم
-                        Builder(builder: (context) {
-                          final avatarProvider = _resolveAvatarProvider();
-                          return CircleAvatar(
-                            backgroundImage: avatarProvider ??
-                                const AssetImage(
-                                        'assets/images/default_profile.png')
-                                    as ImageProvider,
-                            radius: 20.w,
-                            child: avatarProvider == null
-                                ? Icon(Icons.person, color: AppColor.white)
-                                : null,
-                          );
-                        }),
-                        horizontalSpace(12.w),
-
-                        /// تفاصيل التقييم (اسم المستخدم، تقييم النجوم، التاريخ)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            /// **اسم المستخدم**
-                            Text(
-                              lastEvaluation!.name,
-                              style: AppText.titleMd.copyWith(
-                                color: AppColor.black,
-                              ),
-                            ),
-                            verticalSpace(3),
-
-                            /// **التقييم بالنجوم والتاريخ**
-                            Row(
-                              children: [
-                                ...List.generate(
-                                  5,
-                                  (index) => const Icon(
-                                    Icons.star,
-                                    size: 15,
-                                    color: Colors.yellow,
-                                  ),
-                                ),
-                                horizontalSpace(8.w),
-                                Text(
-                                  formatDate(lastEvaluation!.date),
-                                  style: AppText.caption,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    verticalSpace(17),
-
-                    /// **نص التقييم**
-                    Text(
-                      lastEvaluation!.body,
-                      style: AppText.bodySm,
-                    ),
-                  ],
-                )
-
-              /// **عرض رسالة في حالة عدم وجود تقييمات**
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "لا توجد تقييمات بعد.",
-                      style: AppText.titleMd.copyWith(
-                        color: AppColor.black,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-
-          /// **زر "شوف كل التقييمات"**
-          verticalSpace(20),
-          Align(
-            alignment: Alignment.centerRight,
-            child: GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => EvaluationsPage(placeId: placeId),
-                  ),
-                );
-              },
-              child: Text(
-                "شوف كل التقييمات",
-                style: AppText.titleLg.copyWith(
-                  decoration: TextDecoration.underline,
-                  color: AppColor.black,
-                ),
+          if (lastEvaluation != null)
+            _LastReviewRow(
+              review: lastEvaluation!,
+              formattedDate: _formatDate(lastEvaluation!.date),
+            )
+          else
+            Text(
+              AppCopy.emptyResultsTitle,
+              style: AppText.titleMd.copyWith(
+                color: AppColor.black,
+                fontWeight: FontWeight.bold,
               ),
             ),
-          ),
+          verticalSpace(20),
+          _SeeAllLink(placeId: placeId),
         ],
+      ),
+    );
+  }
+}
+
+class _Header extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            Text(AppCopy.reviewsTitle, style: AppText.titleLg),
+            horizontalSpace(5),
+            Text(AppCopy.detailsBeFirstReview, style: AppText.bodySm),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _LastReviewRow extends StatelessWidget {
+  const _LastReviewRow({required this.review, required this.formattedDate});
+
+  final EvaluationsItemModel review;
+  final String formattedDate;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const _UserAvatar(),
+            horizontalSpace(12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    review.name,
+                    style:
+                        AppText.titleMd.copyWith(color: AppColor.black),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  verticalSpace(3),
+                  Row(
+                    children: [
+                      const _StarsRow(),
+                      horizontalSpace(8.w),
+                      Text(formattedDate, style: AppText.caption),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        verticalSpace(17),
+        Text(review.body, style: AppText.bodySm),
+      ],
+    );
+  }
+}
+
+/// Five-star row. `const` so it's a single Element shared between rebuilds
+/// instead of allocating 5 Icons every time the row builds.
+class _StarsRow extends StatelessWidget {
+  const _StarsRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _Star(),
+        _Star(),
+        _Star(),
+        _Star(),
+        _Star(),
+      ],
+    );
+  }
+}
+
+class _Star extends StatelessWidget {
+  const _Star();
+
+  @override
+  Widget build(BuildContext context) {
+    // Use a brand-warm amber via the warning token rather than Colors.yellow.
+    return const Padding(
+      padding: EdgeInsetsDirectional.only(start: 1),
+      child: Icon(Icons.star, size: 15, color: AppColor.warning),
+    );
+  }
+}
+
+class _UserAvatar extends StatelessWidget {
+  const _UserAvatar();
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<ProfileImageState>(
+      valueListenable: ProfileImageStore.instance,
+      builder: (_, snap, __) {
+        final ImageProvider? provider = snap.bytes != null
+            ? MemoryImage(snap.bytes!)
+            : snap.file != null
+                ? FileImage(snap.file!)
+                : null;
+
+        if (provider == null) {
+          return CircleAvatar(
+            radius: 20.w,
+            backgroundColor: AppColor.primary50,
+            child: Icon(Icons.person, color: AppColor.primary, size: 22.sp),
+          );
+        }
+        return CircleAvatar(radius: 20.w, backgroundImage: provider);
+      },
+    );
+  }
+}
+
+class _SeeAllLink extends StatelessWidget {
+  const _SeeAllLink({required this.placeId});
+  final int placeId;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: GestureDetector(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => EvaluationsPage(placeId: placeId),
+          ),
+        ),
+        child: Text(
+          AppCopy.reviewsTitle,
+          style: AppText.titleLg.copyWith(
+            decoration: TextDecoration.underline,
+            color: AppColor.black,
+          ),
+        ),
       ),
     );
   }

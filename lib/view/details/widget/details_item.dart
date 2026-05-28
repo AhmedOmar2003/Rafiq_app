@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 import '../../../core/design/app_image.dart';
+import '../../../core/design/cached_network_image.dart';
 import '../../../core/utils/app_color.dart';
 import '../../../core/utils/spacing.dart';
 import '../../../core/utils/text_style_theme.dart';
 import '../../../models/suggestion_item_model/suggestion_item.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class DetailsItem extends StatelessWidget {
   final SuggestionItemModel model;
@@ -78,22 +80,16 @@ class DetailsItem extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   model.image.isNotEmpty
-                      ? Image.network(
-                          _normalizeImageUrl(model.image),
+                      ? CachedNetworkImage(
+                          url: _normalizeImageUrl(model.image),
                           fit: BoxFit.cover,
-                          webHtmlElementStrategy:
-                              WebHtmlElementStrategy.prefer,
-                          errorBuilder: (context, error, stackTrace) {
-                            return _buildPlaceholder();
-                          },
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Center(
-                              child: CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation<Color>(AppColor.primary),
-                              ),
-                            );
-                          },
+                          placeholder: (_) => Center(
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                  AppColor.primary),
+                            ),
+                          ),
+                          errorWidget: (_) => _buildPlaceholder(),
                         )
                       : _buildPlaceholder(),
                   // Gradient overlay

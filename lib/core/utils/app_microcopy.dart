@@ -187,6 +187,19 @@ class AppCopy {
   static const verifyCta = 'أكّد الكود';
   static const verifyResend = 'ابعت الكود تاني';
   static const verifyResendIn = 'تقدر تطلبه تاني بعد';
+  static const verifyCodeWrongLength = 'الكود لازم يكون 6 أرقام';
+
+  // --- Signup verification (new flow after register) --------------------------
+  static const signupVerifyTitle = 'أكّد إيميلك';
+  static const signupVerifyBody = 'بعتنالك كود على بريد جيميل بتاعك،';
+  static const signupVerifyTail = 'اكتبه تحت عشان نفعّل حسابك.';
+  static const signupVerifySuccessTitle = 'حسابك اتفعّل ✅';
+  static const signupVerifySuccessBody = 'يلا نبدأ نلاقيلك أحلى الأماكن!';
+
+  // --- Password reset verification --------------------------------------------
+  static const resetVerifyTitle = 'تأكيد الهوية';
+  static const resetVerifyBody = 'بعتنالك كود على بريدك،';
+  static const resetVerifyTail = 'اكتبه عشان نأكّد إنك إنت.';
 
   // --- Reset password ----------------------------------------------------------
   static const resetTitle = 'كلمة سر جديدة';
@@ -197,7 +210,6 @@ class AppCopy {
       'تقدر دلوقتي تسجّل دخولك بكلمة السر الجديدة.';
   static const resetConfirmHint = 'اكتبها تاني للتأكيد';
   static const resetOtpHint = '6 أرقام';
-  static const verifyCodeWrongLength = 'الكود لازم يكون 6 أرقام';
 
   // --- Change password dialog --------------------------------------------------
   static const changePwTitle = 'تغيير كلمة السر';

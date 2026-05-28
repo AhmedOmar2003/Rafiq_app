@@ -1,19 +1,17 @@
-import 'dart:io';
-import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:rafiq_app/core/utils/app_microcopy.dart';
 import 'package:rafiq_app/models/suggestion_item_model/suggestion_item.dart';
+import 'package:rafiq_app/service/profile_image_store.dart';
 import 'package:rafiq_app/view/details/details_page.dart';
 import 'package:rafiq_app/view/pages/cubit.dart';
 import 'package:rafiq_app/view/pages/profile_page.dart';
 import 'package:rafiq_app/view/pages/suggestions/widgets/suggestion_container.dart';
 import 'package:rafiq_app/view/pages/suggestions/widgets/suggestion_item.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// The main screen that displays suggestions and filters
 class SuggestionsScreen extends StatefulWidget {
@@ -29,17 +27,15 @@ class SuggestionsScreen extends StatefulWidget {
 }
 
 class _SuggestionsScreenState extends State<SuggestionsScreen> {
-  static const String _profileImageKey = 'profile_image';
-  static const String _profileImageWebKey = 'profile_image_base64';
   List<SuggestionItemModel> filteredSuggestions = [];
-  File? _profileImage;
-  Uint8List? _profileImageBytes;
   final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    _loadProfileImage();
+    // Profile image is owned by ProfileImageStore (singleton). Just nudge it
+    // to load if it hasn't yet — re-mounts are free.
+    ProfileImageStore.instance.ensureLoaded();
     filteredSuggestions = widget.suggestionItemList;
   }
 
@@ -47,46 +43,6 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
   void dispose() {
     _scrollController.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadProfileImage() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    if (kIsWeb) {
-      final base64Value = prefs.getString(_profileImageWebKey);
-      if (base64Value == null || base64Value.isEmpty) {
-        if (!mounted) return;
-        setState(() {
-          _profileImageBytes = null;
-          _profileImage = null;
-        });
-        return;
-      }
-      try {
-        final bytes = base64Decode(base64Value);
-        if (!mounted) return;
-        setState(() {
-          _profileImageBytes = bytes;
-          _profileImage = null;
-        });
-      } catch (_) {
-        await prefs.remove(_profileImageWebKey);
-      }
-      return;
-    }
-
-    final savedPath = prefs.getString(_profileImageKey);
-    if (savedPath == null || savedPath.isEmpty) return;
-
-    final file = File(savedPath);
-    if (await file.exists()) {
-      if (!mounted) return;
-      setState(() {
-        _profileImage = file;
-      });
-    } else {
-      await prefs.remove(_profileImageKey);
-    }
   }
 
   @override
@@ -113,6 +69,12 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
         ),
         body: CustomScrollView(
           controller: _scrollController,
+          // PERFORMANCE: pre-cache ~one viewport off-screen so scroll feels
+          // instant without holding too many widgets alive at once.
+          cacheExtent: 600,
+          // Physics tuned for a long product feed: snappy on touch, momentum
+          // on iOS, no over-eager bouncing on the filter bar.
+          physics: const ClampingScrollPhysics(),
           slivers: [
             SliverToBoxAdapter(child: _buildFilterBar()),
             SliverPadding(
@@ -133,15 +95,26 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const ProfilePage()),
-        ).then((_) => _loadProfileImage()),
-        child: CircleAvatar(
-          radius: 18.w,
-          backgroundColor: AppColor.surfaceMuted,
-          backgroundImage: _profileImageBytes != null
-              ? MemoryImage(_profileImageBytes!) as ImageProvider
-              : _profileImage != null
-                  ? FileImage(_profileImage!)
-                  : const AssetImage('assets/images/default_profile.png'),
+        ).then((_) => ProfileImageStore.instance.refresh()),
+        // Only the avatar rebuilds when the picture changes, not the whole
+        // suggestions screen.
+        child: ValueListenableBuilder<ProfileImageState>(
+          valueListenable: ProfileImageStore.instance,
+          builder: (_, snap, __) {
+            ImageProvider provider;
+            if (snap.bytes != null) {
+              provider = MemoryImage(snap.bytes!);
+            } else if (snap.file != null) {
+              provider = FileImage(snap.file!);
+            } else {
+              provider = const AssetImage('assets/images/default_profile.png');
+            }
+            return CircleAvatar(
+              radius: 18.w,
+              backgroundColor: AppColor.surfaceMuted,
+              backgroundImage: provider,
+            );
+          },
         ),
       ),
     );
@@ -172,22 +145,31 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
   }
 
   Widget _buildSuggestionsList() {
-    return filteredSuggestions.isNotEmpty
-        ? SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final model = filteredSuggestions[index];
-                return CustomSuggestionContainer(
-                  model: model,
-                  onTap: () => _navigateToDetails(model),
-                );
-              },
-              childCount: filteredSuggestions.length,
+    if (filteredSuggestions.isEmpty) {
+      return SliverFillRemaining(child: AppStateView.search());
+    }
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          final model = filteredSuggestions[index];
+          // RepaintBoundary isolates each card on its own layer so scrolling
+          // doesn't repaint the whole list every frame.
+          return RepaintBoundary(
+            child: CustomSuggestionContainer(
+              key: ValueKey(model.placeId),
+              model: model,
+              onTap: () => _navigateToDetails(model),
             ),
-          )
-        : SliverFillRemaining(
-            child: AppStateView.search(),
           );
+        },
+        childCount: filteredSuggestions.length,
+        // PERFORMANCE: long product feeds shouldn't hang on to off-screen
+        // children — let them GC and rebuild from the model when scrolled
+        // back into view.
+        addAutomaticKeepAlives: false,
+        addRepaintBoundaries: false, // we wrap manually above
+      ),
+    );
   }
 
   void _navigateToDetails(SuggestionItemModel model) {

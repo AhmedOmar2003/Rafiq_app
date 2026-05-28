@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:rafiq_app/auth/forget%20password/vriefy_code_page.dart';
+import 'package:rafiq_app/auth/forget%20password/reset_password.dart';
+import 'package:rafiq_app/auth/widgets/otp_verify_screen.dart';
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:rafiq_app/core/utils/app_microcopy.dart';
@@ -35,7 +36,29 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       AppFeedback.success(AppCopy.forgotCodeSent);
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => VerifyCodeScreen(email: normalizedEmail)),
+        MaterialPageRoute(
+          builder: (_) => OtpVerifyScreen(
+            email: normalizedEmail,
+            flow: OtpFlow.recovery,
+            onVerify: (code) => AuthService().verifyPasswordResetOtp(
+              email: normalizedEmail,
+              otpCode: code,
+            ),
+            onResend: () =>
+                AuthService().sendPasswordResetOtp(normalizedEmail),
+            onSuccess: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ResetPasswordPage(
+                    emailForOtpFlow: normalizedEmail,
+                    requiresOtpVerification: false,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
       );
     } catch (e) {
       if (!mounted) return;

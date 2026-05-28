@@ -78,21 +78,17 @@ class AuthService {
     return message.replaceFirst('Exception: ', '');
   }
 
-  /// Sign-up step 1 — collect user details and trigger the 6-digit OTP email.
+  /// Raw Supabase sign-up call.
   ///
-  /// After this call Supabase has created an unconfirmed `auth.users` row
-  /// and dispatched a 6-digit code via the "Confirm signup" email template.
-  /// The session is intentionally `null` — the account is NOT logged in until
-  /// [verifySignUpOtp] succeeds.
-  ///
-  /// Prerequisites (one-time, in Supabase dashboard):
-  ///   Auth -> Providers -> Email   -> Enable email confirmations: ON
-  ///   Auth -> Email templates -> Confirm signup
-  ///     Subject: "كود رفيق"
-  ///     Body MUST contain `{{ .Token }}` (6-digit code), not `{{ .ConfirmationURL }}`.
+  /// Behaviour depends on the dashboard setting
+  /// (Authentication → Providers → Email → "Confirm email"):
+  ///   * **OFF** → returned [AuthResponse] contains a live session; user is
+  ///     immediately logged in. The wrapping [signUp] caches it.
+  ///   * **ON**  → session is null; user must verify via [verifySignUpOtp]
+  ///     before they can sign in. Supabase sends the OTP email automatically.
   ///
   /// Throws [Exception] with a friendly Arabic message on failure.
-  Future<void> signUpWithEmailOtp({
+  Future<AuthResponse> signUpWithEmailOtp({
     required String name,
     required String email,
     required String password,
@@ -113,7 +109,7 @@ class AuthService {
     }
 
     try {
-      await _client.auth.signUp(
+      return await _client.auth.signUp(
         email: normalizedEmail,
         password: password,
         data: {
@@ -285,20 +281,55 @@ class AuthService {
     }
   }
 
-  /// Legacy synchronous signUp kept for callers that don't yet use the OTP
-  /// verification screen. Equivalent to [signUpWithEmailOtp] without the
-  /// verification step — the user must still verify before they can sign in
-  /// (Supabase's email confirmation requirement is now ON by design).
+  /// Direct sign-up — creates the account and immediately logs the user in.
+  ///
+  /// Requires **Email Confirmation = OFF** in the Supabase dashboard
+  /// (Authentication → Providers → Email). With it disabled, `signUp`
+  /// returns an active session straight away and we cache it.
+  ///
+  /// If confirmation is still ON in Supabase, the returned session will be
+  /// null and the user will be unable to sign in — Supabase rejects the
+  /// password until the email is verified.
   Future<UserModel> signUp({
     required String name,
     required String email,
     required String password,
   }) async {
-    await signUpWithEmailOtp(name: name, email: email, password: password);
+    final normalizedEmail = email.trim().toLowerCase();
+    final normalizedName = name.trim();
+
+    final response = await signUpWithEmailOtp(
+      name: normalizedName,
+      email: normalizedEmail,
+      password: password,
+    );
+
+    final user = response.user ?? _client.auth.currentUser;
+    final session = response.session;
+
+    // If email confirmation is OFF, Supabase returns a live session — cache it.
+    if (user != null && session != null) {
+      final profile = await _loadProfile(user.id);
+      final cachedName = profile?['full_name']?.toString() ??
+          user.userMetadata?['full_name']?.toString() ??
+          normalizedName;
+      final cachedEmail =
+          profile?['email']?.toString() ?? user.email ?? normalizedEmail;
+
+      await _cacheUserSession(
+        id: user.id,
+        name: cachedName,
+        email: cachedEmail,
+      );
+
+      return UserModel(id: user.id, name: cachedName, email: cachedEmail);
+    }
+
+    // No session — user must verify their email before signing in.
     return UserModel(
-      id: '',
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
+      id: user?.id ?? '',
+      name: normalizedName,
+      email: normalizedEmail,
     );
   }
 

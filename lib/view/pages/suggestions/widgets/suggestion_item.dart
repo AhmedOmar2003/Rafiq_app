@@ -65,7 +65,13 @@ class SuggestionItem extends StatelessWidget {
       onTap: () async {
         await _openFilterSheet(context);
       },
+      // PERFORMANCE: only rebuild this chip when *its own* slot in FilterState
+      // changes. Without buildWhen, every state emit (loading toggle, places
+      // update, error update) would rebuild all 3 chips needlessly.
       child: BlocBuilder<FilterCubit, FilterState>(
+        buildWhen: (prev, curr) =>
+            _getSelectedFilterFromState(model.text, prev) !=
+            _getSelectedFilterFromState(model.text, curr),
         builder: (context, state) {
           final selectedFilter = _getSelectedFilterFromState(model.text, state);
           final isSelected = selectedFilter != null;
