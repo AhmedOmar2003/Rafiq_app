@@ -10,6 +10,7 @@ import 'package:rafiq_app/model/place.dart';
 import 'package:rafiq_app/service/api_service.dart';
 import 'package:rafiq_app/service/subscription_service.dart';
 import 'package:rafiq_app/view/details/details_page.dart';
+import 'package:rafiq_app/view/pages/choice/choice_screen.dart';
 import 'package:rafiq_app/view/pages/choice/take_data_screen.dart';
 import 'package:rafiq_app/view/home/widget/stepper_component.dart';
 import 'package:rafiq_app/view/provider/analytics/analytics_screen.dart';
@@ -162,6 +163,19 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
     await _refreshHub();
   }
 
+  void _goBackToChoice() {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => ChoiceScreen(
+          onPlanSelected: () {},
+          onNoPlanSelected: () {},
+          onNext: () {},
+        ),
+      ),
+      (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final placeCount = _places.length;
@@ -170,7 +184,11 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
       // "تابع خدمتك" — same identity post-subscription, no role flip.
       header: AppPageHeader(
         title: hubTitle,
-        leading: const SizedBox.shrink(),
+        leading: IconButton(
+          onPressed: _goBackToChoice,
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          tooltip: 'رجوع',
+        ),
       ),
       body: ValueListenableBuilder<ProviderEntitlement>(
         valueListenable: SubscriptionService.instance.entitlement,

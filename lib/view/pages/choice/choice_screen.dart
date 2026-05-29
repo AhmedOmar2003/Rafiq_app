@@ -62,15 +62,15 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
         MaterialPageRoute(builder: (_) => const HomeView()),
         (route) => false,
       );
-      } else {
+    } else {
       await UserRoleStore.instance.chooseProvider();
       if (!mounted) return;
-      final navContext = navigatorKey.currentContext ?? context;
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
           builder: (_) => SubscriptionScreen(
             onboarding: true,
             onPlanChosen: () {
+              final navContext = navigatorKey.currentContext ?? context;
               Navigator.of(navContext, rootNavigator: true).pushAndRemoveUntil(
                 MaterialPageRoute(
                   builder: (_) => const ProviderHubScreen(),
