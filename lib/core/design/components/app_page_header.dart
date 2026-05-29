@@ -94,20 +94,25 @@ class AppPageHeader extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final canPop = Navigator.canPop(context);
     final showLeading = leading != null || canPop;
+    final hasActions = actions != null && actions!.isNotEmpty;
     final fg = _fg;
     final headerHeight = subtitle == null ? kToolbarHeight : kToolbarHeight + 18;
-    final leadingSlot = showLeading
-        ? leading ??
+    // When a slot is empty we render nothing instead of a 48dp spacer so the
+    // title sits flush with the page padding — matching the right-aligned
+    // body content underneath (per design-system "title is anchored to the
+    // content edge" rule).
+    final Widget? leadingSlot = showLeading
+        ? (leading ??
             _HeaderIconButton(
               icon: Icons.arrow_back_ios_new_rounded,
               color: fg,
               onTap: onBack ?? () => Navigator.maybePop(context),
               semanticLabel: 'رجوع',
-            )
-        : SizedBox(width: 48.w);
-    final actionsSlot = actions != null && actions!.isNotEmpty
+            ))
+        : null;
+    final Widget? actionsSlot = hasActions
         ? Row(mainAxisSize: MainAxisSize.min, children: actions!)
-        : SizedBox(width: 48.w);
+        : null;
     final titleBlock = Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment:
@@ -155,10 +160,11 @@ class AppPageHeader extends StatelessWidget implements PreferredSizeWidget {
                 ? Stack(
                     alignment: Alignment.center,
                     children: [
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: leadingSlot,
-                      ),
+                      if (leadingSlot != null)
+                        Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: leadingSlot,
+                        ),
                       Align(
                         alignment: Alignment.center,
                         child: Padding(
@@ -168,24 +174,24 @@ class AppPageHeader extends StatelessWidget implements PreferredSizeWidget {
                           child: titleBlock,
                         ),
                       ),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: actionsSlot,
-                      ),
+                      if (actionsSlot != null)
+                        Align(
+                          alignment: AlignmentDirectional.centerEnd,
+                          child: actionsSlot,
+                        ),
                     ],
                   )
                 : Row(
                     children: [
-                      leadingSlot,
-                      Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: AppSpacing.xs.w,
-                          ),
-                          child: titleBlock,
-                        ),
-                      ),
-                      actionsSlot,
+                      if (leadingSlot != null) ...[
+                        leadingSlot,
+                        SizedBox(width: AppSpacing.xs.w),
+                      ],
+                      Expanded(child: titleBlock),
+                      if (actionsSlot != null) ...[
+                        SizedBox(width: AppSpacing.xs.w),
+                        actionsSlot,
+                      ],
                     ],
                   ),
           ),

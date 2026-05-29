@@ -368,7 +368,10 @@ class _BackIconButton extends StatelessWidget {
             width: 52.w,
             height: 52.w,
             child: Icon(
-              Icons.arrow_forward, // RTL: forward icon points "back"
+              // arrow_back_ios_new_rounded auto-mirrors in RTL so it visually
+              // points to the right — the natural "back" direction for Arabic
+              // reading order. Matches the AppPageHeader leading icon.
+              Icons.arrow_back_ios_new_rounded,
               color: AppColor.textPrimary,
               size: 22.sp,
             ),
