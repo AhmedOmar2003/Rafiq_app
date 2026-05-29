@@ -32,7 +32,9 @@ class _DetailsPageState extends State<DetailsPage> {
   final ApiService _apiService = ApiService();
   late SuggestionItemModel currentModel;
   EvaluationsItemModel? lastEvaluation;
+  List<String> galleryImages = const [];
   bool _isReviewLoading = false;
+  bool _isGalleryLoading = false;
   bool _isMounted = true;
 
   @override
@@ -41,6 +43,7 @@ class _DetailsPageState extends State<DetailsPage> {
     currentModel = widget.model;
     // Profile image is now owned by ProfileImageStore — just nudge it.
     ProfileImageStore.instance.ensureLoaded();
+    _fetchGalleryImages(currentModel);
     _fetchLastEvaluationFromAPI(currentModel.placeId);
   }
 
@@ -72,11 +75,39 @@ class _DetailsPageState extends State<DetailsPage> {
     }
   }
 
+  Future<void> _fetchGalleryImages(SuggestionItemModel model) async {
+    final placeUuid = model.placeUuid;
+    if (placeUuid == null || placeUuid.isEmpty) {
+      if (!_isMounted) return;
+      setState(() => galleryImages = [model.image]);
+      return;
+    }
+
+    if (!_isMounted) return;
+    setState(() => _isGalleryLoading = true);
+    try {
+      final images =
+          await _apiService.fetchPlaceGalleryImages(placeUuid: placeUuid);
+      if (!_isMounted) return;
+      setState(() {
+        galleryImages = images.isNotEmpty ? images : [model.image];
+      });
+    } catch (_) {
+      if (!_isMounted) return;
+      setState(() => galleryImages = [model.image]);
+    } finally {
+      if (_isMounted) {
+        setState(() => _isGalleryLoading = false);
+      }
+    }
+  }
+
   void updateModel(SuggestionItemModel newModel) {
     if (!_isMounted) return;
     setState(() {
       currentModel = newModel;
     });
+    _fetchGalleryImages(newModel);
     _fetchLastEvaluationFromAPI(newModel.placeId);
   }
 
@@ -100,7 +131,11 @@ class _DetailsPageState extends State<DetailsPage> {
                 AppSpacing.huge.h * 2, // comfortable bottom breathing room
               ),
               children: [
-                _DetailsSection(model: currentModel),
+                _DetailsSection(
+                  model: currentModel,
+                  galleryImages: galleryImages,
+                  isLoading: _isGalleryLoading,
+                ),
                 gapV(AppSpacing.xxl),
                 _ReviewsSection(
                   placeId: currentModel.placeId,
@@ -142,9 +177,15 @@ class _DetailsPageState extends State<DetailsPage> {
 // ===========================================================================
 
 class _DetailsSection extends StatelessWidget {
-  const _DetailsSection({required this.model});
+  const _DetailsSection({
+    required this.model,
+    required this.galleryImages,
+    required this.isLoading,
+  });
 
   final SuggestionItemModel model;
+  final List<String> galleryImages;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -152,7 +193,11 @@ class _DetailsSection extends StatelessWidget {
       padding: EdgeInsets.zero,
       child: Column(
         children: [
-          DetailsItem(model: model),
+          DetailsItem(
+            model: model,
+            galleryImages: galleryImages,
+            isLoading: isLoading,
+          ),
           Padding(
             padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
             child: const CustomDivider(),

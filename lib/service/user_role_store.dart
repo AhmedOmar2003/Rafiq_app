@@ -21,8 +21,10 @@ class UserRoleStore {
   static final UserRoleStore instance = UserRoleStore._();
 
   static const _kIsProviderKey = 'is_provider_role';
+  static const _kRoleChosenKey = 'role_chosen';
 
   final ValueNotifier<bool> isProvider = ValueNotifier<bool>(false);
+  final ValueNotifier<bool> hasChosenRole = ValueNotifier<bool>(false);
 
   bool _loaded = false;
   Future<void>? _loadInFlight;
@@ -40,6 +42,7 @@ class UserRoleStore {
     try {
       final prefs = await SharedPreferences.getInstance();
       isProvider.value = prefs.getBool(_kIsProviderKey) ?? false;
+      hasChosenRole.value = prefs.getBool(_kRoleChosenKey) ?? false;
     } catch (_) {
       // Treat as regular user on failure.
     } finally {
@@ -53,8 +56,24 @@ class UserRoleStore {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_kIsProviderKey, value);
+      await prefs.setBool(_kRoleChosenKey, true);
+      hasChosenRole.value = true;
     } catch (_) {/* swallow */}
   }
 
-  Future<void> clear() => setProvider(false);
+  Future<void> chooseRegularUser() async => setProvider(false);
+
+  Future<void> chooseProvider() async => setProvider(true);
+
+  Future<void> resetRoleChoice() async {
+    isProvider.value = false;
+    hasChosenRole.value = false;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_kIsProviderKey);
+      await prefs.remove(_kRoleChosenKey);
+    } catch (_) {/* swallow */}
+  }
+
+  Future<void> clear() => resetRoleChoice();
 }

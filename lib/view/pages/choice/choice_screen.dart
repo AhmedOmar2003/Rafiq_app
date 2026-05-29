@@ -56,32 +56,31 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
     }
 
     if (_selectedIndex == 0) {
-      await UserRoleStore.instance.setProvider(false);
+      await UserRoleStore.instance.chooseRegularUser();
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const HomeView()),
       );
-      } else {
-        await UserRoleStore.instance.setProvider(true);
-        if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => SubscriptionScreen(
-              onboarding: true,
-              onPlanChosen: () {
+    } else {
+      await UserRoleStore.instance.chooseProvider();
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SubscriptionScreen(
+            onboarding: true,
+            onPlanChosen: () {
               // Once a plan is in place, send the provider straight into the
-              // service hub so they can see the plan, stats, and next steps
-              // in one place. Places can still be added from the hub.
+              // service hub so they can manage places and stats in one place.
               Navigator.pushReplacement(
                 navigatorKey.currentContext ?? context,
                 MaterialPageRoute(builder: (_) => const ProviderHubScreen()),
               );
             },
-            ),
           ),
-        );
+        ),
+      );
     }
     widget.onNext();
   }

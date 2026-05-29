@@ -14,7 +14,7 @@ import 'package:rafiq_app/service/api_service.dart';
 import 'package:rafiq_app/service/feature_gate.dart';
 import 'package:rafiq_app/service/subscription_service.dart';
 import 'package:rafiq_app/view/pages/choice/choice_screen.dart';
-import 'package:rafiq_app/view/pages/choice/save_data_screen.dart';
+import 'package:rafiq_app/view/provider/hub/provider_hub_screen.dart';
 import 'package:rafiq_app/view/provider/subscription/subscription_screen.dart';
 
 import '../../../core/design/app_button.dart';
@@ -156,15 +156,27 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
       return;
     }
 
+    if (_providerId == null) {
+      _showSnackBar(AppCopy.providerSessionExpired, isError: true);
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
-      // The legacy API takes a single `imagePath`. Until the multi-image
-      // endpoint is wired (see `place_images` table), we send the user's
-      // chosen cover (first image) and keep the rest locally — the UI
-      // still respects plan caps so the user sees their gallery grow as
-      // they upgrade.
+      final existingPlaces =
+          await ApiService().fetchProviderPlaces(providerId: _providerId!);
+      final allowed = await FeatureGate.requirePlaceSlot(
+        context,
+        _entitlement ?? ProviderEntitlement.freeFallback,
+        existingPlaces.length,
+      );
+      if (!allowed) {
+        return;
+      }
+
       final coverPath = _images.isEmpty ? null : _images.first.path;
       await ApiService().addPlace(
+        providerId: _providerId!,
         placeName: _placeNameController.text.trim(),
         activityName: _selectedPlaceType ?? '',
         budget: _selectedBudget ?? '',
@@ -172,13 +184,14 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
         cityName: _selectedCity ?? '',
         description: _descriptionController.text.trim(),
         imagePath: coverPath,
+        galleryImages: _images,
       );
 
       if (!_isMounted) return;
 
       await _saveUserPlaceLocally();
       _showSnackBar(AppCopy.providerAddedSuccess);
-      _navigateToSplashScreen();
+      _returnToHub();
     } catch (e) {
       _showSnackBar(
         e.toString().replaceFirst('Exception: ', ''),
@@ -202,6 +215,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
         'rating': 5.0,
         'placeAddress': _addressController.text.trim(),
         'imageUrl': _images.isEmpty ? '' : _images.first.path,
+        'galleryImageUrls': _images.map((f) => f.path).toList(),
       'activityName': _selectedPlaceType ?? '',
       'cityName': _selectedCity ?? '',
       'placeId': DateTime.now().millisecondsSinceEpoch, // unique id
@@ -210,11 +224,15 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
     await prefs.setStringList('user_places', userPlacesJson);
   }
 
-  void _navigateToSplashScreen() {
+  void _returnToHub() {
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context, true);
+      return;
+    }
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (context) => const SplashScreen()),
-      (Route<dynamic> route) => false,
+      MaterialPageRoute(builder: (_) => const ProviderHubScreen()),
+      (route) => false,
     );
   }
 

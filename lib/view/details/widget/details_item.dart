@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -12,12 +12,46 @@ import '../../../core/utils/spacing.dart';
 import '../../../core/utils/text_style_theme.dart';
 import '../../../models/suggestion_item_model/suggestion_item.dart';
 
-class DetailsItem extends StatelessWidget {
+class DetailsItem extends StatefulWidget {
   final SuggestionItemModel model;
-  const DetailsItem({super.key, required this.model});
+  final List<String> galleryImages;
+  final bool isLoading;
+
+  const DetailsItem({
+    super.key,
+    required this.model,
+    required this.galleryImages,
+    required this.isLoading,
+  });
+
+  @override
+  State<DetailsItem> createState() => _DetailsItemState();
+}
+
+class _DetailsItemState extends State<DetailsItem> {
+  final PageController _galleryController = PageController();
+  int _currentGalleryIndex = 0;
+
+  @override
+  void dispose() {
+    _galleryController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant DetailsItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.galleryImages.length != widget.galleryImages.length &&
+        _currentGalleryIndex >= widget.galleryImages.length) {
+      _currentGalleryIndex = 0;
+      if (_galleryController.hasClients) {
+        _galleryController.jumpToPage(0);
+      }
+    }
+  }
 
   void openMap() async {
-    final String query = "${model.address}, ${model.text}";
+    final String query = "${widget.model.address}, ${widget.model.text}";
     final Uri googleMapsUri = Uri.parse(
         "https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(query)}");
     try {
@@ -57,8 +91,8 @@ class DetailsItem extends StatelessWidget {
     return trimmed;
   }
 
-  Widget _buildDetailImage(BuildContext context) {
-    final normalized = _normalizeImageUrl(model.image);
+  Widget _buildGalleryImage(BuildContext context, String rawUrl) {
+    final normalized = _normalizeImageUrl(rawUrl);
     if (normalized.isEmpty) {
       return _buildPlaceholder();
     }
@@ -89,89 +123,180 @@ class DetailsItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final model = widget.model;
+    final gallery = widget.galleryImages.isNotEmpty
+        ? widget.galleryImages
+        : <String>[widget.model.image];
+    final hasGallery = gallery.length > 1;
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Image Section
-          Container(
+          SizedBox(
             height: 240.h,
             width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20.r),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColor.black.withOpacity(0.1),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20.r),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  _buildDetailImage(context),
-                  // Gradient overlay
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    height: 100.h,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            AppColor.black.withOpacity(0.7),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20.r),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColor.black.withOpacity(0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20.r),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    PageView.builder(
+                      controller: _galleryController,
+                      itemCount: gallery.length,
+                      onPageChanged: (index) {
+                        if (!mounted) return;
+                        setState(() => _currentGalleryIndex = index);
+                      },
+                      itemBuilder: (_, index) =>
+                          _buildGalleryImage(context, gallery[index]),
+                    ),
+                    // Gradient overlay
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      height: 100.h,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              AppColor.black.withOpacity(0.7),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Rating badge
+                    Positioned(
+                      top: 16.h,
+                      right: 16.w,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                        decoration: BoxDecoration(
+                          color: AppColor.surfaceCard,
+                          borderRadius: BorderRadius.circular(20.r),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColor.black.withOpacity(0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.star,
+                              color: Colors.amber,
+                              size: 16,
+                            ),
+                            horizontalSpace(4),
+                            Text(
+                              widget.model.rate.toString(),
+                              style: TextStyleTheme.textStyle12Medium.copyWith(
+                                color: AppColor.textPrimary,
+                              ),
+                            ),
                           ],
                         ),
                       ),
                     ),
-                  ),
-                  // Rating badge
-                  Positioned(
-                    top: 16.h,
-                    right: 16.w,
-                    child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                      decoration: BoxDecoration(
-                        color: AppColor.surfaceCard,
-                        borderRadius: BorderRadius.circular(20.r),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColor.black.withOpacity(0.1),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
+                    if (hasGallery)
+                      Positioned(
+                        left: 16.w,
+                        top: 16.h,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 10.w,
+                            vertical: 4.h,
                           ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.star,
-                            color: Colors.amber,
-                            size: 16,
+                          decoration: BoxDecoration(
+                            color: AppColor.surfaceCard.withOpacity(0.9),
+                            borderRadius: BorderRadius.circular(999),
                           ),
-                          horizontalSpace(4),
-                          Text(
-                            model.rate.toString(),
+                          child: Text(
+                            '${_currentGalleryIndex + 1}/${gallery.length}',
                             style: TextStyleTheme.textStyle12Medium.copyWith(
                               color: AppColor.textPrimary,
                             ),
                           ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ),
-                ],
+                    if (widget.isLoading)
+                      Positioned.fill(
+                        child: Container(
+                          color: Colors.black.withOpacity(0.12),
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColor.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
+          if (hasGallery) ...[
+            verticalSpace(12),
+            SizedBox(
+              height: 64.h,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: gallery.length,
+                separatorBuilder: (_, __) => horizontalSpace(8),
+                itemBuilder: (context, index) {
+                  final thumb = gallery[index];
+                  final isActive = index == _currentGalleryIndex;
+                  return GestureDetector(
+                    onTap: () {
+                      _galleryController.animateToPage(
+                        index,
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeOutCubic,
+                      );
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 64.w,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14.r),
+                        border: Border.all(
+                          color: isActive
+                              ? AppColor.primary
+                              : AppColor.border,
+                          width: isActive ? 2 : 1,
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(13.r),
+                        child: _buildGalleryImage(context, thumb),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
           
           verticalSpace(20),
           

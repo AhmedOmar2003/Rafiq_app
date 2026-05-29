@@ -10,6 +10,7 @@ import 'package:rafiq_app/on_boarding/on_boarding_screen.dart';
 import 'package:rafiq_app/service/auth_service.dart';
 import 'package:rafiq_app/service/user_role_store.dart';
 import 'package:rafiq_app/view/pages/choice/choice_screen.dart';
+import 'package:rafiq_app/view/home/home_view.dart';
 import 'package:rafiq_app/view/provider/hub/provider_hub_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -119,14 +120,18 @@ class _AuthGateState extends State<AuthGate> {
         final results = snapshot.data ?? const [];
         final session = Supabase.instance.client.auth.currentSession;
         if (session != null) {
+          if (!UserRoleStore.instance.hasChosenRole.value) {
+            return ChoiceScreen(
+              onPlanSelected: () {},
+              onNoPlanSelected: () {},
+              onNext: () {},
+            );
+          }
+
           if (UserRoleStore.instance.isProvider.value) {
             return const ProviderHubScreen();
           }
-          return ChoiceScreen(
-            onPlanSelected: () {},
-            onNoPlanSelected: () {},
-            onNext: () {},
-          );
+          return const HomeView();
         }
 
         final hasSeenOnBoarding = results.isNotEmpty && results[1] == true;

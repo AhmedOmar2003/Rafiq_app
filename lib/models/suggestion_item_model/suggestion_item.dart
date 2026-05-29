@@ -14,6 +14,7 @@ class SuggestionItemModel {
   final Color color;
   final String city;
   final int placeId;
+  final String? placeUuid;
 
   SuggestionItemModel({
     required this.text,
@@ -27,6 +28,7 @@ class SuggestionItemModel {
     required this.color,
     required this.city,
     required this.placeId,
+    this.placeUuid,
   });
 
   factory SuggestionItemModel.fromPlace(Place place) {
@@ -44,6 +46,7 @@ class SuggestionItemModel {
       color: _mapCategoryToColor(place.activityName),
       city: place.cityName,
       placeId: place.placeId,
+      placeUuid: place.placeUuid,
     );
   }
 

@@ -11,6 +11,9 @@ import 'package:rafiq_app/core/utils/app_microcopy.dart';
 import 'package:rafiq_app/core/utils/assets.dart';
 import 'package:rafiq_app/service/auth_service.dart';
 import 'package:rafiq_app/view/pages/choice/choice_screen.dart';
+import 'package:rafiq_app/service/user_role_store.dart';
+import 'package:rafiq_app/view/home/home_view.dart';
+import 'package:rafiq_app/view/provider/hub/provider_hub_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -66,16 +69,27 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _navigateToChoiceScreen() {
+  void _navigateAfterAuth() {
+    if (!UserRoleStore.instance.hasChosenRole.value) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ChoiceScreen(
+            onPlanSelected: () {},
+            onNoPlanSelected: () {},
+            onNext: () {},
+          ),
+        ),
+      );
+      return;
+    }
+
+    final target = UserRoleStore.instance.isProvider.value
+        ? const ProviderHubScreen()
+        : const HomeView();
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(
-        builder: (context) => ChoiceScreen(
-          onPlanSelected: () {},
-          onNoPlanSelected: () {},
-          onNext: () {},
-        ),
-      ),
+      MaterialPageRoute(builder: (_) => target),
     );
   }
 
@@ -112,7 +126,7 @@ class _LoginScreenState extends State<LoginScreen> {
             imageAsset: AppImages.loginSuccess,
             onContinue: () {
               setState(() => _showSuccessOverlay = false);
-              _navigateToChoiceScreen();
+              _navigateAfterAuth();
             },
           ),
       ],

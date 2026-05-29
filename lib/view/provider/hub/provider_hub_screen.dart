@@ -6,12 +6,20 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:rafiq_app/core/utils/app_microcopy.dart';
+import 'package:rafiq_app/models/suggestion_item_model/suggestion_item.dart';
 import 'package:rafiq_app/models/subscription/plan.dart';
+import 'package:rafiq_app/model/place.dart';
+import 'package:rafiq_app/service/api_service.dart';
 import 'package:rafiq_app/service/subscription_service.dart';
+import 'package:rafiq_app/service/user_role_store.dart';
+import 'package:rafiq_app/view/details/details_page.dart';
+import 'package:rafiq_app/view/pages/choice/choice_screen.dart';
 import 'package:rafiq_app/view/pages/choice/take_data_screen.dart';
+import 'package:rafiq_app/view/home/widget/stepper_component.dart';
 import 'package:rafiq_app/view/provider/analytics/analytics_screen.dart';
 import 'package:rafiq_app/view/provider/promotions/promotions_screen.dart';
 import 'package:rafiq_app/view/provider/subscription/subscription_screen.dart';
+import 'package:rafiq_app/core/utils/assets.dart';
 
 /// Central provider dashboard.
 ///
@@ -35,6 +43,9 @@ class ProviderHubScreen extends StatefulWidget {
 
 class _ProviderHubScreenState extends State<ProviderHubScreen> {
   String? _providerId;
+  String? _providerName;
+  List<Place> _places = const [];
+  bool _loadingPlaces = false;
 
   @override
   void initState() {
@@ -43,10 +54,16 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
     SubscriptionService.instance.loadCatalog();
     if (pid != null) {
       _providerId = pid;
-      SubscriptionService.instance.loadEntitlement(pid);
+      _providerName = widget.providerName;
+      _bootstrapProviderState(pid);
     } else {
       _resolveProviderId();
     }
+  }
+
+  Future<void> _bootstrapProviderState(String providerId) async {
+    await SubscriptionService.instance.loadEntitlement(providerId);
+    await _loadProviderPlaces(providerId);
   }
 
   Future<void> _resolveProviderId() async {
@@ -61,103 +78,195 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
           .maybeSingle();
       final resolved = row?['id'] as String?;
       if (!mounted || resolved == null || resolved == _providerId) return;
-      setState(() => _providerId = resolved);
-      await SubscriptionService.instance.loadEntitlement(resolved);
+      setState(() {
+        _providerId = resolved;
+      });
+      await _bootstrapProviderState(resolved);
     } catch (_) {
       // Keep the free fallback; the hub still opens and shows the catalog.
     }
   }
 
+  Future<void> _loadProviderPlaces(String providerId) async {
+    if (!mounted) return;
+    setState(() => _loadingPlaces = true);
+    try {
+      final places = await ApiService().fetchProviderPlaces(providerId: providerId);
+      if (!mounted) return;
+      setState(() => _places = places);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _places = const []);
+    } finally {
+      if (mounted) setState(() => _loadingPlaces = false);
+    }
+  }
+
+  Future<void> _refreshHub() async {
+    final pid = _providerId;
+    if (pid == null) return;
+    await SubscriptionService.instance.loadEntitlement(pid, force: true);
+    await _loadProviderPlaces(pid);
+  }
+
+  Future<void> _openAddPlace() async {
+    final pid = _providerId;
+    if (pid == null) return;
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => const AddPlaceScreen()),
+    );
+    if (result == true) {
+      await _refreshHub();
+    }
+  }
+
+  Future<void> _previewPlace(Place place) async {
+    final previewModel = SuggestionItemModel.fromPlace(place);
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DetailsPage(
+          model: previewModel,
+          suggestionItemList: _places
+              .map((p) => SuggestionItemModel.fromPlace(p))
+              .toList(growable: false),
+        ),
+      ),
+    );
+    await _loadProviderPlaces(_providerId!);
+  }
+
+  Future<void> _changeRole() async {
+    await UserRoleStore.instance.resetRoleChoice();
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChoiceScreen(
+          onPlanSelected: () {},
+          onNoPlanSelected: () {},
+          onNext: () {},
+        ),
+      ),
+      (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final placeCount = _places.length;
+    final hubTitle = placeCount > 1 ? 'تابع خدماتك' : AppCopy.hubTitle;
     return AppPageScaffold(
       // "تابع خدمتك" — same identity post-subscription, no role flip.
-      header: const AppPageHeader(title: AppCopy.hubTitle),
+      header: AppPageHeader(title: hubTitle, actions: [
+        IconButton(
+          tooltip: 'تغيير الدور',
+          onPressed: _changeRole,
+          icon: const Icon(Icons.swap_horiz_rounded),
+        ),
+      ]),
       body: ValueListenableBuilder<ProviderEntitlement>(
         valueListenable: SubscriptionService.instance.entitlement,
         builder: (_, ent, __) {
-          return ListView(
-            padding: EdgeInsets.fromLTRB(
-              AppSpacing.xxl.w,
-              AppSpacing.lg.h,
-              AppSpacing.xxl.w,
-              AppSpacing.huge.h,
+          return RefreshIndicator(
+            onRefresh: _refreshHub,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.xxl.w,
+                AppSpacing.lg.h,
+                AppSpacing.xxl.w,
+                AppSpacing.huge.h,
+              ),
+              children: [
+                _Greeting(name: _providerName ?? widget.providerName),
+                gapV(AppSpacing.lg),
+                _PlanSummaryCard(
+                  entitlement: ent,
+                  onManage: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SubscriptionScreen(
+                        providerId: _providerId,
+                      ),
+                    ),
+                  ),
+                ),
+                gapV(AppSpacing.lg),
+                _ProviderFlowCard(
+                  placeCount: placeCount,
+                  maxPlaces: ent.maxPlaces,
+                  imagesPerPlace: ent.maxGalleryImages,
+                  onAddPlace: _openAddPlace,
+                  onRefresh: _refreshHub,
+                  canAddPlace: ent.maxPlaces > placeCount,
+                ),
+                gapV(AppSpacing.lg),
+                _PlacesSection(
+                  loading: _loadingPlaces,
+                  places: _places,
+                  onAddPlace: _openAddPlace,
+                  onPreviewPlace: _previewPlace,
+                  entitlement: ent,
+                ),
+                gapV(AppSpacing.lg),
+                _KpiStrip(entitlement: ent),
+                gapV(AppSpacing.xxl),
+                _FeatureTile(
+                  icon: Icons.store_rounded,
+                  title: AppCopy.hubFeatTitlePlaces,
+                  body: AppCopy.hubFeatBodyPlaces,
+                  onTap: _openAddPlace,
+                ),
+                gapV(AppSpacing.md),
+                _FeatureTile(
+                  icon: Icons.bar_chart_rounded,
+                  title: AppCopy.hubFeatTitleAnalytics,
+                  body: AppCopy.hubFeatBodyAnalytics,
+                  lockedLabel:
+                      ent.hasAnalyticsBasic ? null : AppCopy.hubLockedTag,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AnalyticsScreen(
+                        providerId: _providerId,
+                      ),
+                    ),
+                  ),
+                ),
+                gapV(AppSpacing.md),
+                _FeatureTile(
+                  icon: Icons.campaign_rounded,
+                  title: AppCopy.hubFeatTitlePromotions,
+                  body: AppCopy.hubFeatBodyPromotions,
+                  lockedLabel:
+                      ent.hasPromotions ? null : AppCopy.hubLockedTag,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PromotionsScreen(
+                        providerId: _providerId,
+                      ),
+                    ),
+                  ),
+                ),
+                gapV(AppSpacing.md),
+                _FeatureTile(
+                  icon: Icons.workspace_premium_rounded,
+                  title: AppCopy.hubFeatTitleSubscription,
+                  body: AppCopy.hubFeatBodySubscription,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SubscriptionScreen(
+                        providerId: _providerId,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            children: [
-              _Greeting(name: widget.providerName),
-              gapV(AppSpacing.lg),
-              _PlanSummaryCard(
-                entitlement: ent,
-                onManage: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => SubscriptionScreen(
-                      providerId: _providerId,
-                    ),
-                  ),
-                ),
-              ),
-              gapV(AppSpacing.lg),
-              _KpiStrip(entitlement: ent),
-              gapV(AppSpacing.xxl),
-              _FeatureTile(
-                icon: Icons.store_rounded,
-                title: AppCopy.hubFeatTitlePlaces,
-                body: AppCopy.hubFeatBodyPlaces,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const AddPlaceScreen(),
-                  ),
-                ),
-              ),
-              gapV(AppSpacing.md),
-              _FeatureTile(
-                icon: Icons.bar_chart_rounded,
-                title: AppCopy.hubFeatTitleAnalytics,
-                body: AppCopy.hubFeatBodyAnalytics,
-                lockedLabel:
-                    ent.hasAnalyticsBasic ? null : AppCopy.hubLockedTag,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => AnalyticsScreen(
-                      providerId: _providerId,
-                    ),
-                  ),
-                ),
-              ),
-              gapV(AppSpacing.md),
-              _FeatureTile(
-                icon: Icons.campaign_rounded,
-                title: AppCopy.hubFeatTitlePromotions,
-                body: AppCopy.hubFeatBodyPromotions,
-                lockedLabel:
-                    ent.hasPromotions ? null : AppCopy.hubLockedTag,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => PromotionsScreen(
-                      providerId: _providerId,
-                    ),
-                  ),
-                ),
-              ),
-              gapV(AppSpacing.md),
-              _FeatureTile(
-                icon: Icons.workspace_premium_rounded,
-                title: AppCopy.hubFeatTitleSubscription,
-                body: AppCopy.hubFeatBodySubscription,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => SubscriptionScreen(
-                      providerId: _providerId,
-                    ),
-                  ),
-                ),
-              ),
-            ],
           );
         },
       ),
@@ -443,6 +552,374 @@ class _FeatureTile extends StatelessWidget {
           Icon(Icons.chevron_left_rounded,
               color: AppColor.textTertiary, size: 24.sp),
         ],
+      ),
+    );
+  }
+}
+
+// ===========================================================================
+// Provider flow summary + places list
+// ===========================================================================
+
+class _ProviderFlowCard extends StatelessWidget {
+  const _ProviderFlowCard({
+    required this.placeCount,
+    required this.maxPlaces,
+    required this.imagesPerPlace,
+    required this.onAddPlace,
+    required this.onRefresh,
+    required this.canAddPlace,
+  });
+
+  final int placeCount;
+  final int maxPlaces;
+  final int imagesPerPlace;
+  final VoidCallback onAddPlace;
+  final VoidCallback onRefresh;
+  final bool canAddPlace;
+
+  @override
+  Widget build(BuildContext context) {
+    final stepIndex = placeCount <= 0 ? 0 : (placeCount == 1 ? 1 : 2);
+    return AppCard(
+      padding: EdgeInsets.all(AppSpacing.lg.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  placeCount > 1 ? 'تابع خدماتك' : 'شوف مكانك',
+                  style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
+                ),
+              ),
+              AppButton(
+                text: 'تحديث',
+                onPress: onRefresh,
+                variant: AppButtonVariant.ghost,
+                size: AppButtonSize.sm,
+                isFullWidth: false,
+              ),
+            ],
+          ),
+          gapV(AppSpacing.xs),
+          Text(
+            placeCount == 0
+                ? 'ابدأ بإضافة مكانك الأول، وبعدها هتشوف لوحة التحكم كاملة.'
+                : 'عندك $placeCount من $maxPlaces أماكن. كل مكان يقدر يحمل حتى $imagesPerPlace صورة حسب الخطة.',
+            style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
+          ),
+          gapV(AppSpacing.lg),
+          SizedBox(
+            height: 88.h,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                StepperComponent(
+                  index: 0,
+                  currentIndex: stepIndex,
+                  onTap: onRefresh,
+                  icon: AppImages.money,
+                  label: 'الخطة',
+                ),
+                StepperComponent(
+                  index: 1,
+                  currentIndex: stepIndex,
+                  onTap: canAddPlace ? onAddPlace : onRefresh,
+                  icon: AppImages.location,
+                  label: 'أماكنك',
+                ),
+                StepperComponent(
+                  index: 2,
+                  currentIndex: stepIndex,
+                  onTap: onRefresh,
+                  icon: AppImages.search,
+                  label: 'Preview',
+                  isLast: true,
+                ),
+              ],
+            ),
+          ),
+          gapV(AppSpacing.md),
+          Row(
+            children: [
+              Expanded(
+                child: _MiniStat(
+                  label: 'أماكنك',
+                  value: '$placeCount/$maxPlaces',
+                ),
+              ),
+              gapH(AppSpacing.sm),
+              Expanded(
+                child: _MiniStat(
+                  label: 'صور لكل مكان',
+                  value: imagesPerPlace >= 999 ? '∞' : '$imagesPerPlace',
+                ),
+              ),
+            ],
+          ),
+          gapV(AppSpacing.md),
+          SizedBox(
+            width: double.infinity,
+            child: AppButton(
+              text: canAddPlace ? 'أضف مكان جديد' : 'وصلت الحد',
+              onPress: canAddPlace ? onAddPlace : onRefresh,
+              isEnabled: canAddPlace,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniStat extends StatelessWidget {
+  const _MiniStat({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.md.w,
+        vertical: AppSpacing.md.h,
+      ),
+      decoration: BoxDecoration(
+        color: AppColor.surfaceMuted,
+        borderRadius: AppRadii.rMd,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: AppText.caption),
+          gapV(AppSpacing.xs),
+          Text(
+            value,
+            style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlacesSection extends StatelessWidget {
+  const _PlacesSection({
+    required this.loading,
+    required this.places,
+    required this.onAddPlace,
+    required this.onPreviewPlace,
+    required this.entitlement,
+  });
+
+  final bool loading;
+  final List<Place> places;
+  final VoidCallback onAddPlace;
+  final ValueChanged<Place> onPreviewPlace;
+  final ProviderEntitlement entitlement;
+
+  @override
+  Widget build(BuildContext context) {
+    final canAddPlace = places.length < entitlement.maxPlaces;
+    return AppCard(
+      padding: EdgeInsets.all(AppSpacing.lg.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'أماكني',
+                  style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
+                ),
+              ),
+              Text(
+                '${places.length}/${entitlement.maxPlaces}',
+                style: AppText.caption.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+          gapV(AppSpacing.sm),
+          Text(
+            places.isEmpty
+                ? 'لما تضيف مكانك الأول، هيظهر هنا بكل تفاصيله، ومن هنا هتفتح Preview كما يراه المستخدم.'
+                : 'افتح أي مكان وشوفه بنفس العرض الذي يراه الزائر، أو أضف مكانًا آخر حسب الخطة.',
+            style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
+          ),
+          gapV(AppSpacing.lg),
+          if (loading)
+            const Center(child: CircularProgressIndicator())
+          else if (places.isEmpty)
+            Column(
+              children: [
+                Container(
+                  width: 92.w,
+                  height: 92.w,
+                  decoration: BoxDecoration(
+                    color: AppColor.primary50,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.store_mall_directory_rounded,
+                      color: AppColor.primary, size: 42.sp),
+                ),
+                gapV(AppSpacing.lg),
+                Text(
+                  'لسه ما أضفتش أي مكان',
+                  style:
+                      AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
+                ),
+                gapV(AppSpacing.sm),
+                Text(
+                  'أضف مكانك الأول عشان تبدأ اللوحة وتظهر كل الإحصائيات.',
+                  style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
+                  textAlign: TextAlign.center,
+                ),
+                gapV(AppSpacing.lg),
+                SizedBox(
+                  width: double.infinity,
+                  child: AppButton(
+                    text: 'أضف مكانك الآن',
+                    onPress: onAddPlace,
+                  ),
+                ),
+              ],
+            )
+          else
+            ListView.separated(
+              itemCount: places.length,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              separatorBuilder: (_, __) => gapV(AppSpacing.md),
+              itemBuilder: (_, index) {
+                final place = places[index];
+                return _PlaceCard(
+                  place: place,
+                  onPreview: () => onPreviewPlace(place),
+                );
+              },
+            ),
+          if (places.isNotEmpty) ...[
+            gapV(AppSpacing.lg),
+            SizedBox(
+              width: double.infinity,
+              child: AppButton(
+                text: canAddPlace ? 'أضف مكانًا آخر' : 'وصلت الحد',
+                onPress: canAddPlace ? onAddPlace : onAddPlace,
+                isEnabled: canAddPlace,
+                variant: AppButtonVariant.outline,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _PlaceCard extends StatelessWidget {
+  const _PlaceCard({required this.place, required this.onPreview});
+
+  final Place place;
+  final VoidCallback onPreview;
+
+  @override
+  Widget build(BuildContext context) {
+    final cover = place.imageUrl?.trim() ?? '';
+    final model = SuggestionItemModel.fromPlace(place);
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColor.surfaceCard,
+        borderRadius: AppRadii.rLg,
+        border: Border.all(color: AppColor.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+            child: SizedBox(
+              height: 172.h,
+              width: double.infinity,
+              child: cover.isNotEmpty
+                  ? Image.network(
+                      cover,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _placePlaceholder(),
+                    )
+                  : _placePlaceholder(),
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.all(AppSpacing.lg.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        place.name,
+                        style: AppText.titleMd.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    PlanBadge(
+                      tier: SubscriptionService.instance.entitlement.value.tier,
+                    ),
+                  ],
+                ),
+                gapV(AppSpacing.xs),
+                Text(
+                  '${place.cityName} • ${place.activityName}',
+                  style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
+                ),
+                gapV(AppSpacing.xs),
+                Text(
+                  place.description,
+                  style: AppText.bodySm,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                gapV(AppSpacing.md),
+                Row(
+                  children: [
+                    Expanded(
+                      child: AppButton(
+                        text: 'Preview كما يراه المستخدم',
+                        onPress: onPreview,
+                        size: AppButtonSize.sm,
+                      ),
+                    ),
+                  ],
+                ),
+                gapV(AppSpacing.sm),
+                Text(
+                  model.address,
+                  style: AppText.caption.copyWith(color: AppColor.textSecondary),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _placePlaceholder() {
+    return Container(
+      color: AppColor.neutral100,
+      child: Center(
+        child: Icon(Icons.image_not_supported_outlined,
+            color: AppColor.textTertiary, size: 38.sp),
       ),
     );
   }

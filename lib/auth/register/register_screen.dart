@@ -9,6 +9,9 @@ import 'package:rafiq_app/core/utils/app_microcopy.dart';
 import 'package:rafiq_app/core/utils/assets.dart';
 import 'package:rafiq_app/service/auth_service.dart';
 import 'package:rafiq_app/view/pages/choice/choice_screen.dart';
+import 'package:rafiq_app/service/user_role_store.dart';
+import 'package:rafiq_app/view/home/home_view.dart';
+import 'package:rafiq_app/view/provider/hub/provider_hub_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -67,16 +70,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  void _navigateToHomeScreen() {
+  void _navigateAfterAuth() {
+    if (!UserRoleStore.instance.hasChosenRole.value) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ChoiceScreen(
+            onPlanSelected: () {},
+            onNoPlanSelected: () {},
+            onNext: () {},
+          ),
+        ),
+        (route) => false,
+      );
+      return;
+    }
+
+    final target = UserRoleStore.instance.isProvider.value
+        ? const ProviderHubScreen()
+        : const HomeView();
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(
-        builder: (context) => ChoiceScreen(
-          onPlanSelected: () {},
-          onNoPlanSelected: () {},
-          onNext: () {},
-        ),
-      ),
+      MaterialPageRoute(builder: (_) => target),
       (route) => false,
     );
   }
@@ -114,7 +129,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             imageAsset: AppImages.loginSuccess,
             onContinue: () {
               setState(() => _showSuccessOverlay = false);
-              _navigateToHomeScreen();
+              _navigateAfterAuth();
             },
           ),
       ],

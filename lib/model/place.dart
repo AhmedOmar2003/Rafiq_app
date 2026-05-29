@@ -28,6 +28,7 @@
 // }
 
 class Place {
+  final String? placeUuid;
   final String name;
   final String description;
   final String priceRange; // حقل السعر
@@ -40,7 +41,8 @@ class Place {
   final int placeId;
 
   Place(
-      {required this.name,
+      {this.placeUuid,
+      required this.name,
       required this.description,
       required this.priceRange,
       required this.budget,
@@ -59,6 +61,11 @@ class Place {
         json['ImageUrl'];
 
     return Place(
+      placeUuid: json['id']?.toString().trim().isNotEmpty == true
+          ? json['id'].toString()
+          : (json['place_uuid']?.toString().trim().isNotEmpty == true
+              ? json['place_uuid'].toString()
+              : null),
       name: json['PlaceName']?.toString() ??
           json['place_name']?.toString() ??
           json['name']?.toString() ??
