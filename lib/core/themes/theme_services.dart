@@ -11,7 +11,7 @@ import 'package:rafiq_app/core/design/tokens/tokens.dart';
 /// scaffold so dark mode is a config flip rather than a rewrite.
 class ThemeServices {
   ThemeData get lightTheme => _build(_lightScheme, Brightness.light);
-  ThemeData get darkTheme => _build(_darkScheme, Brightness.dark);
+  ThemeData get darkTheme => lightTheme; // Dark mode disabled per user request
 
   static const ColorScheme _lightScheme = ColorScheme(
     brightness: Brightness.light,
@@ -36,34 +36,9 @@ class ThemeServices {
     shadow: Color(0x14000000),
   );
 
-  static const ColorScheme _darkScheme = ColorScheme(
-    brightness: Brightness.dark,
-    primary: AppColor.darkPrimary,
-    onPrimary: AppColor.primary900,
-    primaryContainer: AppColor.primary700,
-    onPrimaryContainer: AppColor.primary50,
-    secondary: AppColor.primary200,
-    onSecondary: AppColor.primary900,
-    secondaryContainer: AppColor.primary800,
-    onSecondaryContainer: AppColor.primary50,
-    error: Color(0xffE6857F),
-    onError: AppColor.primary900,
-    errorContainer: Color(0xff5A1B17),
-    onErrorContainer: Color(0xffFBE9E7),
-    surface: AppColor.darkSurfaceCard,
-    onSurface: AppColor.darkTextPrimary,
-    surfaceContainerHighest: AppColor.darkSurfaceVariant,
-    onSurfaceVariant: AppColor.darkTextSecondary,
-    outline: AppColor.darkBorder,
-    outlineVariant: AppColor.darkBorder,
-    shadow: Color(0x33000000),
-  );
-
   ThemeData _build(ColorScheme scheme, Brightness brightness) {
-    final bool isLight = brightness == Brightness.light;
-    final Color pageBg = isLight ? AppColor.surface : AppColor.darkSurface;
-    final Color fieldFill =
-        isLight ? AppColor.surfaceCard : AppColor.darkSurfaceVariant;
+    const Color pageBg = AppColor.surface;
+    const Color fieldFill = AppColor.surfaceCard;
 
     final base = ThemeData(brightness: brightness, useMaterial3: true);
 
@@ -71,7 +46,7 @@ class ThemeServices {
       colorScheme: scheme,
       scaffoldBackgroundColor: pageBg,
       primaryColor: scheme.primary,
-      dividerColor: isLight ? AppColor.divider : AppColor.darkBorder,
+      dividerColor: AppColor.divider,
       textTheme: GoogleFonts.rubikTextTheme(base.textTheme).apply(
         bodyColor: scheme.onSurface,
         displayColor: scheme.onSurface,
@@ -170,8 +145,7 @@ class ThemeServices {
         shape: RoundedRectangleBorder(borderRadius: AppRadii.rMd),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor:
-            isLight ? AppColor.sand200 : AppColor.darkSurfaceVariant,
+        backgroundColor: AppColor.sand200,
         selectedColor: scheme.primary,
         labelStyle: AppText.labelMd.copyWith(color: scheme.onSurface),
         secondaryLabelStyle: AppText.labelMd.copyWith(color: scheme.onPrimary),
@@ -180,8 +154,8 @@ class ThemeServices {
         padding: EdgeInsets.symmetric(
             horizontal: AppSpacing.md.w, vertical: AppSpacing.xs.h),
       ),
-      dividerTheme: DividerThemeData(
-        color: isLight ? AppColor.divider : AppColor.darkBorder,
+      dividerTheme: const DividerThemeData(
+        color: AppColor.divider,
         thickness: 1,
         space: AppSpacing.lg,
       ),

@@ -123,14 +123,4 @@ class AppColor {
 
   static const textMuted = textTertiary;
 
-  // ---------------------------------------------------------------------------
-  // Role tokens (dark theme readiness) — referenced by the dark ThemeData.
-  // ---------------------------------------------------------------------------
-  static const darkSurface = Color(0xff14110E);
-  static const darkSurfaceVariant = Color(0xff1E1A16);
-  static const darkSurfaceCard = Color(0xff241F1A);
-  static const darkBorder = Color(0xff3A332C);
-  static const darkTextPrimary = Color(0xffF5F1E8);
-  static const darkTextSecondary = Color(0xffB9B2A6);
-  static const darkPrimary = primary200; // lighter brand for contrast on dark
 }
