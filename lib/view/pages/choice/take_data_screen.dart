@@ -1,19 +1,25 @@
-import 'package:rafiq_app/core/design/tokens/tokens.dart';
-import 'package:rafiq_app/core/design/components/components.dart';
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'dart:convert';
-import 'package:rafiq_app/service/api_service.dart';
-import 'package:rafiq_app/view/pages/choice/choice_screen.dart';
-import 'package:rafiq_app/view/pages/choice/save_data_screen.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
-import '../../../core/utils/app_microcopy.dart';
-import '../../../core/utils/spacing.dart';
-import '../../../core/design/app_button.dart';
-import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'package:rafiq_app/core/design/components/components.dart';
+import 'package:rafiq_app/core/design/tokens/tokens.dart';
+import 'package:rafiq_app/models/subscription/plan.dart';
+import 'package:rafiq_app/service/api_service.dart';
+import 'package:rafiq_app/service/feature_gate.dart';
+import 'package:rafiq_app/service/subscription_service.dart';
+import 'package:rafiq_app/view/pages/choice/choice_screen.dart';
+import 'package:rafiq_app/view/pages/choice/save_data_screen.dart';
+import 'package:rafiq_app/view/provider/subscription/subscription_screen.dart';
+
+import '../../../core/design/app_button.dart';
+import '../../../core/utils/app_microcopy.dart';
+import '../../../core/utils/spacing.dart';
 
 class AddPlaceScreen extends StatefulWidget {
   const AddPlaceScreen({super.key});
@@ -40,9 +46,15 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
   bool _isLoading = false;
   bool _isMounted = true;
 
-  // Image picker state
+  // Image picker state — currently single image; the gate is sized in
+  // attached images so multi-image becomes a one-line extension.
   File? _image;
   final ImagePicker _picker = ImagePicker();
+
+  // Provider entitlement — read once on mount, refreshed after a successful
+  // upgrade so the form respects new caps immediately.
+  ProviderEntitlement? _entitlement;
+  String? _providerId;
 
   // Constants
   static const List<String> _placeTypes = [
@@ -78,12 +90,56 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
   };
 
   @override
+  void initState() {
+    super.initState();
+    _preloadEntitlement();
+  }
+
+  @override
   void dispose() {
     _isMounted = false;
     _placeNameController.dispose();
     _descriptionController.dispose();
     _addressController.dispose();
     super.dispose();
+  }
+
+  /// Looks up the current provider id from cached prefs, then fetches the
+  /// resolved entitlement. The form gracefully degrades to the Free-tier
+  /// fallback if anything fails — we never block the form on billing.
+  Future<void> _preloadEntitlement() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getString('authUserId');
+      if (userId == null) return;
+
+      // Resolve the provider row for this user.
+      final providerRow = await Supabase.instance.client
+          .from('providers')
+          .select('id')
+          .eq('owner_id', userId)
+          .maybeSingle();
+      if (providerRow == null) return;
+      _providerId = providerRow['id'] as String?;
+      if (_providerId == null) return;
+
+      final ent = await SubscriptionService.instance
+          .loadEntitlement(_providerId!);
+      if (!_isMounted) return;
+      setState(() => _entitlement = ent);
+    } catch (_) {
+      // Silent — keep the Free fallback.
+    }
+  }
+
+  void _openUpgrade() {
+    if (_providerId == null) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SubscriptionScreen(providerId: _providerId!),
+      ),
+    );
   }
 
   void _showSnackBar(String message, {bool isError = false}) {
@@ -171,14 +227,32 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
   }
 
   Future<void> _pickImage() async {
+    // Entitlement preflight — Free fallback is used while billing loads,
+    // which always allows ≥1 image, so the form never freezes here.
+    final ent = _entitlement ?? ProviderEntitlement.freeFallback;
+    final currentImages = _image == null ? 0 : 1;
+
+    final allowed = await FeatureGate.requireImageSlot(
+      context,
+      ent,
+      currentImages,
+    );
+    if (!allowed) {
+      // Sheet handles the upgrade path; nothing else to do here.
+      _openUpgrade();
+      return;
+    }
+
     try {
-      final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-      if (pickedFile != null) {
-        setState(() {
-          _image = File(pickedFile.path);
-        });
+      final pickedFile = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+        maxWidth: 1600,
+      );
+      if (pickedFile != null && _isMounted) {
+        setState(() => _image = File(pickedFile.path));
       }
-    } catch (e) {
+    } catch (_) {
       _showSnackBar(AppCopy.providerImagePickError, isError: true);
     }
   }

@@ -211,6 +211,42 @@ class AppCopy {
   static const resetConfirmHint = 'اكتبها تاني للتأكيد';
   static const resetOtpHint = '6 أرقام';
 
+  // --- Subscription page -------------------------------------------------------
+  static const subTitle = 'خطط الاشتراك';
+  static const subSubtitle = 'اختار الخطة اللي تناسب نشاطك';
+  static const subBillingMonthly = 'شهري';
+  static const subBillingYearly = 'سنوي';
+  static const subYearlyDiscount = 'وفّر %p%';   // %p replaced with discount pct
+  static const subCurrent = 'خطتك الحالية';
+  static const subUpgrade = 'رقّي خطتك';
+  static const subManage = 'إدارة الاشتراك';
+  static const subFreeForever = 'مجاني للأبد';
+  static const subPerMonth = '/شهر';
+  static const subPerYear = '/سنة';
+  static const subRenewsOn = 'يتجدد في';
+  static const subCancelsOn = 'ينتهي في';
+  static const subFeatureUnlimited = 'بلا حدود';
+  static const subCompareTitle = 'مقارنة الخطط';
+  static const subLimitReached = 'وصلت الحد الأقصى للخطة الحالية';
+  static const subUpgradeCta = 'رقّي الخطة عشان تكمّل';
+  static const subFeatPlaces = 'عدد الأماكن';
+  static const subFeatGallery = 'صور المعرض';
+  static const subFeatVideos = 'الفيديوهات';
+  static const subFeatRanking = 'تحسين الظهور';
+  static const subFeatVerified = 'شارة موثَّق';
+  static const subFeatAnalytics = 'تحليلات';
+  static const subFeatPromotions = 'إعلانات وعروض';
+  static const subFeatFeatured = 'ظهور مميّز';
+  static const subFeatPush = 'إشعارات ترويجية';
+  static const subFeatSpotlight = 'بريميوم في الصفحة الرئيسية';
+  static const subFeatSupport = 'دعم أولوية';
+  static const subStatusActive = 'نشط';
+  static const subStatusTrialing = 'تجربة';
+  static const subStatusPastDue = 'متأخّر';
+  static const subStatusCanceled = 'سيتم الإنهاء';
+  static const subStatusExpired = 'منتهي';
+  static const subUpgradeInProgress = 'تم استلام طلبك، هنبعتلك تأكيد على بريدك.';
+
   // --- Change password dialog --------------------------------------------------
   static const changePwTitle = 'تغيير كلمة السر';
   static const changePwCurrent = 'كلمة السر الحالية';

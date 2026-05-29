@@ -7,6 +7,7 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:rafiq_app/rafiq_app.dart';
+import 'package:rafiq_app/service/analytics_tracker.dart';
 import 'package:rafiq_app/service/api_service.dart';
 import 'package:rafiq_app/service/image_disk_cache.dart';
 import 'package:rafiq_app/service/profile_image_store.dart';
@@ -47,6 +48,9 @@ void main() async {
   // Profile picture is read on most screens — fire-and-forget warm so the
   // first frame already has the avatar resolved.
   unawaited(ProfileImageStore.instance.ensureLoaded());
+
+  // Analytics: attach the tracker so it flushes on background + every 5s.
+  AnalyticsTracker.instance.attach();
 
   // ---------------------------------------------------------------------------
   // Image cache budget.
