@@ -120,9 +120,6 @@ class AppCopy {
   static const detailsAddYourComment = 'ضيف تعليقك';
   static const detailsSimilarHeading = 'فعاليات مشابهة';
   static const detailsNoSimilar = 'مفيش أماكن مشابهة دلوقتي';
-  static const bookingUnavailableTitle = 'الحجز مش متاح حاليًا';
-  static const bookingUnavailableBody =
-      'في المرحلة الأولى هنكتفي بالتصفح، التقييم، ومشاهدة التفاصيل من غير حجز أو دفع.';
 
   // --- Profile page ------------------------------------------------------------
   static const profileTitle = 'الملف الشخصي';

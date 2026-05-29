@@ -102,8 +102,6 @@ class _DetailsPageState extends State<DetailsPage> {
               children: [
                 _DetailsSection(model: currentModel),
                 gapV(AppSpacing.xxl),
-                const _BookingUnavailableNotice(),
-                gapV(AppSpacing.xxl),
                 _ReviewsSection(
                   placeId: currentModel.placeId,
                   isLoading: _isReviewLoading && lastEvaluation == null,
@@ -158,55 +156,6 @@ class _DetailsSection extends StatelessWidget {
           Padding(
             padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
             child: const CustomDivider(),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _BookingUnavailableNotice extends StatelessWidget {
-  const _BookingUnavailableNotice();
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      padding: EdgeInsets.all(AppSpacing.lg.w),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: EdgeInsets.all(AppSpacing.sm.w),
-            decoration: BoxDecoration(
-              color: AppColor.primary50,
-              borderRadius: AppRadii.rSm,
-            ),
-            child: Icon(
-              Icons.event_busy_outlined,
-              color: AppColor.primary,
-              size: 24.sp,
-            ),
-          ),
-          gapH(AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  AppCopy.bookingUnavailableTitle,
-                  style: AppText.titleLg.copyWith(
-                    color: AppColor.textPrimary,
-                  ),
-                ),
-                gapV(AppSpacing.xs),
-                Text(
-                  AppCopy.bookingUnavailableBody,
-                  style: AppText.bodyMd.copyWith(
-                    color: AppColor.textSecondary,
-                  ),
-                ),
-              ],
-            ),
           ),
         ],
       ),
