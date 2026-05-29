@@ -187,10 +187,17 @@ class _HomeViewState extends State<HomeView> {
         child: Scaffold(
           backgroundColor: AppColor.surface,
           resizeToAvoidBottomInset: true,
+          // One AppPageHeader for every root surface keeps the title scale,
+          // hairline border, and trailing slot identical across the app.
+          appBar: const AppPageHeader(
+            title: AppCopy.suggestionsTitle,
+            actions: [ProfilePill()],
+          ),
           body: SafeArea(
+            top: false, // header already pads for the system bar
             child: Column(
               children: [
-                _TopBar(),
+                gapV(AppSpacing.md),
                 _StepHeader(
                   steps: _steps,
                   currentIndex: _currentIndex,
@@ -367,33 +374,6 @@ class _BackIconButton extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// Lightweight top strip with the app brand on the left and a profile pill
-/// on the right. Replaces the silent `gapV` at the top of HomeView so the
-/// user always has a one-tap escape to settings.
-class _TopBar extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        AppSpacing.xxl.w,
-        AppSpacing.md.h,
-        AppSpacing.sm.w,
-        AppSpacing.sm.h,
-      ),
-      child: Row(
-        children: [
-          Text(
-            AppCopy.suggestionsTitle,
-            style: AppText.headingSm.copyWith(fontWeight: FontWeight.w800),
-          ),
-          const Spacer(),
-          const ProfilePill(),
-        ],
       ),
     );
   }

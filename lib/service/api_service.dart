@@ -131,23 +131,23 @@ class ApiService {
           return existingId;
         }
 
+        // RPC path — SECURITY DEFINER, grants the provider role and creates
+        // the row atomically. This is what unblocks brand-new signups whose
+        // JWT doesn't yet have `is_provider()` true, so a direct INSERT
+        // would be rejected by RLS.
         final businessName = name.isNotEmpty ? name : safeEmail.split('@').first;
-        final created = await _client
-            .from('providers')
-            .insert({
-              'owner_id': userId,
-              'business_name': businessName,
-              'contact_email': safeEmail,
-              'status': 'pending',
-            })
-            .select('id')
-            .single()
-            .timeout(_networkTimeout);
-        final createdId = created['id']?.toString();
-        if (createdId != null && createdId.isNotEmpty) {
+        final rpcResult = await _client.rpc<dynamic>(
+          'become_provider',
+          params: {
+            '_business_name': businessName,
+            '_contact_email': safeEmail,
+          },
+        ).timeout(_networkTimeout);
+        final createdId = rpcResult?.toString();
+        if (createdId != null && createdId.isNotEmpty && createdId != 'null') {
           await prefs.setString(_providerIdKey, createdId);
+          return createdId;
         }
-        return createdId;
       } catch (_) {
         // Race condition: another request may have created the row meanwhile,
         // or RLS rejected an insert. Re-read before giving up.

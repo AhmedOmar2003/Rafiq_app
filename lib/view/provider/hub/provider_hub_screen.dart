@@ -237,7 +237,6 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
         header: AppPageHeader(
           title: 'جارٍ تجهيز حسابك',
           actions: [ProfilePill()],
-          centerTitle: true,
         ),
         body: Center(child: CircularProgressIndicator()),
       );
@@ -248,7 +247,6 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
         header: const AppPageHeader(
           title: AppCopy.hubTitle,
           actions: [ProfilePill()],
-          centerTitle: true,
         ),
         body: Center(
           child: Padding(
@@ -301,7 +299,6 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
         // app instead. Switching role lives in Profile.
         header: AppPageHeader(
           title: hubTitle,
-          centerTitle: true,
           actions: const [ProfilePill()],
         ),
         body: ValueListenableBuilder<ProviderEntitlement>(
