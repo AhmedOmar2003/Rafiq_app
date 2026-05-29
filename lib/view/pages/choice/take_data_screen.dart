@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
@@ -155,21 +154,23 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
   Future<void> _submitPlace() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final session = Supabase.instance.client.auth.currentSession;
-    if (session == null) {
-      _showSnackBar(AppCopy.providerSessionExpired, isError: true);
-      return;
-    }
-
-    if (_providerId == null) {
-      _showSnackBar(AppCopy.providerSessionExpired, isError: true);
-      return;
-    }
-
     setState(() => _isLoading = true);
+
+    // Resolve a provider id JIT — if the user just signed up they may not
+    // have a row yet, and the cached `_providerId` is null. The helper
+    // creates a default row on the fly when there's a live auth session.
+    String? providerId = _providerId;
+    providerId ??= await ApiService().ensureCurrentProviderId();
+    if (providerId == null) {
+      if (_isMounted) setState(() => _isLoading = false);
+      _showSnackBar(AppCopy.providerSessionExpired, isError: true);
+      return;
+    }
+    _providerId = providerId; // cache for future submits
+
     try {
       final existingPlaces =
-          await ApiService().fetchProviderPlaces(providerId: _providerId!);
+          await ApiService().fetchProviderPlaces(providerId: providerId);
       if (!_isEditing) {
         final allowed = await FeatureGate.requirePlaceSlot(
           context,
@@ -196,7 +197,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
         );
       } else {
         await ApiService().addPlace(
-          providerId: _providerId!,
+          providerId: providerId,
           placeName: _placeNameController.text.trim(),
           activityName: _selectedPlaceType ?? '',
           budget: _selectedBudget ?? '',

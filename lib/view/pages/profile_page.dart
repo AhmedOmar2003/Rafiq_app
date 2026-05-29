@@ -20,6 +20,7 @@ import '../../models/subscription/plan.dart';
 import '../../service/auth_service.dart';
 import '../../service/profile_image_store.dart';
 import '../../service/subscription_service.dart';
+import '../../auth/post_auth_router.dart';
 import '../../service/user_role_store.dart';
 import 'delete_account_sheet.dart';
 
@@ -506,7 +507,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 : snap.file != null
                     ? FileImage(snap.file!)
                     : const AssetImage(
-                            'assets/images/default_profile.png')
+                            'assets/images/default_profile.webp')
                         as ImageProvider;
             return CircleAvatar(
               radius: 70.w,
@@ -536,39 +537,92 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildInfoSection() {
-    return AppCard(
-      padding: EdgeInsets.zero,
-      child: Column(
-        children: [
-          _ProfileInfoRow(
-            icon: Icons.person_2_outlined,
-            label: AppCopy.profileNameLabel,
-            value: userName ?? AppCopy.profileNameFallback,
-          ),
-          Divider(height: 1, color: AppColor.border),
-          _ProfileInfoRow(
-            icon: Icons.email_outlined,
-            label: AppCopy.profileEmailLabel,
-            value: userEmail ?? AppCopy.profileEmailFallback,
-          ),
-          Divider(height: 1, color: AppColor.border),
-          _ProfileInfoRow(
-            icon: Icons.lock_outline,
-            label: AppCopy.profilePasswordLabel,
-            value: '••••••••',
-            trailing: IconButton(
-              icon: Icon(
-                Icons.edit_outlined,
-                color: AppColor.primary,
-                size: 22.sp,
+    return ValueListenableBuilder<bool>(
+      valueListenable: UserRoleStore.instance.isProvider,
+      builder: (_, isProvider, __) {
+        return AppCard(
+          padding: EdgeInsets.zero,
+          child: Column(
+            children: [
+              _ProfileInfoRow(
+                icon: Icons.person_2_outlined,
+                label: AppCopy.profileNameLabel,
+                value: userName ?? AppCopy.profileNameFallback,
               ),
-              onPressed: () => showChangePasswordDialog(context),
-              tooltip: AppCopy.changePwTitle,
-            ),
+              Divider(height: 1, color: AppColor.border),
+              _ProfileInfoRow(
+                icon: Icons.email_outlined,
+                label: AppCopy.profileEmailLabel,
+                value: userEmail ?? AppCopy.profileEmailFallback,
+              ),
+              Divider(height: 1, color: AppColor.border),
+              _ProfileInfoRow(
+                icon: Icons.lock_outline,
+                label: AppCopy.profilePasswordLabel,
+                value: '••••••••',
+                trailing: IconButton(
+                  icon: Icon(
+                    Icons.edit_outlined,
+                    color: AppColor.primary,
+                    size: 22.sp,
+                  ),
+                  onPressed: () => showChangePasswordDialog(context),
+                  tooltip: AppCopy.changePwTitle,
+                ),
+              ),
+              Divider(height: 1, color: AppColor.border),
+              // Switch role row — preserves session + subscription so the
+              // user can flip between tracks without re-onboarding.
+              _ProfileInfoRow(
+                icon: isProvider
+                    ? Icons.travel_explore_rounded
+                    : Icons.storefront_rounded,
+                label: isProvider
+                    ? AppCopy.profileSwitchToUser
+                    : AppCopy.profileSwitchToProvider,
+                value: isProvider
+                    ? AppCopy.profileSwitchToUserValue
+                    : AppCopy.profileSwitchToProviderValue,
+                onTap: () => _handleRoleSwitch(toProvider: !isProvider),
+                trailing: Icon(
+                  Icons.chevron_left_rounded,
+                  color: AppColor.textTertiary,
+                  size: 24.sp,
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
+  }
+
+  /// Flip the user-role flag and route to the right home for the new role.
+  ///
+  /// Session and subscription state are preserved; the user can switch back
+  /// at any time without re-onboarding or re-subscribing.
+  Future<void> _handleRoleSwitch({required bool toProvider}) async {
+    final confirmed = await AppConfirmDialog.show(
+      context,
+      title: AppCopy.profileSwitchConfirmTitle,
+      message: toProvider
+          ? AppCopy.profileSwitchConfirmProvider
+          : AppCopy.profileSwitchConfirmUser,
+      confirmLabel: AppCopy.confirm,
+      cancelLabel: AppCopy.cancel,
+      icon: toProvider
+          ? Icons.storefront_rounded
+          : Icons.travel_explore_rounded,
+    );
+    if (!confirmed || !mounted) return;
+
+    if (toProvider) {
+      await UserRoleStore.instance.chooseProvider();
+    } else {
+      await UserRoleStore.instance.chooseRegularUser();
+    }
+    if (!mounted) return;
+    PostAuthRouter.replaceWithHome(context);
   }
 
   String _planDisplayName(PlanTier tier) {

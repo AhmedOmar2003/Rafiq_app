@@ -39,16 +39,14 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
 
   /// Navigate to the appropriate screen based on selection.
   ///
-  /// Flow:
-  ///   * Regular user → clear the provider flag → push HomeView.
-  ///   * Service provider → set the provider flag → push the subscription
-  ///     screen in *onboarding mode*. Picking any plan (Free, Pro, Max)
-  ///     fires `onPlanChosen`, which pushes the provider hub.
+  /// Two states drive the provider track:
+  ///   * **First visit** (`UserRoleStore.isProvider == false`)
+  ///     → mark as provider → push the subscription onboarding → on plan
+  ///       picked, push the Provider Hub.
+  ///   * **Returning provider** (`UserRoleStore.isProvider == true`)
+  ///     → skip onboarding entirely → push the Provider Hub directly.
   ///
-  /// The provider step now reads like a normal funnel: choose track → choose
-  /// plan → land in the service hub. From there the user can add places,
-  /// view stats, and manage the subscription without bouncing through the
-  /// profile page.
+  /// Regular user → mark as non-provider → HomeView.
   Future<void> _handleNavigation() async {
     if (_selectedIndex == null) {
       AppFeedback.warning(AppCopy.choicePickFirst);
@@ -63,25 +61,39 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
         (route) => false,
       );
     } else {
+      final alreadyProvider = UserRoleStore.instance.isProvider.value;
       await UserRoleStore.instance.chooseProvider();
       if (!mounted) return;
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder: (_) => SubscriptionScreen(
-            onboarding: true,
-            onPlanChosen: () {
-              final navContext = navigatorKey.currentContext ?? context;
-              Navigator.of(navContext, rootNavigator: true).pushAndRemoveUntil(
-                MaterialPageRoute(
-                  builder: (_) => const ProviderHubScreen(),
-                ),
-                (route) => false,
-              );
-            },
+
+      // Returning provider — go straight to the hub. Plan + places + every
+      // setting they had already carries over via the SubscriptionService /
+      // SharedPreferences persistence layers.
+      if (alreadyProvider) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const ProviderHubScreen()),
+          (route) => false,
+        );
+      } else {
+        // First-time provider — onboarding funnel.
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (_) => SubscriptionScreen(
+              onboarding: true,
+              onPlanChosen: () {
+                final navContext = navigatorKey.currentContext ?? context;
+                Navigator.of(navContext, rootNavigator: true)
+                    .pushAndRemoveUntil(
+                  MaterialPageRoute(
+                    builder: (_) => const ProviderHubScreen(),
+                  ),
+                  (route) => false,
+                );
+              },
+            ),
           ),
-        ),
-        (route) => false,
-      );
+          (route) => false,
+        );
+      }
     }
     widget.onNext();
   }
@@ -175,13 +187,27 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
                                 widget.onPlanSelected();
                               },
                             ),
-                            _buildOptionButton(
-                              label: AppCopy.choiceRoleProvider,
-                              index: 1,
-                              icon: Icons.store_rounded,
-                              onTap: () {
-                                setState(() => _selectedIndex = 1);
-                                widget.onNoPlanSelected();
+                            // The second card reacts to the persisted role
+                            // flag: once a user has subscribed, this becomes
+                            // the entry point to their service hub instead
+                            // of a sign-up prompt.
+                            ValueListenableBuilder<bool>(
+                              valueListenable:
+                                  UserRoleStore.instance.isProvider,
+                              builder: (_, isProvider, __) {
+                                return _buildOptionButton(
+                                  label: isProvider
+                                      ? AppCopy.choiceRoleProviderActive
+                                      : AppCopy.choiceRoleProvider,
+                                  index: 1,
+                                  icon: isProvider
+                                      ? Icons.storefront_rounded
+                                      : Icons.store_rounded,
+                                  onTap: () {
+                                    setState(() => _selectedIndex = 1);
+                                    widget.onNoPlanSelected();
+                                  },
+                                );
                               },
                             ),
                           ],
@@ -292,7 +318,9 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
                         Text(
                           index == 0
                               ? AppCopy.choiceUserSubtitle
-                              : AppCopy.choiceProviderSubtitle,
+                              : (UserRoleStore.instance.isProvider.value
+                                  ? AppCopy.choiceProviderActiveSubtitle
+                                  : AppCopy.choiceProviderSubtitle),
                           style: AppText.bodyMd.copyWith(
                             color: Color.lerp(
                               AppColor.textSecondary,

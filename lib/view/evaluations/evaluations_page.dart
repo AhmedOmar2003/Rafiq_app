@@ -360,7 +360,7 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
               ? MemoryImage(snap.bytes!)
               : snap.file != null
                   ? FileImage(snap.file!)
-                  : const AssetImage('assets/images/default_profile.png')
+                  : const AssetImage('assets/images/default_profile.webp')
                       as ImageProvider;
           return CircleAvatar(
             backgroundImage: provider,

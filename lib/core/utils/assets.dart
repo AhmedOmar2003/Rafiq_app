@@ -1,35 +1,35 @@
-class AppImages{
+/// Asset path constants.
+///
+/// All raster images ship as **WebP** (quality 80, max 1200px on the long
+/// side). The conversion saved ~4.4 MB from the bundle. WebP is supported
+/// natively by Flutter via the standard `Image.asset` / `Image.network`
+/// constructors — no extra package needed.
+class AppImages {
+  AppImages._();
 
-  // Images
-
+  // ---- Images ----
   static const basePathImages = 'assets/images/';
-  static const warning = '${basePathImages}warning.png';
-  static const logo = '${basePathImages}rafiq_logo.png';
-  static const angham = '${basePathImages}angham.png';
-  static const padel = '${basePathImages}padel.png';
-  static const bird = '${basePathImages}bird.png';
-  static const visa = '${basePathImages}visa.png';
-  static const miza = '${basePathImages}miza.png';
-  static const vodafone = '${basePathImages}vodafone.png';
-  static const orange = '${basePathImages}orange.png';
-  static const masterCard = '${basePathImages}master_card.png';
-  static const instaPay = '${basePathImages}insta_pay.png';
-  static const etisalat = '${basePathImages}etisalat.png';
-  static const onboarding1 = '${basePathImages}onboarding1.png';
-  static const onboarding2 = '${basePathImages}onboarding2.png';
-  static const onboarding3 = '${basePathImages}onboarding3.png';
+  static const warning = '${basePathImages}warning.webp';
+  static const logo = '${basePathImages}rafiq_logo.webp';
+  static const angham = '${basePathImages}angham.webp';
+  static const padel = '${basePathImages}padel.webp';
+  static const bird = '${basePathImages}bird.webp';
+  static const visa = '${basePathImages}visa.webp';
+  static const miza = '${basePathImages}miza.webp';
+  static const vodafone = '${basePathImages}vodafone.webp';
+  static const orange = '${basePathImages}orange.webp';
+  static const masterCard = '${basePathImages}master_card.webp';
+  static const instaPay = '${basePathImages}insta_pay.webp';
+  static const etisalat = '${basePathImages}etisalat.webp';
+  static const onboarding1 = '${basePathImages}onboarding1.webp';
+  static const onboarding2 = '${basePathImages}onboarding2.webp';
+  static const onboarding3 = '${basePathImages}onboarding3.webp';
   static const success = 'assets/animations/success.json';
-  static const loginSuccess = '${basePathImages}Group 34246.png';
-  static const choice = '${basePathImages}Choice.png';
+  static const loginSuccess = '${basePathImages}Group 34246.webp';
+  static const choice = '${basePathImages}Choice.webp';
 
-  // Icons
-
+  // ---- SVG icons (vector, no conversion needed) ----
   static const basePathIcons = 'assets/icons/';
-  //static const user = '${basePathIcons}user.png';
-
-  // Icons Svg
-
-  static const basePathIconsSvg = 'assets/icons/';
   static const format = '.svg';
   static const user = '${basePathIcons}user$format';
   static const eye = '${basePathIcons}eye-open$format';

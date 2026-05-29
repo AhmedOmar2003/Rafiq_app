@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:rafiq_app/core/design/components/components.dart';
@@ -10,7 +11,6 @@ import 'package:rafiq_app/models/suggestion_item_model/suggestion_item.dart';
 import 'package:rafiq_app/service/api_service.dart';
 import 'package:rafiq_app/view/home/chat.dart';
 import 'package:rafiq_app/view/home/widget/stepper_component.dart';
-import 'package:rafiq_app/view/pages/choice/choice_screen.dart';
 import 'package:rafiq_app/view/pages/step_one_screen/step_one_screen.dart';
 import 'package:rafiq_app/view/pages/step_two_screen/step_two_screen.dart';
 import 'package:rafiq_app/view/pages/step_three_screen/step_three_screen.dart';
@@ -157,17 +157,11 @@ class _HomeViewState extends State<HomeView> {
     }
   }
 
-  void _exitToChoice() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ChoiceScreen(
-          onPlanSelected: () {},
-          onNoPlanSelected: () {},
-          onNext: () {},
-        ),
-      ),
-    );
+  /// Hardware back from a primary surface should suspend the app, not
+  /// teleport to ChoiceScreen. Switching role is a deliberate action
+  /// inside Profile.
+  Future<void> _backgroundApp() async {
+    await SystemNavigator.pop();
   }
 
   void _openChatBot() {
@@ -185,7 +179,7 @@ class _HomeViewState extends State<HomeView> {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _exitToChoice();
+        if (!didPop) _backgroundApp();
       },
       child: LoadingManager(
         isLoading: _isLoading,
@@ -196,7 +190,7 @@ class _HomeViewState extends State<HomeView> {
           body: SafeArea(
             child: Column(
               children: [
-                gapV(AppSpacing.md),
+                _TopBar(),
                 _StepHeader(
                   steps: _steps,
                   currentIndex: _currentIndex,
@@ -372,6 +366,33 @@ class _BackIconButton extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Lightweight top strip with the app brand on the left and a profile pill
+/// on the right. Replaces the silent `gapV` at the top of HomeView so the
+/// user always has a one-tap escape to settings.
+class _TopBar extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.xxl.w,
+        AppSpacing.md.h,
+        AppSpacing.sm.w,
+        AppSpacing.sm.h,
+      ),
+      child: Row(
+        children: [
+          Text(
+            AppCopy.suggestionsTitle,
+            style: AppText.headingSm.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const Spacer(),
+          const ProfilePill(),
+        ],
       ),
     );
   }

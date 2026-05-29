@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:rafiq_app/core/design/components/components.dart';
@@ -10,7 +11,6 @@ import 'package:rafiq_app/model/place.dart';
 import 'package:rafiq_app/service/api_service.dart';
 import 'package:rafiq_app/service/subscription_service.dart';
 import 'package:rafiq_app/view/details/details_page.dart';
-import 'package:rafiq_app/view/pages/choice/choice_screen.dart';
 import 'package:rafiq_app/view/pages/choice/take_data_screen.dart';
 import 'package:rafiq_app/view/home/widget/stepper_component.dart';
 import 'package:rafiq_app/view/provider/analytics/analytics_screen.dart';
@@ -163,34 +163,29 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
     await _refreshHub();
   }
 
-  void _goBackToChoice() {
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(
-        builder: (_) => ChoiceScreen(
-          onPlanSelected: () {},
-          onNoPlanSelected: () {},
-          onNext: () {},
-        ),
-      ),
-      (route) => false,
-    );
+  Future<void> _backgroundApp() async {
+    await SystemNavigator.pop();
   }
 
   @override
   Widget build(BuildContext context) {
     final placeCount = _places.length;
     final hubTitle = placeCount > 1 ? 'تابع خدماتك' : AppCopy.hubTitle;
-    return AppPageScaffold(
-      // "تابع خدمتك" — same identity post-subscription, no role flip.
-      header: AppPageHeader(
-        title: hubTitle,
-        leading: IconButton(
-          onPressed: _goBackToChoice,
-          icon: const Icon(Icons.arrow_back_ios_new_rounded),
-          tooltip: 'رجوع',
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _backgroundApp();
+      },
+      child: AppPageScaffold(
+        // "تابع خدمتك" — same identity post-subscription, no role flip.
+        // No back arrow: this is a *root* surface; the user backgrounds the
+        // app instead. Switching role lives in Profile.
+        header: AppPageHeader(
+          title: hubTitle,
+          leading: const SizedBox.shrink(),
+          actions: const [ProfilePill()],
         ),
-      ),
-      body: ValueListenableBuilder<ProviderEntitlement>(
+        body: ValueListenableBuilder<ProviderEntitlement>(
         valueListenable: SubscriptionService.instance.entitlement,
         builder: (_, ent, __) {
           return RefreshIndicator(
@@ -288,6 +283,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
             ),
           );
         },
+      ),
       ),
     );
   }

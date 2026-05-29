@@ -98,11 +98,16 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  # Asset budget after WebP conversion + font cleanup:
+  #   images   ~1.2 MB  (was 5.5 MB, -78%)
+  #   icons    ~28 KB   (vector SVGs)
+  #   anims    none     (placeholder dir)
+  # Rubik fonts come from google_fonts at runtime and are cached on disk,
+  # so we don't bundle them here.
   assets:
     - assets/images/
     - assets/animations/
     - assets/icons/
-    - assets/fonts/
 
   # fonts:
   #   - family: GoogleFonts.cairo().fontFamily

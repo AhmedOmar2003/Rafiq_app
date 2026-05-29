@@ -71,15 +71,38 @@ class ApiService {
     return 'jpg';
   }
 
+  /// Resolves (and creates if missing) the provider id for the signed-in user.
+  ///
+  /// Resilience rules:
+  ///   1. Auth identity is read from the *Supabase session first*, then prefs
+  ///      as a fallback. This avoids the "session expired" failure when prefs
+  ///      were partially cleared (e.g. by an aborted logout) but the auth
+  ///      cookie is still valid.
+  ///   2. If we find no auth.users id at all → returns null. The caller
+  ///      should redirect to login (we are genuinely signed out).
+  ///   3. If we have an id but no providers row → we create one with a
+  ///      sensible default business name. This is what unblocks the "add
+  ///      first place" flow right after sign-up.
   Future<String?> ensureCurrentProviderId() async {
     await ensureSupabaseInitialized();
     final prefs = await SharedPreferences.getInstance();
-    final userId = prefs.getString('authUserId');
-    final email = prefs.getString('userEmail') ??
-        _client.auth.currentUser?.email ??
+
+    // Prefer live auth state over stale prefs.
+    final supabaseUser = _client.auth.currentUser;
+    final userId = supabaseUser?.id ?? prefs.getString('authUserId');
+    final email =
+        supabaseUser?.email ?? prefs.getString('userEmail') ?? '';
+    final metaName = supabaseUser?.userMetadata?['full_name']?.toString() ??
+        supabaseUser?.userMetadata?['name']?.toString() ??
         '';
-    final name = prefs.getString('userName')?.trim() ?? '';
-    if (userId == null || email.trim().isEmpty) return null;
+    final name =
+        (prefs.getString('userName') ?? metaName).trim();
+
+    if (userId == null || userId.isEmpty) return null;
+    // No email yet but we have a userId → derive a placeholder so the
+    // insert below doesn't violate the NOT NULL constraint on contact_email.
+    final safeEmail =
+        email.trim().isEmpty ? 'user_$userId@placeholder.local' : email.trim();
 
     try {
       final existing = await _client
@@ -92,13 +115,14 @@ class ApiService {
         return existingId;
       }
 
-      final businessName = name.isNotEmpty ? name : email.split('@').first;
+      final businessName =
+          name.isNotEmpty ? name : safeEmail.split('@').first;
       final created = await _client
           .from('providers')
           .insert({
             'owner_id': userId,
             'business_name': businessName,
-            'contact_email': email,
+            'contact_email': safeEmail,
             'status': 'pending',
           })
           .select('id')
@@ -106,6 +130,8 @@ class ApiService {
           .timeout(_networkTimeout);
       return created['id']?.toString();
     } catch (_) {
+      // Race condition: another request may have created the row meanwhile,
+      // or RLS rejected an insert. Re-read before giving up.
       final fallback = await _client
           .from('providers')
           .select('id')

@@ -80,6 +80,11 @@ class AppCopy {
   static const choiceUserSubtitle = 'استكشف الأماكن وشارك تجاربك';
   static const choiceProviderSubtitle = 'ضيف مكانك واستقبل زوارك';
   static const choicePickFirst = 'اختار الأول: مستخدم ولا مقدم خدمة؟';
+  // After a provider has chosen a plan, the second card transitions from
+  // "مقدم خدمة" (sign-up posture) to "تابع خدمتك" (active customer).
+  static const choiceRoleProviderActive = 'تابع خدمتك';
+  static const choiceProviderActiveSubtitle =
+      'افتح لوحتك وشوف أماكنك وإحصائياتك';
 
   // --- Provider / add-place flow ----------------------------------------------
   static const providerFormTitle = 'بيانات مكانك';
@@ -136,6 +141,15 @@ class AppCopy {
   static const profilePasswordLabel = 'كلمة السر';
   static const profileChangeAvatarHint = 'دوس عشان تغيّر الصورة';
   static const profileImageSaveError = 'معرفناش نحفظ الصورة، جرّب تاني.';
+  static const profileSwitchToProvider = 'حوّل لمقدم خدمة';
+  static const profileSwitchToProviderValue = 'افتح خطط الاشتراك وأضف مكانك';
+  static const profileSwitchToUser = 'حوّل لمستخدم عادي';
+  static const profileSwitchToUserValue = 'استكشف الأماكن وتقدر ترجع تابع خدمتك في أي وقت';
+  static const profileSwitchConfirmTitle = 'تأكيد تغيير الدور';
+  static const profileSwitchConfirmProvider =
+      'هتنتقل لمسار مقدم الخدمة. لو لسه ما اخترتش خطة، هنوديك صفحة الخطط.';
+  static const profileSwitchConfirmUser =
+      'هتنتقل لمسار المستخدم العادي. اشتراكك ومكانك هيفضلوا محفوظين لما ترجع.';
   static const logoutTitle = 'هتسجل خروج؟';
   static const logoutMessage = 'متأكد إنك عايز تخرج من التطبيق؟';
   static const logoutConfirm = 'أكيد، خروج';

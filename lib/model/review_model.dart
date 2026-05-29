@@ -30,7 +30,7 @@ class EvaluationsItemModel {
       date: json['created_at']?.toString() ?? '',
       image: (json['image']?.toString().isNotEmpty == true)
           ? json['image'].toString()
-          : "assets/user_placeholder.png",
+          : "assets/images/default_profile.webp",
       rating: json['rating'] != null
           ? int.tryParse(json['rating'].toString()) ?? 5
           : 5,
