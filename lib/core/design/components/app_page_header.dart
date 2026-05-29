@@ -102,7 +102,7 @@ class AppPageHeader extends StatelessWidget implements PreferredSizeWidget {
         bottom: false,
         child: Padding(
           padding: EdgeInsets.symmetric(
-            horizontal: AppSpacing.sm.w,
+            horizontal: AppSpacing.md.w,
             vertical: AppSpacing.xs.h,
           ),
           child: Row(
@@ -116,10 +116,10 @@ class AppPageHeader extends StatelessWidget implements PreferredSizeWidget {
                       semanticLabel: 'رجوع',
                     )
               else
-                SizedBox(width: AppSpacing.lg.w),
+                SizedBox(width: 64.w),
               Expanded(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm.w),
+                  padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs.w),
                   child: Column(
                     crossAxisAlignment: centerTitle
                         ? CrossAxisAlignment.center
@@ -155,7 +155,7 @@ class AppPageHeader extends StatelessWidget implements PreferredSizeWidget {
               if (actions != null && actions!.isNotEmpty)
                 Row(mainAxisSize: MainAxisSize.min, children: actions!)
               else
-                SizedBox(width: showLeading ? 48.w : AppSpacing.lg.w),
+                SizedBox(width: 64.w),
             ],
           ),
         ),

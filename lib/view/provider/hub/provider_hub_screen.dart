@@ -103,6 +103,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
     var pid = _providerId ?? widget.providerId;
     pid ??= await ApiService().ensureCurrentProviderId();
     if (!mounted || pid == null) {
+      AppFeedback.error('بنجهز بيانات الحساب، جرّب مرة ثانية بعد لحظة.');
       return;
     }
     if (_providerId != pid) {
@@ -192,7 +193,6 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
         // app instead. Switching role lives in Profile.
         header: AppPageHeader(
           title: hubTitle,
-          leading: const SizedBox.shrink(),
           actions: const [ProfilePill()],
         ),
         body: ValueListenableBuilder<ProviderEntitlement>(
@@ -647,7 +647,7 @@ class _ProviderFlowCard extends StatelessWidget {
                 StepperComponent(
                   index: 1,
                   currentIndex: stepIndex,
-                  onTap: canAddPlace ? onAddPlace : onRefresh,
+                  onTap: onAddPlace,
                   icon: AppImages.location,
                   label: 'أماكنك',
                 ),
@@ -684,9 +684,12 @@ class _ProviderFlowCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: AppButton(
-              text: canAddPlace ? 'أضف مكان جديد' : 'وصلت الحد',
-              onPress: canAddPlace ? onAddPlace : onRefresh,
-              isEnabled: canAddPlace,
+              text: canAddPlace ? 'أضف مكان جديد' : 'أضف مكان جديد',
+              onPress: onAddPlace,
+              variant: canAddPlace
+                  ? AppButtonVariant.primary
+                  : AppButtonVariant.outline,
+              isEnabled: true,
             ),
           ),
         ],
