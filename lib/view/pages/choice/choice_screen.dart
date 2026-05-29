@@ -4,6 +4,7 @@ import 'package:rafiq_app/auth/login/login_screen.dart';
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:rafiq_app/core/logic/helper_methods.dart';
+import 'package:rafiq_app/service/api_service.dart';
 import 'package:rafiq_app/service/user_role_store.dart';
 import 'package:rafiq_app/view/home/home_view.dart';
 import 'package:rafiq_app/view/provider/subscription/subscription_screen.dart';
@@ -63,6 +64,7 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
     } else {
       final alreadyProvider = UserRoleStore.instance.isProvider.value;
       await UserRoleStore.instance.chooseProvider();
+      final providerId = await _resolveProviderId();
       if (!mounted) return;
 
       // Returning provider — go straight to the hub. Plan + places + every
@@ -70,7 +72,9 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
       // SharedPreferences persistence layers.
       if (alreadyProvider) {
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const ProviderHubScreen()),
+          MaterialPageRoute(
+            builder: (_) => ProviderHubScreen(providerId: providerId),
+          ),
           (route) => false,
         );
       } else {
@@ -79,12 +83,15 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
           MaterialPageRoute(
             builder: (_) => SubscriptionScreen(
               onboarding: true,
-              onPlanChosen: () {
+              providerId: providerId,
+              onPlanChosen: () async {
                 final navContext = navigatorKey.currentContext ?? context;
                 Navigator.of(navContext, rootNavigator: true)
                     .pushAndRemoveUntil(
                   MaterialPageRoute(
-                    builder: (_) => const ProviderHubScreen(),
+                    builder: (_) => ProviderHubScreen(
+                      providerId: providerId,
+                    ),
                   ),
                   (route) => false,
                 );
@@ -96,6 +103,24 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
       }
     }
     widget.onNext();
+  }
+
+  Future<String?> _resolveProviderId() async {
+    const delays = <Duration>[
+      Duration(milliseconds: 180),
+      Duration(milliseconds: 320),
+      Duration(milliseconds: 480),
+    ];
+
+    for (var attempt = 0; attempt <= delays.length; attempt++) {
+      final resolved = await ApiService().ensureCurrentProviderId();
+      if (resolved != null && resolved.isNotEmpty) return resolved;
+
+      if (attempt < delays.length) {
+        await Future.delayed(delays[attempt]);
+      }
+    }
+    return null;
   }
 
   @override

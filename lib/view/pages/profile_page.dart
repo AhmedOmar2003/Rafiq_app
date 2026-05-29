@@ -17,11 +17,13 @@ import '../../core/config/api_config.dart';
 import '../../core/design/components/components.dart';
 import '../../core/utils/app_microcopy.dart';
 import '../../models/subscription/plan.dart';
+import '../../service/api_service.dart';
 import '../../service/auth_service.dart';
 import '../../service/profile_image_store.dart';
 import '../../service/subscription_service.dart';
 import '../../auth/post_auth_router.dart';
 import '../../service/user_role_store.dart';
+import '../provider/hub/provider_hub_screen.dart';
 import 'delete_account_sheet.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -619,7 +621,18 @@ class _ProfilePageState extends State<ProfilePage> {
       await UserRoleStore.instance.chooseRegularUser();
     }
     if (!mounted) return;
-    PostAuthRouter.replaceWithHome(context);
+    if (toProvider) {
+      final providerId = await ApiService().ensureCurrentProviderId();
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => ProviderHubScreen(providerId: providerId),
+        ),
+        (_) => false,
+      );
+      return;
+    }
+    await PostAuthRouter.replaceWithHome(context);
   }
 
   String _planDisplayName(PlanTier tier) {

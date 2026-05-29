@@ -67,7 +67,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  void _navigateAfterAuth() => PostAuthRouter.replaceWithHome(context);
+  Future<void> _navigateAfterAuth() => PostAuthRouter.replaceWithHome(context);
 
   @override
   Widget build(BuildContext context) {
@@ -100,9 +100,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
             title: AppCopy.successGeneric,
             message: AppCopy.registerSuccess,
             imageAsset: AppImages.loginSuccess,
-            onContinue: () {
+            onContinue: () async {
               setState(() => _showSuccessOverlay = false);
-              _navigateAfterAuth();
+              await _navigateAfterAuth();
             },
           ),
       ],

@@ -66,7 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _navigateAfterAuth() => PostAuthRouter.replaceWithHome(context);
+  Future<void> _navigateAfterAuth() => PostAuthRouter.replaceWithHome(context);
 
   @override
   Widget build(BuildContext context) {
@@ -99,9 +99,9 @@ class _LoginScreenState extends State<LoginScreen> {
             title: AppCopy.welcomeBack,
             message: AppCopy.loginSuccess,
             imageAsset: AppImages.loginSuccess,
-            onContinue: () {
+            onContinue: () async {
               setState(() => _showSuccessOverlay = false);
-              _navigateAfterAuth();
+              await _navigateAfterAuth();
             },
           ),
       ],

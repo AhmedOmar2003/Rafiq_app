@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:rafiq_app/service/api_service.dart';
 import 'package:rafiq_app/service/user_role_store.dart';
 import 'package:rafiq_app/view/home/home_view.dart';
 import 'package:rafiq_app/view/pages/choice/choice_screen.dart';
@@ -21,22 +22,36 @@ class PostAuthRouter {
   ///
   /// The role state is read from [UserRoleStore]; the caller is expected to
   /// have already restored it via `ensureLoaded()` (handled at app start).
-  static void replaceWithHome(BuildContext context) {
+  static Future<void> replaceWithHome(BuildContext context) async {
     final store = UserRoleStore.instance;
-    final WidgetBuilder builder;
     if (!store.hasChosenRole.value) {
-      builder = (_) => ChoiceScreen(
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => ChoiceScreen(
             onPlanSelected: () {},
             onNoPlanSelected: () {},
             onNext: () {},
-          );
-    } else if (store.isProvider.value) {
-      builder = (_) => const ProviderHubScreen();
-    } else {
-      builder = (_) => const HomeView();
+          ),
+        ),
+        (_) => false,
+      );
+      return;
     }
+
+    if (store.isProvider.value) {
+      final providerId = await ApiService().ensureCurrentProviderId();
+      if (!context.mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => ProviderHubScreen(providerId: providerId),
+        ),
+        (_) => false,
+      );
+      return;
+    }
+
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: builder),
+      MaterialPageRoute(builder: (_) => const HomeView()),
       (_) => false,
     );
   }

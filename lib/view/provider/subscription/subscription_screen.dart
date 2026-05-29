@@ -51,7 +51,7 @@ class SubscriptionScreen extends StatefulWidget {
   /// Called after the user successfully picks any plan (Free, Pro, or Max)
   /// while in onboarding mode. The screen does NOT pop itself; the caller
   /// decides whether to push the next step or replace the route.
-  final VoidCallback? onPlanChosen;
+  final Future<void> Function()? onPlanChosen;
 
   @override
   State<SubscriptionScreen> createState() => _SubscriptionScreenState();
@@ -89,7 +89,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     if (plan.tier == PlanTier.free) {
       SubscriptionService.instance.applyDemoFree();
       if (widget.onboarding) {
-        widget.onPlanChosen?.call();
+        await widget.onPlanChosen?.call();
       }
       return;
     }
@@ -114,7 +114,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             : AppCopy.subSuccessCta,
       );
       if (!mounted) return;
-      if (widget.onboarding) widget.onPlanChosen?.call();
+      if (widget.onboarding) {
+        await widget.onPlanChosen?.call();
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
