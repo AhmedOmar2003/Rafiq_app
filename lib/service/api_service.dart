@@ -14,6 +14,12 @@ class ApiService {
   static const Duration _networkTimeout = Duration(seconds: 12);
   static const Duration _placesCacheTtl = Duration(minutes: 3);
   static const Duration _reviewsCacheTtl = Duration(minutes: 2);
+  static const int _providerResolveAttempts = 4;
+  static const Duration _providerResolveDelay = Duration(milliseconds: 250);
+  static const String _authUserIdKey = 'authUserId';
+  static const String _userNameKey = 'userName';
+  static const String _userEmailKey = 'userEmail';
+  static const String _providerIdKey = 'providerId';
   static final Map<String, _TimedCache<List<Place>>> _placesCache = {};
   static final Map<String, Future<List<Place>>> _inFlightPlaces = {};
   static final Map<String, _TimedCache<List<String>>> _galleryCache = {};
@@ -87,64 +93,100 @@ class ApiService {
     await ensureSupabaseInitialized();
     final prefs = await SharedPreferences.getInstance();
 
-    // Prefer live auth state over stale prefs.
-    final sessionUser = _client.auth.currentSession?.user;
-    final supabaseUser = _client.auth.currentUser ?? sessionUser;
-    final userId = supabaseUser?.id ?? prefs.getString('authUserId');
-    final email = supabaseUser?.email ?? prefs.getString('userEmail') ?? '';
-    final metaName = supabaseUser?.userMetadata?['full_name']?.toString() ??
-        supabaseUser?.userMetadata?['name']?.toString() ??
+    for (var attempt = 0; attempt < _providerResolveAttempts; attempt++) {
+      await _persistAuthIdentity(prefs);
+
+      // Prefer live auth state over stale prefs.
+      final sessionUser = _client.auth.currentSession?.user;
+      final supabaseUser = _client.auth.currentUser ?? sessionUser;
+      final userId = supabaseUser?.id ?? prefs.getString(_authUserIdKey);
+      final email = supabaseUser?.email ?? prefs.getString(_userEmailKey) ?? '';
+      final metaName = supabaseUser?.userMetadata?['full_name']?.toString() ??
+          supabaseUser?.userMetadata?['name']?.toString() ??
+          '';
+      final name = (prefs.getString(_userNameKey) ?? metaName).trim();
+
+      if (userId == null || userId.isEmpty) {
+        if (attempt < _providerResolveAttempts - 1) {
+          await Future.delayed(_providerResolveDelay);
+          continue;
+        }
+        return null;
+      }
+
+      // No email yet but we have a userId → derive a placeholder so the
+      // insert below doesn't violate the NOT NULL constraint on contact_email.
+      final safeEmail =
+          email.trim().isEmpty ? 'user_$userId@placeholder.local' : email.trim();
+
+      try {
+        final existing = await _client
+            .from('providers')
+            .select('id')
+            .eq('owner_id', userId)
+            .maybeSingle();
+        final existingId = existing?['id']?.toString();
+        if (existingId != null && existingId.isNotEmpty) {
+          await prefs.setString(_providerIdKey, existingId);
+          return existingId;
+        }
+
+        final businessName = name.isNotEmpty ? name : safeEmail.split('@').first;
+        final created = await _client
+            .from('providers')
+            .insert({
+              'owner_id': userId,
+              'business_name': businessName,
+              'contact_email': safeEmail,
+              'status': 'pending',
+            })
+            .select('id')
+            .single()
+            .timeout(_networkTimeout);
+        final createdId = created['id']?.toString();
+        if (createdId != null && createdId.isNotEmpty) {
+          await prefs.setString(_providerIdKey, createdId);
+        }
+        return createdId;
+      } catch (_) {
+        // Race condition: another request may have created the row meanwhile,
+        // or RLS rejected an insert. Re-read before giving up.
+        final fallback = await _client
+            .from('providers')
+            .select('id')
+            .eq('owner_id', userId)
+            .maybeSingle();
+        final fallbackId = fallback?['id']?.toString();
+        if (fallbackId != null && fallbackId.isNotEmpty) {
+          await prefs.setString(_providerIdKey, fallbackId);
+          return fallbackId;
+        }
+
+        if (attempt < _providerResolveAttempts - 1) {
+          await Future.delayed(_providerResolveDelay);
+          continue;
+        }
+      }
+    }
+    return null;
+  }
+
+  Future<void> _persistAuthIdentity(SharedPreferences prefs) async {
+    final user = _client.auth.currentUser ?? _client.auth.currentSession?.user;
+    if (user == null) return;
+
+    await prefs.setString(_authUserIdKey, user.id);
+
+    final email = user.email?.trim() ?? '';
+    if (email.isNotEmpty) {
+      await prefs.setString(_userEmailKey, email);
+    }
+
+    final metaName = user.userMetadata?['full_name']?.toString() ??
+        user.userMetadata?['name']?.toString() ??
         '';
-    final name = (prefs.getString('userName') ?? metaName).trim();
-
-    if (userId == null || userId.isEmpty) return null;
-    // No email yet but we have a userId → derive a placeholder so the
-    // insert below doesn't violate the NOT NULL constraint on contact_email.
-    final safeEmail =
-        email.trim().isEmpty ? 'user_$userId@placeholder.local' : email.trim();
-
-    try {
-      final existing = await _client
-          .from('providers')
-          .select('id')
-          .eq('owner_id', userId)
-          .maybeSingle();
-      final existingId = existing?['id']?.toString();
-      if (existingId != null && existingId.isNotEmpty) {
-        await prefs.setString('providerId', existingId);
-        return existingId;
-      }
-
-      final businessName = name.isNotEmpty ? name : safeEmail.split('@').first;
-      final created = await _client
-          .from('providers')
-          .insert({
-            'owner_id': userId,
-            'business_name': businessName,
-            'contact_email': safeEmail,
-            'status': 'pending',
-          })
-          .select('id')
-          .single()
-          .timeout(_networkTimeout);
-      final createdId = created['id']?.toString();
-      if (createdId != null && createdId.isNotEmpty) {
-        await prefs.setString('providerId', createdId);
-      }
-      return createdId;
-    } catch (_) {
-      // Race condition: another request may have created the row meanwhile,
-      // or RLS rejected an insert. Re-read before giving up.
-      final fallback = await _client
-          .from('providers')
-          .select('id')
-          .eq('owner_id', userId)
-          .maybeSingle();
-      final fallbackId = fallback?['id']?.toString();
-      if (fallbackId != null && fallbackId.isNotEmpty) {
-        await prefs.setString('providerId', fallbackId);
-      }
-      return fallbackId;
+    if (metaName.trim().isNotEmpty) {
+      await prefs.setString(_userNameKey, metaName.trim());
     }
   }
 

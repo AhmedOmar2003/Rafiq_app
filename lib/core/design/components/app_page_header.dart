@@ -95,6 +95,50 @@ class AppPageHeader extends StatelessWidget implements PreferredSizeWidget {
     final canPop = Navigator.canPop(context);
     final showLeading = leading != null || canPop;
     final fg = _fg;
+    final headerHeight = subtitle == null ? kToolbarHeight : kToolbarHeight + 18;
+    final leadingSlot = showLeading
+        ? leading ??
+            _HeaderIconButton(
+              icon: Icons.arrow_back_ios_new_rounded,
+              color: fg,
+              onTap: onBack ?? () => Navigator.maybePop(context),
+              semanticLabel: 'رجوع',
+            )
+        : SizedBox(width: 48.w);
+    final actionsSlot = actions != null && actions!.isNotEmpty
+        ? Row(mainAxisSize: MainAxisSize.min, children: actions!)
+        : SizedBox(width: 48.w);
+    final titleBlock = Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment:
+          centerTitle ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: AppText.headingSm.copyWith(
+            color: fg,
+            fontWeight: FontWeight.w700,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: centerTitle ? TextAlign.center : TextAlign.start,
+        ),
+        if (subtitle != null) ...[
+          SizedBox(height: 2.h),
+          Text(
+            subtitle!,
+            style: AppText.bodySm.copyWith(
+              color: tone == AppHeaderTone.brand
+                  ? AppColor.white.withValues(alpha: 0.85)
+                  : AppColor.textMuted,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: centerTitle ? TextAlign.center : TextAlign.start,
+          ),
+        ],
+      ],
+    );
 
     return Container(
       decoration: BoxDecoration(color: _bg, border: _border),
@@ -102,61 +146,48 @@ class AppPageHeader extends StatelessWidget implements PreferredSizeWidget {
         bottom: false,
         child: Padding(
           padding: EdgeInsets.symmetric(
-            horizontal: AppSpacing.md.w,
+            horizontal: AppSpacing.lg.w,
             vertical: AppSpacing.xs.h,
           ),
-          child: Row(
-            children: [
-              if (showLeading)
-                leading ??
-                    _HeaderIconButton(
-                      icon: Icons.arrow_back_ios_new_rounded,
-                      color: fg,
-                      onTap: onBack ?? () => Navigator.maybePop(context),
-                      semanticLabel: 'رجوع',
-                    )
-              else
-                SizedBox(width: 64.w),
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs.w),
-                  child: Column(
-                    crossAxisAlignment: centerTitle
-                        ? CrossAxisAlignment.center
-                        : CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
+          child: SizedBox(
+            height: headerHeight,
+            child: centerTitle
+                ? Stack(
+                    alignment: Alignment.center,
                     children: [
-                      Text(
-                        title,
-                        style: AppText.headingSm.copyWith(
-                          color: fg,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: leadingSlot,
                       ),
-                      if (subtitle != null) ...[
-                        SizedBox(height: 2.h),
-                        Text(
-                          subtitle!,
-                          style: AppText.bodySm.copyWith(
-                            color: tone == AppHeaderTone.brand
-                                ? AppColor.white.withValues(alpha: 0.85)
-                                : AppColor.textMuted,
+                      Align(
+                        alignment: Alignment.center,
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppSpacing.xs.w,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          child: titleBlock,
                         ),
-                      ],
+                      ),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: actionsSlot,
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      leadingSlot,
+                      Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppSpacing.xs.w,
+                          ),
+                          child: titleBlock,
+                        ),
+                      ),
+                      actionsSlot,
                     ],
                   ),
-                ),
-              ),
-              if (actions != null && actions!.isNotEmpty)
-                Row(mainAxisSize: MainAxisSize.min, children: actions!)
-              else
-                SizedBox(width: 64.w),
-            ],
           ),
         ),
       ),

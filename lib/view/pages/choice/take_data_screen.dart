@@ -115,13 +115,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
   /// fallback if anything fails — we never block the form on billing.
   Future<void> _preloadEntitlement() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      _providerId = widget.providerId ?? prefs.getString('providerId');
-      _providerId ??= await ApiService().ensureCurrentProviderId();
-      if (_providerId == null) {
-        await Future.delayed(const Duration(milliseconds: 250));
-        _providerId ??= await ApiService().ensureCurrentProviderId();
-      }
+      _providerId = await _resolveProviderId();
       if (_providerId == null) return;
 
       final ent =
@@ -148,28 +142,49 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
     isError ? AppFeedback.error(message) : AppFeedback.success(message);
   }
 
+  Future<String?> _resolveProviderId() async {
+    final prefs = await SharedPreferences.getInstance();
+    const delays = <Duration>[
+      Duration(milliseconds: 180),
+      Duration(milliseconds: 320),
+      Duration(milliseconds: 480),
+    ];
+
+    for (var attempt = 0; attempt <= delays.length; attempt++) {
+      final cachedId =
+          _providerId ?? widget.providerId ?? prefs.getString('providerId');
+      if (cachedId != null && cachedId.isNotEmpty) {
+        _providerId = cachedId;
+        return cachedId;
+      }
+
+      final resolved = await ApiService().ensureCurrentProviderId();
+      if (resolved != null && resolved.isNotEmpty) {
+        _providerId = resolved;
+        return resolved;
+      }
+
+      if (attempt < delays.length) {
+        await Future.delayed(delays[attempt]);
+      }
+    }
+
+    return null;
+  }
+
   Future<void> _submitPlace() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
-    // Resolve a provider id JIT — if the user just signed up they may not
-    // have a row yet, and the cached `_providerId` is null. The helper
-    // creates a default row on the fly when there's a live auth session.
-    final prefs = await SharedPreferences.getInstance();
-    String? providerId = _providerId;
-    providerId ??= prefs.getString('providerId');
-    providerId ??= await ApiService().ensureCurrentProviderId();
-    if (providerId == null) {
-      await Future.delayed(const Duration(milliseconds: 250));
-      providerId = await ApiService().ensureCurrentProviderId();
-    }
+    // Resolve a provider id JIT. We retry a few times because auth/session
+    // restoration can lag one or two frames right after login.
+    final providerId = await _resolveProviderId();
     if (providerId == null) {
       if (_isMounted) setState(() => _isLoading = false);
       _showSnackBar(AppCopy.providerSessionExpired, isError: true);
       return;
     }
-    _providerId = providerId; // cache for future submits
 
     try {
       final existingPlaces =

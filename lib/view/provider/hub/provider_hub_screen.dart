@@ -43,19 +43,13 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
   String? _providerName;
   List<Place> _places = const [];
   bool _loadingPlaces = false;
+  bool _isBootstrapping = true;
 
   @override
   void initState() {
     super.initState();
-    final pid = widget.providerId;
     SubscriptionService.instance.loadCatalog();
-    if (pid != null) {
-      _providerId = pid;
-      _providerName = widget.providerName;
-      _bootstrapProviderState(pid);
-    } else {
-      _resolveProviderId();
-    }
+    _bootstrapHub();
   }
 
   Future<void> _bootstrapProviderState(String providerId) async {
@@ -63,16 +57,39 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
     await _loadProviderPlaces(providerId);
   }
 
-  Future<void> _resolveProviderId() async {
+  Future<void> _bootstrapHub() async {
+    if (mounted) {
+      setState(() => _isBootstrapping = true);
+    }
     try {
-      final resolved = await ApiService().ensureCurrentProviderId();
-      if (!mounted || resolved == null || resolved == _providerId) return;
+      final resolved =
+          widget.providerId ?? await ApiService().ensureCurrentProviderId();
+      if (!mounted) return;
+      if (resolved == null || resolved.isEmpty) {
+        setState(() {
+          _providerId = null;
+          _providerName = widget.providerName;
+          _places = const [];
+        });
+        return;
+      }
       setState(() {
         _providerId = resolved;
+        _providerName = widget.providerName ?? _providerName;
       });
       await _bootstrapProviderState(resolved);
     } catch (_) {
       // Keep the free fallback; the hub still opens and shows the catalog.
+      if (mounted) {
+        setState(() {
+          _providerId = null;
+          _places = const [];
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isBootstrapping = false);
+      }
     }
   }
 
@@ -94,7 +111,10 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
 
   Future<void> _refreshHub() async {
     final pid = _providerId;
-    if (pid == null) return;
+    if (pid == null) {
+      await _bootstrapHub();
+      return;
+    }
     await SubscriptionService.instance.loadEntitlement(pid, force: true);
     await _loadProviderPlaces(pid);
   }
@@ -103,7 +123,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
     var pid = _providerId ?? widget.providerId;
     pid ??= await ApiService().ensureCurrentProviderId();
     if (!mounted || pid == null) {
-      AppFeedback.error('بنجهز بيانات الحساب، جرّب مرة ثانية بعد لحظة.');
+      await _bootstrapHub();
       return;
     }
     if (_providerId != pid) {
@@ -180,6 +200,62 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isBootstrapping) {
+      return const AppPageScaffold(
+        header: AppPageHeader(
+          title: 'جارٍ تجهيز حسابك',
+          actions: [ProfilePill()],
+          centerTitle: true,
+        ),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_providerId == null) {
+      return AppPageScaffold(
+        header: const AppPageHeader(
+          title: AppCopy.hubTitle,
+          actions: [ProfilePill()],
+          centerTitle: true,
+        ),
+        body: Center(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppSpacing.xl.w),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.person_search_rounded,
+                  size: 56.sp,
+                  color: AppColor.textTertiary,
+                ),
+                gapV(AppSpacing.md),
+                Text(
+                  'تعذر تجهيز بيانات الحساب الآن',
+                  style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
+                  textAlign: TextAlign.center,
+                ),
+                gapV(AppSpacing.xs),
+                Text(
+                  'اضغط إعادة المحاولة أو اسحب لأسفل لتحديث البيانات.',
+                  style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
+                  textAlign: TextAlign.center,
+                ),
+                gapV(AppSpacing.lg),
+                SizedBox(
+                  width: double.infinity,
+                  child: AppButton(
+                    text: 'إعادة المحاولة',
+                    onPress: _bootstrapHub,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     final placeCount = _places.length;
     final hubTitle = placeCount > 1 ? 'تابع خدماتك' : AppCopy.hubTitle;
     return PopScope(
@@ -193,6 +269,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
         // app instead. Switching role lives in Profile.
         header: AppPageHeader(
           title: hubTitle,
+          centerTitle: true,
           actions: const [ProfilePill()],
         ),
         body: ValueListenableBuilder<ProviderEntitlement>(
@@ -684,8 +761,8 @@ class _ProviderFlowCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: AppButton(
-              text: canAddPlace ? 'أضف مكان جديد' : 'أضف مكان جديد',
-              onPress: onAddPlace,
+              text: canAddPlace ? 'أضف مكان جديد' : 'وصلت الحد',
+              onPress: canAddPlace ? onAddPlace : onRefresh,
               variant: canAddPlace
                   ? AppButtonVariant.primary
                   : AppButtonVariant.outline,
