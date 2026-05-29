@@ -1,5 +1,5 @@
 -- =============================================================================
--- 0013  Analytics — events + daily rollups
+-- 0018  Analytics — events + daily rollups
 -- -----------------------------------------------------------------------------
 -- Design:
 --   • `analytics_events` is the raw, append-only fact table. The client batches

@@ -1,5 +1,5 @@
 -- =============================================================================
--- 0012  Subscriptions, plans, billing events
+-- 0017  Subscriptions, plans, billing events
 -- -----------------------------------------------------------------------------
 -- Three plans (free / pro / max) with per-plan limits & visibility rules.
 -- One *active* subscription row per provider; history is preserved.

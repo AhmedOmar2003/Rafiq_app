@@ -336,7 +336,7 @@ anon key), plus `SUPABASE_SERVICE_ROLE_KEY` (server-only) and
 
 ## 11. Going to production
 
-- [ ] `supabase db push` runs all migrations 0001–0015.
+- [ ] `supabase db push` runs all migrations 0001–0020.
 - [ ] Service role key only on Vercel **server**, never exposed to client.
 - [ ] Webhook URLs registered with gateway, HMAC verified.
 - [ ] `pg_cron` schedules `rebuild_daily_rollups(current_date - 1)` at 02:00.

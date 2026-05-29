@@ -1,5 +1,5 @@
 -- =============================================================================
--- 0014  Promotions + ranking
+-- 0019  Promotions + ranking
 -- -----------------------------------------------------------------------------
 -- • promotional_campaigns: providers create offers / "featured" placements
 --   if their plan allows (Pro+).

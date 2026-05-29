@@ -1,5 +1,5 @@
 -- =============================================================================
--- 0015  RLS for subscriptions, billing, analytics, campaigns
+-- 0020  RLS for subscriptions, billing, analytics, campaigns
 -- -----------------------------------------------------------------------------
 -- Threat model (one line per role):
 --   anon          → no read on private tables; can call insert_event_batch only
