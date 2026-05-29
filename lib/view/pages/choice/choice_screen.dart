@@ -58,28 +58,29 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
     if (_selectedIndex == 0) {
       await UserRoleStore.instance.chooseRegularUser();
       if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
+      Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const HomeView()),
+        (route) => false,
       );
-    } else {
+      } else {
       await UserRoleStore.instance.chooseProvider();
       if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
+      final navContext = navigatorKey.currentContext ?? context;
+      Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
           builder: (_) => SubscriptionScreen(
             onboarding: true,
             onPlanChosen: () {
-              // Once a plan is in place, send the provider straight into the
-              // service hub so they can manage places and stats in one place.
-              Navigator.pushReplacement(
-                navigatorKey.currentContext ?? context,
-                MaterialPageRoute(builder: (_) => const ProviderHubScreen()),
+              Navigator.of(navContext, rootNavigator: true).pushAndRemoveUntil(
+                MaterialPageRoute(
+                  builder: (_) => const ProviderHubScreen(),
+                ),
+                (route) => false,
               );
             },
           ),
         ),
+        (route) => false,
       );
     }
     widget.onNext();

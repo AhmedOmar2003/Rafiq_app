@@ -9,9 +9,7 @@ import 'package:rafiq_app/models/subscription/plan.dart';
 import 'package:rafiq_app/model/place.dart';
 import 'package:rafiq_app/service/api_service.dart';
 import 'package:rafiq_app/service/subscription_service.dart';
-import 'package:rafiq_app/service/user_role_store.dart';
 import 'package:rafiq_app/view/details/details_page.dart';
-import 'package:rafiq_app/view/pages/choice/choice_screen.dart';
 import 'package:rafiq_app/view/pages/choice/take_data_screen.dart';
 import 'package:rafiq_app/view/home/widget/stepper_component.dart';
 import 'package:rafiq_app/view/provider/analytics/analytics_screen.dart';
@@ -100,11 +98,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
   }
 
   Future<void> _openAddPlace() async {
-    final pid = _providerId ?? await ApiService().ensureCurrentProviderId();
-    if (pid == null) return;
-    if (_providerId == null && mounted) {
-      setState(() => _providerId = pid);
-    }
+    final pid = _providerId ?? widget.providerId;
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
@@ -168,22 +162,6 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
     await _refreshHub();
   }
 
-  Future<void> _changeRole() async {
-    await UserRoleStore.instance.resetRoleChoice();
-    if (!mounted) return;
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ChoiceScreen(
-          onPlanSelected: () {},
-          onNoPlanSelected: () {},
-          onNext: () {},
-        ),
-      ),
-      (route) => false,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final placeCount = _places.length;
@@ -193,13 +171,6 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
       header: AppPageHeader(
         title: hubTitle,
         leading: const SizedBox.shrink(),
-        actions: [
-          IconButton(
-            tooltip: 'تغيير الدور',
-            onPressed: _changeRole,
-            icon: const Icon(Icons.swap_horiz_rounded),
-          ),
-        ],
       ),
       body: ValueListenableBuilder<ProviderEntitlement>(
         valueListenable: SubscriptionService.instance.entitlement,
@@ -236,14 +207,19 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
                   onAddPlace: _openAddPlace,
                   onRefresh: _refreshHub,
                   canAddPlace: ent.maxPlaces > placeCount,
-                  loading: _loadingPlaces,
-                  places: _places,
-                  onPreviewPlace: _previewPlace,
-                  onEditPlace: _editPlace,
-                  onDeletePlace: _deletePlace,
                 ),
                 gapV(AppSpacing.lg),
                 _KpiStrip(entitlement: ent),
+                gapV(AppSpacing.xxl),
+                _PlacesSection(
+                  places: _places,
+                  loading: _loadingPlaces,
+                  maxPlaces: ent.maxPlaces,
+                  onPreviewPlace: _previewPlace,
+                  onEditPlace: _editPlace,
+                  onDeletePlace: _deletePlace,
+                  onAddPlace: _openAddPlace,
+                ),
                 gapV(AppSpacing.xxl),
                 _FeatureTile(
                   icon: Icons.bar_chart_rounded,
@@ -594,11 +570,6 @@ class _ProviderFlowCard extends StatelessWidget {
     required this.onAddPlace,
     required this.onRefresh,
     required this.canAddPlace,
-    required this.loading,
-    required this.places,
-    required this.onPreviewPlace,
-    required this.onEditPlace,
-    required this.onDeletePlace,
   });
 
   final int placeCount;
@@ -607,11 +578,6 @@ class _ProviderFlowCard extends StatelessWidget {
   final VoidCallback onAddPlace;
   final VoidCallback onRefresh;
   final bool canAddPlace;
-  final bool loading;
-  final List<Place> places;
-  final ValueChanged<Place> onPreviewPlace;
-  final ValueChanged<Place> onEditPlace;
-  final ValueChanged<Place> onDeletePlace;
 
   @override
   Widget build(BuildContext context) {
@@ -703,7 +669,60 @@ class _ProviderFlowCard extends StatelessWidget {
               isEnabled: canAddPlace,
             ),
           ),
-          gapV(AppSpacing.xl),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlacesSection extends StatelessWidget {
+  const _PlacesSection({
+    required this.places,
+    required this.loading,
+    required this.maxPlaces,
+    required this.onPreviewPlace,
+    required this.onEditPlace,
+    required this.onDeletePlace,
+    required this.onAddPlace,
+  });
+
+  final List<Place> places;
+  final bool loading;
+  final int maxPlaces;
+  final ValueChanged<Place> onPreviewPlace;
+  final ValueChanged<Place> onEditPlace;
+  final ValueChanged<Place> onDeletePlace;
+  final VoidCallback onAddPlace;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      padding: EdgeInsets.all(AppSpacing.lg.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'أماكني',
+                  style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
+                ),
+              ),
+              Text(
+                '${places.length}/$maxPlaces',
+                style: AppText.caption.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+          gapV(AppSpacing.sm),
+          Text(
+            places.isEmpty
+                ? 'أضف مكانك الأول، وبعدها هتلاقيه هنا عشان تعدّل أو تحذف أو تعمل Preview.'
+                : 'كل مكان تقدر تديره من هنا بسرعة.',
+            style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
+          ),
+          gapV(AppSpacing.lg),
           if (loading)
             const Center(child: CircularProgressIndicator())
           else if (places.isEmpty)
