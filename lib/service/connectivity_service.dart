@@ -32,8 +32,8 @@ class ConnectivityService {
   }
 
   void _apply(List<ConnectivityResult> results) {
-    final bool connected =
-        results.isNotEmpty && !results.every((r) => r == ConnectivityResult.none);
+    final bool connected = results.isNotEmpty &&
+        !results.every((r) => r == ConnectivityResult.none);
     if (_online.value != connected) _online.value = connected;
   }
 

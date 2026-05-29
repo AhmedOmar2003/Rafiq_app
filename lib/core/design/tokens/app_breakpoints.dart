@@ -17,8 +17,7 @@ class AppBreakpoints {
   static const double expanded = 905;
   static const double large = 1240;
 
-  static bool isCompact(BuildContext c) =>
-      MediaQuery.sizeOf(c).width < medium;
+  static bool isCompact(BuildContext c) => MediaQuery.sizeOf(c).width < medium;
   static bool isMedium(BuildContext c) {
     final w = MediaQuery.sizeOf(c).width;
     return w >= medium && w < expanded;
@@ -29,8 +28,7 @@ class AppBreakpoints {
     return w >= expanded && w < large;
   }
 
-  static bool isLarge(BuildContext c) =>
-      MediaQuery.sizeOf(c).width >= large;
+  static bool isLarge(BuildContext c) => MediaQuery.sizeOf(c).width >= large;
 
   /// Number of grid columns appropriate for the current width.
   static int columns(BuildContext c) {

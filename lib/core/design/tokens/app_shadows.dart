@@ -43,7 +43,7 @@ class AppShadows {
   /// Brand-tinted glow for primary CTAs (used sparingly).
   static List<BoxShadow> get primaryGlow => [
         BoxShadow(
-          color: AppColor.primary.withOpacity(0.28),
+          color: AppColor.primary.withValues(alpha: 0.28),
           blurRadius: 16,
           offset: const Offset(0, 6),
         ),

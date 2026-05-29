@@ -80,7 +80,8 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
     if (!mounted) return;
     setState(() => _loadingPlaces = true);
     try {
-      final places = await ApiService().fetchProviderPlaces(providerId: providerId);
+      final places =
+          await ApiService().fetchProviderPlaces(providerId: providerId);
       if (!mounted) return;
       setState(() => _places = places);
     } catch (_) {
@@ -99,7 +100,16 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
   }
 
   Future<void> _openAddPlace() async {
-    final pid = _providerId ?? widget.providerId;
+    var pid = _providerId ?? widget.providerId;
+    pid ??= await ApiService().ensureCurrentProviderId();
+    if (!mounted || pid == null) {
+      return;
+    }
+    if (_providerId != pid) {
+      setState(() {
+        _providerId = pid;
+      });
+    }
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
@@ -186,104 +196,104 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
           actions: const [ProfilePill()],
         ),
         body: ValueListenableBuilder<ProviderEntitlement>(
-        valueListenable: SubscriptionService.instance.entitlement,
-        builder: (_, ent, __) {
-          return RefreshIndicator(
-            onRefresh: _refreshHub,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.fromLTRB(
-                AppSpacing.xxl.w,
-                AppSpacing.lg.h,
-                AppSpacing.xxl.w,
-                AppSpacing.huge.h,
+          valueListenable: SubscriptionService.instance.entitlement,
+          builder: (_, ent, __) {
+            return RefreshIndicator(
+              onRefresh: _refreshHub,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.fromLTRB(
+                  AppSpacing.xxl.w,
+                  AppSpacing.lg.h,
+                  AppSpacing.xxl.w,
+                  AppSpacing.huge.h,
+                ),
+                children: [
+                  _Greeting(name: _providerName ?? widget.providerName),
+                  gapV(AppSpacing.lg),
+                  _PlanSummaryCard(
+                    entitlement: ent,
+                    onManage: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => SubscriptionScreen(
+                          providerId: _providerId,
+                        ),
+                      ),
+                    ),
+                  ),
+                  gapV(AppSpacing.lg),
+                  _ProviderFlowCard(
+                    placeCount: placeCount,
+                    maxPlaces: ent.maxPlaces,
+                    imagesPerPlace: ent.maxGalleryImages,
+                    onAddPlace: _openAddPlace,
+                    onRefresh: _refreshHub,
+                    canAddPlace: ent.maxPlaces > placeCount,
+                  ),
+                  gapV(AppSpacing.lg),
+                  _KpiStrip(entitlement: ent),
+                  gapV(AppSpacing.xxl),
+                  _PlacesSection(
+                    places: _places,
+                    loading: _loadingPlaces,
+                    maxPlaces: ent.maxPlaces,
+                    onPreviewPlace: _previewPlace,
+                    onEditPlace: _editPlace,
+                    onDeletePlace: _deletePlace,
+                    onAddPlace: _openAddPlace,
+                  ),
+                  gapV(AppSpacing.xxl),
+                  _FeatureTile(
+                    icon: Icons.bar_chart_rounded,
+                    title: AppCopy.hubFeatTitleAnalytics,
+                    body: AppCopy.hubFeatBodyAnalytics,
+                    lockedLabel:
+                        ent.hasAnalyticsBasic ? null : AppCopy.hubLockedTag,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => AnalyticsScreen(
+                          providerId: _providerId,
+                        ),
+                      ),
+                    ),
+                  ),
+                  gapV(AppSpacing.md),
+                  _FeatureTile(
+                    icon: Icons.campaign_rounded,
+                    title: AppCopy.hubFeatTitlePromotions,
+                    body: AppCopy.hubFeatBodyPromotions,
+                    lockedLabel:
+                        ent.hasPromotions ? null : AppCopy.hubLockedTag,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => PromotionsScreen(
+                          providerId: _providerId,
+                        ),
+                      ),
+                    ),
+                  ),
+                  gapV(AppSpacing.md),
+                  _FeatureTile(
+                    icon: Icons.workspace_premium_rounded,
+                    title: AppCopy.hubFeatTitleSubscription,
+                    body: AppCopy.hubFeatBodySubscription,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => SubscriptionScreen(
+                          providerId: _providerId,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              children: [
-                _Greeting(name: _providerName ?? widget.providerName),
-                gapV(AppSpacing.lg),
-                _PlanSummaryCard(
-                  entitlement: ent,
-                  onManage: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => SubscriptionScreen(
-                        providerId: _providerId,
-                      ),
-                    ),
-                  ),
-                ),
-                gapV(AppSpacing.lg),
-                _ProviderFlowCard(
-                  placeCount: placeCount,
-                  maxPlaces: ent.maxPlaces,
-                  imagesPerPlace: ent.maxGalleryImages,
-                  onAddPlace: _openAddPlace,
-                  onRefresh: _refreshHub,
-                  canAddPlace: ent.maxPlaces > placeCount,
-                ),
-                gapV(AppSpacing.lg),
-                _KpiStrip(entitlement: ent),
-                gapV(AppSpacing.xxl),
-                _PlacesSection(
-                  places: _places,
-                  loading: _loadingPlaces,
-                  maxPlaces: ent.maxPlaces,
-                  onPreviewPlace: _previewPlace,
-                  onEditPlace: _editPlace,
-                  onDeletePlace: _deletePlace,
-                  onAddPlace: _openAddPlace,
-                ),
-                gapV(AppSpacing.xxl),
-                _FeatureTile(
-                  icon: Icons.bar_chart_rounded,
-                  title: AppCopy.hubFeatTitleAnalytics,
-                  body: AppCopy.hubFeatBodyAnalytics,
-                  lockedLabel:
-                      ent.hasAnalyticsBasic ? null : AppCopy.hubLockedTag,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => AnalyticsScreen(
-                        providerId: _providerId,
-                      ),
-                    ),
-                  ),
-                ),
-                gapV(AppSpacing.md),
-                _FeatureTile(
-                  icon: Icons.campaign_rounded,
-                  title: AppCopy.hubFeatTitlePromotions,
-                  body: AppCopy.hubFeatBodyPromotions,
-                  lockedLabel:
-                      ent.hasPromotions ? null : AppCopy.hubLockedTag,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => PromotionsScreen(
-                        providerId: _providerId,
-                      ),
-                    ),
-                  ),
-                ),
-                gapV(AppSpacing.md),
-                _FeatureTile(
-                  icon: Icons.workspace_premium_rounded,
-                  title: AppCopy.hubFeatTitleSubscription,
-                  body: AppCopy.hubFeatBodySubscription,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => SubscriptionScreen(
-                        providerId: _providerId,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -357,8 +367,7 @@ class _PlanSummaryCard extends StatelessWidget {
           ] else ...[
             Text(
               AppCopy.subFreeForever,
-              style:
-                  AppText.titleMd.copyWith(color: AppColor.textPrimary),
+              style: AppText.titleMd.copyWith(color: AppColor.textPrimary),
             ),
             gapV(AppSpacing.md),
           ],
@@ -367,9 +376,8 @@ class _PlanSummaryCard extends StatelessWidget {
             child: AppButton(
               text: isPaid ? AppCopy.hubManagePlan : AppCopy.subUpgrade,
               onPress: onManage,
-              variant: isPaid
-                  ? AppButtonVariant.outline
-                  : AppButtonVariant.primary,
+              variant:
+                  isPaid ? AppButtonVariant.outline : AppButtonVariant.primary,
             ),
           ),
         ],
@@ -497,9 +505,7 @@ class _FeatureTile extends StatelessWidget {
             width: 48.w,
             height: 48.w,
             decoration: BoxDecoration(
-              color: locked
-                  ? AppColor.neutral100
-                  : AppColor.primary50,
+              color: locked ? AppColor.neutral100 : AppColor.primary50,
               borderRadius: AppRadii.rMd,
             ),
             child: Icon(
@@ -807,12 +813,12 @@ class _EmptyPlacesState extends StatelessWidget {
         Container(
           width: 92.w,
           height: 92.w,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: AppColor.primary50,
             shape: BoxShape.circle,
           ),
-          child:
-              Icon(Icons.store_mall_directory_rounded, color: AppColor.primary, size: 42.sp),
+          child: Icon(Icons.store_mall_directory_rounded,
+              color: AppColor.primary, size: 42.sp),
         ),
         gapV(AppSpacing.lg),
         Text(
@@ -949,7 +955,8 @@ class _PlaceCard extends StatelessWidget {
                 gapV(AppSpacing.sm),
                 Text(
                   model.address,
-                  style: AppText.caption.copyWith(color: AppColor.textSecondary),
+                  style:
+                      AppText.caption.copyWith(color: AppColor.textSecondary),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),

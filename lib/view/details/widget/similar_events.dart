@@ -63,7 +63,7 @@ class SimilarEventsItem extends StatelessWidget {
           borderRadius: BorderRadius.circular(16.r),
           boxShadow: [
             BoxShadow(
-              color: AppColor.black.withOpacity(0.05),
+              color: AppColor.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -82,13 +82,14 @@ class SimilarEventsItem extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   ClipRRect(
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(16.r)),
                     child: model.image.isNotEmpty
                         ? CachedNetworkImage(
                             url: model.image,
                             height: 130.h,
                             fit: BoxFit.cover,
-                            placeholder: (_) => Center(
+                            placeholder: (_) => const Center(
                               child: CircularProgressIndicator(
                                 valueColor: AlwaysStoppedAnimation<Color>(
                                     AppColor.primary),
@@ -110,7 +111,7 @@ class SimilarEventsItem extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20.r),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColor.black.withOpacity(0.1),
+                            color: AppColor.black.withValues(alpha: 0.1),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           ),
@@ -152,7 +153,7 @@ class SimilarEventsItem extends StatelessWidget {
                       padding:
                           EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
                       decoration: BoxDecoration(
-                        color: model.color.withOpacity(0.9),
+                        color: model.color.withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(8.r),
                       ),
                       child: Row(
@@ -205,14 +206,16 @@ class SimilarEventsItem extends StatelessWidget {
                             children: [
                               Text(
                                 "يبدأ من",
-                                style: TextStyleTheme.textStyle12Medium.copyWith(
+                                style:
+                                    TextStyleTheme.textStyle12Medium.copyWith(
                                   color: AppColor.textSecondary,
                                   fontSize: 11.sp,
                                 ),
                               ),
                               Text(
                                 "${model.price} جنية",
-                                style: TextStyleTheme.textStyle16Medium.copyWith(
+                                style:
+                                    TextStyleTheme.textStyle16Medium.copyWith(
                                   color: AppColor.primary,
                                   fontWeight: FontWeight.w600,
                                   fontSize: 15.sp,
@@ -226,7 +229,7 @@ class SimilarEventsItem extends StatelessWidget {
                         Container(
                           padding: EdgeInsets.all(5.w),
                           decoration: BoxDecoration(
-                            color: AppColor.primary.withOpacity(0.1),
+                            color: AppColor.primary.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(

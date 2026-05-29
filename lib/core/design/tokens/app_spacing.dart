@@ -25,7 +25,8 @@ class AppSpacing {
   static EdgeInsets get pagePadding =>
       EdgeInsets.symmetric(horizontal: xxl.w, vertical: lg.h);
 
-  static EdgeInsets get pageHorizontal => EdgeInsets.symmetric(horizontal: xxl.w);
+  static EdgeInsets get pageHorizontal =>
+      EdgeInsets.symmetric(horizontal: xxl.w);
 }
 
 /// Vertical gap from the spacing scale (ScreenUtil-aware).

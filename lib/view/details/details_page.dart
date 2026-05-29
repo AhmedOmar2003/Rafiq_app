@@ -19,10 +19,10 @@ class DetailsPage extends StatefulWidget {
   final List<SuggestionItemModel> suggestionItemList;
 
   const DetailsPage({
-    Key? key,
+    super.key,
     required this.model,
     required this.suggestionItemList,
-  }) : super(key: key);
+  });
 
   @override
   State<DetailsPage> createState() => _DetailsPageState();
@@ -227,7 +227,7 @@ class _ReviewsSection extends StatelessWidget {
     if (isLoading) {
       child = SizedBox(
         height: 120.h,
-        child: Center(
+        child: const Center(
           child: CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(AppColor.primary),
           ),
@@ -357,7 +357,7 @@ class _CountChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColor.primary50,
         borderRadius: AppRadii.rPill,
-        border: Border.all(color: AppColor.primary.withOpacity(0.2)),
+        border: Border.all(color: AppColor.primary.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

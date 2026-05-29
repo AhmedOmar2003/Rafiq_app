@@ -22,7 +22,7 @@ class CustomEvaluation extends StatelessWidget {
         borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(
-            color: AppColor.black.withOpacity(0.05),
+            color: AppColor.black.withValues(alpha: 0.05),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -33,8 +33,8 @@ class CustomEvaluation extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(12.r),
           onTap: () {},
-          splashColor: AppColor.primary.withOpacity(0.1),
-          highlightColor: AppColor.primary.withOpacity(0.05),
+          splashColor: AppColor.primary.withValues(alpha: 0.1),
+          highlightColor: AppColor.primary.withValues(alpha: 0.05),
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.w),
             child: Row(

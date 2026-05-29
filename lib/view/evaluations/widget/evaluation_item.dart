@@ -18,7 +18,7 @@ class EvaluationItem extends StatelessWidget {
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: AppColor.black.withOpacity(0.05),
+            color: AppColor.black.withValues(alpha: 0.05),
             blurRadius: 10,
             spreadRadius: 1,
             offset: const Offset(0, 2),
@@ -38,7 +38,7 @@ class EvaluationItem extends StatelessWidget {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: AppColor.black.withOpacity(0.1),
+                        color: AppColor.black.withValues(alpha: 0.1),
                         blurRadius: 8,
                         spreadRadius: 1,
                       ),
@@ -82,7 +82,7 @@ class EvaluationItem extends StatelessWidget {
                         Text(
                           model.date,
                           style: AppText.caption.copyWith(
-                            color: AppColor.black.withOpacity(0.6),
+                            color: AppColor.black.withValues(alpha: 0.6),
                             height: 1.2,
                           ),
                         ),
@@ -98,7 +98,7 @@ class EvaluationItem extends StatelessWidget {
             model.body,
             style: AppText.bodySm.copyWith(
               height: 1.6,
-              color: AppColor.black.withOpacity(0.8),
+              color: AppColor.black.withValues(alpha: 0.8),
               letterSpacing: 0.2,
             ),
           ),

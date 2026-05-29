@@ -66,7 +66,8 @@ class SuggestionItemModel {
       return numbers.last;
     }
 
-    return double.tryParse(normalized.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    return double.tryParse(normalized.replaceAll(RegExp(r'[^0-9.]'), '')) ??
+        0.0;
   }
 
   static String _mapCategoryToIcon(String description) {

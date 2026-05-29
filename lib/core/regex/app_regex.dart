@@ -6,7 +6,7 @@ class AppRegex {
 
   static bool isPasswordValid(String password) {
     return RegExp(r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*).{8,}$')
-    .hasMatch(password);
+        .hasMatch(password);
   }
 
   static bool isPhoneNumberValid(String phoneNumber) {
@@ -14,8 +14,8 @@ class AppRegex {
   }
 
   static bool isUserNameValid(String userName) {
-    return RegExp(r"^\s*([A-Za-z]{1,}([\.,] |[-']| ))+[A-Za-z]+\.?\s*$").
-    hasMatch(userName);
+    return RegExp(r"^\s*([A-Za-z]{1,}([\.,] |[-']| ))+[A-Za-z]+\.?\s*$")
+        .hasMatch(userName);
   }
 
   static bool hasLowerCase(String password) {
@@ -38,7 +38,6 @@ class AppRegex {
     return RegExp(r'^(?=.{8,})').hasMatch(password);
   }
 }
-
 
 /*class AppRegex{
   static final RegExp emailValidatorRegExp = RegExp（r"^［a-zA-Z0-9.] +@［a-zA-Z0-9]+\.［a-zA-Z]+");

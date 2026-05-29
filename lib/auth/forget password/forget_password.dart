@@ -44,8 +44,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               email: normalizedEmail,
               otpCode: code,
             ),
-            onResend: () =>
-                AuthService().sendPasswordResetOtp(normalizedEmail),
+            onResend: () => AuthService().sendPasswordResetOtp(normalizedEmail),
             onSuccess: () {
               Navigator.pushReplacement(
                 context,
@@ -77,7 +76,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         elevation: 0,
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: Icon(Icons.arrow_back_ios_new, color: AppColor.white, size: 22.sp),
+          icon: Icon(Icons.arrow_back_ios_new,
+              color: AppColor.white, size: 22.sp),
         ),
       ),
       body: SafeArea(
@@ -94,10 +94,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         width: 100.w,
                         height: 100.w,
                         decoration: BoxDecoration(
-                          color: AppColor.white.withOpacity(0.1),
+                          color: AppColor.white.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(Icons.lock_reset_rounded, size: 50.sp, color: AppColor.white),
+                        child: Icon(Icons.lock_reset_rounded,
+                            size: 50.sp, color: AppColor.white),
                       ),
                     ),
                   ),
@@ -108,14 +109,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         color: AppColor.surface,
                         borderRadius: AppRadii.topOnly(AppRadii.xxl),
                       ),
-                      padding: EdgeInsets.symmetric(vertical: AppSpacing.xxxl.h, horizontal: AppSpacing.xxl.w),
+                      padding: EdgeInsets.symmetric(
+                          vertical: AppSpacing.xxxl.h,
+                          horizontal: AppSpacing.xxl.w),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           gapV(AppSpacing.lg),
                           Text(
                             AppCopy.forgotTitle,
-                            style: AppText.headingMd.copyWith(color: AppColor.textPrimary, fontWeight: FontWeight.w700),
+                            style: AppText.headingMd.copyWith(
+                                color: AppColor.textPrimary,
+                                fontWeight: FontWeight.w700),
                             textAlign: TextAlign.center,
                           ),
                           gapV(AppSpacing.md),
@@ -133,16 +138,24 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                               controller: emailController,
                               textInputAction: TextInputAction.done,
                               type: TextInputType.emailAddress,
-                              suffixIcon: Icon(Icons.email_outlined, color: AppColor.primary, size: 20.sp),
+                              suffixIcon: Icon(Icons.email_outlined,
+                                  color: AppColor.primary, size: 20.sp),
                               validator: (value) {
-                                if (value == null || value.isEmpty) return AppCopy.fieldRequired;
-                                if (!AuthService.isGmailEmail(value)) return AppCopy.emailGmailOnly;
+                                if (value == null || value.isEmpty) {
+                                  return AppCopy.fieldRequired;
+                                }
+                                if (!AuthService.isGmailEmail(value)) {
+                                  return AppCopy.emailGmailOnly;
+                                }
                                 return null;
                               },
                             ),
                           ),
                           gapV(AppSpacing.xl),
-                          AppButton(text: AppCopy.forgotSendCode, onPress: _sendResetOtp, isLoading: _isLoading),
+                          AppButton(
+                              text: AppCopy.forgotSendCode,
+                              onPress: _sendResetOtp,
+                              isLoading: _isLoading),
                           gapV(AppSpacing.xxl),
                           Center(
                             child: Text(

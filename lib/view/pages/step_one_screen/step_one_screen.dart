@@ -70,7 +70,7 @@ class _StepOptionCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(14.r),
-        splashColor: AppColor.primary.withOpacity(0.1),
+        splashColor: AppColor.primary.withValues(alpha: 0.1),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeOutCubic,
@@ -79,16 +79,14 @@ class _StepOptionCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(14.r),
             color: isSelected ? AppColor.primary : AppColor.surfaceCard,
             border: Border.all(
-              color: isSelected
-                  ? AppColor.primary
-                  : AppColor.border,
+              color: isSelected ? AppColor.primary : AppColor.border,
               width: isSelected ? 1.5 : 1.0,
             ),
             boxShadow: [
               BoxShadow(
                 color: isSelected
-                    ? AppColor.primary.withOpacity(0.15)
-                    : AppColor.black.withOpacity(0.04),
+                    ? AppColor.primary.withValues(alpha: 0.15)
+                    : AppColor.black.withValues(alpha: 0.04),
                 blurRadius: isSelected ? 12 : 6,
                 offset: Offset(0, isSelected ? 4 : 2),
               ),
@@ -102,7 +100,9 @@ class _StepOptionCard extends StatelessWidget {
                 height: 8.w,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: isSelected ? AppColor.white : AppColor.primary.withOpacity(0.3),
+                  color: isSelected
+                      ? AppColor.white
+                      : AppColor.primary.withValues(alpha: 0.3),
                 ),
               ),
               SizedBox(width: 14.w),
@@ -116,7 +116,8 @@ class _StepOptionCard extends StatelessWidget {
                 ),
               ),
               if (isSelected)
-                Icon(Icons.check_circle_rounded, color: AppColor.surfaceCard, size: 20.w),
+                Icon(Icons.check_circle_rounded,
+                    color: AppColor.surfaceCard, size: 20.w),
             ],
           ),
         ),

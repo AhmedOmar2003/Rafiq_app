@@ -108,12 +108,10 @@ class FeatureGate {
 class _ReasonText {
   static String gallery(int cap) =>
       'الخطة الحالية تسمحلك بـ $cap صورة في المعرض.';
-  static String video(int cap) =>
-      cap == 0
-          ? 'الفيديوهات متاحة من خطة برو وفوق.'
-          : 'الخطة الحالية تسمحلك بـ $cap فيديو.';
-  static String places(int cap) =>
-      'الخطة الحالية تسمحلك بـ $cap مكان.';
+  static String video(int cap) => cap == 0
+      ? 'الفيديوهات متاحة من خطة برو وفوق.'
+      : 'الخطة الحالية تسمحلك بـ $cap فيديو.';
+  static String places(int cap) => 'الخطة الحالية تسمحلك بـ $cap مكان.';
 }
 
 /// Bottom sheet shown when a gate fails. Lets the user upgrade in 1 tap
@@ -131,7 +129,8 @@ class UpgradeSheet {
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColor.surfaceCard,
-      shape: RoundedRectangleBorder(borderRadius: AppRadii.topOnly(AppRadii.xxl)),
+      shape:
+          RoundedRectangleBorder(borderRadius: AppRadii.topOnly(AppRadii.xxl)),
       builder: (sheetCtx) {
         return SafeArea(
           top: false,
@@ -148,7 +147,7 @@ class UpgradeSheet {
                 Container(
                   width: 80.w,
                   height: 80.w,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: AppColor.primary50,
                     shape: BoxShape.circle,
                   ),

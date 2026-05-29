@@ -90,15 +90,40 @@ class _AppButtonState extends State<AppButton> {
   ({Color bg, Color fg, Color? border, List<BoxShadow> shadow}) get _colors {
     switch (widget.variant) {
       case AppButtonVariant.primary:
-        return (bg: AppColor.primary, fg: AppColor.textOnPrimary, border: null, shadow: AppShadows.primaryGlow);
+        return (
+          bg: AppColor.primary,
+          fg: AppColor.textOnPrimary,
+          border: null,
+          shadow: AppShadows.primaryGlow
+        );
       case AppButtonVariant.secondary:
-        return (bg: AppColor.sand200, fg: AppColor.primary, border: null, shadow: AppShadows.level0);
+        return (
+          bg: AppColor.sand200,
+          fg: AppColor.primary,
+          border: null,
+          shadow: AppShadows.level0
+        );
       case AppButtonVariant.outline:
-        return (bg: Colors.transparent, fg: AppColor.primary, border: AppColor.primary, shadow: AppShadows.level0);
+        return (
+          bg: Colors.transparent,
+          fg: AppColor.primary,
+          border: AppColor.primary,
+          shadow: AppShadows.level0
+        );
       case AppButtonVariant.ghost:
-        return (bg: Colors.transparent, fg: AppColor.primary, border: null, shadow: AppShadows.level0);
+        return (
+          bg: Colors.transparent,
+          fg: AppColor.primary,
+          border: null,
+          shadow: AppShadows.level0
+        );
       case AppButtonVariant.destructive:
-        return (bg: AppColor.error, fg: AppColor.white, border: null, shadow: AppShadows.level0);
+        return (
+          bg: AppColor.error,
+          fg: AppColor.white,
+          border: null,
+          shadow: AppShadows.level0
+        );
     }
   }
 
@@ -111,7 +136,8 @@ class _AppButtonState extends State<AppButton> {
           style: widget.buttonStyle,
           onPressed: _effectiveOnPress,
           child: widget.child ??
-              Text(widget.text, textAlign: TextAlign.center, style: widget.textStyle),
+              Text(widget.text,
+                  textAlign: TextAlign.center, style: widget.textStyle),
         ),
       );
     }
@@ -137,7 +163,9 @@ class _AppButtonState extends State<AppButton> {
             decoration: BoxDecoration(
               color: c.bg,
               borderRadius: AppRadii.rMd,
-              border: c.border != null ? Border.all(color: c.border!, width: 1.5) : null,
+              border: c.border != null
+                  ? Border.all(color: c.border!, width: 1.5)
+                  : null,
               boxShadow: _pressed ? AppShadows.level0 : c.shadow,
             ),
             child: _content(c.fg),

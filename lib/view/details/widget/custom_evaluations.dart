@@ -108,8 +108,7 @@ class _LastReviewRow extends StatelessWidget {
                 children: [
                   Text(
                     review.name,
-                    style:
-                        AppText.titleMd.copyWith(color: AppColor.black),
+                    style: AppText.titleMd.copyWith(color: AppColor.black),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),

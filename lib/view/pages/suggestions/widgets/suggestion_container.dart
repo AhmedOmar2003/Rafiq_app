@@ -162,7 +162,7 @@ class _CategoryPill extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         borderRadius: AppRadii.rMd,
-        color: color.withOpacity(0.92),
+        color: color.withValues(alpha: 0.92),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -243,7 +243,7 @@ class _PriceRow extends StatelessWidget {
         const Spacer(),
         Container(
           padding: EdgeInsets.all(AppSpacing.sm.w + 2),
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: AppColor.primary50,
             shape: BoxShape.circle,
           ),
@@ -300,8 +300,7 @@ class _SmartImage extends StatelessWidget {
 
     if (!kIsWeb) {
       final dpr = MediaQuery.devicePixelRatioOf(context);
-      final cacheWidth =
-          (MediaQuery.sizeOf(context).width * dpr).round();
+      final cacheWidth = (MediaQuery.sizeOf(context).width * dpr).round();
       final cacheHeight =
           (CustomSuggestionContainer._heroHeight.h * dpr).round();
       return Image.file(
@@ -350,7 +349,7 @@ class _ImageLoadingPlaceholder extends StatelessWidget {
       height: CustomSuggestionContainer._heroHeight.h,
       color: AppColor.neutral50,
       alignment: Alignment.center,
-      child: SizedBox(
+      child: const SizedBox(
         width: 28,
         height: 28,
         child: CircularProgressIndicator(

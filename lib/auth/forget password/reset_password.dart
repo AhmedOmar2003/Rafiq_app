@@ -125,7 +125,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                               width: 100.w,
                               height: 100.w,
                               decoration: BoxDecoration(
-                                color: AppColor.white.withOpacity(0.1),
+                                color: AppColor.white.withValues(alpha: 0.1),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
@@ -172,7 +172,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                     ? '${AppCopy.verifyBodyPrefix.trim()} $currentEmail'
                                     : currentEmail),
                             style: AppText.bodyLg.copyWith(
-                              color: AppColor.black.withOpacity(0.7),
+                              color: AppColor.black.withValues(alpha: 0.7),
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -189,7 +189,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                 if (value == null || value.trim().isEmpty) {
                                   return AppCopy.fieldRequired;
                                 }
-                                if (!RegExp(r'^\d{6}$').hasMatch(value.trim())) {
+                                if (!RegExp(r'^\d{6}$')
+                                    .hasMatch(value.trim())) {
                                   return AppCopy.verifyCodeWrongLength;
                                 }
                                 return null;
@@ -239,8 +240,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                                   : (widget.requiresOtpVerification
                                       ? AppCopy.resetCta
                                       : AppCopy.done),
-                              textStyle:
-                                  AppText.titleLg.copyWith(
+                              textStyle: AppText.titleLg.copyWith(
                                 color: Colors.white,
                                 letterSpacing: 0.5,
                               ),

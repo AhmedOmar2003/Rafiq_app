@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -27,18 +26,30 @@ extension AnalyticsKindX on AnalyticsKind {
   /// Snake_case form Postgres accepts as the enum literal.
   String get wire {
     switch (this) {
-      case AnalyticsKind.placeImpression: return 'place_impression';
-      case AnalyticsKind.placeOpen: return 'place_open';
-      case AnalyticsKind.placeFavorite: return 'place_favorite';
-      case AnalyticsKind.placeUnfavorite: return 'place_unfavorite';
-      case AnalyticsKind.placeShare: return 'place_share';
-      case AnalyticsKind.placeMapOpen: return 'place_map_open';
-      case AnalyticsKind.placePhoneCall: return 'place_phone_call';
-      case AnalyticsKind.placeWebsiteClick: return 'place_website_click';
-      case AnalyticsKind.placeReviewSubmit: return 'place_review_submit';
-      case AnalyticsKind.providerProfileView: return 'provider_profile_view';
-      case AnalyticsKind.recommendationShown: return 'recommendation_shown';
-      case AnalyticsKind.recommendationClick: return 'recommendation_click';
+      case AnalyticsKind.placeImpression:
+        return 'place_impression';
+      case AnalyticsKind.placeOpen:
+        return 'place_open';
+      case AnalyticsKind.placeFavorite:
+        return 'place_favorite';
+      case AnalyticsKind.placeUnfavorite:
+        return 'place_unfavorite';
+      case AnalyticsKind.placeShare:
+        return 'place_share';
+      case AnalyticsKind.placeMapOpen:
+        return 'place_map_open';
+      case AnalyticsKind.placePhoneCall:
+        return 'place_phone_call';
+      case AnalyticsKind.placeWebsiteClick:
+        return 'place_website_click';
+      case AnalyticsKind.placeReviewSubmit:
+        return 'place_review_submit';
+      case AnalyticsKind.providerProfileView:
+        return 'provider_profile_view';
+      case AnalyticsKind.recommendationShown:
+        return 'recommendation_shown';
+      case AnalyticsKind.recommendationClick:
+        return 'recommendation_click';
     }
   }
 }

@@ -16,7 +16,6 @@ import 'package:rafiq_app/service/subscription_service.dart';
 import 'package:rafiq_app/view/provider/hub/provider_hub_screen.dart';
 import 'package:rafiq_app/view/provider/subscription/subscription_screen.dart';
 
-import '../../../core/design/app_button.dart';
 import '../../../core/utils/app_microcopy.dart';
 import '../../../core/utils/spacing.dart';
 
@@ -84,14 +83,6 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
     "لسه محددتش",
   ];
 
-  static const Map<String, int> _activityMap = {
-    "طعام": 1,
-    "ترفيه": 2,
-    "سياحي": 3,
-    "رياضة": 4,
-    "فاجئني": 5,
-  };
-
   @override
   void initState() {
     super.initState();
@@ -124,11 +115,17 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
   /// fallback if anything fails — we never block the form on billing.
   Future<void> _preloadEntitlement() async {
     try {
-      _providerId = widget.providerId ?? await ApiService().ensureCurrentProviderId();
+      final prefs = await SharedPreferences.getInstance();
+      _providerId = widget.providerId ?? prefs.getString('providerId');
+      _providerId ??= await ApiService().ensureCurrentProviderId();
+      if (_providerId == null) {
+        await Future.delayed(const Duration(milliseconds: 250));
+        _providerId ??= await ApiService().ensureCurrentProviderId();
+      }
       if (_providerId == null) return;
 
-      final ent = await SubscriptionService.instance
-          .loadEntitlement(_providerId!);
+      final ent =
+          await SubscriptionService.instance.loadEntitlement(_providerId!);
       if (!_isMounted) return;
       setState(() => _entitlement = ent);
     } catch (_) {
@@ -159,8 +156,14 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
     // Resolve a provider id JIT — if the user just signed up they may not
     // have a row yet, and the cached `_providerId` is null. The helper
     // creates a default row on the fly when there's a live auth session.
+    final prefs = await SharedPreferences.getInstance();
     String? providerId = _providerId;
+    providerId ??= prefs.getString('providerId');
     providerId ??= await ApiService().ensureCurrentProviderId();
+    if (providerId == null) {
+      await Future.delayed(const Duration(milliseconds: 250));
+      providerId = await ApiService().ensureCurrentProviderId();
+    }
     if (providerId == null) {
       if (_isMounted) setState(() => _isLoading = false);
       _showSnackBar(AppCopy.providerSessionExpired, isError: true);
@@ -172,6 +175,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
       final existingPlaces =
           await ApiService().fetchProviderPlaces(providerId: providerId);
       if (!_isEditing) {
+        if (!mounted) return;
         final allowed = await FeatureGate.requirePlaceSlot(
           context,
           _entitlement ?? ProviderEntitlement.freeFallback,
@@ -335,10 +339,12 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        _handleBack();
-        return false;
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          _handleBack();
+        }
       },
       child: Directionality(
         textDirection: TextDirection.rtl,
@@ -395,23 +401,24 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
               borderRadius: BorderRadius.circular(12.r),
               boxShadow: [
                 BoxShadow(
-                  color: AppColor.black.withOpacity(0.04),
+                  color: AppColor.black.withValues(alpha: 0.04),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
               ],
             ),
-              child: IconButton(
-                padding: EdgeInsets.only(right: 6.w),
-                icon: Icon(Icons.arrow_back_ios, color: AppColor.black, size: 20.sp),
+            child: IconButton(
+              padding: EdgeInsets.only(right: 6.w),
+              icon: Icon(Icons.arrow_back_ios,
+                  color: AppColor.black, size: 20.sp),
               onPressed: _handleBack,
             ),
           ),
           Text(
             AppCopy.providerFormTitle,
             style: AppText.headingSm.copyWith(
-               fontWeight: FontWeight.w700,
-               color: AppColor.black,
+              fontWeight: FontWeight.w700,
+              color: AppColor.black,
             ),
           ),
           SizedBox(width: 48.w), // Spacer to balance the row
@@ -602,7 +609,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: AppColor.black.withOpacity(0.02),
+            color: AppColor.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -624,18 +631,19 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
             padding: EdgeInsets.symmetric(horizontal: 16.w),
             child: Icon(icon, color: AppColor.primary, size: 24.sp),
           ),
-          contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: maxLines > 1 ? 20.h : 18.h),
+          contentPadding: EdgeInsets.symmetric(
+              horizontal: 16.w, vertical: maxLines > 1 ? 20.h : 18.h),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16.r),
-            borderSide: BorderSide(color: AppColor.border, width: 1),
+            borderSide: const BorderSide(color: AppColor.border, width: 1),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16.r),
-            borderSide: BorderSide(color: AppColor.border, width: 1),
+            borderSide: const BorderSide(color: AppColor.border, width: 1),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16.r),
-            borderSide: BorderSide(color: AppColor.primary, width: 1.5),
+            borderSide: const BorderSide(color: AppColor.primary, width: 1.5),
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16.r),
@@ -663,17 +671,18 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: AppColor.black.withOpacity(0.02),
+            color: AppColor.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
         ],
       ),
       child: DropdownButtonFormField<String>(
-        value: value,
+        initialValue: value,
         onChanged: onChanged,
         validator: validator,
-        icon: Icon(Icons.keyboard_arrow_down_rounded, color: AppColor.textSecondary),
+        icon: const Icon(Icons.keyboard_arrow_down_rounded,
+            color: AppColor.textSecondary),
         decoration: InputDecoration(
           labelText: label,
           labelStyle: AppText.bodyLg.copyWith(
@@ -684,18 +693,19 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
             padding: EdgeInsets.symmetric(horizontal: 16.w),
             child: Icon(icon, color: AppColor.primary, size: 24.sp),
           ),
-          contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 18.h),
+          contentPadding:
+              EdgeInsets.symmetric(horizontal: 16.w, vertical: 18.h),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16.r),
-            borderSide: BorderSide(color: AppColor.border, width: 1),
+            borderSide: const BorderSide(color: AppColor.border, width: 1),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16.r),
-            borderSide: BorderSide(color: AppColor.border, width: 1),
+            borderSide: const BorderSide(color: AppColor.border, width: 1),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16.r),
-            borderSide: BorderSide(color: AppColor.primary, width: 1.5),
+            borderSide: const BorderSide(color: AppColor.primary, width: 1.5),
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16.r),
@@ -718,7 +728,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
 
   Widget _buildSubmitButton() {
     return _isLoading
-        ? Center(
+        ? const Center(
             child: CircularProgressIndicator(
               valueColor: AlwaysStoppedAnimation<Color>(AppColor.primary),
             ),
@@ -733,7 +743,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
                 borderRadius: BorderRadius.circular(16.r),
               ),
               elevation: 4,
-              shadowColor: AppColor.primary.withOpacity(0.4),
+              shadowColor: AppColor.primary.withValues(alpha: 0.4),
             ),
             textStyle: AppText.titleLg.copyWith(
               color: AppColor.white,
@@ -778,7 +788,8 @@ class _GalleryTile extends StatelessWidget {
               fit: BoxFit.cover,
               // Cap decoded size to avoid 8MB+ pics sitting at full res in
               // RAM just to be displayed as a 130dp thumbnail.
-              cacheWidth: (130 * MediaQuery.devicePixelRatioOf(context)).round(),
+              cacheWidth:
+                  (130 * MediaQuery.devicePixelRatioOf(context)).round(),
             ),
           ),
           if (isCover)
@@ -807,7 +818,7 @@ class _GalleryTile extends StatelessWidget {
             top: 4.h,
             right: 4.w,
             child: Material(
-              color: Colors.black.withOpacity(0.55),
+              color: Colors.black.withValues(alpha: 0.55),
               shape: const CircleBorder(),
               child: InkResponse(
                 onTap: onRemove,
@@ -847,7 +858,7 @@ class _AddTile extends StatelessWidget {
           color: AppColor.primary50,
           borderRadius: BorderRadius.circular(16.r),
           border: Border.all(
-            color: AppColor.primary.withOpacity(0.35),
+            color: AppColor.primary.withValues(alpha: 0.35),
             width: 1.5,
           ),
         ),

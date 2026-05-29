@@ -174,7 +174,10 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
             child: Column(
               children: [
                 _BackBar(onBack: () => Navigator.maybePop(context)),
-                _Hero(collapsed: keyboardOpen, email: widget.email, title: _title),
+                _Hero(
+                    collapsed: keyboardOpen,
+                    email: widget.email,
+                    title: _title),
                 Expanded(
                   child: Container(
                     width: double.infinity,
@@ -260,7 +263,7 @@ class _BackBar extends StatelessWidget {
           button: true,
           label: AppCopy.back,
           child: Material(
-            color: AppColor.white.withOpacity(0.12),
+            color: AppColor.white.withValues(alpha: 0.12),
             shape: const CircleBorder(),
             child: InkResponse(
               onTap: onBack,
@@ -323,7 +326,7 @@ class _Hero extends StatelessWidget {
                   Text(
                     email,
                     style: AppText.labelMd.copyWith(
-                      color: AppColor.white.withOpacity(0.88),
+                      color: AppColor.white.withValues(alpha: 0.88),
                     ),
                     textAlign: TextAlign.center,
                     maxLines: 1,
@@ -347,9 +350,9 @@ class _RingedIcon extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: AppColor.white.withOpacity(0.08),
+        color: AppColor.white.withValues(alpha: 0.08),
         border: Border.all(
-          color: AppColor.white.withOpacity(0.16),
+          color: AppColor.white.withValues(alpha: 0.16),
           width: 1,
         ),
       ),
@@ -358,7 +361,7 @@ class _RingedIcon extends StatelessWidget {
         height: 72.w,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: AppColor.white.withOpacity(0.16),
+          color: AppColor.white.withValues(alpha: 0.16),
         ),
         child: Icon(
           Icons.mark_email_read_outlined,
@@ -497,7 +500,7 @@ class _ResendBlock extends StatelessWidget {
                     ? SizedBox(
                         width: 16.w,
                         height: 16.w,
-                        child: CircularProgressIndicator(
+                        child: const CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor:
                               AlwaysStoppedAnimation<Color>(AppColor.primary),

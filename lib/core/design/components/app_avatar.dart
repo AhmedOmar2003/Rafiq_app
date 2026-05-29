@@ -48,7 +48,8 @@ class AppAvatar extends StatelessWidget {
                 width: size.w,
                 height: size.w,
                 fit: BoxFit.cover,
-                placeholder: (_) => ColoredBox(color: AppColor.neutral100),
+                placeholder: (_) =>
+                    const ColoredBox(color: AppColor.neutral100),
                 errorWidget: (_) => fallback,
               )
             : fallback,

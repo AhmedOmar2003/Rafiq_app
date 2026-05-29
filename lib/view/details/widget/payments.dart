@@ -26,7 +26,7 @@ class Payments extends StatelessWidget {
         borderRadius: BorderRadius.circular(10.r),
         color: AppColor.white,
         border: Border.all(
-          color: const Color(0xff000061).withOpacity(.38),
+          color: const Color(0xff000061).withValues(alpha: .38),
           width: 0.3,
         ),
       ),

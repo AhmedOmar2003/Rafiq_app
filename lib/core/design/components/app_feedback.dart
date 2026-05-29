@@ -13,10 +13,14 @@ import 'package:rafiq_app/core/logic/helper_methods.dart';
 class AppFeedback {
   AppFeedback._();
 
-  static void success(String message) => _show(message, AppTone.success, Icons.check_circle_rounded);
-  static void error(String message) => _show(message, AppTone.error, Icons.error_rounded);
-  static void warning(String message) => _show(message, AppTone.warning, Icons.warning_amber_rounded);
-  static void info(String message) => _show(message, AppTone.info, Icons.info_rounded);
+  static void success(String message) =>
+      _show(message, AppTone.success, Icons.check_circle_rounded);
+  static void error(String message) =>
+      _show(message, AppTone.error, Icons.error_rounded);
+  static void warning(String message) =>
+      _show(message, AppTone.warning, Icons.warning_amber_rounded);
+  static void info(String message) =>
+      _show(message, AppTone.info, Icons.info_rounded);
 
   static void _show(String message, AppTone tone, IconData icon) {
     if (message.trim().isEmpty) return;
@@ -38,12 +42,14 @@ class AppFeedback {
             children: [
               Container(
                 padding: EdgeInsets.all(AppSpacing.xs.w),
-                decoration: BoxDecoration(color: c.bg, borderRadius: AppRadii.rSm),
+                decoration:
+                    BoxDecoration(color: c.bg, borderRadius: AppRadii.rSm),
                 child: Icon(icon, color: c.fg, size: 18.sp),
               ),
               gapH(AppSpacing.md),
               Expanded(
-                child: Text(message, style: AppText.bodyMd.copyWith(color: AppColor.white)),
+                child: Text(message,
+                    style: AppText.bodyMd.copyWith(color: AppColor.white)),
               ),
             ],
           ),

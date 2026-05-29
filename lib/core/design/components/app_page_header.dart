@@ -49,7 +49,7 @@ class AppPageHeader extends StatelessWidget implements PreferredSizeWidget {
 
   /// Backward-compat: lets callers spell `transparent: true` instead of `tone:`.
   @Deprecated('Use tone: AppHeaderTone.transparent instead.')
-  AppPageHeader.transparent({
+  const AppPageHeader.transparent({
     Key? key,
     required String title,
     String? subtitle,
@@ -81,7 +81,7 @@ class AppPageHeader extends StatelessWidget implements PreferredSizeWidget {
 
   BoxBorder? get _border => switch (tone) {
         AppHeaderTone.surface =>
-          Border(bottom: BorderSide(color: AppColor.border, width: 1)),
+          const Border(bottom: BorderSide(color: AppColor.border, width: 1)),
         _ => null,
       };
 
@@ -141,7 +141,7 @@ class AppPageHeader extends StatelessWidget implements PreferredSizeWidget {
                           subtitle!,
                           style: AppText.bodySm.copyWith(
                             color: tone == AppHeaderTone.brand
-                                ? AppColor.white.withOpacity(0.85)
+                                ? AppColor.white.withValues(alpha: 0.85)
                                 : AppColor.textMuted,
                           ),
                           maxLines: 1,
@@ -192,7 +192,8 @@ class _HeaderIconButton extends StatelessWidget {
           width: 48.w,
           height: 48.w,
           child: Center(
-            child: Icon(icon, size: 22.sp, color: color ?? AppColor.textPrimary),
+            child:
+                Icon(icon, size: 22.sp, color: color ?? AppColor.textPrimary),
           ),
         ),
       ),

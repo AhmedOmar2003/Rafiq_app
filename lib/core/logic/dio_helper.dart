@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 class DioHelper {
   final Dio _dio = Dio(
@@ -6,20 +7,20 @@ class DioHelper {
   );
   Future<CustomResponse> sendData(String endPoint,
       {Map<String, dynamic>? data}) async {
-    print("(POST) https://vcare.integration25.com/api$endPoint");
-    print("Data:$data");
+    debugPrint("(POST) https://vcare.integration25.com/api$endPoint");
+    debugPrint("Data:$data");
     try {
       final response = await _dio.post(
         endPoint,
         data: data,
       );
-      print(response.data);
+      debugPrint("${response.data}");
       return CustomResponse(
           message: response.data["message"],
           isSuccess: true,
           response: response);
     } on DioException catch (ex) {
-      print(ex);
+      debugPrint("$ex");
       return CustomResponse(
           message: ex.response?.data["message"] ?? "",
           isSuccess: false,
@@ -29,20 +30,20 @@ class DioHelper {
 
   Future<CustomResponse> getData(String endPoint,
       {Map<String, dynamic>? data}) async {
-    print("(POST) https://vcare.integration25.com/api$endPoint");
-    print("Data:$data");
+    debugPrint("(POST) https://vcare.integration25.com/api$endPoint");
+    debugPrint("Data:$data");
     try {
       final response = await _dio.get(
         endPoint,
         queryParameters: data,
       );
-      print(response.data);
+      debugPrint("${response.data}");
       return CustomResponse(
           message: response.data["message"],
           isSuccess: true,
           response: response);
     } on DioException catch (ex) {
-      print(ex);
+      debugPrint("$ex");
       return CustomResponse(
           message: ex.response?.data["message"] ?? "",
           isSuccess: false,

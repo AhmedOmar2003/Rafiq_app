@@ -81,7 +81,8 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
     final prefs = await SharedPreferences.getInstance();
     final userId =
         prefs.getString('authUserId') ?? prefs.getInt('userId')?.toString();
-    final userName = prefs.getString('userName') ?? AppCopy.reviewAuthorAnonymous;
+    final userName =
+        prefs.getString('userName') ?? AppCopy.reviewAuthorAnonymous;
 
     if (userId == null || textController.text.isEmpty) {
       AppFeedback.warning(AppCopy.reviewEmptyText);
@@ -114,7 +115,6 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return AppPageScaffold(
@@ -135,13 +135,15 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
           : null,
       body: ListView(
         padding: EdgeInsets.fromLTRB(
-          AppSpacing.lg.w, AppSpacing.lg.h, AppSpacing.lg.w, AppSpacing.lg.h),
+            AppSpacing.lg.w, AppSpacing.lg.h, AppSpacing.lg.w, AppSpacing.lg.h),
         children: [
           if (isLoading && evaluationsItemList.isEmpty)
-            ...List.generate(3, (i) => Padding(
-              padding: EdgeInsets.only(bottom: AppSpacing.md.h),
-              child: AppSkeleton.card(),
-            ))
+            ...List.generate(
+                3,
+                (i) => Padding(
+                      padding: EdgeInsets.only(bottom: AppSpacing.md.h),
+                      child: AppSkeleton.card(),
+                    ))
           else if (evaluationsItemList.isEmpty)
             _buildEmptyState()
           else
@@ -159,7 +161,8 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
         color: AppColor.surfaceCard,
         boxShadow: AppShadows.level3,
       ),
-      padding: EdgeInsets.fromLTRB(AppSpacing.lg.w, AppSpacing.md.h, AppSpacing.lg.w, AppSpacing.md.h),
+      padding: EdgeInsets.fromLTRB(
+          AppSpacing.lg.w, AppSpacing.md.h, AppSpacing.lg.w, AppSpacing.md.h),
       child: SafeArea(
         top: false,
         child: Row(
@@ -191,14 +194,17 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
                     focusedBorder: InputBorder.none,
                     contentPadding: EdgeInsets.zero,
                     hintText: AppCopy.reviewInputHint,
-                    hintStyle: AppText.bodyLg.copyWith(color: AppColor.textTertiary),
+                    hintStyle:
+                        AppText.bodyLg.copyWith(color: AppColor.textTertiary),
                   ),
                 ),
               ),
             ),
             gapH(AppSpacing.sm),
             Material(
-              color: isLoading ? AppColor.primary.withOpacity(0.5) : AppColor.primary,
+              color: isLoading
+                  ? AppColor.primary.withValues(alpha: 0.5)
+                  : AppColor.primary,
               shape: const CircleBorder(),
               clipBehavior: Clip.antiAlias,
               child: InkWell(
@@ -214,7 +220,8 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
                             child: const CircularProgressIndicator(
                                 color: AppColor.white, strokeWidth: 2),
                           )
-                        : Icon(Icons.send_rounded, size: 22.w, color: AppColor.white),
+                        : Icon(Icons.send_rounded,
+                            size: 22.w, color: AppColor.white),
                   ),
                 ),
               ),
@@ -235,7 +242,7 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
             Container(
               padding: EdgeInsets.all(24.w),
               decoration: BoxDecoration(
-                color: AppColor.primary.withOpacity(0.1),
+                color: AppColor.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -259,7 +266,8 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
             ),
             gapV(AppSpacing.lg),
             Container(
-              padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w, vertical: AppSpacing.xxl.h),
+              padding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg.w, vertical: AppSpacing.xxl.h),
               decoration: BoxDecoration(
                 color: AppColor.surfaceCard,
                 borderRadius: AppRadii.rXl,
@@ -267,11 +275,14 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
               ),
               child: Column(
                 children: [
-                  _buildEmptyStateItem(AppCopy.reviewsEmptyShare, Icons.share_outlined),
+                  _buildEmptyStateItem(
+                      AppCopy.reviewsEmptyShare, Icons.share_outlined),
                   gapV(AppSpacing.lg),
-                  _buildEmptyStateItem(AppCopy.reviewsEmptyHelp, Icons.lightbulb_outline),
+                  _buildEmptyStateItem(
+                      AppCopy.reviewsEmptyHelp, Icons.lightbulb_outline),
                   gapV(AppSpacing.lg),
-                  _buildEmptyStateItem(AppCopy.reviewsEmptyDiscover, Icons.explore_outlined),
+                  _buildEmptyStateItem(
+                      AppCopy.reviewsEmptyDiscover, Icons.explore_outlined),
                 ],
               ),
             ),
@@ -287,7 +298,7 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
         Container(
           padding: EdgeInsets.all(AppSpacing.sm.w),
           decoration: BoxDecoration(
-            color: AppColor.primary.withOpacity(0.1),
+            color: AppColor.primary.withValues(alpha: 0.1),
             borderRadius: AppRadii.rMd,
           ),
           child: Icon(icon, size: 22.w, color: AppColor.primary),
@@ -321,16 +332,20 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
                 gapV(AppSpacing.xs),
                 Row(
                   children: [
-                    ...List.generate(5, (i) => Padding(
-                      padding: EdgeInsets.only(left: 2.w),
-                      child: Icon(Icons.star_rounded, color: Colors.amber, size: 18.w),
-                    )),
+                    ...List.generate(
+                        5,
+                        (i) => Padding(
+                              padding: EdgeInsets.only(left: 2.w),
+                              child: Icon(Icons.star_rounded,
+                                  color: Colors.amber, size: 18.w),
+                            )),
                     gapH(AppSpacing.sm),
                     Text(formattedDate, style: AppText.bodySm),
                   ],
                 ),
                 gapV(AppSpacing.sm),
-                Text(evaluation.body, style: AppText.bodyMd.copyWith(height: 1.6)),
+                Text(evaluation.body,
+                    style: AppText.bodyMd.copyWith(height: 1.6)),
               ],
             ),
           ),
@@ -345,7 +360,7 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: AppColor.black.withOpacity(0.1),
+            color: AppColor.black.withValues(alpha: 0.1),
             blurRadius: 8,
             spreadRadius: 1,
           ),
@@ -365,7 +380,7 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
           return CircleAvatar(
             backgroundImage: provider,
             radius: 26.r,
-            backgroundColor: AppColor.primary.withOpacity(0.1),
+            backgroundColor: AppColor.primary.withValues(alpha: 0.1),
             child: snap.hasImage
                 ? null
                 : Icon(Icons.person, color: AppColor.primary, size: 26.w),

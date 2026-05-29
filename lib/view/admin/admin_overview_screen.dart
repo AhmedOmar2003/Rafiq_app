@@ -46,9 +46,8 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
         .order('created_at', ascending: false)
         .limit(100);
 
-    final ids = (providers as List)
-        .map((r) => (r as Map)['id'] as String)
-        .toList();
+    final ids =
+        (providers as List).map((r) => (r as Map)['id'] as String).toList();
 
     Map<String, Map<String, dynamic>> plans = {};
     if (ids.isNotEmpty) {
@@ -80,8 +79,7 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
     try {
       await Supabase.instance.client
           .from('providers')
-          .update({'status': next})
-          .eq('id', row.id);
+          .update({'status': next}).eq('id', row.id);
       AppFeedback.success(AppCopy.successGeneric);
       if (!mounted) return;
       setState(() => _future = _load());
@@ -97,7 +95,8 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
         header: const AppPageHeader(title: AppCopy.adminTitle),
         body: AppStateView.search(
           title: 'لوحة الإدارة للويب فقط',
-          message: 'الإدارة والمراقبة موجودة في الويب فقط، وليست جزءًا من الموبايل.',
+          message:
+              'الإدارة والمراقبة موجودة في الويب فقط، وليست جزءًا من الموبايل.',
         ),
       );
     }
@@ -108,7 +107,7 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
         future: _future,
         builder: (_, snap) {
           if (snap.connectionState != ConnectionState.done) {
-            return Center(
+            return const Center(
               child: CircularProgressIndicator(color: AppColor.primary),
             );
           }
@@ -175,7 +174,7 @@ class _FilterBar extends StatelessWidget {
         horizontal: AppSpacing.xxl.w,
         vertical: AppSpacing.md.h,
       ),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColor.surface,
         border: Border(bottom: BorderSide(color: AppColor.border)),
       ),

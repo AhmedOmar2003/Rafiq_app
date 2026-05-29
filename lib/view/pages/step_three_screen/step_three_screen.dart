@@ -12,7 +12,8 @@ class StepThree extends StatefulWidget {
   State<StepThree> createState() => _StepThreeState();
 }
 
-class _StepThreeState extends State<StepThree> with AutomaticKeepAliveClientMixin {
+class _StepThreeState extends State<StepThree>
+    with AutomaticKeepAliveClientMixin {
   int currentIndex = -1;
   String selectedActivity = '';
 
@@ -74,7 +75,7 @@ class _ActivityOptionCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(14.r),
-        splashColor: AppColor.primary.withOpacity(0.1),
+        splashColor: AppColor.primary.withValues(alpha: 0.1),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeOutCubic,
@@ -89,8 +90,8 @@ class _ActivityOptionCard extends StatelessWidget {
             boxShadow: [
               BoxShadow(
                 color: isSelected
-                    ? AppColor.primary.withOpacity(0.15)
-                    : AppColor.black.withOpacity(0.04),
+                    ? AppColor.primary.withValues(alpha: 0.15)
+                    : AppColor.black.withValues(alpha: 0.04),
                 blurRadius: isSelected ? 12 : 6,
                 offset: Offset(0, isSelected ? 4 : 2),
               ),
@@ -103,8 +104,8 @@ class _ActivityOptionCard extends StatelessWidget {
                   padding: EdgeInsets.all(6.w),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? AppColor.white.withOpacity(0.2)
-                        : AppColor.primary.withOpacity(0.08),
+                        ? AppColor.white.withValues(alpha: 0.2)
+                        : AppColor.primary.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(8.r),
                   ),
                   child: AppImage(
@@ -123,7 +124,7 @@ class _ActivityOptionCard extends StatelessWidget {
                     shape: BoxShape.circle,
                     color: isSelected
                         ? AppColor.white
-                        : AppColor.primary.withOpacity(0.3),
+                        : AppColor.primary.withValues(alpha: 0.3),
                   ),
                 ),
               SizedBox(width: 14.w),
@@ -137,7 +138,8 @@ class _ActivityOptionCard extends StatelessWidget {
                 ),
               ),
               if (isSelected)
-                Icon(Icons.check_circle_rounded, color: AppColor.surfaceCard, size: 20.w),
+                Icon(Icons.check_circle_rounded,
+                    color: AppColor.surfaceCard, size: 20.w),
             ],
           ),
         ),

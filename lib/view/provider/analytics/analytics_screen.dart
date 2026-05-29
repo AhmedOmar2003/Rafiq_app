@@ -30,7 +30,9 @@ class AnalyticsScreen extends StatelessWidget {
       body: ValueListenableBuilder<ProviderEntitlement>(
         valueListenable: SubscriptionService.instance.entitlement,
         builder: (_, ent, __) {
-          if (!ent.hasAnalyticsBasic) return _AnalyticsLocked(providerId: providerId);
+          if (!ent.hasAnalyticsBasic) {
+            return _AnalyticsLocked(providerId: providerId);
+          }
           return _AnalyticsUnlocked(entitlement: ent);
         },
       ),
@@ -171,7 +173,7 @@ class _KpiCard extends StatelessWidget {
             width: 36.w,
             height: 36.w,
             decoration: BoxDecoration(
-              color: tone.withOpacity(0.12),
+              color: tone.withValues(alpha: 0.12),
               borderRadius: AppRadii.rSm,
             ),
             child: Icon(icon, color: tone, size: 20.sp),
@@ -185,8 +187,7 @@ class _KpiCard extends StatelessWidget {
           ),
           gapV(AppSpacing.xs / 2),
           Text(label,
-              style:
-                  AppText.bodySm.copyWith(color: AppColor.textSecondary)),
+              style: AppText.bodySm.copyWith(color: AppColor.textSecondary)),
         ],
       ),
     );
@@ -214,7 +215,7 @@ class _TrendCard extends StatelessWidget {
               size: Size.infinite,
               painter: _SparklinePainter(
                 color: AppColor.primary,
-                fill: AppColor.primary.withOpacity(0.08),
+                fill: AppColor.primary.withValues(alpha: 0.08),
                 rich: isPro,
               ),
             ),
@@ -301,7 +302,7 @@ class _AnalyticsLocked extends StatelessWidget {
             Container(
               width: 96.w,
               height: 96.w,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppColor.primary50,
                 shape: BoxShape.circle,
               ),
@@ -328,8 +329,7 @@ class _AnalyticsLocked extends StatelessWidget {
                 onPress: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) =>
-                        SubscriptionScreen(providerId: providerId),
+                    builder: (_) => SubscriptionScreen(providerId: providerId),
                   ),
                 ),
               ),

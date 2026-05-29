@@ -24,7 +24,9 @@ class PromotionsScreen extends StatelessWidget {
       body: ValueListenableBuilder<ProviderEntitlement>(
         valueListenable: SubscriptionService.instance.entitlement,
         builder: (_, ent, __) {
-          if (!ent.hasPromotions) return _PromotionsLocked(providerId: providerId);
+          if (!ent.hasPromotions) {
+            return _PromotionsLocked(providerId: providerId);
+          }
           return _PromotionsEmpty(tier: ent.tier);
         },
       ),
@@ -49,7 +51,7 @@ class _PromotionsEmpty extends StatelessWidget {
             Container(
               width: 96.w,
               height: 96.w,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppColor.primary50,
                 shape: BoxShape.circle,
               ),
@@ -102,7 +104,7 @@ class _PromotionsLocked extends StatelessWidget {
             Container(
               width: 96.w,
               height: 96.w,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppColor.warningBg,
                 shape: BoxShape.circle,
               ),
@@ -129,8 +131,7 @@ class _PromotionsLocked extends StatelessWidget {
                 onPress: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) =>
-                        SubscriptionScreen(providerId: providerId),
+                    builder: (_) => SubscriptionScreen(providerId: providerId),
                   ),
                 ),
               ),

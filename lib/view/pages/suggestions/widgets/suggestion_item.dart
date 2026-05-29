@@ -55,9 +55,9 @@ class SuggestionItem extends StatelessWidget {
   final SuggestionModel model;
 
   const SuggestionItem({
-    Key? key,
+    super.key,
     required this.model,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -87,13 +87,13 @@ class SuggestionItem extends StatelessWidget {
               boxShadow: [
                 if (isSelected)
                   BoxShadow(
-                    color: AppColor.primary.withOpacity(0.3),
+                    color: AppColor.primary.withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   )
                 else
                   BoxShadow(
-                    color: AppColor.black.withOpacity(0.04),
+                    color: AppColor.black.withValues(alpha: 0.04),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -115,7 +115,8 @@ class SuggestionItem extends StatelessWidget {
                     selectedFilter ?? model.text,
                     style: AppText.labelMd.copyWith(
                       color: isSelected ? AppColor.white : AppColor.textPrimary,
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      fontWeight:
+                          isSelected ? FontWeight.w700 : FontWeight.w500,
                     ),
                   ),
                   SizedBox(width: 4.w),
@@ -143,11 +144,6 @@ class SuggestionItem extends StatelessWidget {
       return filterState.budget;
     }
     return null;
-  }
-
-  String? _getSelectedFilter(String filterType, BuildContext context) {
-    final filterState = context.read<FilterCubit>().state;
-    return _getSelectedFilterFromState(filterType, filterState);
   }
 
   /// Filter selector — opens an overflow-proof bottom sheet.
@@ -189,8 +185,10 @@ class SuggestionItem extends StatelessWidget {
                 // so we don't add a second one here.
                 Padding(
                   padding: EdgeInsets.fromLTRB(
-                    AppSpacing.xxl.w, AppSpacing.sm.h,
-                    AppSpacing.xxl.w, AppSpacing.md.h,
+                    AppSpacing.xxl.w,
+                    AppSpacing.sm.h,
+                    AppSpacing.xxl.w,
+                    AppSpacing.md.h,
                   ),
                   child: Row(
                     children: [
@@ -222,8 +220,10 @@ class SuggestionItem extends StatelessWidget {
                 Flexible(
                   child: ListView.separated(
                     padding: EdgeInsets.fromLTRB(
-                      AppSpacing.xxl.w, AppSpacing.lg.h,
-                      AppSpacing.xxl.w, AppSpacing.lg.h,
+                      AppSpacing.xxl.w,
+                      AppSpacing.lg.h,
+                      AppSpacing.xxl.w,
+                      AppSpacing.lg.h,
                     ),
                     itemCount: model.answer.length,
                     separatorBuilder: (_, __) => gapV(AppSpacing.sm),
@@ -245,7 +245,7 @@ class SuggestionItem extends StatelessWidget {
                 // Sticky apply button — wrapped in SafeArea so the Android
                 // system nav (3-button bar / gesture pill) never covers it.
                 Container(
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: AppColor.surfaceElevated,
                     border: Border(
                       top: BorderSide(color: AppColor.border, width: 1),
@@ -256,8 +256,10 @@ class SuggestionItem extends StatelessWidget {
                     minimum: EdgeInsets.only(bottom: AppSpacing.sm.h),
                     child: Padding(
                       padding: EdgeInsets.fromLTRB(
-                        AppSpacing.xxl.w, AppSpacing.md.h,
-                        AppSpacing.xxl.w, AppSpacing.md.h,
+                        AppSpacing.xxl.w,
+                        AppSpacing.md.h,
+                        AppSpacing.xxl.w,
+                        AppSpacing.md.h,
                       ),
                       child: AppButton(
                         text: "تطبيق الفلتر",
@@ -330,7 +332,7 @@ class _FilterOptionTile extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: AppRadii.rMd,
-        splashColor: AppColor.actionPrimary.withOpacity(0.08),
+        splashColor: AppColor.actionPrimary.withValues(alpha: 0.08),
         child: Container(
           padding: EdgeInsets.symmetric(
             horizontal: AppSpacing.lg.w,

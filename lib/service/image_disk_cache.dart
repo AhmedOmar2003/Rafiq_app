@@ -102,8 +102,7 @@ class ImageDiskCache {
       if (await file.exists()) return file;
 
       // Cache miss — download once, persist, hand back the file.
-      final response =
-          await http.get(Uri.parse(url)).timeout(_networkTimeout);
+      final response = await http.get(Uri.parse(url)).timeout(_networkTimeout);
       if (response.statusCode != 200 || response.bodyBytes.isEmpty) {
         return null;
       }

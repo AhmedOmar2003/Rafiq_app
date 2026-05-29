@@ -18,12 +18,12 @@ class SuggestionsScreen extends StatefulWidget {
   final List<SuggestionItemModel> suggestionItemList;
 
   const SuggestionsScreen({
-    Key? key,
+    super.key,
     required this.suggestionItemList,
-  }) : super(key: key);
+  });
 
   @override
-  _SuggestionsScreenState createState() => _SuggestionsScreenState();
+  State<SuggestionsScreen> createState() => _SuggestionsScreenState();
 }
 
 class _SuggestionsScreenState extends State<SuggestionsScreen> {
@@ -122,11 +122,12 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
 
   Widget _buildFilterBar() {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: AppSpacing.lg.h, horizontal: AppSpacing.sm.w),
+      padding: EdgeInsets.symmetric(
+          vertical: AppSpacing.lg.h, horizontal: AppSpacing.sm.w),
       margin: EdgeInsets.only(bottom: AppSpacing.md.h),
       decoration: BoxDecoration(
         color: AppColor.surface,
-        border: Border(
+        border: const Border(
           bottom: BorderSide(color: AppColor.border, width: 1),
         ),
         boxShadow: AppShadows.level1,

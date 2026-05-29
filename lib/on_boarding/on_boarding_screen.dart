@@ -140,7 +140,8 @@ class _OnBoardingItem extends StatelessWidget {
         const Spacer(),
         TextButton(
           onPressed: onLoginPressed,
-          child: Text("تخطي", style: AppText.headingLg.copyWith(color: AppColor.textSecondary)),
+          child: Text("تخطي",
+              style: AppText.headingLg.copyWith(color: AppColor.textSecondary)),
         ),
       ],
     );
@@ -151,7 +152,7 @@ class _OnBoardingItem extends StatelessWidget {
       controller: pageController,
       count: onBoardingList.length,
       effect: ExpandingDotsEffect(
-        dotColor: AppColor.primary.withOpacity(.15),
+        dotColor: AppColor.primary.withValues(alpha: .15),
         dotHeight: 10.h,
         dotWidth: 10.h,
         expansionFactor: 4,

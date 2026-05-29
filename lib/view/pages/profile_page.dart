@@ -25,7 +25,7 @@ import '../../service/user_role_store.dart';
 import 'delete_account_sheet.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({Key? key}) : super(key: key);
+  const ProfilePage({super.key});
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -196,7 +196,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void showChangePasswordDialog(BuildContext context) {
-    final _formKey = GlobalKey<FormState>();
+    final formKey = GlobalKey<FormState>();
     final TextEditingController currentPasswordController =
         TextEditingController();
     final TextEditingController newPasswordController = TextEditingController();
@@ -208,7 +208,7 @@ class _ProfilePageState extends State<ProfilePage> {
     // PERFORMANCE / CORRECTNESS: dialog-scoped controllers must be disposed
     // when the dialog closes, otherwise they leak ChangeNotifier subscribers
     // for the lifetime of the app.
-    void _disposeResources() {
+    void disposeResources() {
       currentPasswordController.dispose();
       newPasswordController.dispose();
       confirmPasswordController.dispose();
@@ -217,7 +217,7 @@ class _ProfilePageState extends State<ProfilePage> {
     }
 
     Future<void> changePassword() async {
-      if (!_formKey.currentState!.validate()) return;
+      if (!formKey.currentState!.validate()) return;
       isLoading.value = true;
       errorMessage.value = null;
       try {
@@ -238,6 +238,7 @@ class _ProfilePageState extends State<ProfilePage> {
         );
         final result = jsonDecode(response.body);
         if (response.statusCode == 200 && result['status'] == 'success') {
+          if (!context.mounted) return;
           Navigator.of(context).pop();
           AppFeedback.success(result['message'] ?? AppCopy.changePwSuccess);
         } else {
@@ -265,7 +266,7 @@ class _ProfilePageState extends State<ProfilePage> {
             child: StatefulBuilder(
               builder: (context, setState) {
                 return Form(
-                  key: _formKey,
+                  key: formKey,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -277,8 +278,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             child: Center(
                               child: Text(
                                 AppCopy.changePwTitle,
-                                style:
-                                    AppText.titleLg.copyWith(
+                                style: AppText.titleLg.copyWith(
                                   color: AppColor.primary,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -288,7 +288,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                           GestureDetector(
                             onTap: () => Navigator.of(context).pop(),
-                            child: Icon(
+                            child: const Icon(
                               Icons.close,
                               color: AppColor.primary,
                               size: 24,
@@ -303,8 +303,8 @@ class _ProfilePageState extends State<ProfilePage> {
                         obscureText: true,
                         decoration: InputDecoration(
                           labelText: AppCopy.changePwCurrent,
-                          prefixIcon:
-                              Icon(Icons.lock_outline, color: AppColor.primary),
+                          prefixIcon: const Icon(Icons.lock_outline,
+                              color: AppColor.primary),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(15),
                           ),
@@ -323,8 +323,8 @@ class _ProfilePageState extends State<ProfilePage> {
                         obscureText: true,
                         decoration: InputDecoration(
                           labelText: AppCopy.changePwNew,
-                          prefixIcon:
-                              Icon(Icons.lock_outline, color: AppColor.primary),
+                          prefixIcon: const Icon(Icons.lock_outline,
+                              color: AppColor.primary),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(15),
                           ),
@@ -343,8 +343,8 @@ class _ProfilePageState extends State<ProfilePage> {
                         obscureText: true,
                         decoration: InputDecoration(
                           labelText: AppCopy.changePwConfirm,
-                          prefixIcon:
-                              Icon(Icons.lock_outline, color: AppColor.primary),
+                          prefixIcon: const Icon(Icons.lock_outline,
+                              color: AppColor.primary),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(15),
                           ),
@@ -381,7 +381,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                       changePassword();
                                     },
                               child: loading
-                                  ? SizedBox(
+                                  ? const SizedBox(
                                       height: 24,
                                       width: 24,
                                       child: CircularProgressIndicator(
@@ -391,8 +391,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                     )
                                   : Text(
                                       "تحديث كلمة المرور",
-                                      style: AppText.titleMd
-                                          .copyWith(
+                                      style: AppText.titleMd.copyWith(
                                         color: AppColor.white,
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -408,9 +407,9 @@ class _ProfilePageState extends State<ProfilePage> {
                         builder: (context, error, _) {
                           return AnimatedOpacity(
                             opacity: error == null ? 0.0 : 1.0,
-                            duration: Duration(milliseconds: 300),
+                            duration: const Duration(milliseconds: 300),
                             child: error == null
-                                ? SizedBox.shrink()
+                                ? const SizedBox.shrink()
                                 : Padding(
                                     padding: EdgeInsets.only(top: 4.h),
                                     child: Text(
@@ -443,7 +442,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         );
       },
-    ).whenComplete(_disposeResources);
+    ).whenComplete(disposeResources);
   }
 
   @override
@@ -491,7 +490,7 @@ class _ProfilePageState extends State<ProfilePage> {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: AppColor.black.withOpacity(0.1),
+            color: AppColor.black.withValues(alpha: 0.1),
             blurRadius: 20,
             spreadRadius: 5,
           ),
@@ -506,8 +505,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ? MemoryImage(snap.bytes!)
                 : snap.file != null
                     ? FileImage(snap.file!)
-                    : const AssetImage(
-                            'assets/images/default_profile.webp')
+                    : const AssetImage('assets/images/default_profile.webp')
                         as ImageProvider;
             return CircleAvatar(
               radius: 70.w,
@@ -520,7 +518,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     : Container(
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: AppColor.black.withOpacity(0.4),
+                          color: AppColor.black.withValues(alpha: 0.4),
                         ),
                         child: Icon(
                           Icons.camera_alt_rounded,
@@ -549,13 +547,13 @@ class _ProfilePageState extends State<ProfilePage> {
                 label: AppCopy.profileNameLabel,
                 value: userName ?? AppCopy.profileNameFallback,
               ),
-              Divider(height: 1, color: AppColor.border),
+              const Divider(height: 1, color: AppColor.border),
               _ProfileInfoRow(
                 icon: Icons.email_outlined,
                 label: AppCopy.profileEmailLabel,
                 value: userEmail ?? AppCopy.profileEmailFallback,
               ),
-              Divider(height: 1, color: AppColor.border),
+              const Divider(height: 1, color: AppColor.border),
               _ProfileInfoRow(
                 icon: Icons.lock_outline,
                 label: AppCopy.profilePasswordLabel,
@@ -570,7 +568,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   tooltip: AppCopy.changePwTitle,
                 ),
               ),
-              Divider(height: 1, color: AppColor.border),
+              const Divider(height: 1, color: AppColor.border),
               // Switch role row — preserves session + subscription so the
               // user can flip between tracks without re-onboarding.
               _ProfileInfoRow(
@@ -610,9 +608,8 @@ class _ProfilePageState extends State<ProfilePage> {
           : AppCopy.profileSwitchConfirmUser,
       confirmLabel: AppCopy.confirm,
       cancelLabel: AppCopy.cancel,
-      icon: toProvider
-          ? Icons.storefront_rounded
-          : Icons.travel_explore_rounded,
+      icon:
+          toProvider ? Icons.storefront_rounded : Icons.travel_explore_rounded,
     );
     if (!confirmed || !mounted) return;
 
@@ -694,7 +691,7 @@ class _ProfilePageState extends State<ProfilePage> {
           color: AppColor.error,
           fontWeight: FontWeight.w700,
           decoration: TextDecoration.underline,
-          decorationColor: AppColor.error.withOpacity(0.4),
+          decorationColor: AppColor.error.withValues(alpha: 0.4),
         ),
       ),
     );
@@ -749,7 +746,7 @@ class _ProfileHero extends StatelessWidget {
             email ?? AppCopy.profileEmailFallback,
             textAlign: TextAlign.center,
             style: AppText.bodyLg.copyWith(
-              color: AppColor.white.withOpacity(0.85),
+              color: AppColor.white.withValues(alpha: 0.85),
             ),
           ),
           // Plan badge is part of the provider identity, so it only renders
@@ -803,7 +800,7 @@ class _ProfileInfoRow extends StatelessWidget {
           children: [
             Container(
               padding: EdgeInsets.all(AppSpacing.sm.w),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppColor.primary50,
                 shape: BoxShape.circle,
               ),

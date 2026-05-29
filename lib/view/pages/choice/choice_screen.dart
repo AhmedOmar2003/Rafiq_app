@@ -116,7 +116,7 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
           backgroundColor: AppColor.ofWhite,
           body: SafeArea(
             child: Container(
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppColor.ofWhite,
               ),
               child: Column(
@@ -135,7 +135,8 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
                                 borderRadius: BorderRadius.circular(20.r),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppColor.black.withOpacity(0.04),
+                                    color:
+                                        AppColor.black.withValues(alpha: 0.04),
                                     blurRadius: 8,
                                     offset: const Offset(0, 4),
                                   ),
@@ -216,12 +217,13 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
                     ),
                   ),
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
                     decoration: BoxDecoration(
                       color: AppColor.ofWhite,
                       boxShadow: [
                         BoxShadow(
-                          color: AppColor.black.withOpacity(0.04),
+                          color: AppColor.black.withValues(alpha: 0.04),
                           blurRadius: 6,
                           offset: const Offset(0, -2),
                         ),
@@ -257,8 +259,8 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
           child: InkWell(
             onTap: onTap,
             borderRadius: BorderRadius.circular(16.r),
-            splashColor: AppColor.primary.withOpacity(0.1),
-            highlightColor: AppColor.primary.withOpacity(0.05),
+            splashColor: AppColor.primary.withValues(alpha: 0.1),
+            highlightColor: AppColor.primary.withValues(alpha: 0.05),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeOutCubic,
@@ -268,7 +270,7 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
                 color: Color.lerp(AppColor.white, AppColor.primary, value),
                 border: Border.all(
                   color: Color.lerp(
-                    const Color(0xFF000000).withOpacity(0.1),
+                    const Color(0xFF000000).withValues(alpha: 0.1),
                     AppColor.primary,
                     value,
                   )!,
@@ -276,9 +278,9 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: isSelected 
-                      ? AppColor.primary.withOpacity(0.1)
-                      : AppColor.black.withOpacity(0.04),
+                    color: isSelected
+                        ? AppColor.primary.withValues(alpha: 0.1)
+                        : AppColor.black.withValues(alpha: 0.04),
                     blurRadius: isSelected ? 12 : 6,
                     offset: Offset(0, isSelected ? 4 : 2),
                     spreadRadius: isSelected ? 0.5 : 0,
@@ -291,15 +293,16 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
                     padding: EdgeInsets.all(8.w),
                     decoration: BoxDecoration(
                       color: Color.lerp(
-                        AppColor.primary.withOpacity(0.1),
-                        AppColor.white.withOpacity(0.2),
+                        AppColor.primary.withValues(alpha: 0.1),
+                        AppColor.white.withValues(alpha: 0.2),
                         value,
                       ),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       icon,
-                      color: Color.lerp(AppColor.primary, AppColor.white, value),
+                      color:
+                          Color.lerp(AppColor.primary, AppColor.white, value),
                       size: 22.w,
                     ),
                   ),
@@ -311,7 +314,8 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
                         Text(
                           label,
                           style: AppText.titleLg.copyWith(
-                            color: Color.lerp(AppColor.textPrimary, AppColor.white, value),
+                            color: Color.lerp(
+                                AppColor.textPrimary, AppColor.white, value),
                           ),
                         ),
                         gapV(AppSpacing.xs),
@@ -324,7 +328,7 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
                           style: AppText.bodyMd.copyWith(
                             color: Color.lerp(
                               AppColor.textSecondary,
-                              AppColor.white.withOpacity(0.8),
+                              AppColor.white.withValues(alpha: 0.8),
                               value,
                             ),
                           ),
@@ -334,7 +338,8 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
                   ),
                   Icon(
                     Icons.arrow_forward_ios_rounded,
-                    color: Color.lerp(AppColor.primary.withOpacity(0.3), AppColor.white, value),
+                    color: Color.lerp(AppColor.primary.withValues(alpha: 0.3),
+                        AppColor.white, value),
                     size: 16.w,
                   ),
                 ],

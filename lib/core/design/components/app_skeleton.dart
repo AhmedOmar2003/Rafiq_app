@@ -40,10 +40,11 @@ class AppSkeleton extends StatefulWidget {
   State<AppSkeleton> createState() => _AppSkeletonState();
 }
 
-class _AppSkeletonState extends State<AppSkeleton> with SingleTickerProviderStateMixin {
-  late final AnimationController _c =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 1100))
-        ..repeat(reverse: true);
+class _AppSkeletonState extends State<AppSkeleton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 1100))
+    ..repeat(reverse: true);
 
   @override
   void dispose() {
@@ -53,17 +54,21 @@ class _AppSkeletonState extends State<AppSkeleton> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
-    final bool reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
-    final shape = widget.isCircle
-        ? BoxShape.circle
-        : BoxShape.rectangle;
-    final br = widget.isCircle ? null : (widget.radius != null ? BorderRadius.circular(widget.radius!.r) : AppRadii.rSm);
+    final bool reduceMotion =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    final shape = widget.isCircle ? BoxShape.circle : BoxShape.rectangle;
+    final br = widget.isCircle
+        ? null
+        : (widget.radius != null
+            ? BorderRadius.circular(widget.radius!.r)
+            : AppRadii.rSm);
 
     if (reduceMotion) {
       return Container(
         width: widget.width,
         height: widget.height.h,
-        decoration: BoxDecoration(color: AppColor.neutral200, shape: shape, borderRadius: br),
+        decoration: BoxDecoration(
+            color: AppColor.neutral200, shape: shape, borderRadius: br),
       );
     }
 
@@ -80,7 +85,11 @@ class _AppSkeletonState extends State<AppSkeleton> with SingleTickerProviderStat
             gradient: LinearGradient(
               begin: Alignment(-1 - t, 0),
               end: Alignment(1 - t, 0),
-              colors: const [AppColor.neutral100, AppColor.neutral200, AppColor.neutral100],
+              colors: const [
+                AppColor.neutral100,
+                AppColor.neutral200,
+                AppColor.neutral100
+              ],
             ),
           ),
         );

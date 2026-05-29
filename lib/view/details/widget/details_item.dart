@@ -101,7 +101,7 @@ class _DetailsItemState extends State<DetailsItem> {
       return CachedNetworkImage(
         url: normalized,
         fit: BoxFit.cover,
-        placeholder: (_) => Center(
+        placeholder: (_) => const Center(
           child: CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(AppColor.primary),
           ),
@@ -141,7 +141,7 @@ class _DetailsItemState extends State<DetailsItem> {
                 borderRadius: BorderRadius.circular(20.r),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColor.black.withOpacity(0.1),
+                    color: AppColor.black.withValues(alpha: 0.1),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -175,7 +175,7 @@ class _DetailsItemState extends State<DetailsItem> {
                             end: Alignment.bottomCenter,
                             colors: [
                               Colors.transparent,
-                              AppColor.black.withOpacity(0.7),
+                              AppColor.black.withValues(alpha: 0.7),
                             ],
                           ),
                         ),
@@ -186,13 +186,14 @@ class _DetailsItemState extends State<DetailsItem> {
                       top: 16.h,
                       right: 16.w,
                       child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 8.w, vertical: 4.h),
                         decoration: BoxDecoration(
                           color: AppColor.surfaceCard,
                           borderRadius: BorderRadius.circular(20.r),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColor.black.withOpacity(0.1),
+                              color: AppColor.black.withValues(alpha: 0.1),
                               blurRadius: 4,
                               offset: const Offset(0, 2),
                             ),
@@ -227,7 +228,7 @@ class _DetailsItemState extends State<DetailsItem> {
                             vertical: 4.h,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColor.surfaceCard.withOpacity(0.9),
+                            color: AppColor.surfaceCard.withValues(alpha: 0.9),
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
@@ -241,8 +242,8 @@ class _DetailsItemState extends State<DetailsItem> {
                     if (widget.isLoading)
                       Positioned.fill(
                         child: Container(
-                          color: Colors.black.withOpacity(0.12),
-                          child: Center(
+                          color: Colors.black.withValues(alpha: 0.12),
+                          child: const Center(
                             child: CircularProgressIndicator(
                               valueColor: AlwaysStoppedAnimation<Color>(
                                 AppColor.white,
@@ -281,9 +282,7 @@ class _DetailsItemState extends State<DetailsItem> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(14.r),
                         border: Border.all(
-                          color: isActive
-                              ? AppColor.primary
-                              : AppColor.border,
+                          color: isActive ? AppColor.primary : AppColor.border,
                           width: isActive ? 2 : 1,
                         ),
                       ),
@@ -297,18 +296,18 @@ class _DetailsItemState extends State<DetailsItem> {
               ),
             ),
           ],
-          
+
           verticalSpace(20),
-          
+
           // Category badge
           Container(
             padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
             decoration: BoxDecoration(
-              color: model.color.withOpacity(0.9),
+              color: model.color.withValues(alpha: 0.9),
               borderRadius: BorderRadius.circular(12.r),
               boxShadow: [
                 BoxShadow(
-                  color: model.color.withOpacity(0.3),
+                  color: model.color.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -334,9 +333,9 @@ class _DetailsItemState extends State<DetailsItem> {
               ],
             ),
           ),
-          
+
           verticalSpace(16),
-          
+
           // Title
           Text(
             model.text,
@@ -346,9 +345,9 @@ class _DetailsItemState extends State<DetailsItem> {
               fontSize: 24.sp,
             ),
           ),
-          
+
           verticalSpace(12),
-          
+
           // Description
           Text(
             model.body.toString(),
@@ -357,16 +356,16 @@ class _DetailsItemState extends State<DetailsItem> {
               height: 1.6,
             ),
           ),
-          
+
           verticalSpace(20),
-          
+
           // Location section
           Container(
             padding: EdgeInsets.all(16.w),
             decoration: BoxDecoration(
               color: AppColor.neutral50,
               borderRadius: BorderRadius.circular(12.r),
-              border: Border.all(color: AppColor.neutral200!),
+              border: Border.all(color: AppColor.neutral200),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -376,7 +375,7 @@ class _DetailsItemState extends State<DetailsItem> {
                     Container(
                       padding: EdgeInsets.all(8.w),
                       decoration: BoxDecoration(
-                        color: AppColor.primary.withOpacity(0.1),
+                        color: AppColor.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8.r),
                       ),
                       child: Icon(
@@ -417,7 +416,7 @@ class _DetailsItemState extends State<DetailsItem> {
                   child: Container(
                     padding: EdgeInsets.symmetric(vertical: 12.h),
                     decoration: BoxDecoration(
-                      color: AppColor.primary.withOpacity(0.1),
+                      color: AppColor.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8.r),
                     ),
                     child: Center(
@@ -433,14 +432,14 @@ class _DetailsItemState extends State<DetailsItem> {
               ],
             ),
           ),
-          
+
           verticalSpace(20),
-          
+
           // Price section
           Container(
             padding: EdgeInsets.all(16.w),
             decoration: BoxDecoration(
-              color: AppColor.primary.withOpacity(0.05),
+              color: AppColor.primary.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(12.r),
             ),
             child: Row(

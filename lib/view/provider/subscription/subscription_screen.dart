@@ -61,8 +61,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   bool _yearly = true;
   bool _busy = false;
 
-  bool get _hasProvider => widget.providerId != null;
-
   @override
   void initState() {
     super.initState();
@@ -132,7 +130,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         valueListenable: SubscriptionService.instance.catalog,
         builder: (_, plans, __) {
           if (plans.isEmpty) {
-            return Center(
+            return const Center(
               child: CircularProgressIndicator(color: AppColor.primary),
             );
           }
@@ -414,8 +412,7 @@ class _PlanCard extends StatelessWidget {
           color: isCurrent || isRecommended ? accent : AppColor.border,
           width: isCurrent || isRecommended ? 2 : 1,
         ),
-        boxShadow:
-            isRecommended ? AppShadows.primaryGlow : AppShadows.level1,
+        boxShadow: isRecommended ? AppShadows.primaryGlow : AppShadows.level1,
       ),
       padding: EdgeInsets.all(AppSpacing.xxl.w),
       child: Column(
@@ -429,7 +426,7 @@ class _PlanCard extends StatelessWidget {
               ),
               const Spacer(),
               if (isCurrent)
-                _Chip(label: AppCopy.subCurrent, color: AppColor.success)
+                const _Chip(label: AppCopy.subCurrent, color: AppColor.success)
               else if (isRecommended)
                 _Chip(label: 'الأكثر اختياراً', color: plan.accentColor),
             ],
@@ -451,15 +448,16 @@ class _PlanCard extends StatelessWidget {
               children: [
                 Text(
                   price.toString(),
-                  style: AppText.displayMd.copyWith(color: AppColor.textPrimary),
+                  style:
+                      AppText.displayMd.copyWith(color: AppColor.textPrimary),
                 ),
                 gapH(AppSpacing.xs),
                 Padding(
                   padding: EdgeInsets.only(bottom: 8.h),
                   child: Text(
                     'ج.م ${per.trim()}',
-                    style: AppText.bodyLg
-                        .copyWith(color: AppColor.textSecondary),
+                    style:
+                        AppText.bodyLg.copyWith(color: AppColor.textSecondary),
                   ),
                 ),
               ],
@@ -480,9 +478,8 @@ class _PlanCard extends StatelessWidget {
                 if (isCurrent && !onboarding) return AppCopy.subManage;
                 return plan.ctaLabel;
               }(),
-              onPress: disabled
-                  ? () {}
-                  : (isCurrent && !onboarding ? () {} : onCta),
+              onPress:
+                  disabled ? () {} : (isCurrent && !onboarding ? () {} : onCta),
               isEnabled: !disabled && (onboarding || !isCurrent),
               variant: isRecommended
                   ? AppButtonVariant.primary
@@ -506,13 +503,16 @@ class _PlanCard extends StatelessWidget {
       if (plan.maxVideos > 0)
         _Feature(
             label: '${AppCopy.subFeatVideos}: ${unlimited(plan.maxVideos)}'),
-      if (plan.isVerified) _Feature(label: AppCopy.subFeatVerified),
-      if (plan.hasAnalyticsBasic) _Feature(label: AppCopy.subFeatAnalytics),
-      if (plan.hasPromotions) _Feature(label: AppCopy.subFeatPromotions),
-      if (plan.hasFeaturedSlot) _Feature(label: AppCopy.subFeatFeatured),
-      if (plan.hasPushCampaigns) _Feature(label: AppCopy.subFeatPush),
-      if (plan.hasHomepageSpotlight) _Feature(label: AppCopy.subFeatSpotlight),
-      if (plan.hasPrioritySupport) _Feature(label: AppCopy.subFeatSupport),
+      if (plan.isVerified) const _Feature(label: AppCopy.subFeatVerified),
+      if (plan.hasAnalyticsBasic)
+        const _Feature(label: AppCopy.subFeatAnalytics),
+      if (plan.hasPromotions) const _Feature(label: AppCopy.subFeatPromotions),
+      if (plan.hasFeaturedSlot) const _Feature(label: AppCopy.subFeatFeatured),
+      if (plan.hasPushCampaigns) const _Feature(label: AppCopy.subFeatPush),
+      if (plan.hasHomepageSpotlight)
+        const _Feature(label: AppCopy.subFeatSpotlight),
+      if (plan.hasPrioritySupport)
+        const _Feature(label: AppCopy.subFeatSupport),
     ];
     return bullets;
   }
@@ -551,7 +551,7 @@ class _Chip extends StatelessWidget {
         vertical: 2.h,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: AppRadii.rSm,
       ),
       child: Text(
@@ -588,7 +588,8 @@ class _ComparisonTable extends StatelessWidget {
       ),
       _CompareRow(
         AppCopy.subFeatVideos,
-        plans.map((p) => p.maxVideos == 0 ? '—' : p.maxVideos.toString())
+        plans
+            .map((p) => p.maxVideos == 0 ? '—' : p.maxVideos.toString())
             .toList(),
       ),
       _CompareRow(
@@ -646,7 +647,7 @@ class _CompareHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Expanded(flex: 3, child: const SizedBox.shrink()),
+          const Expanded(flex: 3, child: SizedBox.shrink()),
           for (final p in plans)
             Expanded(
               flex: 2,
@@ -828,7 +829,7 @@ class _ConfirmUpgradeSheet extends StatelessWidget {
                   width: 56.w,
                   height: 56.w,
                   decoration: BoxDecoration(
-                    color: plan.accentColor.withOpacity(0.12),
+                    color: plan.accentColor.withValues(alpha: 0.12),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -902,8 +903,7 @@ class _ConfirmUpgradeSheet extends StatelessWidget {
                   Expanded(
                     child: Text(
                       AppCopy.subDemoExplainer,
-                      style: AppText.bodySm
-                          .copyWith(color: AppColor.warning),
+                      style: AppText.bodySm.copyWith(color: AppColor.warning),
                     ),
                   ),
                 ],
@@ -985,7 +985,7 @@ class _UpgradeSuccessOverlay extends StatefulWidget {
     return Navigator.of(context).push(
       PageRouteBuilder<void>(
         opaque: false,
-        barrierColor: Colors.black.withOpacity(0.5),
+        barrierColor: Colors.black.withValues(alpha: 0.5),
         barrierDismissible: false,
         transitionDuration: AppMotion.base,
         pageBuilder: (_, __, ___) => _UpgradeSuccessOverlay(
@@ -999,8 +999,7 @@ class _UpgradeSuccessOverlay extends StatefulWidget {
   }
 
   @override
-  State<_UpgradeSuccessOverlay> createState() =>
-      _UpgradeSuccessOverlayState();
+  State<_UpgradeSuccessOverlay> createState() => _UpgradeSuccessOverlayState();
 }
 
 class _UpgradeSuccessOverlayState extends State<_UpgradeSuccessOverlay>
@@ -1054,7 +1053,7 @@ class _UpgradeSuccessOverlayState extends State<_UpgradeSuccessOverlay>
                         height: 120.w,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: plan.accentColor.withOpacity(0.08),
+                          color: plan.accentColor.withValues(alpha: 0.08),
                         ),
                       ),
                       Container(
@@ -1062,7 +1061,7 @@ class _UpgradeSuccessOverlayState extends State<_UpgradeSuccessOverlay>
                         height: 88.w,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: plan.accentColor.withOpacity(0.18),
+                          color: plan.accentColor.withValues(alpha: 0.18),
                         ),
                       ),
                       Container(
@@ -1107,7 +1106,7 @@ class _UpgradeSuccessOverlayState extends State<_UpgradeSuccessOverlay>
                         vertical: AppSpacing.sm.h,
                       ),
                       decoration: BoxDecoration(
-                        color: plan.accentColor.withOpacity(0.12),
+                        color: plan.accentColor.withValues(alpha: 0.12),
                         borderRadius: AppRadii.rPill,
                       ),
                       child: Row(

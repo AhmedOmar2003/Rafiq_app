@@ -37,7 +37,7 @@ class StepperComponent extends StatelessWidget {
   bool get _isActive => _isDone || _isCurrent;
 
   Widget _buildCircle() {
-    final activeColor = AppColor.primary;
+    const activeColor = AppColor.primary;
     return Semantics(
       button: true,
       label: label,
@@ -61,7 +61,8 @@ class StepperComponent extends StatelessWidget {
                 color: _isActive ? activeColor : AppColor.border,
                 width: 1.5,
               ),
-              boxShadow: _isCurrent ? AppShadows.primaryGlow : AppShadows.level0,
+              boxShadow:
+                  _isCurrent ? AppShadows.primaryGlow : AppShadows.level0,
             ),
             child: Center(
               child: _isDone

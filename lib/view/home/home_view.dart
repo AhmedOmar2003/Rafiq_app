@@ -210,8 +210,9 @@ class _HomeViewState extends State<HomeView> {
                   totalSteps: _totalSteps,
                   isLastStep: _isLastStep,
                   isLoading: _isLoading,
-                  onBack:
-                      _currentIndex == 0 ? null : () => _goToStep(_currentIndex - 1),
+                  onBack: _currentIndex == 0
+                      ? null
+                      : () => _goToStep(_currentIndex - 1),
                   onNext: _handlePrimaryCta,
                   onChatTap: _openChatBot,
                 ),

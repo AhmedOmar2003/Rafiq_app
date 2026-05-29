@@ -69,7 +69,7 @@ class DeleteAccountSheet {
                     Container(
                       width: 56.w,
                       height: 56.w,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: AppColor.errorBg,
                         shape: BoxShape.circle,
                       ),
@@ -95,7 +95,7 @@ class DeleteAccountSheet {
                     color: AppColor.errorBg,
                     borderRadius: AppRadii.rMd,
                     border: Border.all(
-                      color: AppColor.error.withOpacity(0.3),
+                      color: AppColor.error.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Text(
@@ -168,8 +168,7 @@ class DeleteAccountSheet {
   }) {
     if (!isProvider) return AppCopy.deleteAccountBodyRegular;
     if (tier == PlanTier.free) return AppCopy.deleteAccountBodyProviderFree;
-    final name = planDisplayName ??
-        (tier == PlanTier.pro ? 'برو' : 'ماكس');
+    final name = planDisplayName ?? (tier == PlanTier.pro ? 'برو' : 'ماكس');
     return AppCopy.deleteAccountBodyProviderPaidPrefix +
         name +
         AppCopy.deleteAccountBodyProviderPaidSuffix;

@@ -15,7 +15,7 @@ class SuggestionModel {
 
 /// A list of predefined suggestions for the app
 final List<SuggestionModel> suggestionList = [
-  SuggestionModel(
+  const SuggestionModel(
     text: "النشاط",
     icon: AppImages.activitie,
     answer: [
@@ -26,7 +26,7 @@ final List<SuggestionModel> suggestionList = [
       "فاجئني",
     ],
   ),
-  SuggestionModel(
+  const SuggestionModel(
     text: "المكان",
     icon: AppImages.mapPin,
     answer: [
@@ -37,7 +37,7 @@ final List<SuggestionModel> suggestionList = [
       "أي حتة",
     ],
   ),
-  SuggestionModel(
+  const SuggestionModel(
     text: "الميزانية",
     icon: AppImages.money,
     answer: [

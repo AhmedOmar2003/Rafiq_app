@@ -16,7 +16,8 @@ enum AppTone { neutral, primary, success, warning, error, info }
 
 /// Small status pill (e.g. "مفتوح", "مدفوع", "قيد المراجعة").
 class AppBadge extends StatelessWidget {
-  const AppBadge(this.label, {super.key, this.tone = AppTone.neutral, this.icon});
+  const AppBadge(this.label,
+      {super.key, this.tone = AppTone.neutral, this.icon});
 
   final String label;
   final AppTone tone;
@@ -26,7 +27,8 @@ class AppBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = toneColors(tone);
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: AppSpacing.md.w, vertical: AppSpacing.xs.h),
+      padding: EdgeInsets.symmetric(
+          horizontal: AppSpacing.md.w, vertical: AppSpacing.xs.h),
       decoration: BoxDecoration(color: c.bg, borderRadius: AppRadii.rPill),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -68,7 +70,8 @@ class AppChip extends StatelessWidget {
         borderRadius: AppRadii.rPill,
         child: AnimatedContainer(
           duration: AppMotion.fast,
-          padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w, vertical: AppSpacing.sm.h),
+          padding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg.w, vertical: AppSpacing.sm.h),
           decoration: BoxDecoration(color: bg, borderRadius: AppRadii.rPill),
           child: Row(
             mainAxisSize: MainAxisSize.min,

@@ -42,7 +42,8 @@ class LoadingManager extends StatelessWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const CircularProgressIndicator(color: AppColor.primary),
+                        const CircularProgressIndicator(
+                            color: AppColor.primary),
                         gapV(AppSpacing.lg),
                         Text(message ?? AppCopy.loading, style: AppText.bodyMd),
                       ],

@@ -17,7 +17,8 @@ class AppCopy {
 
   // --- Generic errors (friendly, no jargon) ------------------------------------
   static const errorTitle = 'حصل لخبطة بسيطة';
-  static const errorBody = 'مقدرناش نكمّل دلوقتي. جرّب تاني، ولو فضلت، استنّى شوية.';
+  static const errorBody =
+      'مقدرناش نكمّل دلوقتي. جرّب تاني، ولو فضلت، استنّى شوية.';
   static const errorRetry = 'حاول تاني';
   static const errorGeneric = 'في حاجة مش ظابطة، جرّب تاني بعد شوية.';
 
@@ -27,7 +28,8 @@ class AppCopy {
   static const emptySearchTitle = 'ملقيناش اللي بتدوّر عليه';
   static const emptySearchBody = 'جرّب كلمة تانية أو قلّل الفلاتر.';
   static const emptyFavoritesTitle = 'لسه مفيش مفضّلة';
-  static const emptyFavoritesBody = 'أول ما يعجبك مكان، دوس على القلب وهيتحفظ هنا.';
+  static const emptyFavoritesBody =
+      'أول ما يعجبك مكان، دوس على القلب وهيتحفظ هنا.';
 
   // --- Loading -----------------------------------------------------------------
   static const loading = 'ثانية واحدة...';
@@ -65,7 +67,8 @@ class AppCopy {
   static const stepCity = 'المدينة';
   static const stepBudget = 'الميزانية';
   static const stepActivity = 'النشاط';
-  static const homeIncomplete = 'كمّل الاختيارات الأول، عشان نلاقيلك أحلى أماكن.';
+  static const homeIncomplete =
+      'كمّل الاختيارات الأول، عشان نلاقيلك أحلى أماكن.';
   static const homeCtaFinal = 'يلا نفسح!';
   static const homeStepCounter = 'خطوة %d من %t'; // %d=current, %t=total
   static const back = 'رجوع';
@@ -91,7 +94,8 @@ class AppCopy {
   static const providerSessionExpired =
       'انتهت جلسة الدخول، سجّل تاني عشان نكمّل.';
   static const providerAddedSuccess = 'اتضاف بنجاح ✅';
-  static const providerImagePickError = 'حصلت مشكلة وانت بتختار الصورة، جرّب تاني.';
+  static const providerImagePickError =
+      'حصلت مشكلة وانت بتختار الصورة، جرّب تاني.';
   static const providerSavedTitle = 'مبروك! بيانات مكانك اتسجلت';
   static const providerGalleryTitle = 'صور المكان';
   static const providerCoverHint = 'الصورة الأولى هتبقى الكوفر';
@@ -144,7 +148,8 @@ class AppCopy {
   static const profileSwitchToProvider = 'حوّل لمقدم خدمة';
   static const profileSwitchToProviderValue = 'افتح خطط الاشتراك وأضف مكانك';
   static const profileSwitchToUser = 'حوّل لمستخدم عادي';
-  static const profileSwitchToUserValue = 'استكشف الأماكن وتقدر ترجع تابع خدمتك في أي وقت';
+  static const profileSwitchToUserValue =
+      'استكشف الأماكن وتقدر ترجع تابع خدمتك في أي وقت';
   static const profileSwitchConfirmTitle = 'تأكيد تغيير الدور';
   static const profileSwitchConfirmProvider =
       'هتنتقل لمسار مقدم الخدمة. لو لسه ما اخترتش خطة، هنوديك صفحة الخطط.';
@@ -217,8 +222,7 @@ class AppCopy {
   static const resetBody = 'اختار كلمة سر قوية وسهل تفتكرها.';
   static const resetCta = 'حفظ كلمة السر';
   static const resetSuccess = 'تمام! كلمة السر اتغيّرت ✅';
-  static const resetSuccessBody =
-      'تقدر دلوقتي تسجّل دخولك بكلمة السر الجديدة.';
+  static const resetSuccessBody = 'تقدر دلوقتي تسجّل دخولك بكلمة السر الجديدة.';
   static const resetConfirmHint = 'اكتبها تاني للتأكيد';
   static const resetOtpHint = '6 أرقام';
 
@@ -227,7 +231,7 @@ class AppCopy {
   static const subSubtitle = 'اختار الخطة اللي تناسب نشاطك';
   static const subBillingMonthly = 'شهري';
   static const subBillingYearly = 'سنوي';
-  static const subYearlyDiscount = 'وفّر %p%';   // %p replaced with discount pct
+  static const subYearlyDiscount = 'وفّر %p%'; // %p replaced with discount pct
   static const subCurrent = 'خطتك الحالية';
   static const subUpgrade = 'رقّي خطتك';
   static const subManage = 'إدارة الاشتراك';
@@ -256,7 +260,8 @@ class AppCopy {
   static const subStatusPastDue = 'متأخّر';
   static const subStatusCanceled = 'سيتم الإنهاء';
   static const subStatusExpired = 'منتهي';
-  static const subUpgradeInProgress = 'تم استلام طلبك، هنبعتلك تأكيد على بريدك.';
+  static const subUpgradeInProgress =
+      'تم استلام طلبك، هنبعتلك تأكيد على بريدك.';
 
   // --- Onboarding (provider plan picker) --------------------------------------
   static const subOnboardingTitle = 'اختار خطتك';
@@ -341,15 +346,13 @@ class AppCopy {
       'هتمسح حسابك للأبد. كل تقييماتك ومفضلاتك هتروح. الإجراء ده مفيش رجوع منه.';
   static const deleteAccountBodyProviderFree =
       'حسابك ومكانك ومراجعاتك هيتمسحوا للأبد. الإجراء ده مفيش رجوع منه.';
-  static const deleteAccountBodyProviderPaidPrefix =
-      'انت مشترك حالياً في خطة ';
+  static const deleteAccountBodyProviderPaidPrefix = 'انت مشترك حالياً في خطة ';
   static const deleteAccountBodyProviderPaidSuffix =
       '. الاشتراك ده هيتلغى تلقائياً. حسابك ومكانك وكل بياناتك هيتمسحوا للأبد. الإجراء ده مفيش رجوع منه.';
   static const deleteAccountSuccess = 'اتمسح حسابك بنجاح.';
   static const deleteAccountError =
       'معرفناش نمسح حسابك دلوقتي، جرّب تاني بعد شوية.';
-  static const deleteAccountReasonHint =
-      'لو حابب تقولنا السبب (اختياري)';
+  static const deleteAccountReasonHint = 'لو حابب تقولنا السبب (اختياري)';
 
   // --- Change password dialog --------------------------------------------------
   static const changePwTitle = 'تغيير كلمة السر';
@@ -358,5 +361,6 @@ class AppCopy {
   static const changePwConfirm = 'تأكيد كلمة السر';
   static const changePwSuccess = 'اتغيّرت كلمة السر بنجاح ✅';
   static const changePwGenericFail = 'معرفناش نغيّر كلمة السر، راجع بياناتك.';
-  static const changePwMissingEmail = 'لقيناش البريد الإلكتروني، سجل دخول تاني.';
+  static const changePwMissingEmail =
+      'لقيناش البريد الإلكتروني، سجل دخول تاني.';
 }

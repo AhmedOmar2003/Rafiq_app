@@ -100,57 +100,57 @@ class _AppConfirmDialogContent extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-            if (icon != null) ...[
-              Center(
-                child: Container(
-                  width: 56.w,
-                  height: 56.w,
-                  decoration: BoxDecoration(
-                    color: _accent.withOpacity(0.1),
-                    shape: BoxShape.circle,
+              if (icon != null) ...[
+                Center(
+                  child: Container(
+                    width: 56.w,
+                    height: 56.w,
+                    decoration: BoxDecoration(
+                      color: _accent.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(icon, color: _accent, size: 28.sp),
                   ),
-                  child: Icon(icon, color: _accent, size: 28.sp),
                 ),
-              ),
-              gapV(AppSpacing.lg),
-            ],
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: AppText.headingSm.copyWith(
-                color: AppColor.textPrimary,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            if (message != null) ...[
-              gapV(AppSpacing.sm),
+                gapV(AppSpacing.lg),
+              ],
               Text(
-                message!,
+                title,
                 textAlign: TextAlign.center,
-                style: AppText.bodyMd.copyWith(color: AppColor.textSecondary),
-              ),
-            ],
-            gapV(AppSpacing.xl),
-            Row(
-              children: [
-                Expanded(
-                  child: AppButton(
-                    text: cancelLabel,
-                    variant: AppButtonVariant.ghost,
-                    onPress: () => Navigator.of(context).pop(false),
-                  ),
+                style: AppText.headingSm.copyWith(
+                  color: AppColor.textPrimary,
+                  fontWeight: FontWeight.w700,
                 ),
-                gapH(AppSpacing.md),
-                Expanded(
-                  child: AppButton(
-                    text: confirmLabel,
-                    variant: _confirmVariant,
-                    onPress: () => Navigator.of(context).pop(true),
-                  ),
+              ),
+              if (message != null) ...[
+                gapV(AppSpacing.sm),
+                Text(
+                  message!,
+                  textAlign: TextAlign.center,
+                  style: AppText.bodyMd.copyWith(color: AppColor.textSecondary),
                 ),
               ],
-            ),
-          ],
+              gapV(AppSpacing.xl),
+              Row(
+                children: [
+                  Expanded(
+                    child: AppButton(
+                      text: cancelLabel,
+                      variant: AppButtonVariant.ghost,
+                      onPress: () => Navigator.of(context).pop(false),
+                    ),
+                  ),
+                  gapH(AppSpacing.md),
+                  Expanded(
+                    child: AppButton(
+                      text: confirmLabel,
+                      variant: _confirmVariant,
+                      onPress: () => Navigator.of(context).pop(true),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),

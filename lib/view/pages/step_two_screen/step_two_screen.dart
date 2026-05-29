@@ -75,7 +75,7 @@ class _BudgetOptionCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(14.r),
-        splashColor: AppColor.primary.withOpacity(0.1),
+        splashColor: AppColor.primary.withValues(alpha: 0.1),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeOutCubic,
@@ -90,8 +90,8 @@ class _BudgetOptionCard extends StatelessWidget {
             boxShadow: [
               BoxShadow(
                 color: isSelected
-                    ? AppColor.primary.withOpacity(0.15)
-                    : AppColor.black.withOpacity(0.04),
+                    ? AppColor.primary.withValues(alpha: 0.15)
+                    : AppColor.black.withValues(alpha: 0.04),
                 blurRadius: isSelected ? 12 : 6,
                 offset: Offset(0, isSelected ? 4 : 2),
               ),
@@ -107,7 +107,7 @@ class _BudgetOptionCard extends StatelessWidget {
                   shape: BoxShape.circle,
                   color: isSelected
                       ? AppColor.white
-                      : AppColor.primary.withOpacity(0.3),
+                      : AppColor.primary.withValues(alpha: 0.3),
                 ),
               ),
               SizedBox(width: 14.w),
@@ -121,7 +121,8 @@ class _BudgetOptionCard extends StatelessWidget {
                 ),
               ),
               if (isSelected)
-                Icon(Icons.check_circle_rounded, color: AppColor.surfaceCard, size: 20.w),
+                Icon(Icons.check_circle_rounded,
+                    color: AppColor.surfaceCard, size: 20.w),
             ],
           ),
         ),

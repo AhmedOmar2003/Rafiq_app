@@ -59,7 +59,7 @@ class PlanBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: s.bg,
         borderRadius: AppRadii.rPill,
-        border: Border.all(color: s.color.withOpacity(0.18)),
+        border: Border.all(color: s.color.withValues(alpha: 0.18)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

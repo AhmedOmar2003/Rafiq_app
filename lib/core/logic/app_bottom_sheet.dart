@@ -26,7 +26,8 @@ class AppBottomSheet {
       // (`showDragHandle: true`). Suppress it here when callers explicitly
       // pass `showHandle: false` so the helper still wins.
       showDragHandle: showHandle,
-      shape: RoundedRectangleBorder(borderRadius: AppRadii.topOnly(AppRadii.xl)),
+      shape:
+          RoundedRectangleBorder(borderRadius: AppRadii.topOnly(AppRadii.xl)),
       builder: (context) {
         return SafeArea(
           top: false,
@@ -42,7 +43,8 @@ class AppBottomSheet {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 if (title != null) ...[
-                  Text(title, style: AppText.headingSm, textAlign: TextAlign.center),
+                  Text(title,
+                      style: AppText.headingSm, textAlign: TextAlign.center),
                   gapV(AppSpacing.lg),
                 ],
                 Flexible(child: widget),

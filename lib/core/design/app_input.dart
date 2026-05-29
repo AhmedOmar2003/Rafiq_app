@@ -81,12 +81,14 @@ class _AppInputState extends State<AppInput> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(bottom: widget.paddingBottom.h, top: widget.paddingTop.h),
+      padding: EdgeInsets.only(
+          bottom: widget.paddingBottom.h, top: widget.paddingTop.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (widget.label != null) ...[
-            Text(widget.label!, style: AppText.labelMd.copyWith(color: AppColor.textPrimary)),
+            Text(widget.label!,
+                style: AppText.labelMd.copyWith(color: AppColor.textPrimary)),
             gapV(AppSpacing.sm),
           ],
           Container(
@@ -97,7 +99,8 @@ class _AppInputState extends State<AppInput> {
             ),
             child: TextFormField(
               textAlign: widget.textAlign,
-              style: widget.textStyle ?? AppText.bodyLg.copyWith(color: AppColor.textPrimary),
+              style: widget.textStyle ??
+                  AppText.bodyLg.copyWith(color: AppColor.textPrimary),
               enabled: widget.enabled,
               autofillHints: widget.autofillHints,
               keyboardType: widget.type,
@@ -128,21 +131,24 @@ class _AppInputState extends State<AppInput> {
   }
 
   InputDecoration _decoration() {
-    OutlineInputBorder border(Color color, [double width = 1]) => OutlineInputBorder(
+    OutlineInputBorder border(Color color, [double width = 1]) =>
+        OutlineInputBorder(
           borderRadius: AppRadii.rLg,
           borderSide: BorderSide(color: color, width: width),
         );
 
     return InputDecoration(
       counterText: '',
-      contentPadding:
-          EdgeInsets.symmetric(horizontal: AppSpacing.xl.w, vertical: AppSpacing.lg.h),
+      contentPadding: EdgeInsets.symmetric(
+          horizontal: AppSpacing.xl.w, vertical: AppSpacing.lg.h),
       filled: widget.isFilled ?? true,
       fillColor: widget.fillColor ?? AppColor.surfaceCard,
       hintText: widget.hintText,
       hintStyle: AppText.bodyMd.copyWith(color: AppColor.textTertiary),
       prefixIcon: widget.prefixIcon != null
-          ? Padding(padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w), child: widget.prefixIcon)
+          ? Padding(
+              padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
+              child: widget.prefixIcon)
           : null,
       suffixIcon: _suffix(),
       border: border(Colors.transparent),
@@ -150,7 +156,7 @@ class _AppInputState extends State<AppInput> {
       focusedBorder: border(AppColor.primary, 1.5),
       errorBorder: border(AppColor.error),
       focusedErrorBorder: border(AppColor.error, 1.5),
-      disabledBorder: border(AppColor.border.withOpacity(0.5)),
+      disabledBorder: border(AppColor.border.withValues(alpha: 0.5)),
       errorStyle: AppText.bodySm.copyWith(color: AppColor.error),
     );
   }
@@ -161,7 +167,9 @@ class _AppInputState extends State<AppInput> {
         padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm.w),
         child: IconButton(
           icon: Icon(
-            _obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+            _obscure
+                ? Icons.visibility_off_outlined
+                : Icons.visibility_outlined,
             color: AppColor.textTertiary,
           ),
           onPressed: () => setState(() => _obscure = !_obscure),

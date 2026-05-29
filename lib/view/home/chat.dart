@@ -158,8 +158,9 @@ class _BotScreenState extends State<BotScreen> {
                   SizedBox(
                     width: 20.w,
                     height: 20.w,
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(AppColor.primary),
+                    child: const CircularProgressIndicator(
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(AppColor.primary),
                       strokeWidth: 2,
                     ),
                   ),
@@ -187,7 +188,8 @@ class _BotScreenState extends State<BotScreen> {
                       style: AppText.bodyLg,
                       decoration: InputDecoration(
                         hintText: "اسأل رفيق عن أي مكان...",
-                        hintStyle: AppText.bodyLg.copyWith(color: AppColor.textTertiary),
+                        hintStyle: AppText.bodyLg
+                            .copyWith(color: AppColor.textTertiary),
                         filled: true,
                         fillColor: AppColor.surfaceCard,
                         contentPadding: EdgeInsets.symmetric(
@@ -195,14 +197,16 @@ class _BotScreenState extends State<BotScreen> {
                           vertical: AppSpacing.md.h,
                         ),
                         enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: AppColor.border),
+                          borderSide: const BorderSide(color: AppColor.border),
                           borderRadius: AppRadii.rPill,
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: AppColor.primary, width: 1.5),
+                          borderSide: const BorderSide(
+                              color: AppColor.primary, width: 1.5),
                           borderRadius: AppRadii.rPill,
                         ),
-                        border: OutlineInputBorder(borderRadius: AppRadii.rPill),
+                        border:
+                            OutlineInputBorder(borderRadius: AppRadii.rPill),
                       ),
                       onSubmitted: _isLoading ? null : (_) => sendMessage(),
                       textInputAction: TextInputAction.send,
@@ -211,7 +215,7 @@ class _BotScreenState extends State<BotScreen> {
                   gapH(AppSpacing.sm),
                   Material(
                     color: _isLoading
-                        ? AppColor.primary.withOpacity(0.4)
+                        ? AppColor.primary.withValues(alpha: 0.4)
                         : AppColor.primary,
                     borderRadius: AppRadii.rPill,
                     child: InkWell(
@@ -220,7 +224,8 @@ class _BotScreenState extends State<BotScreen> {
                       child: SizedBox(
                         width: 46.w,
                         height: 46.w,
-                        child: Icon(Icons.send_rounded, color: AppColor.white, size: 20.sp),
+                        child: Icon(Icons.send_rounded,
+                            color: AppColor.white, size: 20.sp),
                       ),
                     ),
                   ),
@@ -278,7 +283,7 @@ class Messages extends StatelessWidget {
             date,
             style: AppText.caption.copyWith(
               color: isUser
-                  ? AppColor.white.withOpacity(0.7)
+                  ? AppColor.white.withValues(alpha: 0.7)
                   : AppColor.textTertiary,
             ),
           ),

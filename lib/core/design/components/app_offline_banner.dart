@@ -65,19 +65,20 @@ class _AppConnectivityScopeState extends State<AppConnectivityScope> {
                 child: AnimatedSwitcher(
                   duration: AppMotion.base,
                   transitionBuilder: (child, anim) => SlideTransition(
-                    position: Tween(begin: const Offset(0, 1), end: Offset.zero).animate(anim),
+                    position: Tween(begin: const Offset(0, 1), end: Offset.zero)
+                        .animate(anim),
                     child: child,
                   ),
                   child: showOffline
-                      ? _Banner(
-                          key: const ValueKey('offline'),
+                      ? const _Banner(
+                          key: ValueKey('offline'),
                           tone: _BannerTone.warning,
                           icon: Icons.wifi_off_rounded,
                           text: AppCopy.offlineBanner,
                         )
                       : _showBackOnline
-                          ? _Banner(
-                              key: const ValueKey('online'),
+                          ? const _Banner(
+                              key: ValueKey('online'),
                               tone: _BannerTone.success,
                               icon: Icons.wifi_rounded,
                               text: AppCopy.backOnline,
@@ -96,7 +97,8 @@ class _AppConnectivityScopeState extends State<AppConnectivityScope> {
 enum _BannerTone { warning, success }
 
 class _Banner extends StatelessWidget {
-  const _Banner({super.key, required this.tone, required this.icon, required this.text});
+  const _Banner(
+      {super.key, required this.tone, required this.icon, required this.text});
   final _BannerTone tone;
   final IconData icon;
   final String text;
@@ -109,7 +111,8 @@ class _Banner extends StatelessWidget {
       type: MaterialType.transparency,
       child: Container(
         margin: EdgeInsets.all(AppSpacing.md.w),
-        padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w, vertical: AppSpacing.md.h),
+        padding: EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg.w, vertical: AppSpacing.md.h),
         decoration: BoxDecoration(
           color: bg,
           borderRadius: AppRadii.rMd,
@@ -120,7 +123,8 @@ class _Banner extends StatelessWidget {
             Icon(icon, color: Colors.white, size: 20.sp),
             gapH(AppSpacing.md),
             Expanded(
-              child: Text(text, style: AppText.labelMd.copyWith(color: Colors.white)),
+              child: Text(text,
+                  style: AppText.labelMd.copyWith(color: Colors.white)),
             ),
           ],
         ),

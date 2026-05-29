@@ -47,8 +47,7 @@ class ProfilePill extends StatelessWidget {
                   ? MemoryImage(snap.bytes!)
                   : snap.file != null
                       ? FileImage(snap.file!)
-                      : const AssetImage(
-                              'assets/images/default_profile.webp')
+                      : const AssetImage('assets/images/default_profile.webp')
                           as ImageProvider;
               return CircleAvatar(
                 radius: radius.w,

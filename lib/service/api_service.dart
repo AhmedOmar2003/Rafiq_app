@@ -88,15 +88,14 @@ class ApiService {
     final prefs = await SharedPreferences.getInstance();
 
     // Prefer live auth state over stale prefs.
-    final supabaseUser = _client.auth.currentUser;
+    final sessionUser = _client.auth.currentSession?.user;
+    final supabaseUser = _client.auth.currentUser ?? sessionUser;
     final userId = supabaseUser?.id ?? prefs.getString('authUserId');
-    final email =
-        supabaseUser?.email ?? prefs.getString('userEmail') ?? '';
+    final email = supabaseUser?.email ?? prefs.getString('userEmail') ?? '';
     final metaName = supabaseUser?.userMetadata?['full_name']?.toString() ??
         supabaseUser?.userMetadata?['name']?.toString() ??
         '';
-    final name =
-        (prefs.getString('userName') ?? metaName).trim();
+    final name = (prefs.getString('userName') ?? metaName).trim();
 
     if (userId == null || userId.isEmpty) return null;
     // No email yet but we have a userId → derive a placeholder so the
@@ -112,11 +111,11 @@ class ApiService {
           .maybeSingle();
       final existingId = existing?['id']?.toString();
       if (existingId != null && existingId.isNotEmpty) {
+        await prefs.setString('providerId', existingId);
         return existingId;
       }
 
-      final businessName =
-          name.isNotEmpty ? name : safeEmail.split('@').first;
+      final businessName = name.isNotEmpty ? name : safeEmail.split('@').first;
       final created = await _client
           .from('providers')
           .insert({
@@ -128,7 +127,11 @@ class ApiService {
           .select('id')
           .single()
           .timeout(_networkTimeout);
-      return created['id']?.toString();
+      final createdId = created['id']?.toString();
+      if (createdId != null && createdId.isNotEmpty) {
+        await prefs.setString('providerId', createdId);
+      }
+      return createdId;
     } catch (_) {
       // Race condition: another request may have created the row meanwhile,
       // or RLS rejected an insert. Re-read before giving up.
@@ -137,7 +140,11 @@ class ApiService {
           .select('id')
           .eq('owner_id', userId)
           .maybeSingle();
-      return fallback?['id']?.toString();
+      final fallbackId = fallback?['id']?.toString();
+      if (fallbackId != null && fallbackId.isNotEmpty) {
+        await prefs.setString('providerId', fallbackId);
+      }
+      return fallbackId;
     }
   }
 
@@ -278,7 +285,8 @@ class ApiService {
           .select()
           .timeout(_networkTimeout);
       if (response.isNotEmpty) {
-        final createdPlace = Place.fromJson(Map<String, dynamic>.from(response.first));
+        final createdPlace =
+            Place.fromJson(Map<String, dynamic>.from(response.first));
         if (galleryImages.isNotEmpty && createdPlace.placeUuid != null) {
           final coverPublicUrl = await _savePlaceGalleryImages(
             providerId: providerId,
@@ -415,7 +423,8 @@ class ApiService {
             storagePath,
             bytes,
           );
-      final publicUrl = _client.storage.from('place-images').getPublicUrl(storagePath);
+      final publicUrl =
+          _client.storage.from('place-images').getPublicUrl(storagePath);
       coverPublicUrl ??= publicUrl;
       await _client.from('place_images').insert({
         'place_id': placeUuid,
@@ -466,10 +475,7 @@ class ApiService {
         query = query.eq('place_id', legacyPlaceId);
       }
 
-      final response = await query
-          .select()
-          .single()
-          .timeout(_networkTimeout);
+      final response = await query.select().single().timeout(_networkTimeout);
 
       _invalidatePlacesCache();
       return Place.fromJson(Map<String, dynamic>.from(response));

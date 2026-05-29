@@ -62,7 +62,8 @@ class ThemeServices {
   ThemeData _build(ColorScheme scheme, Brightness brightness) {
     final bool isLight = brightness == Brightness.light;
     final Color pageBg = isLight ? AppColor.surface : AppColor.darkSurface;
-    final Color fieldFill = isLight ? AppColor.surfaceCard : AppColor.darkSurfaceVariant;
+    final Color fieldFill =
+        isLight ? AppColor.surfaceCard : AppColor.darkSurfaceVariant;
 
     final base = ThemeData(brightness: brightness, useMaterial3: true);
 
@@ -75,7 +76,6 @@ class ThemeServices {
         bodyColor: scheme.onSurface,
         displayColor: scheme.onSurface,
       ),
-
       appBarTheme: AppBarTheme(
         centerTitle: true,
         backgroundColor: Colors.transparent,
@@ -85,13 +85,12 @@ class ThemeServices {
         titleTextStyle: AppText.headingSm.copyWith(color: scheme.primary),
         iconTheme: IconThemeData(color: scheme.onSurface),
       ),
-
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: scheme.primary,
           foregroundColor: scheme.onPrimary,
-          disabledBackgroundColor: scheme.primary.withOpacity(0.4),
-          disabledForegroundColor: scheme.onPrimary.withOpacity(0.8),
+          disabledBackgroundColor: scheme.primary.withValues(alpha: 0.4),
+          disabledForegroundColor: scheme.onPrimary.withValues(alpha: 0.8),
           elevation: 0,
           minimumSize: Size(double.infinity, 52.h),
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -99,7 +98,6 @@ class ThemeServices {
           shape: RoundedRectangleBorder(borderRadius: AppRadii.rMd),
         ),
       ),
-
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: scheme.primary,
@@ -109,19 +107,17 @@ class ThemeServices {
           shape: RoundedRectangleBorder(borderRadius: AppRadii.rMd),
         ),
       ),
-
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: scheme.primary,
           textStyle: AppText.labelMd,
         ),
       ),
-
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: fieldFill,
-        contentPadding:
-            EdgeInsets.symmetric(horizontal: AppSpacing.xl.w, vertical: AppSpacing.lg.h),
+        contentPadding: EdgeInsets.symmetric(
+            horizontal: AppSpacing.xl.w, vertical: AppSpacing.lg.h),
         hintStyle: AppText.bodyMd.copyWith(color: AppColor.textTertiary),
         labelStyle: AppText.labelMd.copyWith(color: scheme.onSurfaceVariant),
         border: OutlineInputBorder(
@@ -146,22 +142,20 @@ class ThemeServices {
         ),
         errorStyle: AppText.bodySm.copyWith(color: scheme.error),
       ),
-
       cardTheme: CardThemeData(
         color: scheme.surface,
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(borderRadius: AppRadii.rLg),
       ),
-
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: scheme.surface,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: AppRadii.topOnly(AppRadii.xl)),
+        shape:
+            RoundedRectangleBorder(borderRadius: AppRadii.topOnly(AppRadii.xl)),
         showDragHandle: true,
         dragHandleColor: AppColor.borderStrong,
       ),
-
       dialogTheme: DialogThemeData(
         backgroundColor: scheme.surface,
         surfaceTintColor: Colors.transparent,
@@ -169,30 +163,28 @@ class ThemeServices {
         titleTextStyle: AppText.headingSm.copyWith(color: scheme.onSurface),
         contentTextStyle: AppText.bodyLg.copyWith(color: scheme.onSurface),
       ),
-
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         backgroundColor: scheme.onSurface,
         contentTextStyle: AppText.bodyMd.copyWith(color: scheme.surface),
         shape: RoundedRectangleBorder(borderRadius: AppRadii.rMd),
       ),
-
       chipTheme: ChipThemeData(
-        backgroundColor: isLight ? AppColor.sand200 : AppColor.darkSurfaceVariant,
+        backgroundColor:
+            isLight ? AppColor.sand200 : AppColor.darkSurfaceVariant,
         selectedColor: scheme.primary,
         labelStyle: AppText.labelMd.copyWith(color: scheme.onSurface),
         secondaryLabelStyle: AppText.labelMd.copyWith(color: scheme.onPrimary),
         side: BorderSide.none,
         shape: RoundedRectangleBorder(borderRadius: AppRadii.rPill),
-        padding: EdgeInsets.symmetric(horizontal: AppSpacing.md.w, vertical: AppSpacing.xs.h),
+        padding: EdgeInsets.symmetric(
+            horizontal: AppSpacing.md.w, vertical: AppSpacing.xs.h),
       ),
-
       dividerTheme: DividerThemeData(
         color: isLight ? AppColor.divider : AppColor.darkBorder,
         thickness: 1,
         space: AppSpacing.lg,
       ),
-
       progressIndicatorTheme: ProgressIndicatorThemeData(color: scheme.primary),
     );
   }

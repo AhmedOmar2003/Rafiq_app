@@ -35,7 +35,8 @@ class AppStateView extends StatelessWidget {
   final VoidCallback? onAction;
   final bool compact;
 
-  factory AppStateView.empty({String? title, String? message, VoidCallback? onAction}) =>
+  factory AppStateView.empty(
+          {String? title, String? message, VoidCallback? onAction}) =>
       AppStateView(
         icon: Icons.inbox_outlined,
         title: title ?? AppCopy.emptyResultsTitle,
@@ -44,7 +45,8 @@ class AppStateView extends StatelessWidget {
         onAction: onAction,
       );
 
-  factory AppStateView.search({String? title, String? message, VoidCallback? onAction}) =>
+  factory AppStateView.search(
+          {String? title, String? message, VoidCallback? onAction}) =>
       AppStateView(
         icon: Icons.search_off_rounded,
         title: title ?? AppCopy.emptySearchTitle,
@@ -53,7 +55,8 @@ class AppStateView extends StatelessWidget {
         onAction: onAction,
       );
 
-  factory AppStateView.error({String? title, String? message, VoidCallback? onAction}) =>
+  factory AppStateView.error(
+          {String? title, String? message, VoidCallback? onAction}) =>
       AppStateView(
         icon: Icons.sentiment_dissatisfied_rounded,
         iconColor: AppColor.error,
@@ -89,7 +92,9 @@ class AppStateView extends StatelessWidget {
                 color: iconBg ?? AppColor.sand200,
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: (compact ? 34 : 44).sp, color: iconColor ?? AppColor.primary),
+              child: Icon(icon,
+                  size: (compact ? 34 : 44).sp,
+                  color: iconColor ?? AppColor.primary),
             ),
             gapV(AppSpacing.xl),
             Text(title, textAlign: TextAlign.center, style: AppText.headingSm),
