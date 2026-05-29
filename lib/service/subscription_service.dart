@@ -175,27 +175,62 @@ class SubscriptionService {
   //
   // Remove the call site once the webhook flips real entitlement rows.
 
-  /// Synthesize an entitlement from a catalog plan and publish it locally.
-  /// Returns the entitlement that is now live for the rest of the session.
-  ProviderEntitlement applyDemoUpgrade({
+  /// Transition the caller to [plan].
+  ///
+  /// Goes through the `apply_demo_subscription` SECURITY DEFINER RPC so the
+  /// chosen tier becomes a real row in `provider_subscriptions`. That keeps
+  /// `provider_current_plan` and the local notifier in sync — the bug where
+  /// the plan reverted to Free on the next bootstrap (because the DB still
+  /// reported Free) is fixed at the source.
+  ///
+  /// Returns the entitlement that is now live for the session. UI updates
+  /// instantly — the round-trip to the DB happens in the background and only
+  /// gates persistence, not the local broadcast.
+  Future<ProviderEntitlement> applyDemoUpgrade({
     required SubscriptionPlan plan,
+    bool yearly = false,
+    String? providerId,
     Duration period = const Duration(days: 30),
-  }) {
+  }) async {
     final now = DateTime.now();
     final ent = _buildDemoEntitlement(plan: plan, periodEnd: now.add(period));
-    // Reset cache markers so the next real `loadEntitlement` call refreshes
-    // from Supabase (production wins over demo).
+
+    // 1. Publish locally first so the UI flips immediately.
+    final pid = providerId ?? _entitlementProviderId;
     _entitlementFetchedAt = now;
-    _entitlementProviderId = _entitlementProviderId ?? 'demo';
+    if (pid != null && pid != 'demo') _entitlementProviderId = pid;
     entitlement.value = ent;
     unawaited(_persistDemoTier(plan.tier, ent.periodEnd));
+
+    // 2. Persist to the DB so the row is real. If this fails (offline,
+    //    auth race), the local override + SharedPrefs still hold until the
+    //    next online attempt.
+    try {
+      await ApiService.ensureSupabaseInitialized();
+      await _client.rpc<dynamic>(
+        'apply_demo_subscription',
+        params: {'_tier': plan.tier.wire, '_yearly': yearly},
+      );
+    } catch (e) {
+      if (kDebugMode) debugPrint('apply_demo_subscription RPC failed: $e');
+    }
+
     return ent;
   }
 
-  /// Reset to Free baseline (demo helper for "downgrade" or "cancel").
-  void applyDemoFree() {
+  /// Drop to Free both locally and in the DB (cancels any active row).
+  Future<void> applyDemoFree({String? providerId}) async {
     entitlement.value = ProviderEntitlement.freeFallback;
     unawaited(_clearDemoTier());
+    try {
+      await ApiService.ensureSupabaseInitialized();
+      await _client.rpc<dynamic>(
+        'apply_demo_subscription',
+        params: {'_tier': 'free', '_yearly': false},
+      );
+    } catch (e) {
+      if (kDebugMode) debugPrint('apply_demo_subscription(free) failed: $e');
+    }
   }
 
   /// Restore a previously persisted demo upgrade. Idempotent — safe to call
@@ -239,6 +274,13 @@ class SubscriptionService {
       }
 
       entitlement.value = _buildDemoEntitlement(plan: plan, periodEnd: end);
+
+      // Reconcile with the DB only when needed. If the previous upgrade
+      // crashed between the local publish and the RPC, the DB still
+      // reports a different (usually Free) tier. We check first to avoid
+      // resetting period_start on every app launch — the RPC cancels and
+      // re-inserts, which would restart the 30-day timer each restore.
+      unawaited(_reconcilePersistedTierWithDb(tier));
     } catch (_) {
       // Don't surface a startup failure for a demo nicety.
     } finally {
@@ -272,6 +314,45 @@ class SubscriptionService {
       periodEnd: periodEnd,
       cancelAtPeriodEnd: false,
     );
+  }
+
+  /// Read the live tier from `provider_current_plan` and, if it doesn't
+  /// match the persisted demo tier, replay the RPC. Cheap no-op in the
+  /// happy path (one SELECT, no write).
+  Future<void> _reconcilePersistedTierWithDb(PlanTier persistedTier) async {
+    try {
+      await ApiService.ensureSupabaseInitialized();
+      final uid = _client.auth.currentUser?.id;
+      if (uid == null) return; // Not signed in yet — nothing to reconcile.
+
+      final row = await _client
+          .from('provider_current_plan')
+          .select('tier, provider_id')
+          .maybeSingle();
+
+      final dbTierStr = row?['tier'] as String?;
+      final dbTier = dbTierStr == null
+          ? PlanTier.free
+          : PlanTierX.fromWire(dbTierStr);
+
+      if (dbTier == persistedTier) return; // Already in sync.
+
+      // Mismatch → the last upgrade never persisted. Re-issue the RPC.
+      await _client.rpc<dynamic>(
+        'apply_demo_subscription',
+        params: {'_tier': persistedTier.wire, '_yearly': false},
+      );
+      if (kDebugMode) {
+        debugPrint(
+          'Reconciled persisted demo tier ${persistedTier.wire} '
+          'against DB tier ${dbTier.wire}.',
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('reconcile persisted demo tier failed: $e');
+      }
+    }
   }
 
   Future<void> _persistDemoTier(PlanTier tier, DateTime? end) async {

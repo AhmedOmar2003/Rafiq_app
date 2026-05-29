@@ -145,7 +145,7 @@ class _ProfilePageState extends State<ProfilePage> {
       // After the RPC the auth row is gone — drop every client-side
       // singleton so a fresh signup starts from zero.
       await UserRoleStore.instance.clear();
-      SubscriptionService.instance.applyDemoFree();
+      await SubscriptionService.instance.applyDemoFree();
       if (!mounted) return;
       AppFeedback.success(AppCopy.deleteAccountSuccess);
       Navigator.of(context).pushAndRemoveUntil(

@@ -87,9 +87,16 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
     // Free plan path -------------------------------------------------------
     if (plan.tier == PlanTier.free) {
-      SubscriptionService.instance.applyDemoFree();
-      if (widget.onboarding) {
-        await widget.onPlanChosen?.call();
+      setState(() => _busy = true);
+      try {
+        await SubscriptionService.instance
+            .applyDemoFree(providerId: widget.providerId);
+        if (!mounted) return;
+        if (widget.onboarding) {
+          await widget.onPlanChosen?.call();
+        }
+      } finally {
+        if (mounted) setState(() => _busy = false);
       }
       return;
     }
@@ -104,7 +111,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
     setState(() => _busy = true);
     try {
-      SubscriptionService.instance.applyDemoUpgrade(plan: plan);
+      await SubscriptionService.instance.applyDemoUpgrade(
+        plan: plan,
+        yearly: _yearly,
+        providerId: widget.providerId,
+      );
       if (!mounted) return;
       await _UpgradeSuccessOverlay.show(
         context,
@@ -183,10 +194,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                             await SubscriptionService.instance
                                 .cancelAtPeriodEnd(providerId);
                           } catch (_) {
-                            SubscriptionService.instance.applyDemoFree();
+                            await SubscriptionService.instance
+                                .applyDemoFree(providerId: providerId);
                           }
                         } else {
-                          SubscriptionService.instance.applyDemoFree();
+                          await SubscriptionService.instance.applyDemoFree();
                         }
                       },
                     ),
