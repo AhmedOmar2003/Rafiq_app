@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -54,6 +57,36 @@ class DetailsItem extends StatelessWidget {
     return trimmed;
   }
 
+  Widget _buildDetailImage(BuildContext context) {
+    final normalized = _normalizeImageUrl(model.image);
+    if (normalized.isEmpty) {
+      return _buildPlaceholder();
+    }
+
+    if (normalized.startsWith('http')) {
+      return CachedNetworkImage(
+        url: normalized,
+        fit: BoxFit.cover,
+        placeholder: (_) => Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppColor.primary),
+          ),
+        ),
+        errorWidget: (_) => _buildPlaceholder(),
+      );
+    }
+
+    if (!kIsWeb) {
+      return Image.file(
+        File(normalized),
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _buildPlaceholder(),
+      );
+    }
+
+    return _buildPlaceholder();
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -79,19 +112,7 @@ class DetailsItem extends StatelessWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  model.image.isNotEmpty
-                      ? CachedNetworkImage(
-                          url: _normalizeImageUrl(model.image),
-                          fit: BoxFit.cover,
-                          placeholder: (_) => Center(
-                            child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                  AppColor.primary),
-                            ),
-                          ),
-                          errorWidget: (_) => _buildPlaceholder(),
-                        )
-                      : _buildPlaceholder(),
+                  _buildDetailImage(context),
                   // Gradient overlay
                   Positioned(
                     bottom: 0,
