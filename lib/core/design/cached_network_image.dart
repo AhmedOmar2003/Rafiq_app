@@ -85,7 +85,7 @@ class _CachedNetworkImageState extends State<CachedNetworkImage> {
   // Cap decode resolution at 2× the displayed pixel size — high-DPR retina
   // sharp, no waste. Falls back to the screen width for full-bleed heroes.
   int? _cacheDimension(double? logical, double dpr) {
-    if (logical == null) return null;
+    if (logical == null || !logical.isFinite || logical <= 0) return null;
     return (logical * dpr).round();
   }
 

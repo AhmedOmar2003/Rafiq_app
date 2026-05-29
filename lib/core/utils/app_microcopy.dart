@@ -238,6 +238,13 @@ class AppCopy {
   static const subStatusExpired = 'منتهي';
   static const subUpgradeInProgress = 'تم استلام طلبك، هنبعتلك تأكيد على بريدك.';
 
+  // --- Onboarding (provider plan picker) --------------------------------------
+  static const subOnboardingTitle = 'اختار خطتك';
+  static const subOnboardingSubtitle =
+      'كل خطة بتفتحلك مميزات أكتر لمكانك. تقدر تغيّر في أي وقت.';
+  static const subOnboardingFreeCta = 'كمّل بالخطة المجانية';
+  static const subOnboardingContinueCta = 'يلا نضيف مكانك';
+
   // --- Demo upgrade flow -------------------------------------------------------
   static const subConfirmTitle = 'أكّد اشتراكك';
   static const subConfirmSubtitlePrefix = 'هتنضم لخطة';
@@ -252,6 +259,75 @@ class AppCopy {
   static const subDemoBadge = 'تجربة عرض';
   static const subDemoExplainer =
       'ده وضع تجريبي — مفيش دفع حقيقي حتى الربط ببوابة الدفع.';
+
+  // --- Provider hub ------------------------------------------------------------
+  static const hubTitle = 'لوحة المزود';
+  static const hubGreetingPrefix = 'أهلاً بيك';
+  static const hubCurrentPlan = 'خطتك الحالية';
+  static const hubManagePlan = 'إدارة الخطة';
+  static const hubKpiPlaces = 'أماكن';
+  static const hubKpiImages = 'صور لكل مكان';
+  static const hubKpiAnalytics = 'تحليلات';
+  static const hubFeatTitleAnalytics = 'تحليلات الأداء';
+  static const hubFeatBodyAnalytics =
+      'شوف ناس بتزور صفحتك إزاي والوقت المفضّل ليهم.';
+  static const hubFeatTitlePromotions = 'إعلانات وعروض';
+  static const hubFeatBodyPromotions =
+      'اعمل عروض ترويجية تظهر في الواجهة الرئيسية للزوار.';
+  static const hubFeatTitlePlaces = 'أماكنك';
+  static const hubFeatBodyPlaces = 'إدارة الأماكن، التعديل، وإضافة جديد.';
+  static const hubFeatTitleSubscription = 'الاشتراك';
+  static const hubFeatBodySubscription =
+      'رقّي خطتك في أي وقت أو إلغي الاشتراك بسهولة.';
+  static const hubLockedTag = 'يفتح مع برو';
+  static const hubLockedMax = 'يفتح مع ماكس';
+
+  // --- Analytics screen --------------------------------------------------------
+  static const anaTitle = 'تحليلاتك';
+  static const anaLast30Days = 'آخر 30 يوم';
+  static const anaProfileViews = 'مشاهدات الملف';
+  static const anaPlaceOpens = 'فتح الأماكن';
+  static const anaFavorites = 'إضافة للمفضلة';
+  static const anaMapClicks = 'فتح الخريطة';
+  static const anaLockedTitle = 'فعّل تحليلات الأداء';
+  static const anaLockedBody =
+      'متاحة لخطة برو أو ماكس — شوف ناس بتزور صفحتك من فين، وكام مرة بيفتحوا أماكنك.';
+  static const anaUpgradeCta = 'رقّي لـ برو';
+
+  // --- Promotions screen -------------------------------------------------------
+  static const promoTitle = 'إعلاناتك';
+  static const promoEmptyTitle = 'لسه ما عملتش حملة';
+  static const promoEmptyBody =
+      'اعمل حملة "Featured" أو عرض خصم — هتظهر في الواجهة الرئيسية وتجيب زوار جداد.';
+  static const promoCreateCta = 'اعمل حملة جديدة';
+  static const promoLockedTitle = 'الإعلانات تبدأ من خطة برو';
+  static const promoLockedBody =
+      'الإعلانات والعروض الترويجية ميزة بتساعدك تجيب زوار أكتر بسرعة.';
+
+  // --- Admin overview ----------------------------------------------------------
+  static const adminTitle = 'لوحة الإدارة';
+  static const adminProviders = 'المزودون';
+  static const adminAllPlans = 'كل الخطط';
+
+  // --- Delete account ----------------------------------------------------------
+  static const deleteAccountRow = 'حذف الحساب';
+  static const deleteAccountRowValue = 'حذف نهائي للحساب وبياناتك';
+  static const deleteAccountTitle = 'تأكيد حذف الحساب';
+  static const deleteAccountConfirm = 'احذف حسابي';
+  // Context-aware confirmation bodies (chosen at runtime by ProfilePage)
+  static const deleteAccountBodyRegular =
+      'هتمسح حسابك للأبد. كل تقييماتك ومفضلاتك هتروح. الإجراء ده مفيش رجوع منه.';
+  static const deleteAccountBodyProviderFree =
+      'حسابك ومكانك ومراجعاتك هيتمسحوا للأبد. الإجراء ده مفيش رجوع منه.';
+  static const deleteAccountBodyProviderPaidPrefix =
+      'انت مشترك حالياً في خطة ';
+  static const deleteAccountBodyProviderPaidSuffix =
+      '. الاشتراك ده هيتلغى تلقائياً. حسابك ومكانك وكل بياناتك هيتمسحوا للأبد. الإجراء ده مفيش رجوع منه.';
+  static const deleteAccountSuccess = 'اتمسح حسابك بنجاح.';
+  static const deleteAccountError =
+      'معرفناش نمسح حسابك دلوقتي، جرّب تاني بعد شوية.';
+  static const deleteAccountReasonHint =
+      'لو حابب تقولنا السبب (اختياري)';
 
   // --- Change password dialog --------------------------------------------------
   static const changePwTitle = 'تغيير كلمة السر';

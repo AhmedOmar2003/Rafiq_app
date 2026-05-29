@@ -11,6 +11,8 @@ import 'package:rafiq_app/service/analytics_tracker.dart';
 import 'package:rafiq_app/service/api_service.dart';
 import 'package:rafiq_app/service/image_disk_cache.dart';
 import 'package:rafiq_app/service/profile_image_store.dart';
+import 'package:rafiq_app/service/subscription_service.dart';
+import 'package:rafiq_app/service/user_role_store.dart';
 import 'package:rafiq_app/view/pages/cubit.dart';
 
 void main() async {
@@ -51,6 +53,14 @@ void main() async {
 
   // Analytics: attach the tracker so it flushes on background + every 5s.
   AnalyticsTracker.instance.attach();
+
+  // Restore any persisted demo subscription so the UI keeps the chosen
+  // tier across app restarts until the real payment webhook takes over.
+  unawaited(SubscriptionService.instance.restorePersistedDemo());
+
+  // Restore the provider-track flag so the Profile shows the right tiles
+  // on first frame.
+  unawaited(UserRoleStore.instance.ensureLoaded());
 
   // ---------------------------------------------------------------------------
   // Image cache budget.

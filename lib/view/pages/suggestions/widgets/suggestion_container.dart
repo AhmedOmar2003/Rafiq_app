@@ -291,7 +291,6 @@ class _SmartImage extends StatelessWidget {
     if (normalized.startsWith('http')) {
       return CachedNetworkImage(
         url: normalized,
-        width: double.infinity,
         height: CustomSuggestionContainer._heroHeight.h,
         fit: BoxFit.cover,
         placeholder: (_) => const _ImageLoadingPlaceholder(),

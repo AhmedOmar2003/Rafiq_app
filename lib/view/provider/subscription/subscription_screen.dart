@@ -30,10 +30,28 @@ import 'package:rafiq_app/service/subscription_service.dart';
 ///   * Upgrade CTA fires `startCheckout` and shows a soft success toast —
 ///     the real entitlement flip happens after the webhook lands.
 class SubscriptionScreen extends StatefulWidget {
-  const SubscriptionScreen({super.key, required this.providerId});
+  const SubscriptionScreen({
+    super.key,
+    this.providerId,
+    this.onboarding = false,
+    this.onPlanChosen,
+  });
 
-  /// Resolved provider id of the signed-in user.
-  final String providerId;
+  /// Resolved provider id of the signed-in user. `null` for users who haven't
+  /// onboarded as a provider yet — the screen still shows the catalog as
+  /// marketing material but disables the upgrade CTAs.
+  final String? providerId;
+
+  /// When true the page becomes the *first* step in the provider onboarding:
+  /// a plan picker. The Free plan card gets a real CTA, and any successful
+  /// selection fires [onPlanChosen] (or pops to the previous route) so the
+  /// caller can continue to the add-place screen.
+  final bool onboarding;
+
+  /// Called after the user successfully picks any plan (Free, Pro, or Max)
+  /// while in onboarding mode. The screen does NOT pop itself; the caller
+  /// decides whether to push the next step or replace the route.
+  final VoidCallback? onPlanChosen;
 
   @override
   State<SubscriptionScreen> createState() => _SubscriptionScreenState();
@@ -43,28 +61,62 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   bool _yearly = true;
   bool _busy = false;
 
+  bool get _hasProvider => widget.providerId != null;
+
   @override
   void initState() {
     super.initState();
     final svc = SubscriptionService.instance;
     svc.loadCatalog();
-    svc.loadEntitlement(widget.providerId);
+    final pid = widget.providerId;
+    if (pid != null) svc.loadEntitlement(pid);
   }
 
-  Future<void> _onUpgrade(PlanTier targetTier) async {
+  /// DEMO upgrade flow.
+  ///
+  /// 1. Opens a confirm sheet listing features + amount (paid plans only).
+  /// 2. On confirm, applies the entitlement *locally* via
+  ///    [SubscriptionService.applyDemoUpgrade] so every screen reacts
+  ///    immediately (current-plan badge, manage section, etc.).
+  /// 3. Shows a celebratory full-screen success overlay.
+  /// 4. In onboarding mode, fires [widget.onPlanChosen] so the caller can
+  ///    push the next step (typically the add-place screen).
+  ///
+  /// When the real payment gateway is wired, replace step 2 with the
+  /// `startCheckout` RPC — the rest of the UX stays the same.
+  Future<void> _onUpgrade(SubscriptionPlan plan) async {
     if (_busy) return;
+
+    // Free plan path -------------------------------------------------------
+    if (plan.tier == PlanTier.free) {
+      SubscriptionService.instance.applyDemoFree();
+      if (widget.onboarding) {
+        widget.onPlanChosen?.call();
+      }
+      return;
+    }
+
+    // Paid plan path -------------------------------------------------------
+    final confirmed = await _ConfirmUpgradeSheet.show(
+      context,
+      plan: plan,
+      yearly: _yearly,
+    );
+    if (confirmed != true || !mounted) return;
+
     setState(() => _busy = true);
     try {
-      await SubscriptionService.instance.startCheckout(
-        providerId: widget.providerId,
-        targetTier: targetTier,
-        yearly: _yearly,
+      SubscriptionService.instance.applyDemoUpgrade(plan: plan);
+      if (!mounted) return;
+      await _UpgradeSuccessOverlay.show(
+        context,
+        plan: plan,
+        ctaLabel: widget.onboarding
+            ? AppCopy.subOnboardingContinueCta
+            : AppCopy.subSuccessCta,
       );
       if (!mounted) return;
-      AppFeedback.success(AppCopy.subUpgradeInProgress);
-    } catch (e) {
-      if (!mounted) return;
-      AppFeedback.error(e.toString().replaceFirst('Exception: ', ''));
+      if (widget.onboarding) widget.onPlanChosen?.call();
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -72,8 +124,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final headerTitle =
+        widget.onboarding ? AppCopy.subOnboardingTitle : AppCopy.subTitle;
     return AppPageScaffold(
-      header: const AppPageHeader(title: AppCopy.subTitle),
+      header: AppPageHeader(title: headerTitle),
       body: ValueListenableBuilder<List<SubscriptionPlan>>(
         valueListenable: SubscriptionService.instance.catalog,
         builder: (_, plans, __) {
@@ -85,6 +139,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           return ValueListenableBuilder<ProviderEntitlement>(
             valueListenable: SubscriptionService.instance.entitlement,
             builder: (_, ent, __) {
+              // The service initialises with `freeFallback`, so this is safe
+              // even when no provider id has been resolved yet. Demo upgrades
+              // publish here too, which is why the UI reacts instantly to a
+              // successful confirm.
               return ListView(
                 padding: EdgeInsets.fromLTRB(
                   AppSpacing.xxl.w,
@@ -93,7 +151,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   AppSpacing.huge.h,
                 ),
                 children: [
-                  _Hero(currentTier: ent.tier),
+                  _Hero(currentTier: ent.tier, onboarding: widget.onboarding),
                   gapV(AppSpacing.xl),
                   _BillingToggle(
                     yearly: _yearly,
@@ -110,13 +168,25 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   ),
                   gapV(AppSpacing.lg),
                   _ComparisonTable(plans: plans),
-                  if (!ent.tier.name.startsWith('free')) ...[
+                  if (ent.tier != PlanTier.free) ...[
                     gapV(AppSpacing.huge),
                     _ManageSection(
                       entitlement: ent,
                       onCancel: () async {
-                        await SubscriptionService.instance
-                            .cancelAtPeriodEnd(widget.providerId);
+                        // In demo mode just drop to Free locally. Once the
+                        // payment webhook is live, swap this for the real
+                        // `cancelAtPeriodEnd` call below.
+                        final providerId = widget.providerId;
+                        if (providerId != null) {
+                          try {
+                            await SubscriptionService.instance
+                                .cancelAtPeriodEnd(providerId);
+                          } catch (_) {
+                            SubscriptionService.instance.applyDemoFree();
+                          }
+                        } else {
+                          SubscriptionService.instance.applyDemoFree();
+                        }
                       },
                     ),
                   ],
@@ -153,7 +223,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             isCurrent: plan.tier == ent.tier,
             isRecommended: plan.tier == PlanTier.pro,
             disabled: _busy,
-            onCta: () => _onUpgrade(plan.tier),
+            onboarding: widget.onboarding,
+            onCta: () => _onUpgrade(plan),
           ),
         ),
       );
@@ -167,19 +238,23 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 // ===========================================================================
 
 class _Hero extends StatelessWidget {
-  const _Hero({required this.currentTier});
+  const _Hero({required this.currentTier, this.onboarding = false});
 
   final PlanTier currentTier;
+  final bool onboarding;
 
   @override
   Widget build(BuildContext context) {
+    final title = onboarding ? AppCopy.subOnboardingTitle : AppCopy.subTitle;
+    final subtitle =
+        onboarding ? AppCopy.subOnboardingSubtitle : AppCopy.subSubtitle;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(AppCopy.subTitle, style: AppText.displayMd),
+        Text(title, style: AppText.displayMd),
         gapV(AppSpacing.sm),
         Text(
-          AppCopy.subSubtitle,
+          subtitle,
           style: AppText.bodyLg.copyWith(color: AppColor.textSecondary),
         ),
       ],
@@ -314,6 +389,7 @@ class _PlanCard extends StatelessWidget {
     required this.isRecommended,
     required this.disabled,
     required this.onCta,
+    this.onboarding = false,
   });
 
   final SubscriptionPlan plan;
@@ -322,6 +398,7 @@ class _PlanCard extends StatelessWidget {
   final bool isRecommended;
   final bool disabled;
   final VoidCallback onCta;
+  final bool onboarding;
 
   @override
   Widget build(BuildContext context) {
@@ -393,9 +470,20 @@ class _PlanCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: AppButton(
-              text: isCurrent ? AppCopy.subManage : plan.ctaLabel,
-              onPress: isCurrent || disabled ? () {} : onCta,
-              isEnabled: !disabled && !isCurrent,
+              // During onboarding the free card needs a real CTA so the user
+              // can confirm their choice and move on. Outside onboarding it
+              // stays as "إدارة الاشتراك" when current.
+              text: () {
+                if (onboarding && plan.isFree) {
+                  return AppCopy.subOnboardingFreeCta;
+                }
+                if (isCurrent && !onboarding) return AppCopy.subManage;
+                return plan.ctaLabel;
+              }(),
+              onPress: disabled
+                  ? () {}
+                  : (isCurrent && !onboarding ? () {} : onCta),
+              isEnabled: !disabled && (onboarding || !isCurrent),
               variant: isRecommended
                   ? AppButtonVariant.primary
                   : AppButtonVariant.outline,
@@ -671,6 +759,388 @@ class _Row extends StatelessWidget {
           style: AppText.labelMd.copyWith(fontWeight: FontWeight.w700),
         ),
       ],
+    );
+  }
+}
+
+// ===========================================================================
+// Confirm-upgrade bottom sheet
+// ===========================================================================
+
+/// Premium bottom sheet that summarises the plan being purchased: title,
+/// price, benefits list, demo notice, confirm/cancel buttons.
+///
+/// Returns `true` from [show] when the user confirms, `false` / `null`
+/// otherwise.
+class _ConfirmUpgradeSheet extends StatelessWidget {
+  const _ConfirmUpgradeSheet({required this.plan, required this.yearly});
+
+  final SubscriptionPlan plan;
+  final bool yearly;
+
+  static Future<bool?> show(
+    BuildContext context, {
+    required SubscriptionPlan plan,
+    required bool yearly,
+  }) {
+    return showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColor.surfaceCard,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppRadii.topOnly(AppRadii.xxl),
+      ),
+      builder: (_) => _ConfirmUpgradeSheet(plan: plan, yearly: yearly),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final price = yearly ? plan.priceYearlyEgp : plan.priceMonthlyEgp;
+    final per = yearly ? AppCopy.subPerYear : AppCopy.subPerMonth;
+    return SafeArea(
+      top: false,
+      child: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.xxl.w,
+          AppSpacing.lg.h,
+          AppSpacing.xxl.w,
+          AppSpacing.xxl.h,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 40.w,
+                height: 4.h,
+                decoration: BoxDecoration(
+                  color: AppColor.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            gapV(AppSpacing.xl),
+            Row(
+              children: [
+                Container(
+                  width: 56.w,
+                  height: 56.w,
+                  decoration: BoxDecoration(
+                    color: plan.accentColor.withOpacity(0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.workspace_premium_rounded,
+                    color: plan.accentColor,
+                    size: 30.sp,
+                  ),
+                ),
+                gapH(AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(AppCopy.subConfirmTitle, style: AppText.headingSm),
+                      gapV(AppSpacing.xs / 2),
+                      Text(
+                        '${AppCopy.subConfirmSubtitlePrefix} ${plan.displayName}',
+                        style: AppText.bodyMd
+                            .copyWith(color: AppColor.textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            gapV(AppSpacing.xl),
+            // Price row -----------------------------------------------------
+            Container(
+              padding: EdgeInsets.all(AppSpacing.lg.w),
+              decoration: BoxDecoration(
+                color: AppColor.surface,
+                borderRadius: AppRadii.rLg,
+                border: Border.all(color: AppColor.border),
+              ),
+              child: Row(
+                children: [
+                  Text(AppCopy.subConfirmPriceLabel,
+                      style: AppText.bodyMd
+                          .copyWith(color: AppColor.textSecondary)),
+                  const Spacer(),
+                  Text(
+                    '$price ج.م ${per.trim()}',
+                    style: AppText.titleLg.copyWith(
+                      color: plan.accentColor,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            gapV(AppSpacing.xl),
+            Text(AppCopy.subConfirmBenefitsHeading, style: AppText.titleMd),
+            gapV(AppSpacing.md),
+            ..._benefitBullets(),
+            gapV(AppSpacing.xl),
+            // Demo notice ---------------------------------------------------
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.md.w,
+                vertical: AppSpacing.sm.h,
+              ),
+              decoration: BoxDecoration(
+                color: AppColor.warningBg,
+                borderRadius: AppRadii.rMd,
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.science_outlined,
+                      color: AppColor.warning, size: 18.sp),
+                  gapH(AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      AppCopy.subDemoExplainer,
+                      style: AppText.bodySm
+                          .copyWith(color: AppColor.warning),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            gapV(AppSpacing.xl),
+            SizedBox(
+              width: double.infinity,
+              child: AppButton(
+                text: AppCopy.subConfirmCta,
+                onPress: () => Navigator.pop(context, true),
+              ),
+            ),
+            gapV(AppSpacing.sm),
+            SizedBox(
+              width: double.infinity,
+              child: AppButton(
+                text: AppCopy.cancel,
+                onPress: () => Navigator.pop(context, false),
+                variant: AppButtonVariant.outline,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _benefitBullets() {
+    String unlimited(int v) =>
+        v >= 999 ? AppCopy.subFeatureUnlimited : v.toString();
+
+    final benefits = <String>[
+      '${AppCopy.subFeatGallery}: ${unlimited(plan.maxGalleryImages)}',
+      if (plan.maxVideos > 0)
+        '${AppCopy.subFeatVideos}: ${unlimited(plan.maxVideos)}',
+      if (plan.isVerified) AppCopy.subFeatVerified,
+      if (plan.hasAnalyticsBasic) AppCopy.subFeatAnalytics,
+      if (plan.hasPromotions) AppCopy.subFeatPromotions,
+      if (plan.hasFeaturedSlot) AppCopy.subFeatFeatured,
+      if (plan.hasPushCampaigns) AppCopy.subFeatPush,
+      if (plan.hasHomepageSpotlight) AppCopy.subFeatSpotlight,
+      if (plan.hasPrioritySupport) AppCopy.subFeatSupport,
+    ];
+
+    return benefits.map((b) {
+      return Padding(
+        padding: EdgeInsets.only(bottom: AppSpacing.sm.h),
+        child: Row(
+          children: [
+            Icon(Icons.check_circle_rounded,
+                color: AppColor.success, size: 20.sp),
+            gapH(AppSpacing.sm),
+            Expanded(child: Text(b, style: AppText.bodyMd)),
+          ],
+        ),
+      );
+    }).toList();
+  }
+}
+
+// ===========================================================================
+// Celebratory success overlay
+// ===========================================================================
+
+/// Full-screen modal shown after a demo "subscription" lands. Has a soft
+/// scaling + opacity entrance so the moment feels rewarding rather than
+/// transactional.
+class _UpgradeSuccessOverlay extends StatefulWidget {
+  const _UpgradeSuccessOverlay({required this.plan, required this.ctaLabel});
+  final SubscriptionPlan plan;
+  final String ctaLabel;
+
+  static Future<void> show(
+    BuildContext context, {
+    required SubscriptionPlan plan,
+    String? ctaLabel,
+  }) {
+    return Navigator.of(context).push(
+      PageRouteBuilder<void>(
+        opaque: false,
+        barrierColor: Colors.black.withOpacity(0.5),
+        barrierDismissible: false,
+        transitionDuration: AppMotion.base,
+        pageBuilder: (_, __, ___) => _UpgradeSuccessOverlay(
+          plan: plan,
+          ctaLabel: ctaLabel ?? AppCopy.subSuccessCta,
+        ),
+        transitionsBuilder: (_, a, __, child) =>
+            FadeTransition(opacity: a, child: child),
+      ),
+    );
+  }
+
+  @override
+  State<_UpgradeSuccessOverlay> createState() =>
+      _UpgradeSuccessOverlayState();
+}
+
+class _UpgradeSuccessOverlayState extends State<_UpgradeSuccessOverlay>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctl;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+    _scale = CurvedAnimation(parent: _ctl, curve: Curves.elasticOut);
+    _ctl.forward();
+  }
+
+  @override
+  void dispose() {
+    _ctl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final plan = widget.plan;
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Center(
+        child: Padding(
+          padding: EdgeInsets.all(AppSpacing.xxl.w),
+          child: ScaleTransition(
+            scale: _scale,
+            child: Container(
+              padding: EdgeInsets.all(AppSpacing.xxl.w),
+              decoration: BoxDecoration(
+                color: AppColor.surfaceCard,
+                borderRadius: AppRadii.rXl,
+                boxShadow: AppShadows.level3,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Halo + check ------------------------------------------
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Container(
+                        width: 120.w,
+                        height: 120.w,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: plan.accentColor.withOpacity(0.08),
+                        ),
+                      ),
+                      Container(
+                        width: 88.w,
+                        height: 88.w,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: plan.accentColor.withOpacity(0.18),
+                        ),
+                      ),
+                      Container(
+                        width: 64.w,
+                        height: 64.w,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: plan.accentColor,
+                          boxShadow: AppShadows.primaryGlow,
+                        ),
+                        child: Icon(
+                          Icons.check_rounded,
+                          color: AppColor.white,
+                          size: 36.sp,
+                        ),
+                      ),
+                    ],
+                  ),
+                  gapV(AppSpacing.xl),
+                  Text(
+                    '${AppCopy.subSuccessTitlePrefix} '
+                    '${plan.displayName} '
+                    '${AppCopy.subSuccessTitleSuffix}',
+                    textAlign: TextAlign.center,
+                    style: AppText.headingMd.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  gapV(AppSpacing.md),
+                  Text(
+                    AppCopy.subSuccessBody,
+                    textAlign: TextAlign.center,
+                    style: AppText.bodyMd.copyWith(
+                      color: AppColor.textSecondary,
+                    ),
+                  ),
+                  gapV(AppSpacing.xl),
+                  if (plan.badgeLabel != null) ...[
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md.w,
+                        vertical: AppSpacing.sm.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: plan.accentColor.withOpacity(0.12),
+                        borderRadius: AppRadii.rPill,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.verified_rounded,
+                              color: plan.accentColor, size: 16.sp),
+                          gapH(AppSpacing.xs),
+                          Text(
+                            plan.badgeLabel!,
+                            style: AppText.labelSm.copyWith(
+                              color: plan.accentColor,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    gapV(AppSpacing.xl),
+                  ],
+                  SizedBox(
+                    width: double.infinity,
+                    child: AppButton(
+                      text: widget.ctaLabel,
+                      onPress: () => Navigator.pop(context),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

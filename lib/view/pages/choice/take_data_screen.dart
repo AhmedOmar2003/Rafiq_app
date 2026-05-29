@@ -226,6 +226,41 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
     );
   }
 
+  /// Inline reminder of the active plan + current gallery usage. Reacts to
+  /// demo upgrades through [SubscriptionService.entitlement] so the cap
+  /// changes the moment a user "subscribes" on the pricing page.
+  Widget _buildEntitlementBanner() {
+    return ValueListenableBuilder<ProviderEntitlement>(
+      valueListenable: SubscriptionService.instance.entitlement,
+      builder: (_, ent, __) {
+        final used = _image == null ? 0 : 1;
+        return Container(
+          margin: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 0),
+          padding: EdgeInsets.symmetric(
+            horizontal: 16.w,
+            vertical: 12.h,
+          ),
+          decoration: BoxDecoration(
+            color: AppColor.surfaceCard,
+            borderRadius: AppRadii.rMd,
+            border: Border.all(color: AppColor.border),
+          ),
+          child: Row(
+            children: [
+              PlanBadge(tier: ent.tier),
+              const Spacer(),
+              EntitlementChip(
+                label: AppCopy.subFeatGallery,
+                used: used,
+                limit: ent.maxGalleryImages,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _pickImage() async {
     // Entitlement preflight — Free fallback is used while billing loads,
     // which always allows ≥1 image, so the form never freezes here.
@@ -274,6 +309,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
               child: Column(
                 children: [
                   _buildAppBar(),
+                  _buildEntitlementBanner(),
                   Expanded(
                     child: SingleChildScrollView(
                       physics: const BouncingScrollPhysics(),

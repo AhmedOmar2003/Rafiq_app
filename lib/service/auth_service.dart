@@ -416,6 +416,42 @@ class AuthService {
     return const <String, dynamic>{};
   }
 
+  /// Permanently deletes the caller's account.
+  ///
+  /// Calls the SECURITY DEFINER `delete_my_account(reason)` RPC which:
+  ///   1. Cancels any active subscription on the provider.
+  ///   2. Deletes the provider row (cascades to places, reviews, etc.).
+  ///   3. Deletes the auth.users row.
+  ///   4. Appends an audit entry in `account_deletions`.
+  ///
+  /// After the RPC returns, the Supabase session is invalid; this method
+  /// also issues a local `signOut()` so the client cache + prefs are
+  /// scrubbed before the caller navigates to login.
+  Future<Map<String, dynamic>> deleteMyAccount({String? reason}) async {
+    await ensureSupabaseInitialized();
+    Map<String, dynamic> summary = const {};
+    try {
+      final raw = await _client.rpc(
+        'delete_my_account',
+        params: {'_reason': reason},
+      );
+      if (raw is Map) {
+        summary = Map<String, dynamic>.from(raw);
+      }
+    } catch (e) {
+      throw Exception(_friendlyAuthError(e));
+    }
+    // Local cleanup runs even if the auth row was already invalidated.
+    try {
+      await _client.auth.signOut();
+    } catch (_) {/* the session may already be dead — fine */}
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+    } catch (_) {/* swallow */}
+    return summary;
+  }
+
   Future<void> signOut() async {
     await ensureSupabaseInitialized();
     await _client.auth.signOut();

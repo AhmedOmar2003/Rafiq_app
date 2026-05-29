@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rafiq_app/auth/login/login_screen.dart';
-import 'package:rafiq_app/view/home/home_view.dart';
-import 'package:rafiq_app/view/pages/choice/take_data_screen.dart';
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
+import 'package:rafiq_app/core/logic/helper_methods.dart';
+import 'package:rafiq_app/service/user_role_store.dart';
+import 'package:rafiq_app/view/home/home_view.dart';
+import 'package:rafiq_app/view/pages/choice/take_data_screen.dart';
+import 'package:rafiq_app/view/provider/subscription/subscription_screen.dart';
 import '../../../core/utils/app_microcopy.dart';
 import '../../../core/utils/assets.dart';
 
@@ -34,21 +37,49 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
   /// Tracks which option is selected (0 for regular user, 1 for service provider)
   int? _selectedIndex;
 
-  /// Navigate to the appropriate screen based on selection
-  void _handleNavigation() {
-    if (_selectedIndex == 0) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomeView()),
-      );
-    } else if (_selectedIndex == 1) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const AddPlaceScreen()),
-      );
-    } else {
+  /// Navigate to the appropriate screen based on selection.
+  ///
+  /// Flow:
+  ///   * Regular user → clear the provider flag → push HomeView.
+  ///   * Service provider → set the provider flag → push the subscription
+  ///     screen in *onboarding mode*. Picking any plan (Free, Pro, Max)
+  ///     fires `onPlanChosen`, which pushes the add-place screen.
+  ///
+  /// The provider step now reads like a normal funnel: choose track → choose
+  /// plan → fill business data → done. Plans drive the rest of the app, so
+  /// the user always knows what they unlocked.
+  Future<void> _handleNavigation() async {
+    if (_selectedIndex == null) {
       AppFeedback.warning(AppCopy.choicePickFirst);
       return;
+    }
+
+    if (_selectedIndex == 0) {
+      await UserRoleStore.instance.setProvider(false);
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeView()),
+      );
+    } else {
+      await UserRoleStore.instance.setProvider(true);
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SubscriptionScreen(
+            onboarding: true,
+            onPlanChosen: () {
+              // Once a plan is in place, send the provider straight into the
+              // add-place form. pushReplacement keeps the back stack clean.
+              Navigator.pushReplacement(
+                navigatorKey.currentContext ?? context,
+                MaterialPageRoute(builder: (_) => const AddPlaceScreen()),
+              );
+            },
+          ),
+        ),
+      );
     }
     widget.onNext();
   }

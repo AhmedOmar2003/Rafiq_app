@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:rafiq_app/models/subscription/plan.dart';
@@ -23,6 +24,12 @@ class SubscriptionService {
 
   static const Duration _entitlementTtl = Duration(seconds: 60);
 
+  /// SharedPreferences keys for the **demo** entitlement.
+  /// They survive an app kill so the user keeps seeing the plan they
+  /// "subscribed" to during the demo period.
+  static const _kDemoTierKey = 'demo_entitlement_tier';
+  static const _kDemoPeriodEndKey = 'demo_entitlement_period_end_iso';
+
   final ValueNotifier<List<SubscriptionPlan>> catalog =
       ValueNotifier<List<SubscriptionPlan>>(const []);
   final ValueNotifier<ProviderEntitlement> entitlement =
@@ -32,6 +39,7 @@ class SubscriptionService {
   Future<ProviderEntitlement>? _entitlementInFlight;
   DateTime? _entitlementFetchedAt;
   String? _entitlementProviderId;
+  bool _persistedRestored = false;
 
   SupabaseClient get _client => Supabase.instance.client;
 
@@ -151,5 +159,138 @@ class SubscriptionService {
       params: {'_provider_id': providerId},
     );
     await loadEntitlement(providerId, force: true);
+  }
+
+  // ---------------------------------------------------------------------------
+  // DEMO: in-memory entitlement override
+  // ---------------------------------------------------------------------------
+  //
+  // While the real payment gateway is being wired, the UI needs a way to
+  // *show* what changes for each tier. [applyDemoUpgrade] takes a catalog
+  // plan and synthesizes a [ProviderEntitlement] with a 30-day period and
+  // the limits/flags from the catalog, then broadcasts it through the same
+  // ValueNotifier the production path uses. This lets every screen react
+  // (badges, manage section, current-plan highlight) without touching the
+  // database.
+  //
+  // Remove the call site once the webhook flips real entitlement rows.
+
+  /// Synthesize an entitlement from a catalog plan and publish it locally.
+  /// Returns the entitlement that is now live for the rest of the session.
+  ProviderEntitlement applyDemoUpgrade({
+    required SubscriptionPlan plan,
+    Duration period = const Duration(days: 30),
+  }) {
+    final now = DateTime.now();
+    final ent = _buildDemoEntitlement(plan: plan, periodEnd: now.add(period));
+    // Reset cache markers so the next real `loadEntitlement` call refreshes
+    // from Supabase (production wins over demo).
+    _entitlementFetchedAt = now;
+    _entitlementProviderId = _entitlementProviderId ?? 'demo';
+    entitlement.value = ent;
+    unawaited(_persistDemoTier(plan.tier, ent.periodEnd));
+    return ent;
+  }
+
+  /// Reset to Free baseline (demo helper for "downgrade" or "cancel").
+  void applyDemoFree() {
+    entitlement.value = ProviderEntitlement.freeFallback;
+    unawaited(_clearDemoTier());
+  }
+
+  /// Restore a previously persisted demo upgrade. Idempotent — safe to call
+  /// at every app start. Resolves immediately if the catalog isn't loaded
+  /// yet (Free fallback stays until the catalog arrives, then this is
+  /// re-attempted).
+  Future<void> restorePersistedDemo() async {
+    if (_persistedRestored) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final tierStr = prefs.getString(_kDemoTierKey);
+      if (tierStr == null) {
+        _persistedRestored = true;
+        return;
+      }
+      final tier = PlanTierX.fromWire(tierStr);
+      if (tier == PlanTier.free) {
+        _persistedRestored = true;
+        return;
+      }
+
+      // Resolve the matching plan in the catalog (load it if not cached).
+      var plans = catalog.value;
+      if (plans.isEmpty) {
+        plans = await loadCatalog();
+      }
+      final plan =
+          plans.firstWhere((p) => p.tier == tier, orElse: () => plans.first);
+
+      final endIso = prefs.getString(_kDemoPeriodEndKey);
+      final end = endIso != null
+          ? DateTime.tryParse(endIso) ??
+              DateTime.now().add(const Duration(days: 30))
+          : DateTime.now().add(const Duration(days: 30));
+
+      // Expired demo → drop to free silently.
+      if (end.isBefore(DateTime.now())) {
+        await _clearDemoTier();
+        _persistedRestored = true;
+        return;
+      }
+
+      entitlement.value = _buildDemoEntitlement(plan: plan, periodEnd: end);
+    } catch (_) {
+      // Don't surface a startup failure for a demo nicety.
+    } finally {
+      _persistedRestored = true;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Internal helpers
+  // ---------------------------------------------------------------------------
+
+  ProviderEntitlement _buildDemoEntitlement({
+    required SubscriptionPlan plan,
+    required DateTime? periodEnd,
+  }) {
+    return ProviderEntitlement(
+      tier: plan.tier,
+      maxGalleryImages: plan.maxGalleryImages,
+      maxVideos: plan.maxVideos,
+      maxPlaces: plan.maxPlaces,
+      maxCoverImages: plan.maxCoverImages,
+      isVerified: plan.isVerified,
+      hasAnalyticsBasic: plan.hasAnalyticsBasic,
+      hasAnalyticsPro: plan.hasAnalyticsPro,
+      hasPromotions: plan.hasPromotions,
+      hasFeaturedSlot: plan.hasFeaturedSlot,
+      hasPushCampaigns: plan.hasPushCampaigns,
+      hasHomepageSpotlight: plan.hasHomepageSpotlight,
+      hasPrioritySupport: plan.hasPrioritySupport,
+      badgeLabel: plan.badgeLabel,
+      periodEnd: periodEnd,
+      cancelAtPeriodEnd: false,
+    );
+  }
+
+  Future<void> _persistDemoTier(PlanTier tier, DateTime? end) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_kDemoTierKey, tier.wire);
+      if (end != null) {
+        await prefs.setString(_kDemoPeriodEndKey, end.toIso8601String());
+      } else {
+        await prefs.remove(_kDemoPeriodEndKey);
+      }
+    } catch (_) {/* swallow */}
+  }
+
+  Future<void> _clearDemoTier() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_kDemoTierKey);
+      await prefs.remove(_kDemoPeriodEndKey);
+    } catch (_) {/* swallow */}
   }
 }

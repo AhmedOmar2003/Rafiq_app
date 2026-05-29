@@ -19,9 +19,15 @@ import '../../core/design/components/app_page_header.dart';
 import '../../core/design/components/components.dart';
 import '../../core/utils/app_microcopy.dart';
 import '../../core/utils/spacing.dart';
+import '../../models/subscription/plan.dart';
 import '../../service/auth_service.dart';
 import '../../service/profile_image_store.dart';
+import '../../service/subscription_service.dart';
+import '../../service/user_role_store.dart';
+import '../admin/admin_overview_screen.dart';
+import '../provider/hub/provider_hub_screen.dart';
 import '../provider/subscription/subscription_screen.dart';
+import 'delete_account_sheet.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -43,6 +49,10 @@ class _ProfilePageState extends State<ProfilePage> {
     // loaded. The hero image listens to its ValueNotifier so we never need
     // local setState plumbing for the picture.
     ProfileImageStore.instance.ensureLoaded();
+    // Make sure the role flag + subscription catalog are warm before the
+    // user expects to see plan-specific copy in the row.
+    UserRoleStore.instance.ensureLoaded();
+    SubscriptionService.instance.loadCatalog();
   }
 
   Future<void> _loadUserData() async {
@@ -57,7 +67,22 @@ class _ProfilePageState extends State<ProfilePage> {
   /// the SubscriptionScreen. Falls back to the catalog-only view when the
   /// user isn't a provider yet, so the pricing page also doubles as
   /// marketing material.
-  Future<void> _openSubscription() async {
+  Future<void> _openSubscription() => _openProviderRoute(
+        (providerId) =>
+            SubscriptionScreen(providerId: providerId),
+      );
+
+  /// Same flow but routes to the Provider Hub (dashboard).
+  Future<void> _openProviderHub() => _openProviderRoute(
+        (providerId) => ProviderHubScreen(
+          providerId: providerId,
+          providerName: userName,
+        ),
+      );
+
+  Future<void> _openProviderRoute(
+    Widget Function(String? providerId) builder,
+  ) async {
     String? providerId;
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -71,14 +96,12 @@ class _ProfilePageState extends State<ProfilePage> {
         providerId = row?['id'] as String?;
       }
     } catch (_) {
-      // Treat as anonymous browse — the screen handles null gracefully.
+      // Best-effort — screen handles null gracefully.
     }
     if (!mounted) return;
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => SubscriptionScreen(providerId: providerId),
-      ),
+      MaterialPageRoute(builder: (_) => builder(providerId)),
     );
   }
 
@@ -140,6 +163,48 @@ class _ProfilePageState extends State<ProfilePage> {
     } catch (_) {}
   }
 
+  /// Context-aware **Delete account** flow.
+  ///
+  /// Reads the current role + entitlement so the confirmation copy tells
+  /// the user exactly what they're about to lose (no surprises later).
+  /// On confirm, calls the DB RPC, then resets every client-side store and
+  /// navigates to login.
+  Future<void> _handleDeleteAccount() async {
+    if (_isLoading) return;
+    final isProvider = UserRoleStore.instance.isProvider.value;
+    final ent = SubscriptionService.instance.entitlement.value;
+    final planName = _planDisplayName(ent.tier);
+
+    final ({bool confirmed, String? reason}) result =
+        await DeleteAccountSheet.show(
+      context,
+      isProvider: isProvider,
+      tier: ent.tier,
+      planDisplayName: planName,
+    );
+    if (!result.confirmed || !mounted) return;
+
+    setState(() => _isLoading = true);
+    try {
+      await AuthService().deleteMyAccount(reason: result.reason);
+      // After the RPC the auth row is gone — drop every client-side
+      // singleton so a fresh signup starts from zero.
+      await UserRoleStore.instance.clear();
+      SubscriptionService.instance.applyDemoFree();
+      if (!mounted) return;
+      AppFeedback.success(AppCopy.deleteAccountSuccess);
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (_) => false,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      AppFeedback.error(AppCopy.deleteAccountError);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   Future<void> _handleLogoutConfirmedDirect() async {
     if (_isLoading) return;
 
@@ -149,6 +214,12 @@ class _ProfilePageState extends State<ProfilePage> {
     final email = userEmail;
     try {
       // Log out locally + Supabase first for immediate UX.
+      //
+      // We intentionally do NOT touch [UserRoleStore] or
+      // [SubscriptionService] here. Logout is a session boundary, not a
+      // data wipe — the same user logging back in expects to find the
+      // same role and the same active plan. Clearing those belongs to the
+      // delete-account flow, not to sign-out.
       await AuthService().signOut();
       if (!mounted) return;
 
@@ -448,6 +519,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     _buildInfoSection(),
                     gapV(AppSpacing.xxxl),
                     _buildLogoutButton(),
+                    gapV(AppSpacing.lg),
+                    _buildDeleteAccountButton(),
                     gapV(AppSpacing.huge),
                   ],
                 ),
@@ -513,52 +586,128 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget _buildInfoSection() {
     return AppCard(
       padding: EdgeInsets.zero,
-      child: Column(
-        children: [
-          _ProfileInfoRow(
-            icon: Icons.person_2_outlined,
-            label: AppCopy.profileNameLabel,
-            value: userName ?? AppCopy.profileNameFallback,
-          ),
-          Divider(height: 1, color: AppColor.border),
-          _ProfileInfoRow(
-            icon: Icons.email_outlined,
-            label: AppCopy.profileEmailLabel,
-            value: userEmail ?? AppCopy.profileEmailFallback,
-          ),
-          Divider(height: 1, color: AppColor.border),
-          _ProfileInfoRow(
-            icon: Icons.lock_outline,
-            label: AppCopy.profilePasswordLabel,
-            value: '••••••••',
-            trailing: IconButton(
-              icon: Icon(
-                Icons.edit_outlined,
-                color: AppColor.primary,
-                size: 22.sp,
+      child: ValueListenableBuilder<bool>(
+        valueListenable: UserRoleStore.instance.isProvider,
+        builder: (_, isProvider, __) {
+          return Column(
+            children: [
+              _ProfileInfoRow(
+                icon: Icons.person_2_outlined,
+                label: AppCopy.profileNameLabel,
+                value: userName ?? AppCopy.profileNameFallback,
               ),
-              onPressed: () => showChangePasswordDialog(context),
-              tooltip: AppCopy.changePwTitle,
-            ),
-          ),
-          Divider(height: 1, color: AppColor.border),
-          // Subscription entry — opens the pricing/manage screen. Works for
-          // any user; the screen disables upgrade CTAs when the user has
-          // not onboarded as a provider yet.
-          _ProfileInfoRow(
-            icon: Icons.workspace_premium_rounded,
-            label: AppCopy.subTitle,
-            value: AppCopy.subManage,
-            onTap: _openSubscription,
-            trailing: Icon(
-              Icons.chevron_left_rounded,
-              color: AppColor.textTertiary,
-              size: 24.sp,
-            ),
-          ),
-        ],
+              Divider(height: 1, color: AppColor.border),
+              _ProfileInfoRow(
+                icon: Icons.email_outlined,
+                label: AppCopy.profileEmailLabel,
+                value: userEmail ?? AppCopy.profileEmailFallback,
+              ),
+              Divider(height: 1, color: AppColor.border),
+              _ProfileInfoRow(
+                icon: Icons.lock_outline,
+                label: AppCopy.profilePasswordLabel,
+                value: '••••••••',
+                trailing: IconButton(
+                  icon: Icon(
+                    Icons.edit_outlined,
+                    color: AppColor.primary,
+                    size: 22.sp,
+                  ),
+                  onPressed: () => showChangePasswordDialog(context),
+                  tooltip: AppCopy.changePwTitle,
+                ),
+              ),
+              // Provider-only surfaces. A regular user gets a clean profile
+              // without anything they can't act on.
+              if (isProvider) ...[
+                Divider(height: 1, color: AppColor.border),
+                _ProfileInfoRow(
+                  icon: Icons.dashboard_rounded,
+                  label: AppCopy.hubTitle,
+                  value: AppCopy.hubManagePlan,
+                  onTap: _openProviderHub,
+                  trailing: Icon(
+                    Icons.chevron_left_rounded,
+                    color: AppColor.textTertiary,
+                    size: 24.sp,
+                  ),
+                ),
+                Divider(height: 1, color: AppColor.border),
+                // Subscription row: surface the active plan + period end so
+                // the provider always knows where they stand.
+                ValueListenableBuilder<ProviderEntitlement>(
+                  valueListenable:
+                      SubscriptionService.instance.entitlement,
+                  builder: (_, ent, __) {
+                    final planName = _planDisplayName(ent.tier);
+                    final periodText = _formatPeriod(ent);
+                    final value = periodText == null
+                        ? planName
+                        : '$planName · $periodText';
+                    return _ProfileInfoRow(
+                      icon: Icons.workspace_premium_rounded,
+                      label: AppCopy.subTitle,
+                      value: value,
+                      onTap: _openSubscription,
+                      trailing: Icon(
+                        Icons.chevron_left_rounded,
+                        color: AppColor.textTertiary,
+                        size: 24.sp,
+                      ),
+                    );
+                  },
+                ),
+              ],
+              Divider(height: 1, color: AppColor.border),
+              // Admin overview — RLS guarantees only admins see real rows.
+              _ProfileInfoRow(
+                icon: Icons.admin_panel_settings_rounded,
+                label: AppCopy.adminTitle,
+                value: AppCopy.adminProviders,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const AdminOverviewScreen(),
+                  ),
+                ),
+                trailing: Icon(
+                  Icons.chevron_left_rounded,
+                  color: AppColor.textTertiary,
+                  size: 24.sp,
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
+  }
+
+  String _planDisplayName(PlanTier tier) {
+    final cat = SubscriptionService.instance.catalog.value;
+    for (final p in cat) {
+      if (p.tier == tier) return p.displayName;
+    }
+    // Fallbacks if catalog isn't loaded yet.
+    switch (tier) {
+      case PlanTier.free:
+        return 'مجاني';
+      case PlanTier.pro:
+        return 'برو';
+      case PlanTier.max:
+        return 'ماكس';
+    }
+  }
+
+  String? _formatPeriod(ProviderEntitlement ent) {
+    if (ent.tier == PlanTier.free) return null;
+    final end = ent.periodEnd;
+    if (end == null) return null;
+    final iso =
+        '${end.year}-${end.month.toString().padLeft(2, '0')}-${end.day.toString().padLeft(2, '0')}';
+    return ent.cancelAtPeriodEnd
+        ? '${AppCopy.subCancelsOn} $iso'
+        : '${AppCopy.subRenewsOn} $iso';
   }
 
   Widget _buildLogoutButton() {
@@ -592,6 +741,29 @@ class _ProfilePageState extends State<ProfilePage> {
           backgroundColor: AppColor.surfaceCard,
           side: const BorderSide(color: AppColor.error, width: 1.5),
           shape: RoundedRectangleBorder(borderRadius: AppRadii.rMd),
+        ),
+      ),
+    );
+  }
+
+  /// Subtle "danger zone" link styled as a text button rather than another
+  /// big outlined action — sign-out is the primary exit, account deletion
+  /// is intentional and rare.
+  Widget _buildDeleteAccountButton() {
+    return TextButton.icon(
+      onPressed: _isLoading ? null : _handleDeleteAccount,
+      icon: Icon(
+        Icons.delete_forever_outlined,
+        color: AppColor.error,
+        size: 18.sp,
+      ),
+      label: Text(
+        AppCopy.deleteAccountRow,
+        style: AppText.labelMd.copyWith(
+          color: AppColor.error,
+          fontWeight: FontWeight.w700,
+          decoration: TextDecoration.underline,
+          decorationColor: AppColor.error.withOpacity(0.4),
         ),
       ),
     );
@@ -648,6 +820,22 @@ class _ProfileHero extends StatelessWidget {
             style: AppText.bodyLg.copyWith(
               color: AppColor.white.withOpacity(0.85),
             ),
+          ),
+          // Plan badge is part of the provider identity, so it only renders
+          // for the provider track. Regular users see a clean cream hero.
+          ValueListenableBuilder<bool>(
+            valueListenable: UserRoleStore.instance.isProvider,
+            builder: (_, isProvider, __) {
+              if (!isProvider) return const SizedBox.shrink();
+              return Padding(
+                padding: EdgeInsets.only(top: AppSpacing.md.h),
+                child: ValueListenableBuilder<ProviderEntitlement>(
+                  valueListenable: SubscriptionService.instance.entitlement,
+                  builder: (_, ent, __) =>
+                      PlanBadge(tier: ent.tier, size: PlanBadgeSize.header),
+                ),
+              );
+            },
           ),
         ],
       ),
