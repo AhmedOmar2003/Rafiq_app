@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:rafiq_app/model/place.dart';
 import 'package:rafiq_app/model/review_model.dart';
 import 'package:rafiq_app/core/config/supabase_config.dart';
@@ -68,6 +69,50 @@ class ApiService {
     if (normalized.endsWith('.png')) return 'png';
     if (normalized.endsWith('.webp')) return 'webp';
     return 'jpg';
+  }
+
+  Future<String?> ensureCurrentProviderId() async {
+    await ensureSupabaseInitialized();
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getString('authUserId');
+    final email = prefs.getString('userEmail') ??
+        _client.auth.currentUser?.email ??
+        '';
+    final name = prefs.getString('userName')?.trim() ?? '';
+    if (userId == null || email.trim().isEmpty) return null;
+
+    try {
+      final existing = await _client
+          .from('providers')
+          .select('id')
+          .eq('owner_id', userId)
+          .maybeSingle();
+      final existingId = existing?['id']?.toString();
+      if (existingId != null && existingId.isNotEmpty) {
+        return existingId;
+      }
+
+      final businessName = name.isNotEmpty ? name : email.split('@').first;
+      final created = await _client
+          .from('providers')
+          .insert({
+            'owner_id': userId,
+            'business_name': businessName,
+            'contact_email': email,
+            'status': 'pending',
+          })
+          .select('id')
+          .single()
+          .timeout(_networkTimeout);
+      return created['id']?.toString();
+    } catch (_) {
+      final fallback = await _client
+          .from('providers')
+          .select('id')
+          .eq('owner_id', userId)
+          .maybeSingle();
+      return fallback?['id']?.toString();
+    }
   }
 
   Future<List<Place>> fetchPlaces({
@@ -358,7 +403,8 @@ class ApiService {
   }
 
   Future<Place> updatePlace({
-    required int placeId,
+    required String? placeUuid,
+    int? legacyPlaceId,
     required String placeName,
     required String activityName,
     required String budget,
@@ -387,10 +433,14 @@ class ApiService {
         'updated_at': DateTime.now().toUtc().toIso8601String(),
       };
 
-      final response = await _client
-          .from('places')
-          .update(payload)
-          .eq('place_id', placeId)
+      var query = _client.from('places').update(payload);
+      if (placeUuid != null && placeUuid.isNotEmpty) {
+        query = query.eq('id', placeUuid);
+      } else if (legacyPlaceId != null) {
+        query = query.eq('place_id', legacyPlaceId);
+      }
+
+      final response = await query
           .select()
           .single()
           .timeout(_networkTimeout);
@@ -405,13 +455,22 @@ class ApiService {
   }
 
   Future<void> deletePlace(int placeId) async {
+    await deletePlaceByIdentifier(legacyPlaceId: placeId);
+  }
+
+  Future<void> deletePlaceByIdentifier({
+    String? placeUuid,
+    int? legacyPlaceId,
+  }) async {
     try {
       await ensureSupabaseInitialized();
-      await _client
-          .from('places')
-          .delete()
-          .eq('place_id', placeId)
-          .timeout(_networkTimeout);
+      var query = _client.from('places').delete();
+      if (placeUuid != null && placeUuid.isNotEmpty) {
+        query = query.eq('id', placeUuid);
+      } else if (legacyPlaceId != null) {
+        query = query.eq('place_id', legacyPlaceId);
+      }
+      await query.timeout(_networkTimeout);
       _invalidatePlacesCache();
     } on PostgrestException catch (e) {
       throw Exception('فشل في حذف المكان: ${e.message}');

@@ -9,11 +9,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
+import 'package:rafiq_app/model/place.dart';
 import 'package:rafiq_app/models/subscription/plan.dart';
 import 'package:rafiq_app/service/api_service.dart';
 import 'package:rafiq_app/service/feature_gate.dart';
 import 'package:rafiq_app/service/subscription_service.dart';
-import 'package:rafiq_app/view/pages/choice/choice_screen.dart';
 import 'package:rafiq_app/view/provider/hub/provider_hub_screen.dart';
 import 'package:rafiq_app/view/provider/subscription/subscription_screen.dart';
 
@@ -22,7 +22,10 @@ import '../../../core/utils/app_microcopy.dart';
 import '../../../core/utils/spacing.dart';
 
 class AddPlaceScreen extends StatefulWidget {
-  const AddPlaceScreen({super.key});
+  const AddPlaceScreen({super.key, this.editingPlace, this.providerId});
+
+  final Place? editingPlace;
+  final String? providerId;
 
   @override
   State<AddPlaceScreen> createState() => _AddPlaceScreenState();
@@ -55,6 +58,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
   // upgrade so the form respects new caps immediately.
   ProviderEntitlement? _entitlement;
   String? _providerId;
+  bool get _isEditing => widget.editingPlace != null;
 
   // Constants
   static const List<String> _placeTypes = [
@@ -92,7 +96,19 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
   @override
   void initState() {
     super.initState();
+    _prefillIfNeeded();
     _preloadEntitlement();
+  }
+
+  void _prefillIfNeeded() {
+    final place = widget.editingPlace;
+    if (place == null) return;
+    _placeNameController.text = place.name;
+    _descriptionController.text = place.description;
+    _addressController.text = place.placeAddress;
+    _selectedPlaceType = place.activityName;
+    _selectedCity = place.cityName;
+    _selectedBudget = place.budget.isNotEmpty ? place.budget : place.priceRange;
   }
 
   @override
@@ -109,18 +125,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
   /// fallback if anything fails — we never block the form on billing.
   Future<void> _preloadEntitlement() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getString('authUserId');
-      if (userId == null) return;
-
-      // Resolve the provider row for this user.
-      final providerRow = await Supabase.instance.client
-          .from('providers')
-          .select('id')
-          .eq('owner_id', userId)
-          .maybeSingle();
-      if (providerRow == null) return;
-      _providerId = providerRow['id'] as String?;
+      _providerId = widget.providerId ?? await ApiService().ensureCurrentProviderId();
       if (_providerId == null) return;
 
       final ent = await SubscriptionService.instance
@@ -147,7 +152,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
     isError ? AppFeedback.error(message) : AppFeedback.success(message);
   }
 
-  Future<void> _addPlace() async {
+  Future<void> _submitPlace() async {
     if (!_formKey.currentState!.validate()) return;
 
     final session = Supabase.instance.client.auth.currentSession;
@@ -165,32 +170,50 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
     try {
       final existingPlaces =
           await ApiService().fetchProviderPlaces(providerId: _providerId!);
-      final allowed = await FeatureGate.requirePlaceSlot(
-        context,
-        _entitlement ?? ProviderEntitlement.freeFallback,
-        existingPlaces.length,
-      );
-      if (!allowed) {
-        return;
+      if (!_isEditing) {
+        final allowed = await FeatureGate.requirePlaceSlot(
+          context,
+          _entitlement ?? ProviderEntitlement.freeFallback,
+          existingPlaces.length,
+        );
+        if (!allowed) {
+          return;
+        }
       }
 
       final coverPath = _images.isEmpty ? null : _images.first.path;
-      await ApiService().addPlace(
-        providerId: _providerId!,
-        placeName: _placeNameController.text.trim(),
-        activityName: _selectedPlaceType ?? '',
-        budget: _selectedBudget ?? '',
-        address: _addressController.text.trim(),
-        cityName: _selectedCity ?? '',
-        description: _descriptionController.text.trim(),
-        imagePath: coverPath,
-        galleryImages: _images,
-      );
+      if (_isEditing) {
+        await ApiService().updatePlace(
+          placeUuid: widget.editingPlace!.placeUuid,
+          legacyPlaceId: widget.editingPlace!.placeId,
+          placeName: _placeNameController.text.trim(),
+          activityName: _selectedPlaceType ?? '',
+          budget: _selectedBudget ?? '',
+          address: _addressController.text.trim(),
+          cityName: _selectedCity ?? '',
+          description: _descriptionController.text.trim(),
+          imagePath: coverPath,
+        );
+      } else {
+        await ApiService().addPlace(
+          providerId: _providerId!,
+          placeName: _placeNameController.text.trim(),
+          activityName: _selectedPlaceType ?? '',
+          budget: _selectedBudget ?? '',
+          address: _addressController.text.trim(),
+          cityName: _selectedCity ?? '',
+          description: _descriptionController.text.trim(),
+          imagePath: coverPath,
+          galleryImages: _images,
+        );
+      }
 
       if (!_isMounted) return;
 
       await _saveUserPlaceLocally();
-      _showSnackBar(AppCopy.providerAddedSuccess);
+      _showSnackBar(
+        _isEditing ? 'تم تعديل المكان بنجاح' : AppCopy.providerAddedSuccess,
+      );
       _returnToHub();
     } catch (e) {
       _showSnackBar(
@@ -207,18 +230,18 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
   Future<void> _saveUserPlaceLocally() async {
     final prefs = await SharedPreferences.getInstance();
     final userPlacesJson = prefs.getStringList('user_places') ?? [];
-      final newPlace = {
-        'name': _placeNameController.text.trim(),
-        'description': _descriptionController.text.trim(),
-        'priceRange': _selectedBudget ?? '',
-        'budget': _selectedBudget ?? '',
-        'rating': 5.0,
-        'placeAddress': _addressController.text.trim(),
-        'imageUrl': _images.isEmpty ? '' : _images.first.path,
-        'galleryImageUrls': _images.map((f) => f.path).toList(),
+    final newPlace = {
+      'name': _placeNameController.text.trim(),
+      'description': _descriptionController.text.trim(),
+      'priceRange': _selectedBudget ?? '',
+      'budget': _selectedBudget ?? '',
+      'rating': 5.0,
+      'placeAddress': _addressController.text.trim(),
+      'imageUrl': _images.isEmpty ? '' : _images.first.path,
+      'galleryImageUrls': _images.map((f) => f.path).toList(),
       'activityName': _selectedPlaceType ?? '',
       'cityName': _selectedCity ?? '',
-      'placeId': DateTime.now().millisecondsSinceEpoch, // unique id
+      'placeId': DateTime.now().millisecondsSinceEpoch,
     };
     userPlacesJson.add(jsonEncode(newPlace));
     await prefs.setStringList('user_places', userPlacesJson);
@@ -236,18 +259,8 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
     );
   }
 
-  void _navigateToChoiceScreen() {
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ChoiceScreen(
-          onPlanSelected: () {},
-          onNoPlanSelected: () {},
-          onNext: () {},
-        ),
-      ),
-      (Route<dynamic> route) => false,
-    );
+  void _handleBack() {
+    _returnToHub();
   }
 
   /// Inline reminder of the active plan + current gallery usage. Reacts to
@@ -323,7 +336,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        _navigateToChoiceScreen();
+        _handleBack();
         return false;
       },
       child: Directionality(
@@ -387,10 +400,10 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
                 ),
               ],
             ),
-            child: IconButton(
-              padding: EdgeInsets.only(right: 6.w),
-              icon: Icon(Icons.arrow_back_ios, color: AppColor.black, size: 20.sp),
-              onPressed: _navigateToChoiceScreen,
+              child: IconButton(
+                padding: EdgeInsets.only(right: 6.w),
+                icon: Icon(Icons.arrow_back_ios, color: AppColor.black, size: 20.sp),
+              onPressed: _handleBack,
             ),
           ),
           Text(
@@ -710,8 +723,8 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
             ),
           )
         : AppButton(
-            text: "حفظ البيانات",
-            onPress: _addPlace,
+            text: _isEditing ? 'حفظ التعديلات' : "حفظ البيانات",
+            onPress: _submitPlace,
             buttonStyle: ElevatedButton.styleFrom(
               minimumSize: Size(double.infinity, 56.h),
               backgroundColor: AppColor.primary,

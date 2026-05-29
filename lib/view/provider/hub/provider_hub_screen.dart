@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
@@ -68,15 +66,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
 
   Future<void> _resolveProviderId() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getString('authUserId');
-      if (userId == null) return;
-      final row = await Supabase.instance.client
-          .from('providers')
-          .select('id')
-          .eq('owner_id', userId)
-          .maybeSingle();
-      final resolved = row?['id'] as String?;
+      final resolved = await ApiService().ensureCurrentProviderId();
       if (!mounted || resolved == null || resolved == _providerId) return;
       setState(() {
         _providerId = resolved;
@@ -110,11 +100,16 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
   }
 
   Future<void> _openAddPlace() async {
-    final pid = _providerId;
+    final pid = _providerId ?? await ApiService().ensureCurrentProviderId();
     if (pid == null) return;
+    if (_providerId == null && mounted) {
+      setState(() => _providerId = pid);
+    }
     final result = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(builder: (_) => const AddPlaceScreen()),
+      MaterialPageRoute(
+        builder: (_) => AddPlaceScreen(providerId: pid),
+      ),
     );
     if (result == true) {
       await _refreshHub();
@@ -134,7 +129,43 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
         ),
       ),
     );
-    await _loadProviderPlaces(_providerId!);
+    final pid = _providerId ?? widget.providerId;
+    if (pid != null) {
+      await _loadProviderPlaces(pid);
+    }
+  }
+
+  Future<void> _editPlace(Place place) async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddPlaceScreen(
+          editingPlace: place,
+          providerId: _providerId ?? widget.providerId,
+        ),
+      ),
+    );
+    if (result == true) {
+      await _refreshHub();
+    }
+  }
+
+  Future<void> _deletePlace(Place place) async {
+    final confirmed = await AppConfirmDialog.show(
+      context,
+      title: 'حذف المكان',
+      message: 'هل تريد حذف "${place.name}"؟',
+      confirmLabel: 'حذف',
+      cancelLabel: 'إلغاء',
+      tone: AppConfirmTone.danger,
+      icon: Icons.delete_rounded,
+    );
+    if (!confirmed) return;
+    await ApiService().deletePlaceByIdentifier(
+      placeUuid: place.placeUuid,
+      legacyPlaceId: place.placeId,
+    );
+    await _refreshHub();
   }
 
   Future<void> _changeRole() async {
@@ -159,13 +190,17 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
     final hubTitle = placeCount > 1 ? 'تابع خدماتك' : AppCopy.hubTitle;
     return AppPageScaffold(
       // "تابع خدمتك" — same identity post-subscription, no role flip.
-      header: AppPageHeader(title: hubTitle, actions: [
-        IconButton(
-          tooltip: 'تغيير الدور',
-          onPressed: _changeRole,
-          icon: const Icon(Icons.swap_horiz_rounded),
-        ),
-      ]),
+      header: AppPageHeader(
+        title: hubTitle,
+        leading: const SizedBox.shrink(),
+        actions: [
+          IconButton(
+            tooltip: 'تغيير الدور',
+            onPressed: _changeRole,
+            icon: const Icon(Icons.swap_horiz_rounded),
+          ),
+        ],
+      ),
       body: ValueListenableBuilder<ProviderEntitlement>(
         valueListenable: SubscriptionService.instance.entitlement,
         builder: (_, ent, __) {
@@ -201,25 +236,15 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
                   onAddPlace: _openAddPlace,
                   onRefresh: _refreshHub,
                   canAddPlace: ent.maxPlaces > placeCount,
-                ),
-                gapV(AppSpacing.lg),
-                _PlacesSection(
                   loading: _loadingPlaces,
                   places: _places,
-                  onAddPlace: _openAddPlace,
                   onPreviewPlace: _previewPlace,
-                  entitlement: ent,
+                  onEditPlace: _editPlace,
+                  onDeletePlace: _deletePlace,
                 ),
                 gapV(AppSpacing.lg),
                 _KpiStrip(entitlement: ent),
                 gapV(AppSpacing.xxl),
-                _FeatureTile(
-                  icon: Icons.store_rounded,
-                  title: AppCopy.hubFeatTitlePlaces,
-                  body: AppCopy.hubFeatBodyPlaces,
-                  onTap: _openAddPlace,
-                ),
-                gapV(AppSpacing.md),
                 _FeatureTile(
                   icon: Icons.bar_chart_rounded,
                   title: AppCopy.hubFeatTitleAnalytics,
@@ -569,6 +594,11 @@ class _ProviderFlowCard extends StatelessWidget {
     required this.onAddPlace,
     required this.onRefresh,
     required this.canAddPlace,
+    required this.loading,
+    required this.places,
+    required this.onPreviewPlace,
+    required this.onEditPlace,
+    required this.onDeletePlace,
   });
 
   final int placeCount;
@@ -577,6 +607,11 @@ class _ProviderFlowCard extends StatelessWidget {
   final VoidCallback onAddPlace;
   final VoidCallback onRefresh;
   final bool canAddPlace;
+  final bool loading;
+  final List<Place> places;
+  final ValueChanged<Place> onPreviewPlace;
+  final ValueChanged<Place> onEditPlace;
+  final ValueChanged<Place> onDeletePlace;
 
   @override
   Widget build(BuildContext context) {
@@ -668,6 +703,27 @@ class _ProviderFlowCard extends StatelessWidget {
               isEnabled: canAddPlace,
             ),
           ),
+          gapV(AppSpacing.xl),
+          if (loading)
+            const Center(child: CircularProgressIndicator())
+          else if (places.isEmpty)
+            _EmptyPlacesState(onAddPlace: onAddPlace)
+          else
+            ListView.separated(
+              itemCount: places.length,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              separatorBuilder: (_, __) => gapV(AppSpacing.md),
+              itemBuilder: (_, index) {
+                final place = places[index];
+                return _PlaceCard(
+                  place: place,
+                  onPreview: () => onPreviewPlace(place),
+                  onEdit: () => onEditPlace(place),
+                  onDelete: () => onDeletePlace(place),
+                );
+              },
+            ),
         ],
       ),
     );
@@ -706,125 +762,61 @@ class _MiniStat extends StatelessWidget {
   }
 }
 
-class _PlacesSection extends StatelessWidget {
-  const _PlacesSection({
-    required this.loading,
-    required this.places,
-    required this.onAddPlace,
-    required this.onPreviewPlace,
-    required this.entitlement,
-  });
+class _EmptyPlacesState extends StatelessWidget {
+  const _EmptyPlacesState({required this.onAddPlace});
 
-  final bool loading;
-  final List<Place> places;
   final VoidCallback onAddPlace;
-  final ValueChanged<Place> onPreviewPlace;
-  final ProviderEntitlement entitlement;
 
   @override
   Widget build(BuildContext context) {
-    final canAddPlace = places.length < entitlement.maxPlaces;
-    return AppCard(
-      padding: EdgeInsets.all(AppSpacing.lg.w),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'أماكني',
-                  style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
-                ),
-              ),
-              Text(
-                '${places.length}/${entitlement.maxPlaces}',
-                style: AppText.caption.copyWith(fontWeight: FontWeight.w700),
-              ),
-            ],
+    return Column(
+      children: [
+        Container(
+          width: 92.w,
+          height: 92.w,
+          decoration: BoxDecoration(
+            color: AppColor.primary50,
+            shape: BoxShape.circle,
           ),
-          gapV(AppSpacing.sm),
-          Text(
-            places.isEmpty
-                ? 'لما تضيف مكانك الأول، هيظهر هنا بكل تفاصيله، ومن هنا هتفتح Preview كما يراه المستخدم.'
-                : 'افتح أي مكان وشوفه بنفس العرض الذي يراه الزائر، أو أضف مكانًا آخر حسب الخطة.',
-            style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
+          child:
+              Icon(Icons.store_mall_directory_rounded, color: AppColor.primary, size: 42.sp),
+        ),
+        gapV(AppSpacing.lg),
+        Text(
+          'لسه ما أضفتش أي مكان',
+          style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
+        ),
+        gapV(AppSpacing.sm),
+        Text(
+          'أضف مكانك الأول عشان تبدأ اللوحة وتظهر كل الإحصائيات.',
+          style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
+          textAlign: TextAlign.center,
+        ),
+        gapV(AppSpacing.lg),
+        SizedBox(
+          width: double.infinity,
+          child: AppButton(
+            text: 'أضف مكانك الآن',
+            onPress: onAddPlace,
           ),
-          gapV(AppSpacing.lg),
-          if (loading)
-            const Center(child: CircularProgressIndicator())
-          else if (places.isEmpty)
-            Column(
-              children: [
-                Container(
-                  width: 92.w,
-                  height: 92.w,
-                  decoration: BoxDecoration(
-                    color: AppColor.primary50,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.store_mall_directory_rounded,
-                      color: AppColor.primary, size: 42.sp),
-                ),
-                gapV(AppSpacing.lg),
-                Text(
-                  'لسه ما أضفتش أي مكان',
-                  style:
-                      AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
-                ),
-                gapV(AppSpacing.sm),
-                Text(
-                  'أضف مكانك الأول عشان تبدأ اللوحة وتظهر كل الإحصائيات.',
-                  style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
-                  textAlign: TextAlign.center,
-                ),
-                gapV(AppSpacing.lg),
-                SizedBox(
-                  width: double.infinity,
-                  child: AppButton(
-                    text: 'أضف مكانك الآن',
-                    onPress: onAddPlace,
-                  ),
-                ),
-              ],
-            )
-          else
-            ListView.separated(
-              itemCount: places.length,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              separatorBuilder: (_, __) => gapV(AppSpacing.md),
-              itemBuilder: (_, index) {
-                final place = places[index];
-                return _PlaceCard(
-                  place: place,
-                  onPreview: () => onPreviewPlace(place),
-                );
-              },
-            ),
-          if (places.isNotEmpty) ...[
-            gapV(AppSpacing.lg),
-            SizedBox(
-              width: double.infinity,
-              child: AppButton(
-                text: canAddPlace ? 'أضف مكانًا آخر' : 'وصلت الحد',
-                onPress: canAddPlace ? onAddPlace : onAddPlace,
-                isEnabled: canAddPlace,
-                variant: AppButtonVariant.outline,
-              ),
-            ),
-          ],
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
 
 class _PlaceCard extends StatelessWidget {
-  const _PlaceCard({required this.place, required this.onPreview});
+  const _PlaceCard({
+    required this.place,
+    required this.onPreview,
+    required this.onEdit,
+    required this.onDelete,
+  });
 
   final Place place;
   final VoidCallback onPreview;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -895,6 +887,28 @@ class _PlaceCard extends StatelessWidget {
                         text: 'Preview كما يراه المستخدم',
                         onPress: onPreview,
                         size: AppButtonSize.sm,
+                      ),
+                    ),
+                  ],
+                ),
+                gapV(AppSpacing.sm),
+                Row(
+                  children: [
+                    Expanded(
+                      child: AppButton(
+                        text: 'تعديل',
+                        onPress: onEdit,
+                        size: AppButtonSize.sm,
+                        variant: AppButtonVariant.outline,
+                      ),
+                    ),
+                    gapH(AppSpacing.sm),
+                    Expanded(
+                      child: AppButton(
+                        text: 'حذف',
+                        onPress: onDelete,
+                        size: AppButtonSize.sm,
+                        variant: AppButtonVariant.destructive,
                       ),
                     ),
                   ],
