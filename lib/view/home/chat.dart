@@ -18,8 +18,9 @@ class BotScreen extends StatefulWidget {
 class _BotScreenState extends State<BotScreen> {
   final TextEditingController _userMessage = TextEditingController();
   final FlutterTts flutterTts = FlutterTts(); // ✅ إنشاء كائن TTS
-  late final GenerativeModel model;
+  GenerativeModel? model;
   bool _isLoading = false;
+  bool _isConfigured = false;
 
   final List<Message> _messages = [
     Message(
@@ -33,10 +34,14 @@ class _BotScreenState extends State<BotScreen> {
   @override
   void initState() {
     super.initState();
-    model = GenerativeModel(
-      model: 'gemini-2.0-flash',
-      apiKey: ApiConfig.geminiApiKey,
-    );
+    final geminiKey = ApiConfig.geminiApiKey.trim();
+    _isConfigured = geminiKey.isNotEmpty;
+    if (_isConfigured) {
+      model = GenerativeModel(
+        model: 'gemini-2.0-flash',
+        apiKey: geminiKey,
+      );
+    }
     _speakWelcomeMessage(); // ✅ تشغيل الصوت الترحيبي عند فتح الصفحة
   }
 
@@ -61,6 +66,21 @@ class _BotScreenState extends State<BotScreen> {
   }
 
   Future<void> sendMessage() async {
+    if (!_isConfigured || model == null) {
+      if (!mounted) return;
+      setState(() {
+        _messages.add(
+          Message(
+            isUser: false,
+            message:
+                'المساعد الذكي غير مفعّل حاليًا. هيتفعّل لما يتم تمرير مفتاح Gemini من البيئة وقت البناء.',
+            date: DateTime.now(),
+          ),
+        );
+      });
+      return;
+    }
+
     final message = _userMessage.text.trim();
     if (message.isEmpty) return;
 
@@ -87,7 +107,7 @@ class _BotScreenState extends State<BotScreen> {
       """;
 
       final content = [Content.text(prompt)];
-      final response = await model.generateContent(content);
+      final response = await model!.generateContent(content);
 
       if (!mounted) return;
 

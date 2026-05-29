@@ -38,6 +38,7 @@ If you use environment variables in the build pipeline, pass them as:
 
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
+- `GEMINI_API_KEY` if you want the in-app AI assistant enabled
 
 ## Getting Started
 
@@ -45,7 +46,8 @@ If you use environment variables in the build pipeline, pass them as:
 2. Apply `supabase/schema.sql` in your Supabase SQL editor
 3. Configure the Vercel project with the build settings above
 4. If you use password recovery, set `SUPABASE_RECOVERY_REDIRECT_URL` to your deployed app URL
-5. Deploy the web build
+5. Pass `GEMINI_API_KEY` at build time only if you want the AI assistant active
+6. Deploy the web build
 
 ## iOS Release (TestFlight)
 

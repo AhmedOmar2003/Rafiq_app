@@ -334,7 +334,31 @@ class AppCopy {
   // --- Admin overview ----------------------------------------------------------
   static const adminTitle = 'لوحة الإدارة';
   static const adminProviders = 'المزودون';
+  static const adminUsers = 'المستخدمين';
+  static const adminSubscriptions = 'الاشتراكات';
   static const adminAllPlans = 'كل الخطط';
+  static const adminKpiTotalUsers = 'إجمالي المستخدمين';
+  static const adminKpiProviders = 'مقدّمي الخدمة';
+  static const adminKpiPaidSubs = 'مشتركين مدفوع';
+  static const adminKpiPending = 'في انتظار اعتماد';
+  static const adminKpiMrr = 'إيراد شهري متوقّع';
+  static const adminSearchHint = 'ابحث بالاسم أو الإيميل…';
+  static const adminRoleAdmin = 'أدمن';
+  static const adminRoleProvider = 'مقدّم خدمة';
+  static const adminRoleUser = 'مستخدم';
+  static const adminEmptyUsers = 'مفيش مستخدمين مطابقين للبحث.';
+  static const adminEmptyProviders = 'مفيش مقدّمي خدمة لسه.';
+  static const adminEmptySubs = 'مفيش اشتراكات نشطة لسه.';
+  static const adminBillingMonthly = 'شهري';
+  static const adminBillingYearly = 'سنوي';
+  static const adminSubSourceDemo = 'تجريبي';
+  static const adminSubSourceManual = 'يدوي';
+  static const adminSubSourcePaymob = 'Paymob';
+  static const adminSubSourceStripe = 'Stripe';
+  static const adminPlacesCount = 'الأماكن';
+  static const adminJoinedAt = 'انضم في';
+  static const adminPeriodEnd = 'ينتهي في';
+  static const adminAmount = 'المبلغ';
 
   // --- Delete account ----------------------------------------------------------
   static const deleteAccountRow = 'حذف الحساب';
