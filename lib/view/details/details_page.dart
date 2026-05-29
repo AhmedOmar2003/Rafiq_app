@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:rafiq_app/core/paymob/paymob_manager.dart';
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:rafiq_app/model/review_model.dart';
@@ -34,8 +33,6 @@ class _DetailsPageState extends State<DetailsPage> {
   late SuggestionItemModel currentModel;
   EvaluationsItemModel? lastEvaluation;
   bool _isReviewLoading = false;
-  bool _isPaymentLoading = false;
-  bool _showPaymentSuccess = false;
   bool _isMounted = true;
 
   @override
@@ -83,42 +80,6 @@ class _DetailsPageState extends State<DetailsPage> {
     _fetchLastEvaluationFromAPI(newModel.placeId);
   }
 
-  void _showSuccessOverlay() {
-    if (!_isMounted) return;
-    setState(() => _showPaymentSuccess = true);
-  }
-
-  Future<void> _handlePayment() async {
-    if (_isPaymentLoading) return;
-    if (!_isMounted) return;
-    setState(() => _isPaymentLoading = true);
-
-    try {
-      final price = currentModel.getPrice();
-      final isPaymentSuccessful = await PayMobManager().getPaymentKey(
-        amount: price,
-        currency: "EGP",
-        context: context,
-        placeId: currentModel.placeId,
-      );
-
-      if (!_isMounted) return;
-
-      if (isPaymentSuccessful) {
-        _showSuccessOverlay();
-      } else {
-        AppFeedback.error(AppCopy.paymentFailed);
-      }
-    } catch (_) {
-      if (!_isMounted) return;
-      AppFeedback.error(AppCopy.paymentError);
-    } finally {
-      if (_isMounted) {
-        setState(() => _isPaymentLoading = false);
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final filteredSuggestions = widget.suggestionItemList
@@ -128,22 +89,6 @@ class _DetailsPageState extends State<DetailsPage> {
     return AppPageScaffold(
       unpadded: true,
       header: const AppPageHeader(title: AppCopy.detailsTitle),
-      floatingOverlay: _showPaymentSuccess
-          ? AppSuccessView(
-              title: AppCopy.paymentSuccessTitle,
-              message: AppCopy.paymentSuccessBody,
-              onContinue: () {
-                if (_isMounted) setState(() => _showPaymentSuccess = false);
-              },
-            )
-          : null,
-      footer: AppStickyFooter(
-        child: AppButton(
-          text: AppCopy.bookNow,
-          onPress: _handlePayment,
-          isLoading: _isPaymentLoading,
-        ),
-      ),
       body: Stack(
         children: [
           SafeArea(
@@ -152,10 +97,12 @@ class _DetailsPageState extends State<DetailsPage> {
                 AppSpacing.lg.w,
                 AppSpacing.xxl.h,
                 AppSpacing.lg.w,
-                AppSpacing.huge.h * 2, // room for sticky footer
+                AppSpacing.huge.h * 2, // comfortable bottom breathing room
               ),
               children: [
                 _DetailsSection(model: currentModel),
+                gapV(AppSpacing.xxl),
+                const _BookingUnavailableNotice(),
                 gapV(AppSpacing.xxl),
                 _ReviewsSection(
                   placeId: currentModel.placeId,
@@ -174,7 +121,6 @@ class _DetailsPageState extends State<DetailsPage> {
               ],
             ),
           ),
-          if (_isPaymentLoading) const _PaymentScrim(),
         ],
       ),
     );
@@ -212,6 +158,55 @@ class _DetailsSection extends StatelessWidget {
           Padding(
             padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
             child: const CustomDivider(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BookingUnavailableNotice extends StatelessWidget {
+  const _BookingUnavailableNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      padding: EdgeInsets.all(AppSpacing.lg.w),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: EdgeInsets.all(AppSpacing.sm.w),
+            decoration: BoxDecoration(
+              color: AppColor.primary50,
+              borderRadius: AppRadii.rSm,
+            ),
+            child: Icon(
+              Icons.event_busy_outlined,
+              color: AppColor.primary,
+              size: 24.sp,
+            ),
+          ),
+          gapH(AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  AppCopy.bookingUnavailableTitle,
+                  style: AppText.titleLg.copyWith(
+                    color: AppColor.textPrimary,
+                  ),
+                ),
+                gapV(AppSpacing.xs),
+                Text(
+                  AppCopy.bookingUnavailableBody,
+                  style: AppText.bodyMd.copyWith(
+                    color: AppColor.textSecondary,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -408,23 +403,6 @@ class _NoSimilarSection extends StatelessWidget {
             style: AppText.bodyLg.copyWith(color: AppColor.textSecondary),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _PaymentScrim extends StatelessWidget {
-  const _PaymentScrim();
-
-  @override
-  Widget build(BuildContext context) {
-    return ColoredBox(
-      color: AppColor.overlaySoft,
-      child: Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(AppColor.primary),
-          strokeWidth: 3,
-        ),
       ),
     );
   }

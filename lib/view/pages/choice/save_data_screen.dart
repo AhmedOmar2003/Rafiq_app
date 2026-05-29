@@ -69,7 +69,7 @@ class SplashScreen extends StatelessWidget {
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 24.w),
                 child: AppButton(
-                  text: AppCopy.findMyPlace,
+                  text: AppCopy.homeCtaFinal,
                   onPress: () {
                     Navigator.push(
                       context,

@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
 
@@ -20,6 +21,7 @@ import '../../core/utils/app_microcopy.dart';
 import '../../core/utils/spacing.dart';
 import '../../service/auth_service.dart';
 import '../../service/profile_image_store.dart';
+import '../provider/subscription/subscription_screen.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -49,6 +51,35 @@ class _ProfilePageState extends State<ProfilePage> {
       userName = prefs.getString('userName') ?? AppCopy.profileNameFallback;
       userEmail = prefs.getString('userEmail') ?? AppCopy.profileEmailFallback;
     });
+  }
+
+  /// Resolves the provider row for the signed-in user (if any) and pushes
+  /// the SubscriptionScreen. Falls back to the catalog-only view when the
+  /// user isn't a provider yet, so the pricing page also doubles as
+  /// marketing material.
+  Future<void> _openSubscription() async {
+    String? providerId;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getString('authUserId');
+      if (userId != null) {
+        final row = await Supabase.instance.client
+            .from('providers')
+            .select('id')
+            .eq('owner_id', userId)
+            .maybeSingle();
+        providerId = row?['id'] as String?;
+      }
+    } catch (_) {
+      // Treat as anonymous browse — the screen handles null gracefully.
+    }
+    if (!mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SubscriptionScreen(providerId: providerId),
+      ),
+    );
   }
 
   Future<void> _pickImage() async {
@@ -510,6 +541,21 @@ class _ProfilePageState extends State<ProfilePage> {
               tooltip: AppCopy.changePwTitle,
             ),
           ),
+          Divider(height: 1, color: AppColor.border),
+          // Subscription entry — opens the pricing/manage screen. Works for
+          // any user; the screen disables upgrade CTAs when the user has
+          // not onboarded as a provider yet.
+          _ProfileInfoRow(
+            icon: Icons.workspace_premium_rounded,
+            label: AppCopy.subTitle,
+            value: AppCopy.subManage,
+            onTap: _openSubscription,
+            trailing: Icon(
+              Icons.chevron_left_rounded,
+              color: AppColor.textTertiary,
+              size: 24.sp,
+            ),
+          ),
         ],
       ),
     );
@@ -616,48 +662,53 @@ class _ProfileInfoRow extends StatelessWidget {
     required this.label,
     required this.value,
     this.trailing,
+    this.onTap,
   });
 
   final IconData icon;
   final String label;
   final String value;
   final Widget? trailing;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppSpacing.xl.w,
-        vertical: AppSpacing.lg.h,
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(AppSpacing.sm.w),
-            decoration: BoxDecoration(
-              color: AppColor.primary50,
-              shape: BoxShape.circle,
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: AppSpacing.xl.w,
+          vertical: AppSpacing.lg.h,
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(AppSpacing.sm.w),
+              decoration: BoxDecoration(
+                color: AppColor.primary50,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: AppColor.primary, size: 20.sp),
             ),
-            child: Icon(icon, color: AppColor.primary, size: 20.sp),
-          ),
-          gapH(AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label, style: AppText.caption),
-                gapV(AppSpacing.xs / 2),
-                Text(
-                  value,
-                  style: AppText.bodyLg.copyWith(color: AppColor.textPrimary),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+            gapH(AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: AppText.caption),
+                  gapV(AppSpacing.xs / 2),
+                  Text(
+                    value,
+                    style: AppText.bodyLg.copyWith(color: AppColor.textPrimary),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
-          ),
-          if (trailing != null) trailing!,
-        ],
+            if (trailing != null) trailing!,
+          ],
+        ),
       ),
     );
   }

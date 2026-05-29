@@ -114,21 +114,15 @@ class AppCopy {
   static const reviewsEmptyHelp = 'ساعد الناس تختار صح';
   static const reviewsEmptyDiscover = 'اكتشف أماكن جديدة مع الجميع';
 
-  // --- Payment -----------------------------------------------------------------
-  static const paymentTitle = 'الدفع';
-  static const findMyPlace = 'دور على مكانك';
-  static const bookNow = 'احجز دلوقتي';
-  static const paymentFailed = 'الدفع ما عدّاش، جرّب تاني.';
-  static const paymentError = 'في حاجة لخبطت في الدفع، جرّب تاني.';
-  static const paymentSuccessTitle = 'الحجز اتأكد! 🎉';
-  static const paymentSuccessBody = 'ميّرتنا الاختيار، يلا قضّي وقت لذيذ.';
-
   // --- Details page ------------------------------------------------------------
   static const detailsTitle = 'التفاصيل';
   static const detailsBeFirstReview = 'كن أول واحد يعلّق';
   static const detailsAddYourComment = 'ضيف تعليقك';
   static const detailsSimilarHeading = 'فعاليات مشابهة';
   static const detailsNoSimilar = 'مفيش أماكن مشابهة دلوقتي';
+  static const bookingUnavailableTitle = 'الحجز مش متاح حاليًا';
+  static const bookingUnavailableBody =
+      'في المرحلة الأولى هنكتفي بالتصفح، التقييم، ومشاهدة التفاصيل من غير حجز أو دفع.';
 
   // --- Profile page ------------------------------------------------------------
   static const profileTitle = 'الملف الشخصي';
@@ -246,6 +240,21 @@ class AppCopy {
   static const subStatusCanceled = 'سيتم الإنهاء';
   static const subStatusExpired = 'منتهي';
   static const subUpgradeInProgress = 'تم استلام طلبك، هنبعتلك تأكيد على بريدك.';
+
+  // --- Demo upgrade flow -------------------------------------------------------
+  static const subConfirmTitle = 'أكّد اشتراكك';
+  static const subConfirmSubtitlePrefix = 'هتنضم لخطة';
+  static const subConfirmBenefitsHeading = 'هتحصل على:';
+  static const subConfirmPriceLabel = 'المبلغ';
+  static const subConfirmCta = 'أكّد الاشتراك';
+  static const subSuccessTitlePrefix = 'مبروك! خطة';
+  static const subSuccessTitleSuffix = 'اتفعّلت ✨';
+  static const subSuccessBody =
+      'دلوقتي تقدر تستمتع بكل المميزات، وفترة اشتراكك سارية لمدة شهر.';
+  static const subSuccessCta = 'يلا نبدأ';
+  static const subDemoBadge = 'تجربة عرض';
+  static const subDemoExplainer =
+      'ده وضع تجريبي — مفيش دفع حقيقي حتى الربط ببوابة الدفع.';
 
   // --- Change password dialog --------------------------------------------------
   static const changePwTitle = 'تغيير كلمة السر';
