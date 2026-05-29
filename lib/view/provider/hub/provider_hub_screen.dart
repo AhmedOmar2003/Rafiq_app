@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
@@ -57,13 +58,40 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
     await _loadProviderPlaces(providerId);
   }
 
+  Future<String?> _resolveProviderId() async {
+    final prefs = await SharedPreferences.getInstance();
+    const delays = <Duration>[
+      Duration(milliseconds: 180),
+      Duration(milliseconds: 320),
+      Duration(milliseconds: 480),
+    ];
+
+    for (var attempt = 0; attempt <= delays.length; attempt++) {
+      final cachedId =
+          widget.providerId ?? _providerId ?? prefs.getString('providerId');
+      if (cachedId != null && cachedId.isNotEmpty) {
+        return cachedId;
+      }
+
+      final resolved = await ApiService().ensureCurrentProviderId();
+      if (resolved != null && resolved.isNotEmpty) {
+        return resolved;
+      }
+
+      if (attempt < delays.length) {
+        await Future.delayed(delays[attempt]);
+      }
+    }
+
+    return null;
+  }
+
   Future<void> _bootstrapHub() async {
     if (mounted) {
       setState(() => _isBootstrapping = true);
     }
     try {
-      final resolved =
-          widget.providerId ?? await ApiService().ensureCurrentProviderId();
+      final resolved = await _resolveProviderId();
       if (!mounted) return;
       if (resolved == null || resolved.isEmpty) {
         setState(() {
@@ -77,12 +105,16 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
         _providerId = resolved;
         _providerName = widget.providerName ?? _providerName;
       });
-      await _bootstrapProviderState(resolved);
+      try {
+        await _bootstrapProviderState(resolved);
+      } catch (_) {
+        if (!mounted) return;
+        setState(() => _places = const []);
+      }
     } catch (_) {
       // Keep the free fallback; the hub still opens and shows the catalog.
       if (mounted) {
         setState(() {
-          _providerId = null;
           _places = const [];
         });
       }

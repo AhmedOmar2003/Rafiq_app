@@ -92,16 +92,21 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
   Widget build(BuildContext context) {
     if (!kIsWeb) {
       return AppPageScaffold(
+        unpadded: true,
         header: const AppPageHeader(title: AppCopy.adminTitle),
-        body: AppStateView.search(
-          title: 'لوحة الإدارة للويب فقط',
-          message:
-              'الإدارة والمراقبة موجودة في الويب فقط، وليست جزءًا من الموبايل.',
+        body: Padding(
+          padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
+          child: AppStateView.search(
+            title: 'لوحة الإدارة للويب فقط',
+            message:
+                'الإدارة والمراقبة موجودة في الويب فقط، وليست جزءًا من الموبايل.',
+          ),
         ),
       );
     }
 
     return AppPageScaffold(
+      unpadded: true,
       header: const AppPageHeader(title: AppCopy.adminTitle),
       body: FutureBuilder<List<_ProviderRow>>(
         future: _future,
@@ -123,13 +128,16 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
               ),
               Expanded(
                 child: rows.isEmpty
-                    ? AppStateView.search()
+                    ? Padding(
+                        padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
+                        child: AppStateView.search(),
+                      )
                     : ListView.separated(
                         padding: EdgeInsets.fromLTRB(
-                          AppSpacing.xxl.w,
+                          AppSpacing.lg.w,
                           AppSpacing.lg.h,
-                          AppSpacing.xxl.w,
-                          AppSpacing.xxl.h,
+                          AppSpacing.lg.w,
+                          AppSpacing.lg.h,
                         ),
                         itemBuilder: (_, i) => _ProviderTile(
                           row: rows[i],
@@ -171,7 +179,7 @@ class _FilterBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: AppSpacing.xxl.w,
+        horizontal: AppSpacing.lg.w,
         vertical: AppSpacing.md.h,
       ),
       decoration: const BoxDecoration(

@@ -20,6 +20,7 @@ class PromotionsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppPageScaffold(
+      unpadded: true,
       header: const AppPageHeader(title: AppCopy.promoTitle),
       body: ValueListenableBuilder<ProviderEntitlement>(
         valueListenable: SubscriptionService.instance.entitlement,
@@ -41,7 +42,7 @@ class _PromotionsEmpty extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.all(AppSpacing.xxl.w),
+      padding: EdgeInsets.all(AppSpacing.lg.w),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -96,7 +97,7 @@ class _PromotionsLocked extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.all(AppSpacing.xxl.w),
+      padding: EdgeInsets.all(AppSpacing.lg.w),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,

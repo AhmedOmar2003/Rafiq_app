@@ -467,7 +467,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               gapV(AppSpacing.xxl),
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: AppSpacing.xl.w),
+                padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
                 child: Column(
                   children: [
                     _buildInfoSection(),

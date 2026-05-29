@@ -127,6 +127,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     final headerTitle =
         widget.onboarding ? AppCopy.subOnboardingTitle : AppCopy.subTitle;
     return AppPageScaffold(
+      unpadded: true,
       header: AppPageHeader(title: headerTitle),
       body: ValueListenableBuilder<List<SubscriptionPlan>>(
         valueListenable: SubscriptionService.instance.catalog,
@@ -145,9 +146,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               // successful confirm.
               return ListView(
                 padding: EdgeInsets.fromLTRB(
-                  AppSpacing.xxl.w,
+                  AppSpacing.lg.w,
                   AppSpacing.lg.h,
-                  AppSpacing.xxl.w,
+                  AppSpacing.lg.w,
                   AppSpacing.huge.h,
                 ),
                 children: [

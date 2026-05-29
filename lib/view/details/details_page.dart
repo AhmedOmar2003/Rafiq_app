@@ -120,40 +120,34 @@ class _DetailsPageState extends State<DetailsPage> {
     return AppPageScaffold(
       unpadded: true,
       header: const AppPageHeader(title: AppCopy.detailsTitle),
-      body: Stack(
+      body: ListView(
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.lg.w,
+          AppSpacing.lg.h,
+          AppSpacing.lg.w,
+          AppSpacing.huge.h * 2,
+        ),
         children: [
-          SafeArea(
-            child: ListView(
-              padding: EdgeInsets.fromLTRB(
-                AppSpacing.lg.w,
-                AppSpacing.xxl.h,
-                AppSpacing.lg.w,
-                AppSpacing.huge.h * 2, // comfortable bottom breathing room
-              ),
-              children: [
-                _DetailsSection(
-                  model: currentModel,
-                  galleryImages: galleryImages,
-                  isLoading: _isGalleryLoading,
-                ),
-                gapV(AppSpacing.xxl),
-                _ReviewsSection(
-                  placeId: currentModel.placeId,
-                  isLoading: _isReviewLoading && lastEvaluation == null,
-                  lastEvaluation: lastEvaluation,
-                  onOpenAll: _openEvaluationsPage,
-                ),
-                gapV(AppSpacing.xxl),
-                if (filteredSuggestions.isNotEmpty)
-                  _SimilarSection(
-                    items: filteredSuggestions,
-                    onItemSelected: updateModel,
-                  )
-                else
-                  const _NoSimilarSection(),
-              ],
-            ),
+          _DetailsSection(
+            model: currentModel,
+            galleryImages: galleryImages,
+            isLoading: _isGalleryLoading,
           ),
+          gapV(AppSpacing.xxl),
+          _ReviewsSection(
+            placeId: currentModel.placeId,
+            isLoading: _isReviewLoading && lastEvaluation == null,
+            lastEvaluation: lastEvaluation,
+            onOpenAll: _openEvaluationsPage,
+          ),
+          gapV(AppSpacing.xxl),
+          if (filteredSuggestions.isNotEmpty)
+            _SimilarSection(
+              items: filteredSuggestions,
+              onItemSelected: updateModel,
+            )
+          else
+            const _NoSimilarSection(),
         ],
       ),
     );
