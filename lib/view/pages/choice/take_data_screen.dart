@@ -46,9 +46,9 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
   bool _isLoading = false;
   bool _isMounted = true;
 
-  // Image picker state — currently single image; the gate is sized in
-  // attached images so multi-image becomes a one-line extension.
-  File? _image;
+  // Image picker state — provider can attach up to [entitlement.maxGalleryImages]
+  // pictures. The first one in the list is treated as the cover.
+  final List<File> _images = <File>[];
   final ImagePicker _picker = ImagePicker();
 
   // Provider entitlement — read once on mount, refreshed after a successful
@@ -158,6 +158,12 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
 
     setState(() => _isLoading = true);
     try {
+      // The legacy API takes a single `imagePath`. Until the multi-image
+      // endpoint is wired (see `place_images` table), we send the user's
+      // chosen cover (first image) and keep the rest locally — the UI
+      // still respects plan caps so the user sees their gallery grow as
+      // they upgrade.
+      final coverPath = _images.isEmpty ? null : _images.first.path;
       await ApiService().addPlace(
         placeName: _placeNameController.text.trim(),
         activityName: _selectedPlaceType ?? '',
@@ -165,7 +171,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
         address: _addressController.text.trim(),
         cityName: _selectedCity ?? '',
         description: _descriptionController.text.trim(),
-        imagePath: _image?.path,
+        imagePath: coverPath,
       );
 
       if (!_isMounted) return;
@@ -195,7 +201,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
         'budget': _selectedBudget ?? '',
         'rating': 5.0,
         'placeAddress': _addressController.text.trim(),
-        'imageUrl': _image?.path ?? '',
+        'imageUrl': _images.isEmpty ? '' : _images.first.path,
       'activityName': _selectedPlaceType ?? '',
       'cityName': _selectedCity ?? '',
       'placeId': DateTime.now().millisecondsSinceEpoch, // unique id
@@ -233,7 +239,6 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
     return ValueListenableBuilder<ProviderEntitlement>(
       valueListenable: SubscriptionService.instance.entitlement,
       builder: (_, ent, __) {
-        final used = _image == null ? 0 : 1;
         return Container(
           margin: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 0),
           padding: EdgeInsets.symmetric(
@@ -251,7 +256,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
               const Spacer(),
               EntitlementChip(
                 label: AppCopy.subFeatGallery,
-                used: used,
+                used: _images.length,
                 limit: ent.maxGalleryImages,
               ),
             ],
@@ -265,12 +270,11 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
     // Entitlement preflight — Free fallback is used while billing loads,
     // which always allows ≥1 image, so the form never freezes here.
     final ent = _entitlement ?? ProviderEntitlement.freeFallback;
-    final currentImages = _image == null ? 0 : 1;
 
     final allowed = await FeatureGate.requireImageSlot(
       context,
       ent,
-      currentImages,
+      _images.length,
     );
     if (!allowed) {
       // Sheet handles the upgrade path; nothing else to do here.
@@ -285,11 +289,16 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
         maxWidth: 1600,
       );
       if (pickedFile != null && _isMounted) {
-        setState(() => _image = File(pickedFile.path));
+        setState(() => _images.add(File(pickedFile.path)));
       }
     } catch (_) {
       _showSnackBar(AppCopy.providerImagePickError, isError: true);
     }
+  }
+
+  void _removeImage(int index) {
+    if (!_isMounted) return;
+    setState(() => _images.removeAt(index));
   }
 
   @override
@@ -379,81 +388,81 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
     );
   }
 
+  /// Plan-aware gallery picker.
+  ///
+  /// Visual:
+  ///   • Section header with title + subtitle ("الصورة الأولى هتبقى الكوفر").
+  ///   • Horizontally scrollable tiles, one per image, plus an "add" tile
+  ///     at the end while the user is below their plan cap.
+  ///   • First tile carries a small "COVER" chip so the user understands
+  ///     reordering matters.
+  ///   • If the cap is reached, the add tile disappears and the entitlement
+  ///     chip above turns red (handled by [EntitlementChip]).
   Widget _buildTopImage() {
-    return GestureDetector(
-      onTap: _pickImage,
-      child: Container(
-        margin: EdgeInsets.symmetric(horizontal: 24.w),
-        height: 200.h,
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: AppColor.white,
-          borderRadius: BorderRadius.circular(20.r),
-          border: _image == null 
-              ? Border.all(color: AppColor.primary.withOpacity(0.3), width: 1.5)
-              : Border.all(color: Colors.transparent),
-          boxShadow: [
-            BoxShadow(
-              color: AppColor.black.withOpacity(0.04),
-              blurRadius: 15,
-              offset: const Offset(0, 5),
-            ),
-          ],
-          image: _image != null
-              ? DecorationImage(
-                  image: FileImage(_image!),
-                  fit: BoxFit.cover,
-                )
-              : null,
-        ),
-        child: _image == null
-            ? Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+    return ValueListenableBuilder<ProviderEntitlement>(
+      valueListenable: SubscriptionService.instance.entitlement,
+      builder: (_, ent, __) {
+        final canAdd = _images.length < ent.maxGalleryImages;
+        return Padding(
+          padding: EdgeInsets.symmetric(horizontal: 24.w),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  Container(
-                    padding: EdgeInsets.all(18.w),
-                    decoration: BoxDecoration(
-                      color: AppColor.primary.withOpacity(0.08),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Icons.add_photo_alternate_rounded, color: AppColor.primary, size: 40.w),
-                  ),
-                  SizedBox(height: 16.h),
                   Text(
-                    "إضافة صورة الغلاف للمكان",
-                    style: AppText.titleMd.copyWith(
-                      color: AppColor.primary,
-                      fontWeight: FontWeight.w600,
+                    AppCopy.providerGalleryTitle,
+                    style: AppText.titleLg.copyWith(
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
-                  SizedBox(height: 8.h),
+                  const Spacer(),
                   Text(
-                    "يفضل أن تكون صورة عرضية بجودة عالية",
-                    style: AppText.bodySm.copyWith(
-                      color: AppColor.textTertiary,
-                    ),
-                  ),
-                ],
-              )
-            : Stack(
-                children: [
-                  Positioned(
-                    bottom: 12.h,
-                    right: 12.w,
-                    child: Container(
-                      padding: EdgeInsets.all(10.w),
-                      decoration: BoxDecoration(
-                        color: AppColor.black.withOpacity(0.65),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColor.white.withOpacity(0.5), width: 1),
-                      ),
-                      child: Icon(Icons.edit_rounded, color: AppColor.white, size: 20.w),
+                    _galleryCountLabel(ent),
+                    style: AppText.labelSm.copyWith(
+                      color: AppColor.textSecondary,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ],
               ),
-      ),
+              SizedBox(height: 4.h),
+              Text(
+                AppCopy.providerCoverHint,
+                style: AppText.bodySm.copyWith(color: AppColor.textTertiary),
+              ),
+              SizedBox(height: 14.h),
+              SizedBox(
+                height: 130.h,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _images.length + (canAdd ? 1 : 0),
+                  separatorBuilder: (_, __) => SizedBox(width: 10.w),
+                  itemBuilder: (_, i) {
+                    if (i == _images.length) return _AddTile(onTap: _pickImage);
+                    return _GalleryTile(
+                      file: _images[i],
+                      isCover: i == 0,
+                      onRemove: () => _removeImage(i),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
+  }
+
+  String _galleryCountLabel(ProviderEntitlement ent) {
+    if (ent.maxGalleryImages >= 999) {
+      return AppCopy.providerImagesUnlimited
+          .replaceFirst('%u', _images.length.toString());
+    }
+    return AppCopy.providerImagesUsed
+        .replaceFirst('%u', _images.length.toString())
+        .replaceFirst('%m', ent.maxGalleryImages.toString());
   }
 
   Widget _buildFormFields() {
@@ -699,5 +708,136 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
               fontWeight: FontWeight.w700,
             ),
           );
+  }
+}
+
+// ===========================================================================
+// Gallery widgets — kept private to this screen.
+// ===========================================================================
+
+/// One image tile in the horizontally-scrolling gallery.
+///
+/// Layout: 130×130 rounded square with the picture, a small "COVER" pill on
+/// the first tile, and a delete button in the top-right corner. The delete
+/// button stays a fixed hit-target size regardless of screen DPR.
+class _GalleryTile extends StatelessWidget {
+  const _GalleryTile({
+    required this.file,
+    required this.isCover,
+    required this.onRemove,
+  });
+
+  final File file;
+  final bool isCover;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 130.w,
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16.r),
+            child: Image.file(
+              file,
+              width: 130.w,
+              height: 130.h,
+              fit: BoxFit.cover,
+              // Cap decoded size to avoid 8MB+ pics sitting at full res in
+              // RAM just to be displayed as a 130dp thumbnail.
+              cacheWidth: (130 * MediaQuery.devicePixelRatioOf(context)).round(),
+            ),
+          ),
+          if (isCover)
+            Positioned(
+              left: 6.w,
+              bottom: 6.h,
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 8.w,
+                  vertical: 2.h,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColor.primary,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  'COVER',
+                  style: AppText.caption.copyWith(
+                    color: AppColor.white,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+          Positioned(
+            top: 4.h,
+            right: 4.w,
+            child: Material(
+              color: Colors.black.withOpacity(0.55),
+              shape: const CircleBorder(),
+              child: InkResponse(
+                onTap: onRemove,
+                radius: 18,
+                child: Padding(
+                  padding: EdgeInsets.all(4.w),
+                  child: Icon(
+                    Icons.close_rounded,
+                    color: AppColor.white,
+                    size: 16.sp,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Dashed-style "add image" tile that sits at the end of the gallery.
+/// Only renders while the user is below their plan's gallery cap.
+class _AddTile extends StatelessWidget {
+  const _AddTile({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16.r),
+      child: Container(
+        width: 130.w,
+        height: 130.h,
+        decoration: BoxDecoration(
+          color: AppColor.primary50,
+          borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(
+            color: AppColor.primary.withOpacity(0.35),
+            width: 1.5,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.add_photo_alternate_rounded,
+              color: AppColor.primary,
+              size: 30.sp,
+            ),
+            SizedBox(height: 6.h),
+            Text(
+              AppCopy.providerAddImage,
+              style: AppText.labelSm.copyWith(
+                color: AppColor.primary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

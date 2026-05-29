@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
@@ -32,17 +34,44 @@ class ProviderHubScreen extends StatefulWidget {
 }
 
 class _ProviderHubScreenState extends State<ProviderHubScreen> {
+  String? _providerId;
+
   @override
   void initState() {
     super.initState();
     final pid = widget.providerId;
     SubscriptionService.instance.loadCatalog();
-    if (pid != null) SubscriptionService.instance.loadEntitlement(pid);
+    if (pid != null) {
+      _providerId = pid;
+      SubscriptionService.instance.loadEntitlement(pid);
+    } else {
+      _resolveProviderId();
+    }
+  }
+
+  Future<void> _resolveProviderId() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getString('authUserId');
+      if (userId == null) return;
+      final row = await Supabase.instance.client
+          .from('providers')
+          .select('id')
+          .eq('owner_id', userId)
+          .maybeSingle();
+      final resolved = row?['id'] as String?;
+      if (!mounted || resolved == null || resolved == _providerId) return;
+      setState(() => _providerId = resolved);
+      await SubscriptionService.instance.loadEntitlement(resolved);
+    } catch (_) {
+      // Keep the free fallback; the hub still opens and shows the catalog.
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return AppPageScaffold(
+      // "تابع خدمتك" — same identity post-subscription, no role flip.
       header: const AppPageHeader(title: AppCopy.hubTitle),
       body: ValueListenableBuilder<ProviderEntitlement>(
         valueListenable: SubscriptionService.instance.entitlement,
@@ -63,7 +92,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (_) => SubscriptionScreen(
-                      providerId: widget.providerId,
+                      providerId: _providerId,
                     ),
                   ),
                 ),
@@ -93,7 +122,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (_) => AnalyticsScreen(
-                      providerId: widget.providerId,
+                      providerId: _providerId,
                     ),
                   ),
                 ),
@@ -109,7 +138,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (_) => PromotionsScreen(
-                      providerId: widget.providerId,
+                      providerId: _providerId,
                     ),
                   ),
                 ),
@@ -123,7 +152,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (_) => SubscriptionScreen(
-                      providerId: widget.providerId,
+                      providerId: _providerId,
                     ),
                   ),
                 ),

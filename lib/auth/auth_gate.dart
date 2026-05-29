@@ -8,7 +8,9 @@ import 'package:rafiq_app/core/logic/helper_methods.dart';
 import 'package:rafiq_app/on_boarding/cashe_helper.dart';
 import 'package:rafiq_app/on_boarding/on_boarding_screen.dart';
 import 'package:rafiq_app/service/auth_service.dart';
+import 'package:rafiq_app/service/user_role_store.dart';
 import 'package:rafiq_app/view/pages/choice/choice_screen.dart';
+import 'package:rafiq_app/view/provider/hub/provider_hub_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthGate extends StatefulWidget {
@@ -34,9 +36,10 @@ class _AuthGateState extends State<AuthGate> {
     _bootstrapFuture = Future.wait<Object>([
       AuthService.ensureSupabaseInitialized().then((_) => true),
       CacheHelper.getOnBoardingSeen(),
+      UserRoleStore.instance.ensureLoaded().then((_) => true),
     ]).timeout(
       _bootstrapTimeout,
-      onTimeout: () => const <Object>[false, false],
+      onTimeout: () => const <Object>[false, false, false],
     );
 
     _bootstrapFuture.then((_) {
@@ -116,6 +119,9 @@ class _AuthGateState extends State<AuthGate> {
         final results = snapshot.data ?? const [];
         final session = Supabase.instance.client.auth.currentSession;
         if (session != null) {
+          if (UserRoleStore.instance.isProvider.value) {
+            return const ProviderHubScreen();
+          }
           return ChoiceScreen(
             onPlanSelected: () {},
             onNoPlanSelected: () {},

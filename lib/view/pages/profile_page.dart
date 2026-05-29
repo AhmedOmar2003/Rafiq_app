@@ -9,24 +9,18 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
 
 import '../../auth/login/login_screen.dart';
 import '../../core/config/api_config.dart';
-import '../../core/design/components/app_page_header.dart';
 import '../../core/design/components/components.dart';
 import '../../core/utils/app_microcopy.dart';
-import '../../core/utils/spacing.dart';
 import '../../models/subscription/plan.dart';
 import '../../service/auth_service.dart';
 import '../../service/profile_image_store.dart';
 import '../../service/subscription_service.dart';
 import '../../service/user_role_store.dart';
-import '../admin/admin_overview_screen.dart';
-import '../provider/hub/provider_hub_screen.dart';
-import '../provider/subscription/subscription_screen.dart';
 import 'delete_account_sheet.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -61,48 +55,6 @@ class _ProfilePageState extends State<ProfilePage> {
       userName = prefs.getString('userName') ?? AppCopy.profileNameFallback;
       userEmail = prefs.getString('userEmail') ?? AppCopy.profileEmailFallback;
     });
-  }
-
-  /// Resolves the provider row for the signed-in user (if any) and pushes
-  /// the SubscriptionScreen. Falls back to the catalog-only view when the
-  /// user isn't a provider yet, so the pricing page also doubles as
-  /// marketing material.
-  Future<void> _openSubscription() => _openProviderRoute(
-        (providerId) =>
-            SubscriptionScreen(providerId: providerId),
-      );
-
-  /// Same flow but routes to the Provider Hub (dashboard).
-  Future<void> _openProviderHub() => _openProviderRoute(
-        (providerId) => ProviderHubScreen(
-          providerId: providerId,
-          providerName: userName,
-        ),
-      );
-
-  Future<void> _openProviderRoute(
-    Widget Function(String? providerId) builder,
-  ) async {
-    String? providerId;
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getString('authUserId');
-      if (userId != null) {
-        final row = await Supabase.instance.client
-            .from('providers')
-            .select('id')
-            .eq('owner_id', userId)
-            .maybeSingle();
-        providerId = row?['id'] as String?;
-      }
-    } catch (_) {
-      // Best-effort — screen handles null gracefully.
-    }
-    if (!mounted) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => builder(providerId)),
-    );
   }
 
   Future<void> _pickImage() async {
@@ -586,99 +538,35 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget _buildInfoSection() {
     return AppCard(
       padding: EdgeInsets.zero,
-      child: ValueListenableBuilder<bool>(
-        valueListenable: UserRoleStore.instance.isProvider,
-        builder: (_, isProvider, __) {
-          return Column(
-            children: [
-              _ProfileInfoRow(
-                icon: Icons.person_2_outlined,
-                label: AppCopy.profileNameLabel,
-                value: userName ?? AppCopy.profileNameFallback,
+      child: Column(
+        children: [
+          _ProfileInfoRow(
+            icon: Icons.person_2_outlined,
+            label: AppCopy.profileNameLabel,
+            value: userName ?? AppCopy.profileNameFallback,
+          ),
+          Divider(height: 1, color: AppColor.border),
+          _ProfileInfoRow(
+            icon: Icons.email_outlined,
+            label: AppCopy.profileEmailLabel,
+            value: userEmail ?? AppCopy.profileEmailFallback,
+          ),
+          Divider(height: 1, color: AppColor.border),
+          _ProfileInfoRow(
+            icon: Icons.lock_outline,
+            label: AppCopy.profilePasswordLabel,
+            value: '••••••••',
+            trailing: IconButton(
+              icon: Icon(
+                Icons.edit_outlined,
+                color: AppColor.primary,
+                size: 22.sp,
               ),
-              Divider(height: 1, color: AppColor.border),
-              _ProfileInfoRow(
-                icon: Icons.email_outlined,
-                label: AppCopy.profileEmailLabel,
-                value: userEmail ?? AppCopy.profileEmailFallback,
-              ),
-              Divider(height: 1, color: AppColor.border),
-              _ProfileInfoRow(
-                icon: Icons.lock_outline,
-                label: AppCopy.profilePasswordLabel,
-                value: '••••••••',
-                trailing: IconButton(
-                  icon: Icon(
-                    Icons.edit_outlined,
-                    color: AppColor.primary,
-                    size: 22.sp,
-                  ),
-                  onPressed: () => showChangePasswordDialog(context),
-                  tooltip: AppCopy.changePwTitle,
-                ),
-              ),
-              // Provider-only surfaces. A regular user gets a clean profile
-              // without anything they can't act on.
-              if (isProvider) ...[
-                Divider(height: 1, color: AppColor.border),
-                _ProfileInfoRow(
-                  icon: Icons.dashboard_rounded,
-                  label: AppCopy.hubTitle,
-                  value: AppCopy.hubManagePlan,
-                  onTap: _openProviderHub,
-                  trailing: Icon(
-                    Icons.chevron_left_rounded,
-                    color: AppColor.textTertiary,
-                    size: 24.sp,
-                  ),
-                ),
-                Divider(height: 1, color: AppColor.border),
-                // Subscription row: surface the active plan + period end so
-                // the provider always knows where they stand.
-                ValueListenableBuilder<ProviderEntitlement>(
-                  valueListenable:
-                      SubscriptionService.instance.entitlement,
-                  builder: (_, ent, __) {
-                    final planName = _planDisplayName(ent.tier);
-                    final periodText = _formatPeriod(ent);
-                    final value = periodText == null
-                        ? planName
-                        : '$planName · $periodText';
-                    return _ProfileInfoRow(
-                      icon: Icons.workspace_premium_rounded,
-                      label: AppCopy.subTitle,
-                      value: value,
-                      onTap: _openSubscription,
-                      trailing: Icon(
-                        Icons.chevron_left_rounded,
-                        color: AppColor.textTertiary,
-                        size: 24.sp,
-                      ),
-                    );
-                  },
-                ),
-              ],
-              Divider(height: 1, color: AppColor.border),
-              // Admin overview — RLS guarantees only admins see real rows.
-              _ProfileInfoRow(
-                icon: Icons.admin_panel_settings_rounded,
-                label: AppCopy.adminTitle,
-                value: AppCopy.adminProviders,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const AdminOverviewScreen(),
-                  ),
-                ),
-                trailing: Icon(
-                  Icons.chevron_left_rounded,
-                  color: AppColor.textTertiary,
-                  size: 24.sp,
-                ),
-              ),
-            ],
-          );
-        },
+              onPressed: () => showChangePasswordDialog(context),
+              tooltip: AppCopy.changePwTitle,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -697,17 +585,6 @@ class _ProfilePageState extends State<ProfilePage> {
       case PlanTier.max:
         return 'ماكس';
     }
-  }
-
-  String? _formatPeriod(ProviderEntitlement ent) {
-    if (ent.tier == PlanTier.free) return null;
-    final end = ent.periodEnd;
-    if (end == null) return null;
-    final iso =
-        '${end.year}-${end.month.toString().padLeft(2, '0')}-${end.day.toString().padLeft(2, '0')}';
-    return ent.cancelAtPeriodEnd
-        ? '${AppCopy.subCancelsOn} $iso'
-        : '${AppCopy.subRenewsOn} $iso';
   }
 
   Widget _buildLogoutButton() {

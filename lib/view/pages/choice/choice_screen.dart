@@ -6,8 +6,8 @@ import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:rafiq_app/core/logic/helper_methods.dart';
 import 'package:rafiq_app/service/user_role_store.dart';
 import 'package:rafiq_app/view/home/home_view.dart';
-import 'package:rafiq_app/view/pages/choice/take_data_screen.dart';
 import 'package:rafiq_app/view/provider/subscription/subscription_screen.dart';
+import 'package:rafiq_app/view/provider/hub/provider_hub_screen.dart';
 import '../../../core/utils/app_microcopy.dart';
 import '../../../core/utils/assets.dart';
 
@@ -43,11 +43,12 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
   ///   * Regular user → clear the provider flag → push HomeView.
   ///   * Service provider → set the provider flag → push the subscription
   ///     screen in *onboarding mode*. Picking any plan (Free, Pro, Max)
-  ///     fires `onPlanChosen`, which pushes the add-place screen.
+  ///     fires `onPlanChosen`, which pushes the provider hub.
   ///
   /// The provider step now reads like a normal funnel: choose track → choose
-  /// plan → fill business data → done. Plans drive the rest of the app, so
-  /// the user always knows what they unlocked.
+  /// plan → land in the service hub. From there the user can add places,
+  /// view stats, and manage the subscription without bouncing through the
+  /// profile page.
   Future<void> _handleNavigation() async {
     if (_selectedIndex == null) {
       AppFeedback.warning(AppCopy.choicePickFirst);
@@ -61,25 +62,26 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
         context,
         MaterialPageRoute(builder: (_) => const HomeView()),
       );
-    } else {
-      await UserRoleStore.instance.setProvider(true);
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => SubscriptionScreen(
-            onboarding: true,
-            onPlanChosen: () {
+      } else {
+        await UserRoleStore.instance.setProvider(true);
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => SubscriptionScreen(
+              onboarding: true,
+              onPlanChosen: () {
               // Once a plan is in place, send the provider straight into the
-              // add-place form. pushReplacement keeps the back stack clean.
+              // service hub so they can see the plan, stats, and next steps
+              // in one place. Places can still be added from the hub.
               Navigator.pushReplacement(
                 navigatorKey.currentContext ?? context,
-                MaterialPageRoute(builder: (_) => const AddPlaceScreen()),
+                MaterialPageRoute(builder: (_) => const ProviderHubScreen()),
               );
             },
+            ),
           ),
-        ),
-      );
+        );
     }
     widget.onNext();
   }

@@ -88,6 +88,12 @@ class AppCopy {
   static const providerAddedSuccess = 'اتضاف بنجاح ✅';
   static const providerImagePickError = 'حصلت مشكلة وانت بتختار الصورة، جرّب تاني.';
   static const providerSavedTitle = 'مبروك! بيانات مكانك اتسجلت';
+  static const providerGalleryTitle = 'صور المكان';
+  static const providerCoverHint = 'الصورة الأولى هتبقى الكوفر';
+  static const providerAddImage = 'ضيف صورة';
+  static const providerImagesUsed = '%u من %m صورة';
+  static const providerImagesUnlimited = '%u صورة';
+  static const providerRemoveImage = 'احذف الصورة';
 
   // --- Suggestions list --------------------------------------------------------
   static const suggestionsTitle = 'اقتراحاتنا ليك';
@@ -261,7 +267,9 @@ class AppCopy {
       'ده وضع تجريبي — مفيش دفع حقيقي حتى الربط ببوابة الدفع.';
 
   // --- Provider hub ------------------------------------------------------------
-  static const hubTitle = 'لوحة المزود';
+  static const hubTitle = 'تابع خدمتك';
+  static const hubProfileRowLabel = 'تابع خدمتك';
+  static const hubProfileRowValue = 'إدارة مكانك وإحصائياتك';
   static const hubGreetingPrefix = 'أهلاً بيك';
   static const hubCurrentPlan = 'خطتك الحالية';
   static const hubManagePlan = 'إدارة الخطة';

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:rafiq_app/core/design/components/components.dart';
@@ -91,6 +92,16 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (!kIsWeb) {
+      return AppPageScaffold(
+        header: const AppPageHeader(title: AppCopy.adminTitle),
+        body: AppStateView.search(
+          title: 'لوحة الإدارة للويب فقط',
+          message: 'الإدارة والمراقبة موجودة في الويب فقط، وليست جزءًا من الموبايل.',
+        ),
+      );
+    }
+
     return AppPageScaffold(
       header: const AppPageHeader(title: AppCopy.adminTitle),
       body: FutureBuilder<List<_ProviderRow>>(
