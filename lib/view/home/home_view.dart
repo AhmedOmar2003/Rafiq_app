@@ -269,7 +269,9 @@ class _StepHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: AppSpacing.xxl.w),
+      // Aligned with AppPageHeader's lg.w gutter so the step counter sits
+      // right under the title.
+      padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

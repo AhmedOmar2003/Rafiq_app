@@ -392,10 +392,13 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
               onRefresh: _refreshHub,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
+                // Horizontal gutter == AppPageHeader's horizontal padding
+                // (lg.w == 16). Keeps the page title vertically aligned
+                // with the body content directly underneath.
                 padding: EdgeInsets.fromLTRB(
-                  AppSpacing.xxl.w,
+                  AppSpacing.lg.w,
                   AppSpacing.lg.h,
-                  AppSpacing.xxl.w,
+                  AppSpacing.lg.w,
                   AppSpacing.huge.h,
                 ),
                 children: [
