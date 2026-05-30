@@ -34,7 +34,7 @@ set search_path = ''
 as $$
 declare
   _uid           uuid := auth.uid();
-  _email         citext;
+  _email         extensions.citext;
   _provider      public.providers%rowtype;
   _had_provider  boolean := false;
   _had_paid      boolean := false;
