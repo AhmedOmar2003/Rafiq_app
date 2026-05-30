@@ -62,6 +62,18 @@ void main() async {
   // on first frame.
   unawaited(UserRoleStore.instance.ensureLoaded());
 
+  // Pre-warm the subscription plan catalog. The first screen that needs to
+  // resolve a tier's display name / price (Profile, Hub, Subscription) used
+  // to wait for a 200–400ms DB round-trip on cold open; doing this in the
+  // splash window means the catalog is already in memory before the user
+  // navigates anywhere.
+  unawaited(SubscriptionService.instance.loadCatalog());
+
+  // Initialise the Supabase client during the splash so the first authed
+  // call (entitlement load, places fetch) doesn't pay the SDK init cost
+  // on the user-facing path.
+  unawaited(ApiService.ensureSupabaseInitialized());
+
   // ---------------------------------------------------------------------------
   // Image cache budget.
   //
