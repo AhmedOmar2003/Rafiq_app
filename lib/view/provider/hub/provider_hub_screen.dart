@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
@@ -48,6 +49,16 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
   bool _loadingPlaces = false;
   bool _isBootstrapping = true;
 
+  /// Supabase realtime channel listening for INSERT/UPDATE/DELETE on places
+  /// owned by the current provider. The admin's approve/reject action in the
+  /// web dashboard writes to the same row; the channel fires, we refresh the
+  /// list, the user sees the new status without ever leaving the hub.
+  RealtimeChannel? _placesChannel;
+
+  /// Track which place ids we've already shown a "status changed" toast for
+  /// in this session, so a rebuild doesn't double-fire the snackbar.
+  final Set<String> _notifiedStatusChange = <String>{};
+
   @override
   void initState() {
     super.initState();
@@ -55,9 +66,80 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
     _bootstrapHub();
   }
 
+  @override
+  void dispose() {
+    _placesChannel?.unsubscribe();
+    _placesChannel = null;
+    super.dispose();
+  }
+
   Future<void> _bootstrapProviderState(String providerId) async {
     await SubscriptionService.instance.loadEntitlement(providerId);
     await _loadProviderPlaces(providerId);
+    _subscribeToPlacesRealtime(providerId);
+  }
+
+  /// Open a realtime channel on `public.places` filtered to this provider's
+  /// rows. The admin dashboard's approve/reject server action writes to the
+  /// same row and the Postgres logical replication slot fires this stream —
+  /// usually within ~300ms of the admin click. We then refetch the full list
+  /// (cheap with the indexes from 0025) so the UI always reflects the truth.
+  ///
+  /// The channel is closed in [dispose] and re-opened if the provider id
+  /// changes (e.g. account switch within a session).
+  void _subscribeToPlacesRealtime(String providerId) {
+    _placesChannel?.unsubscribe();
+    final client = Supabase.instance.client;
+    final channel = client.channel('places:provider:$providerId');
+    channel.onPostgresChanges(
+      event: PostgresChangeEvent.all,
+      schema: 'public',
+      table: 'places',
+      filter: PostgresChangeFilter(
+        type: PostgresChangeFilterType.eq,
+        column: 'provider_id',
+        value: providerId,
+      ),
+      callback: (payload) {
+        if (!mounted) return;
+        // Surface a toast for status transitions so the provider notices
+        // even if they're scrolling somewhere else on the hub.
+        final newRow = payload.newRecord;
+        final oldRow = payload.oldRecord;
+        final newStatus = newRow['status']?.toString();
+        final oldStatus = oldRow['status']?.toString();
+        final placeId = newRow['id']?.toString() ?? '';
+        if (newStatus != null &&
+            oldStatus != null &&
+            newStatus != oldStatus &&
+            placeId.isNotEmpty &&
+            !_notifiedStatusChange.contains('$placeId:$newStatus')) {
+          _notifiedStatusChange.add('$placeId:$newStatus');
+          final name = newRow['place_name']?.toString() ??
+              newRow['name']?.toString() ??
+              'مكانك';
+          switch (newStatus) {
+            case 'approved':
+              AppFeedback.success('تم اعتماد "$name" — ظاهر للجمهور دلوقتي');
+              break;
+            case 'rejected':
+              AppFeedback.warning('تم رفض "$name" — راجع السبب وعدّل');
+              break;
+            case 'suspended':
+              AppFeedback.warning('تم تعليق "$name" مؤقتاً');
+              break;
+            case 'pending':
+              AppFeedback.info('"$name" رجع للمراجعة');
+              break;
+          }
+        }
+        // Always refetch to keep the list authoritative — cheaper than
+        // patching rows by hand and avoids edge cases on delete events.
+        _loadProviderPlaces(providerId);
+      },
+    );
+    channel.subscribe();
+    _placesChannel = channel;
   }
 
   Future<String?> _resolveProviderId() async {
