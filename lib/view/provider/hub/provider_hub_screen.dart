@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -829,51 +828,34 @@ class _AppealSheetState extends State<_AppealSheet> {
       AppFeedback.warning('من فضلك اكمل جميع الحقول');
       return;
     }
+    if (!RegExp(r'^\+?[0-9]{6,15}$').hasMatch(phone)) {
+      AppFeedback.warning('رقم الموبايل غير صحيح');
+      return;
+    }
 
     setState(() => _sending = true);
     try {
-      // Build a mailto body with all the context the admin needs.
-      final body = '''
-طعن على رفض مكان
-
-🏪 اسم المكان: ${widget.place.name}
-👤 الاسم: $name
-📱 الهاتف: $phone
-📧 (يُرجى الرد على بريد التطبيق)
-
-💬 سبب الطعن:
-$message
-
----
-سبب الرفض الأصلي: ${widget.place.rejectionReason ?? 'لم يُحدد'}
-''';
-      final uri = Uri(
-        scheme: 'mailto',
-        path: AppCopy.supportEmail,
-        queryParameters: {
-          'subject': 'طعن في رفض: ${widget.place.name}',
-          'body': body,
+      // Write directly to the place_appeals table via the SECURITY DEFINER
+      // RPC. The admin reads it from /dashboard/appeals and contacts the
+      // provider on the phone/email of their choice. No mailto, no leaving
+      // the app.
+      await ApiService.ensureSupabaseInitialized();
+      await Supabase.instance.client.rpc<dynamic>(
+        'submit_place_appeal',
+        params: {
+          '_place_id':      widget.place.placeId,
+          '_contact_name':  name,
+          '_contact_phone': phone,
+          '_message':       message,
         },
       );
-
-      final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!mounted) return;
-      if (ok) {
-        AppFeedback.success(AppCopy.appealSentSuccess);
-        Navigator.pop(context);
-      } else {
-        // Fallback: open WhatsApp with pre-filled message
-        final waBody = Uri.encodeComponent(
-          'طعن على رفض مكان: ${widget.place.name}\nالاسم: $name\nالهاتف: $phone\n$message',
-        );
-        final waUri = Uri.parse(
-          'https://wa.me/2${AppCopy.supportPhone2}?text=$waBody',
-        );
-        await launchUrl(waUri, mode: LaunchMode.externalApplication);
-        if (mounted) Navigator.pop(context);
+      AppFeedback.success(AppCopy.appealSentSuccess);
+      Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        AppFeedback.error(AppCopy.appealSentFail);
       }
-    } catch (_) {
-      if (mounted) AppFeedback.error(AppCopy.appealSentFail);
     } finally {
       if (mounted) setState(() => _sending = false);
     }

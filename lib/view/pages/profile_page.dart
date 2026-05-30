@@ -4,6 +4,10 @@ import 'dart:io';
 
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:rafiq_app/view/pages/legal/help_screen.dart';
+import 'package:rafiq_app/view/pages/legal/privacy_policy_screen.dart';
+import 'package:rafiq_app/view/pages/legal/terms_screen.dart';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -716,29 +720,36 @@ class _ProfilePageState extends State<ProfilePage> {
 }
 
 // ===========================================================================
-// Support section — Privacy, Terms, Help, Contact
+// Support section — calm, two-group layout
 // ===========================================================================
+//
+// Visual rules (per the user's "اشيك واهدى" request):
+//   * Section labels are small uppercase-ish chips in textTertiary, not bold
+//     headlines.
+//   * Rows use a muted icon background (8% primary) instead of saturated
+//     orange so the eye glides instead of jumping.
+//   * Dividers are 1px hairlines (no thick separators).
+//   * Two groups: "معلومات" (read-only legal pages) and "تواصل معانا"
+//     (action: call / whatsapp / email).
 
 class _SupportSection extends StatelessWidget {
   const _SupportSection();
 
   Future<void> _launch(String url) async {
     final uri = Uri.parse(url);
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      // silently fail — url_launcher already logs on debug
-    }
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
-  void _call(String phone) =>
-      _launch('tel:$phone');
+  void _call(String phone) => _launch('tel:$phone');
 
-  void _whatsapp(String phone, String message) =>
-      _launch('https://wa.me/2$phone?text=${Uri.encodeComponent(message)}');
+  void _whatsapp(String phone, String message) => _launch(
+        'https://wa.me/2$phone?text=${Uri.encodeComponent(message)}',
+      );
 
   void _email() => _launch(
         'mailto:${AppCopy.supportEmail}'
-        '?subject=${Uri.encodeComponent("طلب مساعدة - رفيق")}'
-        '&body=${Uri.encodeComponent("مرحباً، أحتاج مساعدة في...")}',
+        '?subject=${Uri.encodeComponent("طلب مساعدة — رفيق")}'
+        '&body=${Uri.encodeComponent("مرحباً،\n\nأحتاج مساعدة في...")}',
       );
 
   @override
@@ -746,16 +757,8 @@ class _SupportSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: EdgeInsets.only(right: AppSpacing.xs.w, bottom: AppSpacing.sm.h),
-          child: Text(
-            AppCopy.profileSupportSection,
-            style: AppText.labelMd.copyWith(
-              color: AppColor.textSecondary,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
+        // Group 1 — Legal & Help
+        const _GroupLabel(text: 'معلومات'),
         AppCard(
           padding: EdgeInsets.zero,
           child: Column(
@@ -763,46 +766,60 @@ class _SupportSection extends StatelessWidget {
               _SupportRow(
                 icon: Icons.privacy_tip_outlined,
                 label: AppCopy.profilePrivacyPolicy,
-                onTap: () => _launch(
-                  'https://rafiq-master-zeta.vercel.app/privacy',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
                 ),
               ),
-              const Divider(height: 1, color: AppColor.border),
+              const _Hairline(),
               _SupportRow(
                 icon: Icons.gavel_outlined,
                 label: AppCopy.profileTerms,
-                onTap: () => _launch(
-                  'https://rafiq-master-zeta.vercel.app/terms',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const TermsScreen()),
                 ),
               ),
-              const Divider(height: 1, color: AppColor.border),
+              const _Hairline(),
               _SupportRow(
                 icon: Icons.help_outline_rounded,
                 label: AppCopy.profileHelp,
-                onTap: () => _launch(
-                  'mailto:${AppCopy.supportEmail}'
-                  '?subject=${Uri.encodeComponent("مركز المساعدة - رفيق")}',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const HelpScreen()),
                 ),
               ),
-              const Divider(height: 1, color: AppColor.border),
+            ],
+          ),
+        ),
+        gapV(AppSpacing.xl),
+        // Group 2 — Contact
+        const _GroupLabel(text: AppCopy.profileContactUs),
+        AppCard(
+          padding: EdgeInsets.zero,
+          child: Column(
+            children: [
               _SupportRow(
                 icon: Icons.phone_outlined,
-                label: '${AppCopy.profileContactUs} — ${AppCopy.supportPhone1}',
+                label: 'اتصال مباشر',
+                trailing: AppCopy.supportPhone1,
                 onTap: () => _call(AppCopy.supportPhone1),
               ),
-              const Divider(height: 1, color: AppColor.border),
+              const _Hairline(),
               _SupportRow(
                 icon: Icons.chat_bubble_outline_rounded,
-                label: '${AppCopy.supportWhatsappHint}${AppCopy.supportPhone2}',
+                label: 'واتساب',
+                trailing: AppCopy.supportPhone2,
                 onTap: () => _whatsapp(
                   AppCopy.supportPhone2,
                   'مرحباً، أحتاج مساعدة في تطبيق رفيق.',
                 ),
               ),
-              const Divider(height: 1, color: AppColor.border),
+              const _Hairline(),
               _SupportRow(
                 icon: Icons.email_outlined,
-                label: AppCopy.supportEmail,
+                label: 'البريد الإلكتروني',
+                trailing: AppCopy.supportEmail,
                 onTap: _email,
               ),
             ],
@@ -813,15 +830,51 @@ class _SupportSection extends StatelessWidget {
   }
 }
 
+class _GroupLabel extends StatelessWidget {
+  const _GroupLabel({required this.text});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        right: AppSpacing.md.w,
+        bottom: AppSpacing.sm.h,
+      ),
+      child: Text(
+        text,
+        style: AppText.labelSm.copyWith(
+          color: AppColor.textTertiary,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.4,
+        ),
+      ),
+    );
+  }
+}
+
+class _Hairline extends StatelessWidget {
+  const _Hairline();
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
+      child: Divider(height: 1, color: AppColor.border.withValues(alpha: 0.5)),
+    );
+  }
+}
+
 class _SupportRow extends StatelessWidget {
   const _SupportRow({
     required this.icon,
     required this.label,
     required this.onTap,
+    this.trailing,
   });
 
   final IconData icon;
   final String label;
+  final String? trailing;
   final VoidCallback onTap;
 
   @override
@@ -831,23 +884,40 @@ class _SupportRow extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.symmetric(
           horizontal: AppSpacing.lg.w,
-          vertical: AppSpacing.md.h,
+          vertical: AppSpacing.md.h + 2,
         ),
         child: Row(
           children: [
-            Icon(icon, size: 20.sp, color: AppColor.primary),
+            // Muted icon chip — 8% primary, never solid orange.
+            Container(
+              width: 36.w,
+              height: 36.w,
+              decoration: BoxDecoration(
+                color: AppColor.primary.withValues(alpha: 0.08),
+                borderRadius: AppRadii.rSm,
+              ),
+              child: Icon(icon, size: 18.sp, color: AppColor.primary),
+            ),
             gapH(AppSpacing.md),
             Expanded(
               child: Text(
                 label,
-                style: AppText.bodyMd,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                style: AppText.bodyMd.copyWith(fontWeight: FontWeight.w600),
               ),
             ),
+            if (trailing != null) ...[
+              gapH(AppSpacing.sm),
+              Text(
+                trailing!,
+                style: AppText.caption.copyWith(
+                  color: AppColor.textTertiary,
+                ),
+              ),
+              gapH(AppSpacing.xs),
+            ],
             Icon(
               Icons.chevron_left_rounded,
-              size: 20.sp,
+              size: 18.sp,
               color: AppColor.textTertiary,
             ),
           ],

@@ -406,7 +406,7 @@ class AppCopy {
   static const appealPhoneHint         = 'رقم الموبايل';
   static const appealMessageHint       = 'اشرح اعتراضك هنا...';
   static const appealSend              = 'إرسال الطعن';
-  static const appealSentSuccess       = 'وصلنا طعنك، هنراجعه وهنرد عليك قريباً ✅';
+  static const appealSentSuccess       = 'وصلنا طعنك، هنتواصل معاك قريباً ✅';
   static const appealSentFail          = 'معرفناش نبعت الطعن، جرّب تاني.';
   static const appealPlaceholder       = 'اكتب سبب الاعتراض...';
 }
