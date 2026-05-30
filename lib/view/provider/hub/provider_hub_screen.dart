@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -340,6 +342,26 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
                   gapV(AppSpacing.lg),
                   _KpiStrip(entitlement: ent),
                   gapV(AppSpacing.xxl),
+                  // Surface anything that's still pending admin review at the
+                  // top so the user always knows what the admin is sitting on.
+                  if (_places.any((p) => p.status == 'pending'))
+                    Padding(
+                      padding: EdgeInsets.only(bottom: AppSpacing.lg.h),
+                      child: _ReviewQueueCard(
+                        pendingPlaces:
+                            _places.where((p) => p.status == 'pending').toList(),
+                      ),
+                    ),
+                  // Rejected places also get a glance card so the user can
+                  // act on the rejection reason and resubmit.
+                  if (_places.any((p) => p.status == 'rejected'))
+                    Padding(
+                      padding: EdgeInsets.only(bottom: AppSpacing.lg.h),
+                      child: _RejectedCard(
+                        rejectedPlaces:
+                            _places.where((p) => p.status == 'rejected').toList(),
+                      ),
+                    ),
                   _PlacesSection(
                     places: _places,
                     loading: _loadingPlaces,
@@ -400,6 +422,273 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+// ===========================================================================
+// Review queue card — 24-hour countdown for pending places
+// ===========================================================================
+//
+// While a place sits in `pending` state, this card keeps the provider in the
+// loop: it lists every awaiting submission with a live HH:MM:SS countdown
+// from the 24-hour SLA window. The admin can flip a place to `approved` /
+// `rejected` at any moment from the web dashboard; the provider sees the
+// state change on the next pull-to-refresh of the hub.
+//
+// Intentionally simple: no animations beyond the per-second tick, no
+// network calls of its own — it just reflects whatever the parent fetched.
+
+class _ReviewQueueCard extends StatefulWidget {
+  const _ReviewQueueCard({required this.pendingPlaces});
+  final List<Place> pendingPlaces;
+
+  @override
+  State<_ReviewQueueCard> createState() => _ReviewQueueCardState();
+}
+
+class _ReviewQueueCardState extends State<_ReviewQueueCard> {
+  static const Duration _slaWindow = Duration(hours: 24);
+  Timer? _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
+
+  String _formatRemaining(DateTime? createdAt) {
+    if (createdAt == null) return '—';
+    final deadline = createdAt.add(_slaWindow);
+    final remaining = deadline.difference(DateTime.now());
+    if (remaining.isNegative) return 'انتهت المهلة';
+    final hours = remaining.inHours.toString().padLeft(2, '0');
+    final minutes = (remaining.inMinutes % 60).toString().padLeft(2, '0');
+    final seconds = (remaining.inSeconds % 60).toString().padLeft(2, '0');
+    return '$hours:$minutes:$seconds';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      padding: EdgeInsets.all(AppSpacing.lg.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40.w,
+                height: 40.w,
+                decoration: BoxDecoration(
+                  color: AppColor.warning.withValues(alpha: 0.12),
+                  borderRadius: AppRadii.rMd,
+                ),
+                child: Icon(
+                  Icons.hourglass_top_rounded,
+                  color: AppColor.warning,
+                  size: 22.sp,
+                ),
+              ),
+              gapH(AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'تحت المراجعة',
+                      style: AppText.titleMd
+                          .copyWith(fontWeight: FontWeight.w800),
+                    ),
+                    Text(
+                      'مهلة المراجعة 24 ساعة من وقت الإضافة',
+                      style: AppText.bodySm.copyWith(
+                        color: AppColor.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          gapV(AppSpacing.md),
+          ...widget.pendingPlaces.map((p) {
+            return Padding(
+              padding: EdgeInsets.only(bottom: AppSpacing.sm.h),
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md.w,
+                  vertical: AppSpacing.sm.h,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColor.warning.withValues(alpha: 0.08),
+                  borderRadius: AppRadii.rMd,
+                  border: Border.all(
+                    color: AppColor.warning.withValues(alpha: 0.20),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            p.name,
+                            style: AppText.bodyMd.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          gapV(2),
+                          Text(
+                            '${p.cityName} — ${p.activityName}',
+                            style: AppText.caption.copyWith(
+                              color: AppColor.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    gapH(AppSpacing.sm),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm.w,
+                        vertical: 4.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColor.surfaceCard,
+                        borderRadius: AppRadii.rSm,
+                        border: Border.all(color: AppColor.warning),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.timer_outlined,
+                              size: 12.sp, color: AppColor.warning),
+                          gapH(AppSpacing.xs),
+                          Text(
+                            _formatRemaining(p.createdAt),
+                            style: AppText.labelSm.copyWith(
+                              color: AppColor.warning,
+                              fontWeight: FontWeight.w800,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+// ===========================================================================
+// Rejected places card — surface admin feedback so the provider can fix +
+// resubmit. Same visual rhythm as the review queue card so the user reads
+// both as part of the same "moderation" section.
+// ===========================================================================
+class _RejectedCard extends StatelessWidget {
+  const _RejectedCard({required this.rejectedPlaces});
+  final List<Place> rejectedPlaces;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      padding: EdgeInsets.all(AppSpacing.lg.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40.w,
+                height: 40.w,
+                decoration: BoxDecoration(
+                  color: AppColor.error.withValues(alpha: 0.12),
+                  borderRadius: AppRadii.rMd,
+                ),
+                child: Icon(
+                  Icons.cancel_outlined,
+                  color: AppColor.error,
+                  size: 22.sp,
+                ),
+              ),
+              gapH(AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'تم رفض الإضافة',
+                      style: AppText.titleMd
+                          .copyWith(fontWeight: FontWeight.w800),
+                    ),
+                    Text(
+                      'راجع السبب وعدّل ثم أعد الإضافة',
+                      style: AppText.bodySm
+                          .copyWith(color: AppColor.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          gapV(AppSpacing.md),
+          ...rejectedPlaces.map((p) {
+            final reason = (p.rejectionReason ?? '').trim();
+            return Padding(
+              padding: EdgeInsets.only(bottom: AppSpacing.sm.h),
+              child: Container(
+                padding: EdgeInsets.all(AppSpacing.md.w),
+                decoration: BoxDecoration(
+                  color: AppColor.error.withValues(alpha: 0.06),
+                  borderRadius: AppRadii.rMd,
+                  border: Border.all(
+                    color: AppColor.error.withValues(alpha: 0.20),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      p.name,
+                      style: AppText.bodyMd
+                          .copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    if (reason.isNotEmpty) ...[
+                      gapV(AppSpacing.xs),
+                      Text(
+                        'السبب: $reason',
+                        style: AppText.bodySm.copyWith(
+                          color: AppColor.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          }),
+        ],
       ),
     );
   }

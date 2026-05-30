@@ -40,6 +40,18 @@ class Place {
   final String cityName;
   final int placeId;
 
+  /// Moderation state. Matches `public.moderation_status` SQL enum:
+  /// `pending` | `approved` | `rejected` | `suspended`. Used by the provider
+  /// hub to render the 24-hour review countdown card while the admin
+  /// hasn't acted yet.
+  final String status;
+
+  /// When the place was created — anchor for the 24-hour review window.
+  final DateTime? createdAt;
+
+  /// Free-text reason set by the admin when [status] is `rejected`.
+  final String? rejectionReason;
+
   Place(
       {this.placeUuid,
       required this.name,
@@ -51,7 +63,10 @@ class Place {
       this.imageUrl,
       required this.activityName,
       required this.cityName,
-      required this.placeId});
+      required this.placeId,
+      this.status = 'approved',
+      this.createdAt,
+      this.rejectionReason});
 
   // تحويل البيانات من JSON
   factory Place.fromJson(Map<String, dynamic> json) {
@@ -101,6 +116,13 @@ class Place {
         }
         return int.tryParse(placeIdValue?.toString() ?? '0') ?? 0;
       }(),
+      status: (json['status'] as String?) ?? 'approved',
+      createdAt: () {
+        final raw = json['created_at'] ?? json['createdAt'];
+        if (raw == null) return null;
+        return DateTime.tryParse(raw.toString());
+      }(),
+      rejectionReason: json['rejection_reason'] as String?,
     );
   }
 }

@@ -393,7 +393,7 @@ class ApiService {
     final rows = await _client
         .from('places')
         .select(
-          'id,place_id,provider_id,place_name,description,price_range,budget,rating,place_address,image_path,activity_name,city_name,created_at',
+          'id,place_id,provider_id,place_name,description,price_range,budget,rating,place_address,image_path,activity_name,city_name,created_at,status,rejection_reason',
         )
         .eq('provider_id', providerId)
         .order('created_at', ascending: false)
