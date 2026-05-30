@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -688,9 +689,21 @@ class _ReviewQueueCardState extends State<_ReviewQueueCard> {
 // resubmit. Same visual rhythm as the review queue card so the user reads
 // both as part of the same "moderation" section.
 // ===========================================================================
+// Rejected places card + Appeal flow
+// ===========================================================================
 class _RejectedCard extends StatelessWidget {
   const _RejectedCard({required this.rejectedPlaces});
   final List<Place> rejectedPlaces;
+
+  void _openAppealSheet(BuildContext context, Place place) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColor.surfaceCard,
+      shape: RoundedRectangleBorder(borderRadius: AppRadii.topOnly(AppRadii.xxl)),
+      builder: (_) => _AppealSheet(place: place),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -708,27 +721,17 @@ class _RejectedCard extends StatelessWidget {
                   color: AppColor.error.withValues(alpha: 0.12),
                   borderRadius: AppRadii.rMd,
                 ),
-                child: Icon(
-                  Icons.cancel_outlined,
-                  color: AppColor.error,
-                  size: 22.sp,
-                ),
+                child: Icon(Icons.cancel_outlined, color: AppColor.error, size: 22.sp),
               ),
               gapH(AppSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'تم رفض الإضافة',
-                      style: AppText.titleMd
-                          .copyWith(fontWeight: FontWeight.w800),
-                    ),
-                    Text(
-                      'راجع السبب وعدّل ثم أعد الإضافة',
-                      style: AppText.bodySm
-                          .copyWith(color: AppColor.textSecondary),
-                    ),
+                    Text('تم رفض الإضافة',
+                        style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800)),
+                    Text('راجع السبب وعدّل أو قدّم طعناً',
+                        style: AppText.bodySm.copyWith(color: AppColor.textSecondary)),
                   ],
                 ),
               ),
@@ -744,33 +747,250 @@ class _RejectedCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppColor.error.withValues(alpha: 0.06),
                   borderRadius: AppRadii.rMd,
-                  border: Border.all(
-                    color: AppColor.error.withValues(alpha: 0.20),
-                  ),
+                  border: Border.all(color: AppColor.error.withValues(alpha: 0.20)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      p.name,
-                      style: AppText.bodyMd
-                          .copyWith(fontWeight: FontWeight.w700),
-                    ),
+                    Text(p.name,
+                        style: AppText.bodyMd.copyWith(fontWeight: FontWeight.w700)),
                     if (reason.isNotEmpty) ...[
                       gapV(AppSpacing.xs),
-                      Text(
-                        'السبب: $reason',
-                        style: AppText.bodySm.copyWith(
-                          color: AppColor.textSecondary,
+                      Text('السبب: $reason',
+                          style: AppText.bodySm
+                              .copyWith(color: AppColor.textSecondary)),
+                    ],
+                    gapV(AppSpacing.sm),
+                    // Appeal CTA — opens a bottom sheet with name/phone/message
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () => _openAppealSheet(context, p),
+                        icon: Icon(Icons.gavel_rounded,
+                            size: 16.sp, color: AppColor.primary),
+                        label: Text(
+                          AppCopy.appealTitle,
+                          style: AppText.labelMd.copyWith(
+                            color: AppColor.primary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppColor.primary),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: AppRadii.rMd,
+                          ),
+                          padding: EdgeInsets.symmetric(vertical: AppSpacing.sm.h),
                         ),
                       ),
-                    ],
+                    ),
                   ],
                 ),
               ),
             );
           }),
         ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Appeal bottom sheet
+// ---------------------------------------------------------------------------
+class _AppealSheet extends StatefulWidget {
+  const _AppealSheet({required this.place});
+  final Place place;
+
+  @override
+  State<_AppealSheet> createState() => _AppealSheetState();
+}
+
+class _AppealSheetState extends State<_AppealSheet> {
+  final _nameCtrl    = TextEditingController();
+  final _phoneCtrl   = TextEditingController();
+  final _messageCtrl = TextEditingController();
+  bool _sending = false;
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _phoneCtrl.dispose();
+    _messageCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _send() async {
+    final name    = _nameCtrl.text.trim();
+    final phone   = _phoneCtrl.text.trim();
+    final message = _messageCtrl.text.trim();
+
+    if (name.isEmpty || phone.isEmpty || message.isEmpty) {
+      AppFeedback.warning('من فضلك اكمل جميع الحقول');
+      return;
+    }
+
+    setState(() => _sending = true);
+    try {
+      // Build a mailto body with all the context the admin needs.
+      final body = '''
+طعن على رفض مكان
+
+🏪 اسم المكان: ${widget.place.name}
+👤 الاسم: $name
+📱 الهاتف: $phone
+📧 (يُرجى الرد على بريد التطبيق)
+
+💬 سبب الطعن:
+$message
+
+---
+سبب الرفض الأصلي: ${widget.place.rejectionReason ?? 'لم يُحدد'}
+''';
+      final uri = Uri(
+        scheme: 'mailto',
+        path: AppCopy.supportEmail,
+        queryParameters: {
+          'subject': 'طعن في رفض: ${widget.place.name}',
+          'body': body,
+        },
+      );
+
+      final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!mounted) return;
+      if (ok) {
+        AppFeedback.success(AppCopy.appealSentSuccess);
+        Navigator.pop(context);
+      } else {
+        // Fallback: open WhatsApp with pre-filled message
+        final waBody = Uri.encodeComponent(
+          'طعن على رفض مكان: ${widget.place.name}\nالاسم: $name\nالهاتف: $phone\n$message',
+        );
+        final waUri = Uri.parse(
+          'https://wa.me/2${AppCopy.supportPhone2}?text=$waBody',
+        );
+        await launchUrl(waUri, mode: LaunchMode.externalApplication);
+        if (mounted) Navigator.pop(context);
+      }
+    } catch (_) {
+      if (mounted) AppFeedback.error(AppCopy.appealSentFail);
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.xxl.w,
+        AppSpacing.lg.h,
+        AppSpacing.xxl.w,
+        MediaQuery.viewInsetsOf(context).bottom + AppSpacing.xxl.h,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Handle
+          Center(
+            child: Container(
+              width: 40.w,
+              height: 4.h,
+              decoration: BoxDecoration(
+                color: AppColor.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          gapV(AppSpacing.xl),
+          Text(AppCopy.appealTitle,
+              style: AppText.headingSm.copyWith(fontWeight: FontWeight.w800)),
+          gapV(AppSpacing.xs),
+          Text(AppCopy.appealSubtitle,
+              style: AppText.bodySm.copyWith(color: AppColor.textSecondary)),
+          gapV(AppSpacing.lg),
+          // Place name (read-only)
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.md.w,
+              vertical: AppSpacing.sm.h,
+            ),
+            decoration: BoxDecoration(
+              color: AppColor.surface,
+              borderRadius: AppRadii.rMd,
+              border: Border.all(color: AppColor.border),
+            ),
+            child: Text(
+              '📍 ${widget.place.name}',
+              style: AppText.bodyMd.copyWith(fontWeight: FontWeight.w600),
+            ),
+          ),
+          gapV(AppSpacing.md),
+          _Field(controller: _nameCtrl,    hint: AppCopy.appealNameHint,    icon: Icons.person_outline),
+          gapV(AppSpacing.md),
+          _Field(controller: _phoneCtrl,   hint: AppCopy.appealPhoneHint,   icon: Icons.phone_outlined,
+              inputType: TextInputType.phone),
+          gapV(AppSpacing.md),
+          _Field(controller: _messageCtrl, hint: AppCopy.appealPlaceholder, icon: Icons.chat_outlined,
+              maxLines: 4),
+          gapV(AppSpacing.xl),
+          AppButton(
+            text: AppCopy.appealSend,
+            onPress: _send,
+            isEnabled: !_sending,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Field extends StatelessWidget {
+  const _Field({
+    required this.controller,
+    required this.hint,
+    required this.icon,
+    this.maxLines = 1,
+    this.inputType,
+  });
+
+  final TextEditingController controller;
+  final String hint;
+  final IconData icon;
+  final int maxLines;
+  final TextInputType? inputType;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      maxLines: maxLines,
+      keyboardType: inputType,
+      textDirection: TextDirection.rtl,
+      style: AppText.bodyMd,
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: AppText.bodyMd.copyWith(color: AppColor.textMuted),
+        prefixIcon: Icon(icon, size: 20.sp, color: AppColor.textSecondary),
+        filled: true,
+        fillColor: AppColor.surface,
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: AppSpacing.md.w,
+          vertical: AppSpacing.md.h,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: AppRadii.rMd,
+          borderSide: const BorderSide(color: AppColor.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: AppRadii.rMd,
+          borderSide: const BorderSide(color: AppColor.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: AppRadii.rMd,
+          borderSide: const BorderSide(color: AppColor.primary, width: 1.5),
+        ),
       ),
     );
   }

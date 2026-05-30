@@ -387,4 +387,26 @@ class AppCopy {
   static const changePwGenericFail = 'معرفناش نغيّر كلمة السر، راجع بياناتك.';
   static const changePwMissingEmail =
       'لقيناش البريد الإلكتروني، سجل دخول تاني.';
+
+  // --- Profile support section -------------------------------------------------
+  static const profileSupportSection   = 'الدعم والمساعدة';
+  static const profilePrivacyPolicy    = 'سياسة الخصوصية';
+  static const profileTerms            = 'الشروط والأحكام';
+  static const profileHelp             = 'مركز المساعدة';
+  static const profileContactUs        = 'تواصل معنا';
+  static const supportPhone1           = '01036925982';
+  static const supportPhone2           = '01050242285';
+  static const supportEmail            = 'ahmedessam.uiux@gmail.com';
+  static const supportWhatsappHint     = 'واتساب: ';
+
+  // --- Place appeal flow -------------------------------------------------------
+  static const appealTitle             = 'طعن في قرار الرفض';
+  static const appealSubtitle          = 'أخبرنا بسبب اعتراضك وهنراجع الطلب في أقرب وقت.';
+  static const appealNameHint          = 'اسمك الكامل';
+  static const appealPhoneHint         = 'رقم الموبايل';
+  static const appealMessageHint       = 'اشرح اعتراضك هنا...';
+  static const appealSend              = 'إرسال الطعن';
+  static const appealSentSuccess       = 'وصلنا طعنك، هنراجعه وهنرد عليك قريباً ✅';
+  static const appealSentFail          = 'معرفناش نبعت الطعن، جرّب تاني.';
+  static const appealPlaceholder       = 'اكتب سبب الاعتراض...';
 }

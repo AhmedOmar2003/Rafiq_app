@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:url_launcher/url_launcher.dart';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -472,6 +474,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   children: [
                     _buildInfoSection(),
                     gapV(AppSpacing.xxxl),
+                    const _SupportSection(),
+                    gapV(AppSpacing.xxxl),
                     _buildLogoutButton(),
                     gapV(AppSpacing.lg),
                     _buildDeleteAccountButton(),
@@ -705,6 +709,148 @@ class _ProfilePageState extends State<ProfilePage> {
           fontWeight: FontWeight.w700,
           decoration: TextDecoration.underline,
           decorationColor: AppColor.error.withValues(alpha: 0.4),
+        ),
+      ),
+    );
+  }
+}
+
+// ===========================================================================
+// Support section — Privacy, Terms, Help, Contact
+// ===========================================================================
+
+class _SupportSection extends StatelessWidget {
+  const _SupportSection();
+
+  Future<void> _launch(String url) async {
+    final uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      // silently fail — url_launcher already logs on debug
+    }
+  }
+
+  void _call(String phone) =>
+      _launch('tel:$phone');
+
+  void _whatsapp(String phone, String message) =>
+      _launch('https://wa.me/2$phone?text=${Uri.encodeComponent(message)}');
+
+  void _email() => _launch(
+        'mailto:${AppCopy.supportEmail}'
+        '?subject=${Uri.encodeComponent("طلب مساعدة - رفيق")}'
+        '&body=${Uri.encodeComponent("مرحباً، أحتاج مساعدة في...")}',
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.only(right: AppSpacing.xs.w, bottom: AppSpacing.sm.h),
+          child: Text(
+            AppCopy.profileSupportSection,
+            style: AppText.labelMd.copyWith(
+              color: AppColor.textSecondary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        AppCard(
+          padding: EdgeInsets.zero,
+          child: Column(
+            children: [
+              _SupportRow(
+                icon: Icons.privacy_tip_outlined,
+                label: AppCopy.profilePrivacyPolicy,
+                onTap: () => _launch(
+                  'https://rafiq-master-zeta.vercel.app/privacy',
+                ),
+              ),
+              const Divider(height: 1, color: AppColor.border),
+              _SupportRow(
+                icon: Icons.gavel_outlined,
+                label: AppCopy.profileTerms,
+                onTap: () => _launch(
+                  'https://rafiq-master-zeta.vercel.app/terms',
+                ),
+              ),
+              const Divider(height: 1, color: AppColor.border),
+              _SupportRow(
+                icon: Icons.help_outline_rounded,
+                label: AppCopy.profileHelp,
+                onTap: () => _launch(
+                  'mailto:${AppCopy.supportEmail}'
+                  '?subject=${Uri.encodeComponent("مركز المساعدة - رفيق")}',
+                ),
+              ),
+              const Divider(height: 1, color: AppColor.border),
+              _SupportRow(
+                icon: Icons.phone_outlined,
+                label: '${AppCopy.profileContactUs} — ${AppCopy.supportPhone1}',
+                onTap: () => _call(AppCopy.supportPhone1),
+              ),
+              const Divider(height: 1, color: AppColor.border),
+              _SupportRow(
+                icon: Icons.chat_bubble_outline_rounded,
+                label: '${AppCopy.supportWhatsappHint}${AppCopy.supportPhone2}',
+                onTap: () => _whatsapp(
+                  AppCopy.supportPhone2,
+                  'مرحباً، أحتاج مساعدة في تطبيق رفيق.',
+                ),
+              ),
+              const Divider(height: 1, color: AppColor.border),
+              _SupportRow(
+                icon: Icons.email_outlined,
+                label: AppCopy.supportEmail,
+                onTap: _email,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SupportRow extends StatelessWidget {
+  const _SupportRow({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg.w,
+          vertical: AppSpacing.md.h,
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 20.sp, color: AppColor.primary),
+            gapH(AppSpacing.md),
+            Expanded(
+              child: Text(
+                label,
+                style: AppText.bodyMd,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Icon(
+              Icons.chevron_left_rounded,
+              size: 20.sp,
+              color: AppColor.textTertiary,
+            ),
+          ],
         ),
       ),
     );
