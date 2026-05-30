@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
@@ -119,7 +120,16 @@ class _DetailsPageState extends State<DetailsPage> {
 
     return AppPageScaffold(
       unpadded: true,
-      header: const AppPageHeader(title: AppCopy.detailsTitle),
+      header: AppPageHeader(
+        title: AppCopy.detailsTitle,
+        actions: [
+          AppHeaderAction(
+            icon: Icons.flag_outlined,
+            semanticLabel: 'بلّغ عن هذا المكان',
+            onTap: () => _openReportSheet(context, currentModel),
+          ),
+        ],
+      ),
       body: ListView(
         padding: EdgeInsets.fromLTRB(
           AppSpacing.lg.w,
@@ -163,6 +173,18 @@ class _DetailsPageState extends State<DetailsPage> {
       if (!_isMounted) return;
       _fetchLastEvaluationFromAPI(currentModel.placeId);
     });
+  }
+
+  void _openReportSheet(BuildContext context, SuggestionItemModel place) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColor.surfaceCard,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppRadii.topOnly(AppRadii.xxl),
+      ),
+      builder: (_) => _ReportSheet(place: place),
+    );
   }
 }
 
@@ -394,4 +416,222 @@ class _NoSimilarSection extends StatelessWidget {
       ),
     );
   }
+}
+
+// ===========================================================================
+// Report sheet — user-facing abuse / content report
+// ===========================================================================
+//
+// Opens from the flag icon in the AppPageHeader. Lets the user pick a reason
+// code from a short whitelist and add optional details, then writes a row to
+// `moderation_reports` via the submit_abuse_report SECURITY DEFINER RPC.
+// Admins see it in /dashboard/reports.
+
+class _ReportSheet extends StatefulWidget {
+  const _ReportSheet({required this.place});
+  final SuggestionItemModel place;
+
+  @override
+  State<_ReportSheet> createState() => _ReportSheetState();
+}
+
+class _ReportSheetState extends State<_ReportSheet> {
+  static const _reasons = <_ReasonOption>[
+    _ReasonOption('spam',       'إعلانات مزعجة'),
+    _ReasonOption('offensive',  'محتوى مسيء'),
+    _ReasonOption('fake',       'معلومات مزيفة'),
+    _ReasonOption('off_topic',  'خارج الموضوع'),
+    _ReasonOption('illegal',    'محتوى غير قانوني'),
+    _ReasonOption('harassment', 'تحرش'),
+    _ReasonOption('other',      'أخرى'),
+  ];
+
+  String? _selected;
+  final _detailsCtrl = TextEditingController();
+  bool _sending = false;
+
+  @override
+  void dispose() {
+    _detailsCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_selected == null) {
+      AppFeedback.warning('من فضلك اختر سبب البلاغ');
+      return;
+    }
+    final uuid = widget.place.placeUuid;
+    if (uuid == null || uuid.isEmpty) {
+      AppFeedback.error('لا يمكن تقديم البلاغ على هذا المكان');
+      return;
+    }
+
+    setState(() => _sending = true);
+    try {
+      await ApiService.ensureSupabaseInitialized();
+      await Supabase.instance.client.rpc<dynamic>(
+        'submit_abuse_report',
+        params: {
+          '_target_type': 'place',
+          '_target_id':   uuid,
+          '_reason_code': _selected,
+          '_details':     _detailsCtrl.text.trim().isEmpty
+              ? null
+              : _detailsCtrl.text.trim(),
+        },
+      );
+      if (!mounted) return;
+      AppFeedback.success('وصلنا بلاغك، هنراجعه قريباً ✅');
+      Navigator.pop(context);
+    } catch (_) {
+      if (mounted) AppFeedback.error('معرفناش نبعت البلاغ، جرّب تاني');
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.xxl.w,
+        AppSpacing.lg.h,
+        AppSpacing.xxl.w,
+        MediaQuery.viewInsetsOf(context).bottom + AppSpacing.xxl.h,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: Container(
+              width: 40.w,
+              height: 4.h,
+              decoration: BoxDecoration(
+                color: AppColor.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          gapV(AppSpacing.xl),
+          Row(
+            children: [
+              Container(
+                width: 44.w,
+                height: 44.w,
+                decoration: BoxDecoration(
+                  color: AppColor.error.withValues(alpha: 0.12),
+                  borderRadius: AppRadii.rMd,
+                ),
+                alignment: Alignment.center,
+                child: Icon(Icons.flag_outlined,
+                    color: AppColor.error, size: 22.sp),
+              ),
+              gapH(AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'بلّغ عن هذا المكان',
+                      style: AppText.titleMd
+                          .copyWith(fontWeight: FontWeight.w800),
+                    ),
+                    Text(
+                      widget.place.text,
+                      style: AppText.bodySm
+                          .copyWith(color: AppColor.textSecondary),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          gapV(AppSpacing.lg),
+          Text(
+            'اختر سبب البلاغ',
+            style: AppText.labelMd.copyWith(
+              color: AppColor.textSecondary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          gapV(AppSpacing.sm),
+          Wrap(
+            spacing: AppSpacing.sm.w,
+            runSpacing: AppSpacing.sm.h,
+            children: _reasons.map((r) {
+              final selected = _selected == r.code;
+              return GestureDetector(
+                onTap: () => setState(() => _selected = r.code),
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md.w,
+                    vertical: AppSpacing.sm.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? AppColor.primary
+                        : AppColor.surface,
+                    borderRadius: AppRadii.rPill,
+                    border: Border.all(
+                      color: selected ? AppColor.primary : AppColor.border,
+                    ),
+                  ),
+                  child: Text(
+                    r.label,
+                    style: AppText.labelMd.copyWith(
+                      color: selected ? AppColor.white : AppColor.textPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          gapV(AppSpacing.lg),
+          TextField(
+            controller: _detailsCtrl,
+            maxLines: 4,
+            textDirection: TextDirection.rtl,
+            style: AppText.bodyMd,
+            decoration: InputDecoration(
+              hintText: 'تفاصيل إضافية (اختياري)',
+              hintStyle: AppText.bodyMd.copyWith(color: AppColor.textMuted),
+              filled: true,
+              fillColor: AppColor.surface,
+              contentPadding: EdgeInsets.all(AppSpacing.md.w),
+              border: OutlineInputBorder(
+                borderRadius: AppRadii.rMd,
+                borderSide: const BorderSide(color: AppColor.border),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: AppRadii.rMd,
+                borderSide: const BorderSide(color: AppColor.border),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: AppRadii.rMd,
+                borderSide:
+                    const BorderSide(color: AppColor.primary, width: 1.5),
+              ),
+            ),
+          ),
+          gapV(AppSpacing.xl),
+          AppButton(
+            text: 'إرسال البلاغ',
+            onPress: _submit,
+            isEnabled: !_sending,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReasonOption {
+  const _ReasonOption(this.code, this.label);
+  final String code;
+  final String label;
 }

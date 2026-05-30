@@ -14,8 +14,16 @@ import 'package:rafiq_app/service/profile_image_store.dart';
 import 'package:rafiq_app/service/subscription_service.dart';
 import 'package:rafiq_app/service/user_role_store.dart';
 import 'package:rafiq_app/view/pages/cubit.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
-void main() async {
+/// Sentry DSN. Loaded from --dart-define so we don't hardcode it in the
+/// repo. When empty, Sentry init is skipped — the app runs identically.
+///
+/// To enable error monitoring for a build:
+///   flutter build apk --release --dart-define=SENTRY_DSN=https://xxx@sentry.io/yyy
+const _sentryDsn = String.fromEnvironment('SENTRY_DSN', defaultValue: '');
+
+Future<void> main() async {
   final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
@@ -92,20 +100,39 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  runApp(
-    MultiProvider(
-      providers: [
-        Provider(create: (_) => FilterCubit(ApiService())),
-      ],
-      child: const RafiqApp(),
-    ),
-  );
+  Widget appRoot() => MultiProvider(
+        providers: [
+          Provider(create: (_) => FilterCubit(ApiService())),
+        ],
+        child: const RafiqApp(),
+      );
+
+  // When SENTRY_DSN is provided at build time, wrap the app in Sentry so
+  // every unhandled exception + Flutter framework error is shipped to the
+  // dashboard. Without a DSN the wrapper is bypassed and the app boots
+  // exactly as before — no overhead, no network.
+  if (_sentryDsn.isNotEmpty) {
+    await SentryFlutter.init(
+      (o) {
+        o.dsn = _sentryDsn;
+        o.tracesSampleRate = 0.20;          // 20% of transactions
+        o.attachScreenshot = false;          // PII safety
+        o.environment = kReleaseMode ? 'production' : 'debug';
+        o.release = 'rafiq-flutter@1.0.0';
+      },
+      appRunner: () => runApp(appRoot()),
+    );
+  } else {
+    runApp(appRoot());
+  }
 
   WidgetsBinding.instance.addPostFrameCallback((_) {
     FlutterNativeSplash.remove();
   });
 
   if (kDebugMode) {
-    debugPrint('App started; Supabase will initialize lazily on first use.');
+    debugPrint(
+      'App started; Supabase lazy. Sentry: ${_sentryDsn.isEmpty ? "OFF" : "ON"}',
+    );
   }
 }

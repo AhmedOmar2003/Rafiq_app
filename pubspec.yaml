@@ -54,6 +54,7 @@ dependencies:
   path_provider: ^2.1.4
   permission_handler: ^11.4.0 
   url_launcher: ^6.3.1
+  sentry_flutter: ^8.10.1
   dart_openai: ^5.1.0
   google_generative_ai: ^0.4.6
   flutter_tts: ^4.2.2

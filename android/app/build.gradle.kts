@@ -60,6 +60,25 @@ android {
                 signingConfig = signingConfigs.getByName("debug")
                 logger.lifecycle("Release keystore not configured. Add android/key.properties for production signing.")
             }
+            // Shrink + obfuscate native + Dart code so the APK isn't a wallet
+            // killer on the user's data plan. Pair with `--split-per-abi`
+            // when building for direct distribution; for Play Store, the
+            // App Bundle handles the split automatically.
+            isMinifyEnabled = true
+            isShrinkResources = true
+        }
+    }
+
+    // Per-ABI splits cut the universal 60MB APK into three ~20MB APKs.
+    // Distribution: ship `app-arm64-v8a-release.apk` on the website (covers
+    // 95%+ of modern Android phones). Old armeabi-v7a stays available as
+    // a fallback if you ever need it.
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("armeabi-v7a", "arm64-v8a", "x86_64")
+            isUniversalApk = true   // also produces the big one for compatibility
         }
     }
 }
