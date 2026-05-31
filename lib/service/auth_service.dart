@@ -411,9 +411,14 @@ class AuthService {
         return Map<String, dynamic>.from(response);
       }
     } catch (_) {
-      // If the lookup RPC is unavailable, fall back to the normal sign-in flow.
+      // If the lookup RPC is unavailable, fall back to the normal sign-in flow
+      // by assuming the account exists and is confirmed.
     }
-    return const <String, dynamic>{};
+    return const <String, dynamic>{
+      'exists': true,
+      'confirmed': true,
+      'profile_exists': true,
+    };
   }
 
   /// Permanently deletes the caller's account.
