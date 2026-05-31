@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:rafiq_app/rafiq_app.dart';
 import 'package:rafiq_app/service/analytics_tracker.dart';
@@ -24,30 +23,6 @@ const _sentryDsn = String.fromEnvironment('SENTRY_DSN', defaultValue: '');
 Future<void> main() async {
   final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
-
-  // ---------------------------------------------------------------------------
-  // GoogleFonts runtime behaviour.
-  //
-  // By default `google_fonts` will try to download font files from Google's CDN
-  // on first use. That blocks first paint on cold start (200–800ms on slow
-  // networks) and creates a hard runtime dependency on the CDN.
-  //
-  // We keep runtime fetching ON for first install (so users see Rubik
-  // immediately), but warm the download in parallel with the splash so the UI
-  // thread isn't blocked when the first text widget builds. After warm-up the
-  // font is cached on disk and subsequent launches are local.
-  //
-  // Release builds should ship Rubik as a bundled asset; see TODO below.
-  // ---------------------------------------------------------------------------
-  // TODO(perf): bundle Rubik as an app asset and set
-  //   GoogleFonts.config.allowRuntimeFetching = false;
-  // to remove the CDN dependency entirely.
-  unawaited(GoogleFonts.pendingFonts(<TextStyle>[
-    GoogleFonts.rubik(fontWeight: FontWeight.w400),
-    GoogleFonts.rubik(fontWeight: FontWeight.w500),
-    GoogleFonts.rubik(fontWeight: FontWeight.w600),
-    GoogleFonts.rubik(fontWeight: FontWeight.w700),
-  ]));
 
   // Make sure the disk-cache directory exists *now* so the first list of
   // suggestions can use the synchronous fast-path on cache hits.

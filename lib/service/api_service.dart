@@ -7,6 +7,20 @@ import 'package:rafiq_app/model/review_model.dart';
 import 'package:rafiq_app/core/config/supabase_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+class AccountModeSnapshot {
+  const AccountModeSnapshot({
+    required this.hasChosenRole,
+    required this.isProviderMode,
+    required this.hasProviderHistory,
+    this.providerId,
+  });
+
+  final bool hasChosenRole;
+  final bool isProviderMode;
+  final bool hasProviderHistory;
+  final String? providerId;
+}
+
 class ApiService {
   static Future<void>? _supabaseInitFuture;
   static const int _placesPageSize = 80;
@@ -77,6 +91,101 @@ class ApiService {
     return 'jpg';
   }
 
+  Future<AccountModeSnapshot?> fetchAccountModeSnapshot() async {
+    await ensureSupabaseInitialized();
+    final prefs = await SharedPreferences.getInstance();
+    await _persistAuthIdentity(prefs);
+
+    final user = _client.auth.currentUser ?? _client.auth.currentSession?.user;
+    final userId = user?.id ?? prefs.getString(_authUserIdKey);
+    if (userId == null || userId.isEmpty) {
+      return null;
+    }
+
+    final profile = await _client
+        .from('profiles')
+        .select('account_mode')
+        .eq('id', userId)
+        .maybeSingle()
+        .timeout(_networkTimeout);
+    final provider = await _client
+        .from('providers')
+        .select('id')
+        .eq('owner_id', userId)
+        .maybeSingle()
+        .timeout(_networkTimeout);
+
+    final accountMode = profile?['account_mode']?.toString().trim();
+    final providerId = provider?['id']?.toString();
+    final snapshot = resolveAccountMode(
+      accountMode: accountMode,
+      providerId: providerId,
+    );
+
+    if (snapshot.hasProviderHistory && snapshot.providerId != null) {
+      await prefs.setString(_providerIdKey, snapshot.providerId!);
+    }
+
+    return snapshot;
+  }
+
+  Future<void> persistAccountMode({
+    required bool isProviderMode,
+  }) async {
+    await ensureSupabaseInitialized();
+    final prefs = await SharedPreferences.getInstance();
+    await _persistAuthIdentity(prefs);
+
+    final user = _client.auth.currentUser ?? _client.auth.currentSession?.user;
+    final userId = user?.id ?? prefs.getString(_authUserIdKey);
+    if (userId == null || userId.isEmpty) {
+      return;
+    }
+
+    await _client
+        .from('profiles')
+        .update({'account_mode': isProviderMode ? 'provider' : 'user'})
+        .eq('id', userId)
+        .timeout(_networkTimeout);
+  }
+
+  static AccountModeSnapshot resolveAccountMode({
+    String? accountMode,
+    String? providerId,
+  }) {
+    final normalizedMode = accountMode?.trim();
+    final normalizedProviderId = providerId?.trim();
+    final hasProviderHistory = normalizedProviderId != null &&
+        normalizedProviderId.isNotEmpty &&
+        normalizedProviderId != 'null';
+
+    return switch (normalizedMode) {
+      'provider' => AccountModeSnapshot(
+          hasChosenRole: true,
+          isProviderMode: true,
+          hasProviderHistory: hasProviderHistory,
+          providerId: hasProviderHistory ? normalizedProviderId : null,
+        ),
+      'user' => AccountModeSnapshot(
+          hasChosenRole: true,
+          isProviderMode: false,
+          hasProviderHistory: hasProviderHistory,
+          providerId: hasProviderHistory ? normalizedProviderId : null,
+        ),
+      _ when hasProviderHistory => AccountModeSnapshot(
+          hasChosenRole: true,
+          isProviderMode: false,
+          hasProviderHistory: true,
+          providerId: normalizedProviderId,
+        ),
+      _ => const AccountModeSnapshot(
+          hasChosenRole: false,
+          isProviderMode: false,
+          hasProviderHistory: false,
+        ),
+    };
+  }
+
   /// Returns the provider id for the signed-in user if a providers row already
   /// exists. This never creates one, which makes it safe for regular-user
   /// surfaces like Profile where we only want to *detect* provider history.
@@ -129,8 +238,9 @@ class ApiService {
 
       // No email yet but we have a userId → derive a placeholder so the
       // insert below doesn't violate the NOT NULL constraint on contact_email.
-      final safeEmail =
-          email.trim().isEmpty ? 'user_$userId@placeholder.local' : email.trim();
+      final safeEmail = email.trim().isEmpty
+          ? 'user_$userId@placeholder.local'
+          : email.trim();
 
       try {
         final existing = await _client
@@ -152,7 +262,8 @@ class ApiService {
         // the row atomically. This is what unblocks brand-new signups whose
         // JWT doesn't yet have `is_provider()` true, so a direct INSERT
         // would be rejected by RLS.
-        final businessName = name.isNotEmpty ? name : safeEmail.split('@').first;
+        final businessName =
+            name.isNotEmpty ? name : safeEmail.split('@').first;
         final rpcResult = await _client.rpc<dynamic>(
           'become_provider',
           params: {
@@ -512,6 +623,7 @@ class ApiService {
     required String description,
     String? imagePath,
     double? rating,
+
     /// True when the edit is a "fix after rejection" — flips status back
     /// to pending so the admin re-reviews it. False for ordinary edits of
     /// an already-approved place (which keeps the place live).

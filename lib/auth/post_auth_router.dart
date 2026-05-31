@@ -24,6 +24,9 @@ class PostAuthRouter {
   /// have already restored it via `ensureLoaded()` (handled at app start).
   static Future<void> replaceWithHome(BuildContext context) async {
     final store = UserRoleStore.instance;
+    await store.ensureLoaded();
+    await store.refreshFromBackend();
+    if (!context.mounted) return;
     if (!store.hasChosenRole.value) {
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(

@@ -64,7 +64,6 @@ dependencies:
   smart_countdown: ^1.0.1
   circular_countdown_timer: ^0.2.4
   provider: ^6.1.1
-  google_fonts: ^8.0.2
   supabase_flutter: ^2.12.4
   google_sign_in: ^7.2.0
 

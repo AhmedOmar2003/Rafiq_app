@@ -22,26 +22,14 @@ class AuthGate extends StatefulWidget {
 }
 
 class _AuthGateState extends State<AuthGate> {
-  /// Max time the splash will wait for Supabase/local prefs before falling
-  /// back. After this, we let the user proceed (treat them as logged out)
-  /// instead of spinning forever on a bad network.
-  static const Duration _bootstrapTimeout = Duration(seconds: 10);
-
   StreamSubscription<AuthState>? _authSubscription;
-  late final Future<List<Object>> _bootstrapFuture;
+  late Future<List<Object>> _bootstrapFuture;
   bool _openedRecoveryPage = false;
 
   @override
   void initState() {
     super.initState();
-    _bootstrapFuture = Future.wait<Object>([
-      AuthService.ensureSupabaseInitialized().then((_) => true),
-      CacheHelper.getOnBoardingSeen(),
-      UserRoleStore.instance.ensureLoaded().then((_) => true),
-    ]).timeout(
-      _bootstrapTimeout,
-      onTimeout: () => const <Object>[false, false, false],
-    );
+    _bootstrapFuture = _bootstrap();
 
     _bootstrapFuture.then((_) {
       if (!mounted) {
@@ -60,6 +48,14 @@ class _AuthGateState extends State<AuthGate> {
 
       _openRecoveryFromIncomingUrlIfNeeded();
     });
+  }
+
+  Future<List<Object>> _bootstrap() {
+    return Future.wait<Object>([
+      AuthService.ensureSupabaseInitialized().then((_) => true),
+      CacheHelper.getOnBoardingSeen(),
+      UserRoleStore.instance.ensureLoaded().then((_) => true),
+    ]);
   }
 
   void _openResetPasswordPage() {
@@ -109,9 +105,31 @@ class _AuthGateState extends State<AuthGate> {
         if (snapshot.hasError) {
           return Scaffold(
             body: Center(
-              child: Text(
-                'حدث خطأ أثناء تشغيل التطبيق: ${snapshot.error}',
-                textAlign: TextAlign.center,
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'حدث خطأ أثناء تجهيز التطبيق.',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      '${snapshot.error}',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _bootstrapFuture = _bootstrap();
+                        });
+                      },
+                      child: const Text('إعادة المحاولة'),
+                    ),
+                  ],
+                ),
               ),
             ),
           );

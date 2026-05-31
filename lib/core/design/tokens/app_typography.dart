@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'package:rafiq_app/core/utils/app_color.dart';
 
-/// Semantic type scale (Rubik, RTL-friendly).
+/// Semantic type scale (platform-native, RTL-friendly).
 ///
 /// Replaces the ~20 size-named styles (textStyle16Light, textStyle24Medium...)
 /// with role-based tokens so screens express intent, not pixels. One family
-/// (Rubik) keeps Arabic + Latin consistent. Sizes use `.sp` (ScreenUtil) and
-/// include sensible line-heights for Arabic legibility.
+/// keeps Arabic + Latin consistent without downloading fonts at runtime.
+/// Sizes use `.sp` (ScreenUtil) and include sensible line-heights for Arabic
+/// legibility.
 ///
 /// Roles (size / weight):
 ///   displayLg 34 bold · displayMd 30 bold
@@ -37,7 +37,7 @@ class AppText {
     Color? color,
     double height = 1.4,
   }) =>
-      GoogleFonts.rubik(
+      TextStyle(
         fontSize: size.sp,
         fontWeight: weight,
         height: height,
