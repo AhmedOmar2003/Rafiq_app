@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:rafiq_app/auth/login/login_screen.dart';
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:rafiq_app/core/logic/helper_methods.dart';
@@ -127,12 +127,13 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
+      // Back from ChoiceScreen is "I want to leave the app" — the user is
+      // already authenticated, so bouncing them to LoginScreen would be a
+      // misleading regression. Background the app instead; reopening it
+      // lands them right back here via AuthGate.
+      onPopInvokedWithResult: (didPop, _) {
         if (!didPop) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const LoginScreen()),
-          );
+          SystemNavigator.pop();
         }
       },
       child: Directionality(
