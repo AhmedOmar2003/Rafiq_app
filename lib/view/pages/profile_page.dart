@@ -601,8 +601,10 @@ class _ProfilePageState extends State<ProfilePage> {
           return '$firstName، $base';
         }
 
-        final hasProviderHistory =
-            (_providerId != null && _providerId!.isNotEmpty);
+        final hasProviderHistory = (_providerId != null && _providerId!.isNotEmpty) &&
+            (_myPlacesCount > 0 ||
+                SubscriptionService.instance.entitlement.value.tier !=
+                    PlanTier.free);
 
         if (hasProviderHistory) {
           // Returning provider — bring them home.
@@ -732,7 +734,10 @@ class _ProfilePageState extends State<ProfilePage> {
       final providerId = await ApiService().ensureCurrentProviderId();
       if (!mounted) return;
 
-      final hasProviderHistory = _providerId != null && _providerId!.isNotEmpty;
+      final hasProviderHistory = _providerId != null && _providerId!.isNotEmpty &&
+          (_myPlacesCount > 0 ||
+              SubscriptionService.instance.entitlement.value.tier !=
+                  PlanTier.free);
       if (hasProviderHistory) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
