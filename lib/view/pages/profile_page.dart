@@ -45,11 +45,6 @@ class _ProfilePageState extends State<ProfilePage> {
   String? userEmail;
   bool _isLoading = false;
 
-  /// Provider id of the signed-in user (null if they're not a provider yet).
-  /// Drives the "return to your hub" banner: present + non-null means they
-  /// confirmed a plan at some point and have a hub to return to.
-  String? _providerId;
-
   /// Number of places this provider owns. Decides the singular vs plural
   /// copy on the "return" banner.
   int _myPlacesCount = 0;
@@ -75,13 +70,12 @@ class _ProfilePageState extends State<ProfilePage> {
   /// look these up.
   Future<void> _resolveProviderContext() async {
     try {
-      final id = await ApiService().ensureCurrentProviderId();
+      final id = await ApiService().lookupCurrentProviderId();
       if (!mounted || id == null || id.isEmpty) return;
       final places =
           await ApiService().fetchProviderPlaces(providerId: id);
       if (!mounted) return;
       setState(() {
-        _providerId = id;
         _myPlacesCount = places.length;
       });
     } catch (_) {
@@ -586,9 +580,15 @@ class _ProfilePageState extends State<ProfilePage> {
   /// Hidden entirely when the user is already in provider mode — they
   /// don't need a CTA pointing to where they already are.
   Widget _buildRoleBanner() {
-    return ValueListenableBuilder<bool>(
-      valueListenable: UserRoleStore.instance.isProvider,
-      builder: (_, isProvider, __) {
+    return AnimatedBuilder(
+      animation: Listenable.merge([
+        UserRoleStore.instance.isProvider,
+        UserRoleStore.instance.hasProviderHistory,
+      ]),
+      builder: (_, __) {
+        final isProvider = UserRoleStore.instance.isProvider.value;
+        final hasProviderHistory =
+            UserRoleStore.instance.hasProviderHistory.value;
         if (isProvider) return const SizedBox.shrink();
 
         // Personalize the title with the user's first name when we have one.
@@ -600,11 +600,6 @@ class _ProfilePageState extends State<ProfilePage> {
           final firstName = name.split(' ').first;
           return '$firstName، $base';
         }
-
-        final hasProviderHistory = (_providerId != null && _providerId!.isNotEmpty) &&
-            (_myPlacesCount > 0 ||
-                SubscriptionService.instance.entitlement.value.tier !=
-                    PlanTier.free);
 
         if (hasProviderHistory) {
           // Returning provider — bring them home.
@@ -621,7 +616,7 @@ class _ProfilePageState extends State<ProfilePage> {
               cta: isMulti
                   ? AppCopy.profileBannerReturnCtaMulti
                   : AppCopy.profileBannerReturnCtaSingle,
-              onTap: () => _handleRoleSwitch(toProvider: true),
+              onTap: _enterProviderFlow,
             ),
           );
         }
@@ -635,7 +630,7 @@ class _ProfilePageState extends State<ProfilePage> {
             title: personalize(AppCopy.profileBannerInviteTitle),
             body: AppCopy.profileBannerInviteBody,
             cta: AppCopy.profileBannerInviteCta,
-            onTap: () => _handleRoleSwitch(toProvider: true),
+            onTap: _enterProviderFlow,
           ),
         );
       },
@@ -706,68 +701,63 @@ class _ProfilePageState extends State<ProfilePage> {
   ///
   /// Session and subscription state are preserved; the user can switch back
   /// at any time without re-onboarding or re-subscribing.
+  Future<void> _enterProviderFlow() async {
+    final hadProviderHistory =
+        UserRoleStore.instance.hasProviderHistory.value;
+    await UserRoleStore.instance.chooseProvider();
+    if (!mounted) return;
+
+    final providerId = await ApiService().ensureCurrentProviderId();
+    if (!mounted) return;
+
+    if (hadProviderHistory) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => ProviderHubScreen(providerId: providerId),
+        ),
+        (_) => false,
+      );
+      return;
+    }
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => SubscriptionScreen(
+          onboarding: true,
+          providerId: providerId,
+          onPlanChosen: () async {
+            if (!mounted) return;
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(
+                builder: (_) => ProviderHubScreen(providerId: providerId),
+              ),
+              (_) => false,
+            );
+          },
+        ),
+      ),
+      (_) => false,
+    );
+  }
+
   Future<void> _handleRoleSwitch({required bool toProvider}) async {
+    if (toProvider) {
+      await _enterProviderFlow();
+      return;
+    }
+
     final confirmed = await AppConfirmDialog.show(
       context,
       title: AppCopy.profileSwitchConfirmTitle,
-      message: toProvider
-          ? AppCopy.profileSwitchConfirmProvider
-          : AppCopy.profileSwitchConfirmUser,
+      message: AppCopy.profileSwitchConfirmUser,
       confirmLabel: AppCopy.confirm,
       cancelLabel: AppCopy.cancel,
-      icon:
-          toProvider ? Icons.storefront_rounded : Icons.travel_explore_rounded,
+      icon: Icons.travel_explore_rounded,
     );
     if (!confirmed || !mounted) return;
 
-    if (toProvider) {
-      await UserRoleStore.instance.chooseProvider();
-    } else {
-      await UserRoleStore.instance.chooseRegularUser();
-    }
+    await UserRoleStore.instance.chooseRegularUser();
     if (!mounted) return;
-
-    if (toProvider) {
-      // First-time provider → SubscriptionScreen so they pick a plan THEY
-      // want (we don't pre-choose Free for them). Returning provider → go
-      // straight to their hub, plan and places preserved.
-      final providerId = await ApiService().ensureCurrentProviderId();
-      if (!mounted) return;
-
-      final hasProviderHistory = _providerId != null && _providerId!.isNotEmpty &&
-          (_myPlacesCount > 0 ||
-              SubscriptionService.instance.entitlement.value.tier !=
-                  PlanTier.free);
-      if (hasProviderHistory) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(
-            builder: (_) => ProviderHubScreen(providerId: providerId),
-          ),
-          (_) => false,
-        );
-      } else {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(
-            builder: (_) => SubscriptionScreen(
-              onboarding: true,
-              providerId: providerId,
-              onPlanChosen: () async {
-                if (!mounted) return;
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        ProviderHubScreen(providerId: providerId),
-                  ),
-                  (_) => false,
-                );
-              },
-            ),
-          ),
-          (_) => false,
-        );
-      }
-      return;
-    }
     await PostAuthRouter.replaceWithHome(context);
   }
 

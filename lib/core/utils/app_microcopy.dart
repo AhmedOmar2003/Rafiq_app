@@ -161,10 +161,9 @@ class AppCopy {
   /// Title is composed at render time as "{name}، ..." so each user feels
   /// the prompt is for them, not a generic ad. The body explains the value
   /// in human terms; the CTA is short and warm ("يلا أبدأ").
-  static const profileBannerInviteTitle = 'إيه رأيك تكون مقدم خدمة؟';
+  static const profileBannerInviteTitle = 'ابدأ رحلتك كمقدم خدمة';
   static const profileBannerInviteBody =
-      'مقدم الخدمة بيقدر يضيف مكانه (كافيه، مطعم، إلخ) ويستقبل زوار أكتر. '
-      'يلا ابدأ دلوقتي، واختار خطة الاشتراك اللي تناسبك براحتك تماماً!';
+      'وسّع فرصك داخل التطبيق، واختار الخطة المناسبة لك بحرية كاملة من غير أي فرض أو استعجال.';
   static const profileBannerInviteCta = 'يلا نبدأ';
 
   /// Provider who switched to user mode — invite them back to their hub.

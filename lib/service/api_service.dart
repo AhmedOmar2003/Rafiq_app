@@ -77,6 +77,13 @@ class ApiService {
     return 'jpg';
   }
 
+  /// Returns the provider id for the signed-in user if a providers row already
+  /// exists. This never creates one, which makes it safe for regular-user
+  /// surfaces like Profile where we only want to *detect* provider history.
+  Future<String?> lookupCurrentProviderId() {
+    return _resolveCurrentProviderId(createIfMissing: false);
+  }
+
   /// Resolves (and creates if missing) the provider id for the signed-in user.
   ///
   /// Resilience rules:
@@ -89,7 +96,13 @@ class ApiService {
   ///   3. If we have an id but no providers row → we create one with a
   ///      sensible default business name. This is what unblocks the "add
   ///      first place" flow right after sign-up.
-  Future<String?> ensureCurrentProviderId() async {
+  Future<String?> ensureCurrentProviderId() {
+    return _resolveCurrentProviderId(createIfMissing: true);
+  }
+
+  Future<String?> _resolveCurrentProviderId({
+    required bool createIfMissing,
+  }) async {
     await ensureSupabaseInitialized();
     final prefs = await SharedPreferences.getInstance();
 
@@ -131,6 +144,10 @@ class ApiService {
           return existingId;
         }
 
+        if (!createIfMissing) {
+          return null;
+        }
+
         // RPC path — SECURITY DEFINER, grants the provider role and creates
         // the row atomically. This is what unblocks brand-new signups whose
         // JWT doesn't yet have `is_provider()` true, so a direct INSERT
@@ -160,6 +177,10 @@ class ApiService {
         if (fallbackId != null && fallbackId.isNotEmpty) {
           await prefs.setString(_providerIdKey, fallbackId);
           return fallbackId;
+        }
+
+        if (!createIfMissing) {
+          return null;
         }
 
         if (attempt < _providerResolveAttempts - 1) {

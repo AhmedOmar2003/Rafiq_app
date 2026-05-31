@@ -553,8 +553,5 @@ class AuthService {
     await prefs.setString(_userNameKey, name);
     await prefs.setString(_userEmailKey, email);
     await prefs.setBool(_loggedInKey, true);
-    // Warm the provider row immediately so provider screens never race auth
-    // restoration after a fresh login.
-    await ApiService().ensureCurrentProviderId();
   }
 }

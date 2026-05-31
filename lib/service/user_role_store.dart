@@ -22,9 +22,11 @@ class UserRoleStore {
 
   static const _kIsProviderKey = 'is_provider_role';
   static const _kRoleChosenKey = 'role_chosen';
+  static const _kEverProviderKey = 'ever_chosen_provider_role';
 
   final ValueNotifier<bool> isProvider = ValueNotifier<bool>(false);
   final ValueNotifier<bool> hasChosenRole = ValueNotifier<bool>(false);
+  final ValueNotifier<bool> hasProviderHistory = ValueNotifier<bool>(false);
 
   bool _loaded = false;
   Future<void>? _loadInFlight;
@@ -43,6 +45,8 @@ class UserRoleStore {
       final prefs = await SharedPreferences.getInstance();
       isProvider.value = prefs.getBool(_kIsProviderKey) ?? false;
       hasChosenRole.value = prefs.getBool(_kRoleChosenKey) ?? false;
+      hasProviderHistory.value =
+          prefs.getBool(_kEverProviderKey) ?? isProvider.value;
     } catch (_) {
       // Treat as regular user on failure.
     } finally {
@@ -55,9 +59,14 @@ class UserRoleStore {
     isProvider.value = value;
     try {
       final prefs = await SharedPreferences.getInstance();
+      final hadProviderHistory =
+          prefs.getBool(_kEverProviderKey) ?? hasProviderHistory.value;
+      final nextProviderHistory = hadProviderHistory || value;
       await prefs.setBool(_kIsProviderKey, value);
       await prefs.setBool(_kRoleChosenKey, true);
+      await prefs.setBool(_kEverProviderKey, nextProviderHistory);
       hasChosenRole.value = true;
+      hasProviderHistory.value = nextProviderHistory;
     } catch (_) {/* swallow */}
   }
 
@@ -68,10 +77,12 @@ class UserRoleStore {
   Future<void> resetRoleChoice() async {
     isProvider.value = false;
     hasChosenRole.value = false;
+    hasProviderHistory.value = false;
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_kIsProviderKey);
       await prefs.remove(_kRoleChosenKey);
+      await prefs.remove(_kEverProviderKey);
     } catch (_) {/* swallow */}
   }
 
