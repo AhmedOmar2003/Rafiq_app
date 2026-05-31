@@ -147,26 +147,25 @@ class AppCopy {
   static const profileImageSaveError = 'معرفناش نحفظ الصورة، جرّب تاني.';
   static const profileSwitchToProvider = 'حوّل لمقدم خدمة';
   static const profileSwitchToProviderValue = 'افتح خطط الاشتراك وأضف مكانك';
-  static const profileSwitchToUser = 'حوّل لمستخدم عادي';
+  static const profileSwitchToUser = 'تصفح كمستخدم عادي';
   static const profileSwitchToUserValue =
-      'استكشف الأماكن وتقدر ترجع تابع خدمتك في أي وقت';
+      'استكشف الأماكن كزائر (خطتك وأماكنك محفوظة بأمان)';
   static const profileSwitchConfirmTitle = 'تأكيد تغيير الدور';
   static const profileSwitchConfirmProvider =
       'هتدخل صفحة الخطط تختار اللي يناسبك (مجاني، Pro، أو Max). تقدر ترجع مستخدم عادي في أي وقت وكل حاجة هتفضل محفوظة.';
   static const profileSwitchConfirmUser =
-      'هتنتقل لمسار المستخدم العادي. اشتراكك ومكانك هيفضلوا محفوظين لما ترجع.';
+      'هتنتقل لمسار المستخدم العادي عشان تشوف الأماكن زي أي زائر. متقلقش، اشتراكك وأماكنك محفوظة بالكامل لما تحب ترجع.';
 
   // --- Profile banners (context-aware CTA, personalized by name) ----------
   /// Regular user who never confirmed a provider plan — friendly invite.
   /// Title is composed at render time as "{name}، ..." so each user feels
   /// the prompt is for them, not a generic ad. The body explains the value
   /// in human terms; the CTA is short and warm ("يلا أبدأ").
-  static const profileBannerInviteTitle =
-      'تحب نشاطك يوصل لأكتر ناس؟';
+  static const profileBannerInviteTitle = 'إيه رأيك تكون مقدم خدمة؟';
   static const profileBannerInviteBody =
-      'لو عندك مطعم، كافيه، أو أي مكان للناس — اعرضه على رفيق، اختار خطتك بنفسك، '
-      'وزبايننا الجداد يلاقوك. مفيش حد بيختار عنك.';
-  static const profileBannerInviteCta = 'يلا، أبدأ';
+      'مقدم الخدمة بيقدر يضيف مكانه (كافيه، مطعم، إلخ) ويستقبل زوار أكتر. '
+      'يلا ابدأ دلوقتي، واختار خطة الاشتراك اللي تناسبك براحتك تماماً!';
+  static const profileBannerInviteCta = 'يلا نبدأ';
 
   /// Provider who switched to user mode — invite them back to their hub.
   /// Singular/plural copy auto-picked from the place count.
