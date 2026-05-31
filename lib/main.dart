@@ -14,13 +14,11 @@ import 'package:rafiq_app/service/profile_image_store.dart';
 import 'package:rafiq_app/service/subscription_service.dart';
 import 'package:rafiq_app/service/user_role_store.dart';
 import 'package:rafiq_app/view/pages/cubit.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 
-/// Sentry DSN. Loaded from --dart-define so we don't hardcode it in the
-/// repo. When empty, Sentry init is skipped — the app runs identically.
-///
-/// To enable error monitoring for a build:
-///   flutter build apk --release --dart-define=SENTRY_DSN=https://xxx@sentry.io/yyy
+// Sentry temporarily removed — the package's Kotlin sources don't compile
+// against our current Android Gradle/Kotlin toolchain. The init flow stays
+// behind an env-gated stub so re-adding the package later is a one-line
+// change. Track in docs/OPERATIONS.md.
 const _sentryDsn = String.fromEnvironment('SENTRY_DSN', defaultValue: '');
 
 Future<void> main() async {
@@ -107,24 +105,11 @@ Future<void> main() async {
         child: const RafiqApp(),
       );
 
-  // When SENTRY_DSN is provided at build time, wrap the app in Sentry so
-  // every unhandled exception + Flutter framework error is shipped to the
-  // dashboard. Without a DSN the wrapper is bypassed and the app boots
-  // exactly as before — no overhead, no network.
-  if (_sentryDsn.isNotEmpty) {
-    await SentryFlutter.init(
-      (o) {
-        o.dsn = _sentryDsn;
-        o.tracesSampleRate = 0.20;          // 20% of transactions
-        o.attachScreenshot = false;          // PII safety
-        o.environment = kReleaseMode ? 'production' : 'debug';
-        o.release = 'rafiq-flutter@1.0.0';
-      },
-      appRunner: () => runApp(appRoot()),
-    );
-  } else {
-    runApp(appRoot());
-  }
+  // Sentry wiring temporarily disabled — see import comment above.
+  // The DSN-gated branch is kept so re-enabling is mechanical: drop the
+  // sentry_flutter dep back in, swap the `else` branch's runApp for the
+  // SentryFlutter.init call, done.
+  runApp(appRoot());
 
   WidgetsBinding.instance.addPostFrameCallback((_) {
     FlutterNativeSplash.remove();
