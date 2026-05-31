@@ -152,23 +152,30 @@ class AppCopy {
       'استكشف الأماكن وتقدر ترجع تابع خدمتك في أي وقت';
   static const profileSwitchConfirmTitle = 'تأكيد تغيير الدور';
   static const profileSwitchConfirmProvider =
-      'هتنتقل لمسار مقدم الخدمة. لو لسه ما اخترتش خطة، هنوديك صفحة الخطط.';
+      'هتدخل صفحة الخطط تختار اللي يناسبك (مجاني، Pro، أو Max). تقدر ترجع مستخدم عادي في أي وقت وكل حاجة هتفضل محفوظة.';
   static const profileSwitchConfirmUser =
       'هتنتقل لمسار المستخدم العادي. اشتراكك ومكانك هيفضلوا محفوظين لما ترجع.';
 
-  // --- Profile banners (context-aware CTA) ---------------------------------
-  /// Regular user who never signed up as provider — invite them in.
-  static const profileBannerInviteTitle = 'تحب نشاطك يوصل لأكتر ناس؟';
-  static const profileBannerInviteBody  = 'ضيف مكانك على رفيق وخلّي زبايننا الجداد يلاقوك. ابدأ مجاناً وارقّي بعدين.';
-  static const profileBannerInviteCta   = 'كن مقدّم خدمة';
+  // --- Profile banners (context-aware CTA, personalized by name) ----------
+  /// Regular user who never confirmed a provider plan — friendly invite.
+  /// Title is composed at render time as "{name}، ..." so each user feels
+  /// the prompt is for them, not a generic ad. The body explains the value
+  /// in human terms; the CTA is short and warm ("يلا أبدأ").
+  static const profileBannerInviteTitle =
+      'تحب نشاطك يوصل لأكتر ناس؟';
+  static const profileBannerInviteBody =
+      'لو عندك مطعم، كافيه، أو أي مكان للناس — اعرضه على رفيق، اختار خطتك بنفسك، '
+      'وزبايننا الجداد يلاقوك. مفيش حد بيختار عنك.';
+  static const profileBannerInviteCta = 'يلا، أبدأ';
 
   /// Provider who switched to user mode — invite them back to their hub.
-  /// Plural copy used when they have multiple places, singular otherwise.
+  /// Singular/plural copy auto-picked from the place count.
   static const profileBannerReturnTitleSingle = 'خدمتك مستنياك';
   static const profileBannerReturnTitleMulti  = 'خدماتك مستنياك';
-  static const profileBannerReturnBody        = 'ارجع لإدارة نشاطك. خطتك واشتراكك لسه محفوظين.';
-  static const profileBannerReturnCtaSingle   = 'ارجع تابع خدمتك';
-  static const profileBannerReturnCtaMulti    = 'ارجع تابع خدماتك';
+  static const profileBannerReturnBody =
+      'ارجع لإدارة نشاطك. خطتك ومكانك واشتراكك كله محفوظ زي ما سيبته.';
+  static const profileBannerReturnCtaSingle = 'ارجع تابع خدمتك';
+  static const profileBannerReturnCtaMulti  = 'ارجع تابع خدماتك';
   static const logoutTitle = 'هتسجل خروج؟';
   static const logoutMessage = 'متأكد إنك عايز تخرج من التطبيق؟';
   static const logoutConfirm = 'أكيد، خروج';

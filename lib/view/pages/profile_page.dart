@@ -30,6 +30,7 @@ import '../../service/subscription_service.dart';
 import '../../auth/post_auth_router.dart';
 import '../../service/user_role_store.dart';
 import '../provider/hub/provider_hub_screen.dart';
+import '../provider/subscription/subscription_screen.dart';
 import 'delete_account_sheet.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -590,6 +591,16 @@ class _ProfilePageState extends State<ProfilePage> {
       builder: (_, isProvider, __) {
         if (isProvider) return const SizedBox.shrink();
 
+        // Personalize the title with the user's first name when we have one.
+        // "أحمد، تحب نشاطك..." reads as a friend talking, not a sales banner.
+        // Falls back to a clean prompt with no comma when the name is missing.
+        String personalize(String base) {
+          final name = (userName ?? '').trim();
+          if (name.isEmpty || name == AppCopy.profileNameFallback) return base;
+          final firstName = name.split(' ').first;
+          return '$firstName، $base';
+        }
+
         final hasProviderHistory =
             (_providerId != null && _providerId!.isNotEmpty);
 
@@ -619,7 +630,7 @@ class _ProfilePageState extends State<ProfilePage> {
           child: _RoleBanner(
             tone: _RoleBannerTone.brand,
             icon: Icons.rocket_launch_rounded,
-            title: AppCopy.profileBannerInviteTitle,
+            title: personalize(AppCopy.profileBannerInviteTitle),
             body: AppCopy.profileBannerInviteBody,
             cta: AppCopy.profileBannerInviteCta,
             onTap: () => _handleRoleSwitch(toProvider: true),
@@ -713,15 +724,43 @@ class _ProfilePageState extends State<ProfilePage> {
       await UserRoleStore.instance.chooseRegularUser();
     }
     if (!mounted) return;
+
     if (toProvider) {
+      // First-time provider → SubscriptionScreen so they pick a plan THEY
+      // want (we don't pre-choose Free for them). Returning provider → go
+      // straight to their hub, plan and places preserved.
       final providerId = await ApiService().ensureCurrentProviderId();
       if (!mounted) return;
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder: (_) => ProviderHubScreen(providerId: providerId),
-        ),
-        (_) => false,
-      );
+
+      final hasProviderHistory = _providerId != null && _providerId!.isNotEmpty;
+      if (hasProviderHistory) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (_) => ProviderHubScreen(providerId: providerId),
+          ),
+          (_) => false,
+        );
+      } else {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (_) => SubscriptionScreen(
+              onboarding: true,
+              providerId: providerId,
+              onPlanChosen: () async {
+                if (!mounted) return;
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        ProviderHubScreen(providerId: providerId),
+                  ),
+                  (_) => false,
+                );
+              },
+            ),
+          ),
+          (_) => false,
+        );
+      }
       return;
     }
     await PostAuthRouter.replaceWithHome(context);
