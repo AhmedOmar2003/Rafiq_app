@@ -169,11 +169,11 @@ class AppCopy {
   /// Provider who switched to user mode — invite them back to their hub.
   /// Singular/plural copy auto-picked from the place count.
   static const profileBannerReturnTitleSingle = 'خدمتك مستنياك';
-  static const profileBannerReturnTitleMulti  = 'خدماتك مستنياك';
+  static const profileBannerReturnTitleMulti = 'خدماتك مستنياك';
   static const profileBannerReturnBody =
       'ارجع لإدارة نشاطك. خطتك ومكانك واشتراكك كله محفوظ زي ما سيبته.';
   static const profileBannerReturnCtaSingle = 'ارجع تابع خدمتك';
-  static const profileBannerReturnCtaMulti  = 'ارجع تابع خدماتك';
+  static const profileBannerReturnCtaMulti = 'ارجع تابع خدماتك';
   static const logoutTitle = 'هتسجل خروج؟';
   static const logoutMessage = 'متأكد إنك عايز تخرج من التطبيق؟';
   static const logoutConfirm = 'أكيد، خروج';
@@ -285,9 +285,11 @@ class AppCopy {
   // --- Onboarding (provider plan picker) --------------------------------------
   static const subOnboardingTitle = 'اختار خطتك';
   static const subOnboardingSubtitle =
-      'كل خطة بتفتحلك مميزات أكتر لمكانك. تقدر تغيّر في أي وقت.';
+      'كل خطة بتفتحلك مميزات أكتر لمكانك. ولا خطة هتتحدد إلا باختيارك أنت.';
   static const subOnboardingFreeCta = 'كمّل بالخطة المجانية';
   static const subOnboardingContinueCta = 'يلا نضيف مكانك';
+  static const subSaveFailed =
+      'تعذر تأكيد الخطة الآن. جرّب مرة أخرى عشان نحفظ اختيارك بشكل صحيح.';
 
   // --- Demo upgrade flow -------------------------------------------------------
   static const subConfirmTitle = 'أكّد اشتراكك';
@@ -408,24 +410,25 @@ class AppCopy {
       'لقيناش البريد الإلكتروني، سجل دخول تاني.';
 
   // --- Profile support section -------------------------------------------------
-  static const profileSupportSection   = 'الدعم والمساعدة';
-  static const profilePrivacyPolicy    = 'سياسة الخصوصية';
-  static const profileTerms            = 'الشروط والأحكام';
-  static const profileHelp             = 'مركز المساعدة';
-  static const profileContactUs        = 'تواصل معنا';
-  static const supportPhone1           = '01036925982';
-  static const supportPhone2           = '01050242285';
-  static const supportEmail            = 'ahmedessam.uiux@gmail.com';
-  static const supportWhatsappHint     = 'واتساب: ';
+  static const profileSupportSection = 'الدعم والمساعدة';
+  static const profilePrivacyPolicy = 'سياسة الخصوصية';
+  static const profileTerms = 'الشروط والأحكام';
+  static const profileHelp = 'مركز المساعدة';
+  static const profileContactUs = 'تواصل معنا';
+  static const supportPhone1 = '01036925982';
+  static const supportPhone2 = '01050242285';
+  static const supportEmail = 'ahmedessam.uiux@gmail.com';
+  static const supportWhatsappHint = 'واتساب: ';
 
   // --- Place appeal flow -------------------------------------------------------
-  static const appealTitle             = 'طعن في قرار الرفض';
-  static const appealSubtitle          = 'أخبرنا بسبب اعتراضك وهنراجع الطلب في أقرب وقت.';
-  static const appealNameHint          = 'اسمك الكامل';
-  static const appealPhoneHint         = 'رقم الموبايل';
-  static const appealMessageHint       = 'اشرح اعتراضك هنا...';
-  static const appealSend              = 'إرسال الطعن';
-  static const appealSentSuccess       = 'وصلنا طعنك، هنتواصل معاك قريباً ✅';
-  static const appealSentFail          = 'معرفناش نبعت الطعن، جرّب تاني.';
-  static const appealPlaceholder       = 'اكتب سبب الاعتراض...';
+  static const appealTitle = 'طعن في قرار الرفض';
+  static const appealSubtitle =
+      'أخبرنا بسبب اعتراضك وهنراجع الطلب في أقرب وقت.';
+  static const appealNameHint = 'اسمك الكامل';
+  static const appealPhoneHint = 'رقم الموبايل';
+  static const appealMessageHint = 'اشرح اعتراضك هنا...';
+  static const appealSend = 'إرسال الطعن';
+  static const appealSentSuccess = 'وصلنا طعنك، هنتواصل معاك قريباً ✅';
+  static const appealSentFail = 'معرفناش نبعت الطعن، جرّب تاني.';
+  static const appealPlaceholder = 'اكتب سبب الاعتراض...';
 }

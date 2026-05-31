@@ -41,11 +41,11 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
   /// Navigate to the appropriate screen based on selection.
   ///
   /// Two states drive the provider track:
-  ///   * **First visit** (`UserRoleStore.isProvider == false`)
-  ///     → mark as provider → push the subscription onboarding → on plan
-  ///       picked, push the Provider Hub.
-  ///   * **Returning provider** (`UserRoleStore.isProvider == true`)
-  ///     → skip onboarding entirely → push the Provider Hub directly.
+  ///   * **First visit** (`hasProviderHistory == false`)
+  ///     → open the subscription onboarding with no preselected plan.
+  ///       We do NOT mark the user as provider yet.
+  ///   * **Returning provider** (`hasProviderHistory == true`)
+  ///     → restore the provider role flag and push the Provider Hub directly.
   ///
   /// Regular user → mark as non-provider → HomeView.
   Future<void> _handleNavigation() async {
@@ -62,15 +62,17 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
         (route) => false,
       );
     } else {
-      final alreadyProvider = UserRoleStore.instance.isProvider.value;
-      await UserRoleStore.instance.chooseProvider();
-      final providerId = await _resolveProviderId();
+      final hasProviderHistory =
+          UserRoleStore.instance.hasProviderHistory.value;
       if (!mounted) return;
 
       // Returning provider — go straight to the hub. Plan + places + every
       // setting they had already carries over via the SubscriptionService /
       // SharedPreferences persistence layers.
-      if (alreadyProvider) {
+      if (hasProviderHistory) {
+        await UserRoleStore.instance.chooseProvider();
+        final providerId = await _resolveProviderId();
+        if (!mounted) return;
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
             builder: (_) => ProviderHubScreen(providerId: providerId),
@@ -79,12 +81,11 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
         );
       } else {
         // First-time provider — onboarding funnel.
-        Navigator.of(context).pushAndRemoveUntil(
+        Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => SubscriptionScreen(
               onboarding: true,
-              providerId: providerId,
-              onPlanChosen: () async {
+              onPlanChosen: (providerId) async {
                 final navContext = navigatorKey.currentContext ?? context;
                 Navigator.of(navContext, rootNavigator: true)
                     .pushAndRemoveUntil(
@@ -98,7 +99,6 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
               },
             ),
           ),
-          (route) => false,
         );
       }
     }

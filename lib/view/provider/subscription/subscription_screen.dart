@@ -5,7 +5,9 @@ import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:rafiq_app/core/utils/app_microcopy.dart';
 import 'package:rafiq_app/models/subscription/plan.dart';
+import 'package:rafiq_app/service/api_service.dart';
 import 'package:rafiq_app/service/subscription_service.dart';
+import 'package:rafiq_app/service/user_role_store.dart';
 
 /// Premium SaaS-grade subscription page.
 ///
@@ -37,9 +39,12 @@ class SubscriptionScreen extends StatefulWidget {
     this.onPlanChosen,
   });
 
-  /// Resolved provider id of the signed-in user. `null` for users who haven't
-  /// onboarded as a provider yet — the screen still shows the catalog as
-  /// marketing material but disables the upgrade CTAs.
+  /// Resolved provider id of the signed-in user.
+  ///
+  /// `null` is the intentional state for a brand-new user who is still
+  /// deciding which provider plan they want. In that case the screen must
+  /// stay "open" and avoid marking any plan as current until the user
+  /// explicitly confirms one.
   final String? providerId;
 
   /// When true the page becomes the *first* step in the provider onboarding:
@@ -49,9 +54,12 @@ class SubscriptionScreen extends StatefulWidget {
   final bool onboarding;
 
   /// Called after the user successfully picks any plan (Free, Pro, or Max)
-  /// while in onboarding mode. The screen does NOT pop itself; the caller
-  /// decides whether to push the next step or replace the route.
-  final Future<void> Function()? onPlanChosen;
+  /// while in onboarding mode.
+  ///
+  /// The callback receives the confirmed `providerId` that now exists on the
+  /// backend, so the caller can route straight to the hub without another
+  /// guesswork round-trip.
+  final Future<void> Function(String providerId)? onPlanChosen;
 
   @override
   State<SubscriptionScreen> createState() => _SubscriptionScreenState();
@@ -60,6 +68,9 @@ class SubscriptionScreen extends StatefulWidget {
 class _SubscriptionScreenState extends State<SubscriptionScreen> {
   bool _yearly = true;
   bool _busy = false;
+
+  bool get _showCurrentPlan =>
+      !widget.onboarding || (widget.providerId?.isNotEmpty ?? false);
 
   @override
   void initState() {
@@ -89,12 +100,23 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     if (plan.tier == PlanTier.free) {
       setState(() => _busy = true);
       try {
-        await SubscriptionService.instance
-            .applyDemoFree(providerId: widget.providerId);
+        await SubscriptionService.instance.applyDemoFree(
+          providerId: widget.providerId,
+          requireBackendSync: widget.onboarding,
+        );
         if (!mounted) return;
         if (widget.onboarding) {
-          await widget.onPlanChosen?.call();
+          final providerId = await _finalizeOnboardingSelection();
+          if (!mounted) return;
+          if (widget.onPlanChosen != null) {
+            await widget.onPlanChosen!(providerId);
+          } else {
+            Navigator.of(context).maybePop(providerId);
+          }
         }
+      } catch (_) {
+        if (!mounted) return;
+        AppFeedback.error(AppCopy.subSaveFailed);
       } finally {
         if (mounted) setState(() => _busy = false);
       }
@@ -115,8 +137,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         plan: plan,
         yearly: _yearly,
         providerId: widget.providerId,
+        requireBackendSync: widget.onboarding,
       );
       if (!mounted) return;
+      String? providerId;
+      if (widget.onboarding) {
+        providerId = await _finalizeOnboardingSelection();
+        if (!mounted) return;
+      }
       await _UpgradeSuccessOverlay.show(
         context,
         plan: plan,
@@ -125,12 +153,33 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             : AppCopy.subSuccessCta,
       );
       if (!mounted) return;
-      if (widget.onboarding) {
-        await widget.onPlanChosen?.call();
+      if (widget.onboarding && providerId != null) {
+        if (widget.onPlanChosen != null) {
+          await widget.onPlanChosen!(providerId);
+        } else {
+          Navigator.of(context).maybePop(providerId);
+        }
       }
+    } catch (_) {
+      if (!mounted) return;
+      AppFeedback.error(AppCopy.subSaveFailed);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  Future<String> _finalizeOnboardingSelection() async {
+    await UserRoleStore.instance.chooseProvider();
+    final providerId = widget.providerId ??
+        await ApiService().lookupCurrentProviderId() ??
+        await ApiService().ensureCurrentProviderId();
+
+    if (providerId == null || providerId.isEmpty) {
+      throw StateError('provider id missing after confirmed plan selection');
+    }
+
+    await SubscriptionService.instance.loadEntitlement(providerId, force: true);
+    return providerId;
   }
 
   @override
@@ -233,7 +282,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           child: _PlanCard(
             plan: plan,
             yearly: _yearly,
-            isCurrent: plan.tier == ent.tier,
+            isCurrent: _showCurrentPlan && plan.tier == ent.tier,
             isRecommended: plan.tier == PlanTier.pro,
             disabled: _busy,
             onboarding: widget.onboarding,

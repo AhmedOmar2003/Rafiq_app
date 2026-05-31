@@ -191,45 +191,85 @@ class SubscriptionService {
     bool yearly = false,
     String? providerId,
     Duration period = const Duration(days: 30),
+    bool requireBackendSync = false,
   }) async {
     final now = DateTime.now();
     final ent = _buildDemoEntitlement(plan: plan, periodEnd: now.add(period));
+    String? resolvedProviderId = providerId ?? _entitlementProviderId;
 
-    // 1. Publish locally first so the UI flips immediately.
-    final pid = providerId ?? _entitlementProviderId;
-    _entitlementFetchedAt = now;
-    if (pid != null && pid != 'demo') _entitlementProviderId = pid;
-    entitlement.value = ent;
-    unawaited(_persistDemoTier(plan.tier, ent.periodEnd));
-
-    // 2. Persist to the DB so the row is real. If this fails (offline,
-    //    auth race), the local override + SharedPrefs still hold until the
-    //    next online attempt.
-    try {
+    Future<String?> persistSelection() async {
       await ApiService.ensureSupabaseInitialized();
       await _client.rpc<dynamic>(
         'apply_demo_subscription',
         params: {'_tier': plan.tier.wire, '_yearly': yearly},
       );
-    } catch (e) {
-      if (kDebugMode) debugPrint('apply_demo_subscription RPC failed: $e');
+      return resolvedProviderId ?? await ApiService().lookupCurrentProviderId();
+    }
+
+    if (requireBackendSync) {
+      resolvedProviderId = await persistSelection();
+    }
+
+    // 1. Publish locally first so the UI flips immediately.
+    _entitlementFetchedAt = now;
+    if (resolvedProviderId != null && resolvedProviderId != 'demo') {
+      _entitlementProviderId = resolvedProviderId;
+    }
+    entitlement.value = ent;
+    unawaited(_persistDemoTier(plan.tier, ent.periodEnd));
+
+    // 2. Persist to the DB so the row is real. In onboarding we require a
+    //    real backend success before the role flips to provider. Elsewhere
+    //    we keep the existing optimistic behavior and retry later.
+    if (!requireBackendSync) {
+      try {
+        final syncedProviderId = await persistSelection();
+        if (syncedProviderId != null && syncedProviderId != 'demo') {
+          _entitlementProviderId = syncedProviderId;
+        }
+      } catch (e) {
+        if (kDebugMode) debugPrint('apply_demo_subscription RPC failed: $e');
+      }
     }
 
     return ent;
   }
 
   /// Drop to Free both locally and in the DB (cancels any active row).
-  Future<void> applyDemoFree({String? providerId}) async {
-    entitlement.value = ProviderEntitlement.freeFallback;
-    unawaited(_clearDemoTier());
-    try {
+  Future<void> applyDemoFree({
+    String? providerId,
+    bool requireBackendSync = false,
+  }) async {
+    Future<String?> persistSelection() async {
       await ApiService.ensureSupabaseInitialized();
       await _client.rpc<dynamic>(
         'apply_demo_subscription',
         params: {'_tier': 'free', '_yearly': false},
       );
-    } catch (e) {
-      if (kDebugMode) debugPrint('apply_demo_subscription(free) failed: $e');
+      return providerId ??
+          _entitlementProviderId ??
+          await ApiService().lookupCurrentProviderId();
+    }
+
+    String? resolvedProviderId = providerId ?? _entitlementProviderId;
+    if (requireBackendSync) {
+      resolvedProviderId = await persistSelection();
+    }
+
+    entitlement.value = ProviderEntitlement.freeFallback;
+    if (resolvedProviderId != null && resolvedProviderId != 'demo') {
+      _entitlementProviderId = resolvedProviderId;
+    }
+    unawaited(_clearDemoTier());
+    if (!requireBackendSync) {
+      try {
+        final syncedProviderId = await persistSelection();
+        if (syncedProviderId != null && syncedProviderId != 'demo') {
+          _entitlementProviderId = syncedProviderId;
+        }
+      } catch (e) {
+        if (kDebugMode) debugPrint('apply_demo_subscription(free) failed: $e');
+      }
     }
   }
 
@@ -331,9 +371,8 @@ class SubscriptionService {
           .maybeSingle();
 
       final dbTierStr = row?['tier'] as String?;
-      final dbTier = dbTierStr == null
-          ? PlanTier.free
-          : PlanTierX.fromWire(dbTierStr);
+      final dbTier =
+          dbTierStr == null ? PlanTier.free : PlanTierX.fromWire(dbTierStr);
 
       if (dbTier == persistedTier) return; // Already in sync.
 

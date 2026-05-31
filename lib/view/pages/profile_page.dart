@@ -72,8 +72,7 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       final id = await ApiService().lookupCurrentProviderId();
       if (!mounted || id == null || id.isEmpty) return;
-      final places =
-          await ApiService().fetchProviderPlaces(providerId: id);
+      final places = await ApiService().fetchProviderPlaces(providerId: id);
       if (!mounted) return;
       setState(() {
         _myPlacesCount = places.length;
@@ -702,15 +701,13 @@ class _ProfilePageState extends State<ProfilePage> {
   /// Session and subscription state are preserved; the user can switch back
   /// at any time without re-onboarding or re-subscribing.
   Future<void> _enterProviderFlow() async {
-    final hadProviderHistory =
-        UserRoleStore.instance.hasProviderHistory.value;
-    await UserRoleStore.instance.chooseProvider();
-    if (!mounted) return;
-
-    final providerId = await ApiService().ensureCurrentProviderId();
-    if (!mounted) return;
+    final hadProviderHistory = UserRoleStore.instance.hasProviderHistory.value;
 
     if (hadProviderHistory) {
+      await UserRoleStore.instance.chooseProvider();
+      if (!mounted) return;
+      final providerId = await ApiService().ensureCurrentProviderId();
+      if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
           builder: (_) => ProviderHubScreen(providerId: providerId),
@@ -720,12 +717,11 @@ class _ProfilePageState extends State<ProfilePage> {
       return;
     }
 
-    Navigator.of(context).pushAndRemoveUntil(
+    Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => SubscriptionScreen(
           onboarding: true,
-          providerId: providerId,
-          onPlanChosen: () async {
+          onPlanChosen: (providerId) async {
             if (!mounted) return;
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(
@@ -736,7 +732,6 @@ class _ProfilePageState extends State<ProfilePage> {
           },
         ),
       ),
-      (_) => false,
     );
   }
 
@@ -886,7 +881,8 @@ class _SupportSection extends StatelessWidget {
                 label: AppCopy.profilePrivacyPolicy,
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
+                  MaterialPageRoute(
+                      builder: (_) => const PrivacyPolicyScreen()),
                 ),
               ),
               const _Hairline(),
@@ -1264,8 +1260,7 @@ class _RoleBanner extends StatelessWidget {
                     Text(
                       title,
                       style: AppText.titleMd.copyWith(
-                        color:
-                            isBrand ? AppColor.white : AppColor.textPrimary,
+                        color: isBrand ? AppColor.white : AppColor.textPrimary,
                         fontWeight: FontWeight.w800,
                       ),
                       maxLines: 1,
@@ -1290,9 +1285,7 @@ class _RoleBanner extends StatelessWidget {
                         vertical: 8.h,
                       ),
                       decoration: BoxDecoration(
-                        color: isBrand
-                            ? AppColor.white
-                            : AppColor.primary,
+                        color: isBrand ? AppColor.white : AppColor.primary,
                         borderRadius: AppRadii.rPill,
                       ),
                       child: Row(
@@ -1301,9 +1294,8 @@ class _RoleBanner extends StatelessWidget {
                           Text(
                             cta,
                             style: AppText.labelMd.copyWith(
-                              color: isBrand
-                                  ? AppColor.primary
-                                  : AppColor.white,
+                              color:
+                                  isBrand ? AppColor.primary : AppColor.white,
                               fontWeight: FontWeight.w800,
                             ),
                           ),
@@ -1311,9 +1303,7 @@ class _RoleBanner extends StatelessWidget {
                           Icon(
                             Icons.arrow_back_ios_new_rounded,
                             size: 12.sp,
-                            color: isBrand
-                                ? AppColor.primary
-                                : AppColor.white,
+                            color: isBrand ? AppColor.primary : AppColor.white,
                           ),
                         ],
                       ),
