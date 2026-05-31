@@ -203,6 +203,12 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
 
       final coverPath = _images.isEmpty ? null : _images.first.path;
       if (_isEditing) {
+        // If the user opened the edit screen from the "rejected card", the
+        // place's current status will be 'rejected'. Saving in that case
+        // means "I fixed it — please re-review", so we flip the row back
+        // to pending. Regular edits of an approved place skip this and
+        // keep the place live.
+        final wasRejected = widget.editingPlace!.status == 'rejected';
         await ApiService().updatePlace(
           placeUuid: widget.editingPlace!.placeUuid,
           legacyPlaceId: widget.editingPlace!.placeId,
@@ -213,6 +219,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
           cityName: _selectedCity ?? '',
           description: _descriptionController.text.trim(),
           imagePath: coverPath,
+          resubmitForReview: wasRejected,
         );
       } else {
         await ApiService().addPlace(

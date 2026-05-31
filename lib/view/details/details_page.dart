@@ -114,9 +114,35 @@ class _DetailsPageState extends State<DetailsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredSuggestions = widget.suggestionItemList
+    // "فعاليات مشابهة" — strict match on city + activity + budget.
+    //
+    // The user explicitly asked for "نفس المدينة + نفس النشاط + نفس
+    // الميزانية" so we filter on all three. If the strict match returns
+    // nothing (small city, niche activity) we relax the budget filter first
+    // — same city + same activity is still a meaningful suggestion. If even
+    // that's empty, fall back to "same city" so the section never goes
+    // dark with content available.
+    bool sameCity(SuggestionItemModel other) =>
+        other.city.trim() == currentModel.city.trim();
+    bool sameActivity(SuggestionItemModel other) =>
+        other.suggestionText.trim() == currentModel.suggestionText.trim();
+    bool sameBudget(SuggestionItemModel other) =>
+        other.price.trim() == currentModel.price.trim();
+
+    final pool = widget.suggestionItemList
         .where((item) => item != currentModel)
         .toList();
+
+    var filteredSuggestions = pool
+        .where((i) => sameCity(i) && sameActivity(i) && sameBudget(i))
+        .toList();
+    if (filteredSuggestions.isEmpty) {
+      filteredSuggestions =
+          pool.where((i) => sameCity(i) && sameActivity(i)).toList();
+    }
+    if (filteredSuggestions.isEmpty) {
+      filteredSuggestions = pool.where(sameCity).toList();
+    }
 
     return AppPageScaffold(
       unpadded: true,

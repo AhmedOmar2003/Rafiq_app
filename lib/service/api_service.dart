@@ -393,7 +393,7 @@ class ApiService {
     final rows = await _client
         .from('places')
         .select(
-          'id,place_id,provider_id,place_name,description,price_range,budget,rating,place_address,image_path,activity_name,city_name,created_at,status,rejection_reason',
+          'id,place_id,provider_id,place_name,description,price_range,budget,rating,place_address,image_path,activity_name,city_name,created_at,status,rejection_reason,edit_allowed',
         )
         .eq('provider_id', providerId)
         .order('created_at', ascending: false)
@@ -491,6 +491,10 @@ class ApiService {
     required String description,
     String? imagePath,
     double? rating,
+    /// True when the edit is a "fix after rejection" — flips status back
+    /// to pending so the admin re-reviews it. False for ordinary edits of
+    /// an already-approved place (which keeps the place live).
+    bool resubmitForReview = false,
   }) async {
     try {
       await ensureSupabaseInitialized();
@@ -507,6 +511,15 @@ class ApiService {
         if (rating != null) 'rating': rating,
         'image_path':
             imagePath != null && imagePath.isNotEmpty ? imagePath : null,
+        // When a provider edits a *rejected* place, we throw it back into
+        // the review queue so the admin can re-decide. We also clear the
+        // rejection_reason + edit_allowed flag so a future rejection starts
+        // from a clean slate. Edits of approved places leave status alone.
+        if (resubmitForReview) ...{
+          'status': 'pending',
+          'rejection_reason': null,
+          'edit_allowed': false,
+        },
         'updated_at': DateTime.now().toUtc().toIso8601String(),
       };
 

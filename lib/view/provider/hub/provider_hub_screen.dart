@@ -445,6 +445,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
                       child: _RejectedCard(
                         rejectedPlaces:
                             _places.where((p) => p.status == 'rejected').toList(),
+                        onEditPlace: _editPlace,
                       ),
                     ),
                   _PlacesSection(
@@ -694,8 +695,12 @@ class _ReviewQueueCardState extends State<_ReviewQueueCard> {
 // Rejected places card + Appeal flow
 // ===========================================================================
 class _RejectedCard extends StatelessWidget {
-  const _RejectedCard({required this.rejectedPlaces});
+  const _RejectedCard({
+    required this.rejectedPlaces,
+    required this.onEditPlace,
+  });
   final List<Place> rejectedPlaces;
+  final ValueChanged<Place> onEditPlace;
 
   void _openAppealSheet(BuildContext context, Place place) {
     showModalBottomSheet<void>(
@@ -763,29 +768,97 @@ class _RejectedCard extends StatelessWidget {
                               .copyWith(color: AppColor.textSecondary)),
                     ],
                     gapV(AppSpacing.sm),
-                    // Appeal CTA — opens a bottom sheet with name/phone/message
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () => _openAppealSheet(context, p),
-                        icon: Icon(Icons.gavel_rounded,
-                            size: 16.sp, color: AppColor.primary),
-                        label: Text(
-                          AppCopy.appealTitle,
-                          style: AppText.labelMd.copyWith(
-                            color: AppColor.primary,
-                            fontWeight: FontWeight.w700,
-                          ),
+                    // When the admin opened the edit-and-resubmit door we
+                    // surface a prominent primary CTA — the appeal path is
+                    // secondary in that case. Otherwise only the appeal CTA
+                    // shows, since editing isn't allowed.
+                    if (p.editAllowed) ...[
+                      // Hint chip — let the provider know they have a fix path
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm.w,
+                          vertical: 6.h,
                         ),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: AppColor.primary),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: AppRadii.rMd,
-                          ),
-                          padding: EdgeInsets.symmetric(vertical: AppSpacing.sm.h),
+                        decoration: BoxDecoration(
+                          color: AppColor.success.withValues(alpha: 0.12),
+                          borderRadius: AppRadii.rSm,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.lock_open_rounded,
+                                size: 14.sp, color: AppColor.success),
+                            gapH(AppSpacing.xs),
+                            Text(
+                              'سمحنالك تعدّل وترجّعه للمراجعة',
+                              style: AppText.labelSm.copyWith(
+                                color: AppColor.success,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
+                      gapV(AppSpacing.sm),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: AppButton(
+                              text: 'عدّل وارجّعه',
+                              onPress: () => onEditPlace(p),
+                            ),
+                          ),
+                          gapH(AppSpacing.sm),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () => _openAppealSheet(context, p),
+                              icon: Icon(Icons.gavel_rounded,
+                                  size: 14.sp, color: AppColor.primary),
+                              label: Text(
+                                'طعن',
+                                style: AppText.labelMd.copyWith(
+                                  color: AppColor.primary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side:
+                                    const BorderSide(color: AppColor.primary),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: AppRadii.rMd,
+                                ),
+                                padding: EdgeInsets.symmetric(
+                                    vertical: AppSpacing.sm.h),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ] else
+                      // Edit locked → appeal is the only path forward
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () => _openAppealSheet(context, p),
+                          icon: Icon(Icons.gavel_rounded,
+                              size: 16.sp, color: AppColor.primary),
+                          label: Text(
+                            AppCopy.appealTitle,
+                            style: AppText.labelMd.copyWith(
+                              color: AppColor.primary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: AppColor.primary),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: AppRadii.rMd,
+                            ),
+                            padding:
+                                EdgeInsets.symmetric(vertical: AppSpacing.sm.h),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),

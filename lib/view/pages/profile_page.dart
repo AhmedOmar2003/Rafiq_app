@@ -44,6 +44,15 @@ class _ProfilePageState extends State<ProfilePage> {
   String? userEmail;
   bool _isLoading = false;
 
+  /// Provider id of the signed-in user (null if they're not a provider yet).
+  /// Drives the "return to your hub" banner: present + non-null means they
+  /// confirmed a plan at some point and have a hub to return to.
+  String? _providerId;
+
+  /// Number of places this provider owns. Decides the singular vs plural
+  /// copy on the "return" banner.
+  int _myPlacesCount = 0;
+
   @override
   void initState() {
     super.initState();
@@ -56,6 +65,27 @@ class _ProfilePageState extends State<ProfilePage> {
     // user expects to see plan-specific copy in the row.
     UserRoleStore.instance.ensureLoaded();
     SubscriptionService.instance.loadCatalog();
+    _resolveProviderContext();
+  }
+
+  /// Resolve provider id + place count in the background so the banner
+  /// renders the right copy when the page is open. Both reads are wrapped
+  /// in try-catch — the profile page should never fail because we couldn't
+  /// look these up.
+  Future<void> _resolveProviderContext() async {
+    try {
+      final id = await ApiService().ensureCurrentProviderId();
+      if (!mounted || id == null || id.isEmpty) return;
+      final places =
+          await ApiService().fetchProviderPlaces(providerId: id);
+      if (!mounted) return;
+      setState(() {
+        _providerId = id;
+        _myPlacesCount = places.length;
+      });
+    } catch (_) {
+      // Silent — banner just falls back to its safe state.
+    }
   }
 
   Future<void> _loadUserData() async {
@@ -476,6 +506,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
                 child: Column(
                   children: [
+                    _buildRoleBanner(),
                     _buildInfoSection(),
                     gapV(AppSpacing.xxxl),
                     const _SupportSection(),
@@ -544,6 +575,60 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  /// Two-state banner that anchors the Profile page above everything else:
+  ///
+  ///   1. Regular user who has *never* confirmed a provider plan
+  ///      → "كن مقدّم خدمة" invite card with the brand gradient.
+  ///   2. Confirmed provider who switched into user mode
+  ///      → "ارجع لخدمتك / خدماتك" warm card with their place count.
+  ///
+  /// Hidden entirely when the user is already in provider mode — they
+  /// don't need a CTA pointing to where they already are.
+  Widget _buildRoleBanner() {
+    return ValueListenableBuilder<bool>(
+      valueListenable: UserRoleStore.instance.isProvider,
+      builder: (_, isProvider, __) {
+        if (isProvider) return const SizedBox.shrink();
+
+        final hasProviderHistory =
+            (_providerId != null && _providerId!.isNotEmpty);
+
+        if (hasProviderHistory) {
+          // Returning provider — bring them home.
+          final isMulti = _myPlacesCount > 1;
+          return Padding(
+            padding: EdgeInsets.only(bottom: AppSpacing.xl.h),
+            child: _RoleBanner(
+              tone: _RoleBannerTone.warm,
+              icon: Icons.storefront_rounded,
+              title: isMulti
+                  ? AppCopy.profileBannerReturnTitleMulti
+                  : AppCopy.profileBannerReturnTitleSingle,
+              body: AppCopy.profileBannerReturnBody,
+              cta: isMulti
+                  ? AppCopy.profileBannerReturnCtaMulti
+                  : AppCopy.profileBannerReturnCtaSingle,
+              onTap: () => _handleRoleSwitch(toProvider: true),
+            ),
+          );
+        }
+
+        // First-time invite — make it look like a brand ad.
+        return Padding(
+          padding: EdgeInsets.only(bottom: AppSpacing.xl.h),
+          child: _RoleBanner(
+            tone: _RoleBannerTone.brand,
+            icon: Icons.rocket_launch_rounded,
+            title: AppCopy.profileBannerInviteTitle,
+            body: AppCopy.profileBannerInviteBody,
+            cta: AppCopy.profileBannerInviteCta,
+            onTap: () => _handleRoleSwitch(toProvider: true),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildInfoSection() {
     return ValueListenableBuilder<bool>(
       valueListenable: UserRoleStore.instance.isProvider,
@@ -578,26 +663,25 @@ class _ProfilePageState extends State<ProfilePage> {
                   tooltip: AppCopy.changePwTitle,
                 ),
               ),
-              const Divider(height: 1, color: AppColor.border),
-              // Switch role row — preserves session + subscription so the
-              // user can flip between tracks without re-onboarding.
-              _ProfileInfoRow(
-                icon: isProvider
-                    ? Icons.travel_explore_rounded
-                    : Icons.storefront_rounded,
-                label: isProvider
-                    ? AppCopy.profileSwitchToUser
-                    : AppCopy.profileSwitchToProvider,
-                value: isProvider
-                    ? AppCopy.profileSwitchToUserValue
-                    : AppCopy.profileSwitchToProviderValue,
-                onTap: () => _handleRoleSwitch(toProvider: !isProvider),
-                trailing: Icon(
-                  Icons.chevron_left_rounded,
-                  color: AppColor.textTertiary,
-                  size: 24.sp,
+              // Switch-role row only when the user is currently in provider
+              // mode — gives them a quick way to flip back to "browse mode"
+              // without losing their plan or places. The opposite direction
+              // (regular → provider) lives in the banner above so it gets
+              // the visual weight it deserves.
+              if (isProvider) ...[
+                const Divider(height: 1, color: AppColor.border),
+                _ProfileInfoRow(
+                  icon: Icons.travel_explore_rounded,
+                  label: AppCopy.profileSwitchToUser,
+                  value: AppCopy.profileSwitchToUserValue,
+                  onTap: () => _handleRoleSwitch(toProvider: false),
+                  trailing: Icon(
+                    Icons.chevron_left_rounded,
+                    color: AppColor.textTertiary,
+                    size: 24.sp,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         );
@@ -1053,6 +1137,158 @@ class _ProfileInfoRow extends StatelessWidget {
             ),
             if (trailing != null) trailing!,
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ===========================================================================
+// Role banner — context-aware CTA at the top of Profile
+// ===========================================================================
+//
+// Two tones express two different relationships:
+//
+//   • brand  → "you don't have a hub yet — start one". Bold gradient,
+//              white text, primary glow. Reads as a marketing ad on
+//              first open.
+//   • warm   → "your hub is waiting for you". Soft surface card with the
+//              primary accent. Reads like a friendly nudge, not a sales
+//              pitch — because the user already crossed the threshold.
+
+enum _RoleBannerTone { brand, warm }
+
+class _RoleBanner extends StatelessWidget {
+  const _RoleBanner({
+    required this.tone,
+    required this.icon,
+    required this.title,
+    required this.body,
+    required this.cta,
+    required this.onTap,
+  });
+
+  final _RoleBannerTone tone;
+  final IconData icon;
+  final String title;
+  final String body;
+  final String cta;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isBrand = tone == _RoleBannerTone.brand;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppRadii.rXl,
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: isBrand
+                ? LinearGradient(
+                    begin: Alignment.topRight,
+                    end: Alignment.bottomLeft,
+                    colors: [
+                      AppColor.primary,
+                      AppColor.primary.withValues(alpha: 0.78),
+                    ],
+                  )
+                : null,
+            color: isBrand ? null : AppColor.primary.withValues(alpha: 0.06),
+            borderRadius: AppRadii.rXl,
+            border: isBrand
+                ? null
+                : Border.all(
+                    color: AppColor.primary.withValues(alpha: 0.22),
+                  ),
+            boxShadow: isBrand ? AppShadows.primaryGlow : null,
+          ),
+          padding: EdgeInsets.all(AppSpacing.xl.w),
+          child: Row(
+            children: [
+              Container(
+                width: 56.w,
+                height: 56.w,
+                decoration: BoxDecoration(
+                  color: isBrand
+                      ? AppColor.white.withValues(alpha: 0.20)
+                      : AppColor.primary.withValues(alpha: 0.12),
+                  borderRadius: AppRadii.rLg,
+                ),
+                child: Icon(
+                  icon,
+                  size: 28.sp,
+                  color: isBrand ? AppColor.white : AppColor.primary,
+                ),
+              ),
+              gapH(AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: AppText.titleMd.copyWith(
+                        color:
+                            isBrand ? AppColor.white : AppColor.textPrimary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    gapV(AppSpacing.xs),
+                    Text(
+                      body,
+                      style: AppText.bodySm.copyWith(
+                        color: isBrand
+                            ? AppColor.white.withValues(alpha: 0.92)
+                            : AppColor.textSecondary,
+                        height: 1.5,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    gapV(AppSpacing.md),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md.w,
+                        vertical: 8.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isBrand
+                            ? AppColor.white
+                            : AppColor.primary,
+                        borderRadius: AppRadii.rPill,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            cta,
+                            style: AppText.labelMd.copyWith(
+                              color: isBrand
+                                  ? AppColor.primary
+                                  : AppColor.white,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          gapH(AppSpacing.xs),
+                          Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            size: 12.sp,
+                            color: isBrand
+                                ? AppColor.primary
+                                : AppColor.white,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

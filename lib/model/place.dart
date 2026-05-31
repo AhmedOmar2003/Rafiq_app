@@ -52,6 +52,11 @@ class Place {
   /// Free-text reason set by the admin when [status] is `rejected`.
   final String? rejectionReason;
 
+  /// True when the admin rejected this place but explicitly allowed the
+  /// provider to edit and resubmit. Drives the "تعديل المكان" button on
+  /// the rejected card; meaningless outside of `status == 'rejected'`.
+  final bool editAllowed;
+
   Place(
       {this.placeUuid,
       required this.name,
@@ -66,7 +71,8 @@ class Place {
       required this.placeId,
       this.status = 'approved',
       this.createdAt,
-      this.rejectionReason});
+      this.rejectionReason,
+      this.editAllowed = false});
 
   // تحويل البيانات من JSON
   factory Place.fromJson(Map<String, dynamic> json) {
@@ -123,6 +129,7 @@ class Place {
         return DateTime.tryParse(raw.toString());
       }(),
       rejectionReason: json['rejection_reason'] as String?,
+      editAllowed: (json['edit_allowed'] as bool?) ?? false,
     );
   }
 }

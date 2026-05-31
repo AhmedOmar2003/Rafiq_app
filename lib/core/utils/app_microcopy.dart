@@ -155,6 +155,20 @@ class AppCopy {
       'هتنتقل لمسار مقدم الخدمة. لو لسه ما اخترتش خطة، هنوديك صفحة الخطط.';
   static const profileSwitchConfirmUser =
       'هتنتقل لمسار المستخدم العادي. اشتراكك ومكانك هيفضلوا محفوظين لما ترجع.';
+
+  // --- Profile banners (context-aware CTA) ---------------------------------
+  /// Regular user who never signed up as provider — invite them in.
+  static const profileBannerInviteTitle = 'تحب نشاطك يوصل لأكتر ناس؟';
+  static const profileBannerInviteBody  = 'ضيف مكانك على رفيق وخلّي زبايننا الجداد يلاقوك. ابدأ مجاناً وارقّي بعدين.';
+  static const profileBannerInviteCta   = 'كن مقدّم خدمة';
+
+  /// Provider who switched to user mode — invite them back to their hub.
+  /// Plural copy used when they have multiple places, singular otherwise.
+  static const profileBannerReturnTitleSingle = 'خدمتك مستنياك';
+  static const profileBannerReturnTitleMulti  = 'خدماتك مستنياك';
+  static const profileBannerReturnBody        = 'ارجع لإدارة نشاطك. خطتك واشتراكك لسه محفوظين.';
+  static const profileBannerReturnCtaSingle   = 'ارجع تابع خدمتك';
+  static const profileBannerReturnCtaMulti    = 'ارجع تابع خدماتك';
   static const logoutTitle = 'هتسجل خروج؟';
   static const logoutMessage = 'متأكد إنك عايز تخرج من التطبيق؟';
   static const logoutConfirm = 'أكيد، خروج';
