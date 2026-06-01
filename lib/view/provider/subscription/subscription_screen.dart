@@ -607,8 +607,14 @@ class _PlanCard extends StatelessWidget {
     final bullets = <Widget>[
       _Feature(label: '${AppCopy.subFeatPlaces}: ${plan.maxPlaces}'),
       _Feature(
+        label:
+            '${AppCopy.subFeatPromoSlots}: ${plan.maxCampaigns == 0 ? '—' : plan.maxCampaigns}',
+      ),
+      _Feature(
           label:
               '${AppCopy.subFeatGallery}: ${unlimited(plan.maxGalleryImages)}'),
+      const _Feature(label: AppCopy.subFeatPlaceReview),
+      const _Feature(label: AppCopy.subFeatCampaignReview),
       if (plan.maxVideos > 0)
         _Feature(
             label: '${AppCopy.subFeatVideos}: ${unlimited(plan.maxVideos)}'),
@@ -689,6 +695,12 @@ class _ComparisonTable extends StatelessWidget {
       _CompareRow(AppCopy.subFeatPlaces,
           plans.map((p) => p.maxPlaces.toString()).toList()),
       _CompareRow(
+        AppCopy.subFeatPromoSlots,
+        plans
+            .map((p) => p.maxCampaigns == 0 ? '—' : p.maxCampaigns.toString())
+            .toList(),
+      ),
+      _CompareRow(
         AppCopy.subFeatGallery,
         plans.map((p) {
           if (p.maxGalleryImages >= 999) return AppCopy.subFeatureUnlimited;
@@ -719,6 +731,14 @@ class _ComparisonTable extends StatelessWidget {
           plans.map((p) => p.hasHomepageSpotlight ? '✓' : '—').toList()),
       _CompareRow(AppCopy.subFeatSupport,
           plans.map((p) => p.hasPrioritySupport ? '✓' : '—').toList()),
+      _CompareRow(
+        AppCopy.subFeatPlaceReview,
+        plans.map((_) => '24h').toList(),
+      ),
+      _CompareRow(
+        AppCopy.subFeatCampaignReview,
+        plans.map((p) => p.hasPromotions ? '6h' : '—').toList(),
+      ),
     ];
 
     return AppCard(
@@ -1046,7 +1066,11 @@ class _ConfirmUpgradeSheet extends StatelessWidget {
         v >= 999 ? AppCopy.subFeatureUnlimited : v.toString();
 
     final benefits = <String>[
+      '${AppCopy.subFeatPlaces}: ${plan.maxPlaces}',
+      '${AppCopy.subFeatPromoSlots}: ${plan.maxCampaigns == 0 ? '—' : plan.maxCampaigns}',
       '${AppCopy.subFeatGallery}: ${unlimited(plan.maxGalleryImages)}',
+      AppCopy.subFeatPlaceReview,
+      if (plan.hasPromotions) AppCopy.subFeatCampaignReview,
       if (plan.maxVideos > 0)
         '${AppCopy.subFeatVideos}: ${unlimited(plan.maxVideos)}',
       if (plan.isVerified) AppCopy.subFeatVerified,

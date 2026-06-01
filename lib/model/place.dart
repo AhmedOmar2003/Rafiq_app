@@ -29,6 +29,7 @@
 
 class Place {
   final String? placeUuid;
+  final String? providerId;
   final String name;
   final String description;
   final String priceRange; // حقل السعر
@@ -60,6 +61,7 @@ class Place {
 
   Place(
       {this.placeUuid,
+      this.providerId,
       required this.name,
       required this.description,
       required this.priceRange,
@@ -88,6 +90,9 @@ class Place {
           : (json['place_uuid']?.toString().trim().isNotEmpty == true
               ? json['place_uuid'].toString()
               : null),
+      providerId: json['provider_id']?.toString().trim().isNotEmpty == true
+          ? json['provider_id'].toString()
+          : null,
       name: json['PlaceName']?.toString() ??
           json['place_name']?.toString() ??
           json['name']?.toString() ??

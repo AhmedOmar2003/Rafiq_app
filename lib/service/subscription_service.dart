@@ -342,6 +342,7 @@ class SubscriptionService {
       maxVideos: plan.maxVideos,
       maxPlaces: plan.maxPlaces,
       maxCoverImages: plan.maxCoverImages,
+      maxCampaigns: plan.maxCampaigns,
       isVerified: plan.isVerified,
       hasAnalyticsBasic: plan.hasAnalyticsBasic,
       hasAnalyticsPro: plan.hasAnalyticsPro,

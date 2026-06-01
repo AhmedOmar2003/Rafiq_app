@@ -27,6 +27,7 @@ class SubscriptionPlan {
     required this.maxGalleryImages,
     required this.maxVideos,
     required this.maxCoverImages,
+    required this.maxCampaigns,
     required this.rankingBoost,
     required this.isVerified,
     required this.hasAnalyticsBasic,
@@ -52,6 +53,7 @@ class SubscriptionPlan {
   final int maxGalleryImages;
   final int maxVideos;
   final int maxCoverImages;
+  final int maxCampaigns;
   final double rankingBoost;
   final bool isVerified;
   final bool hasAnalyticsBasic;
@@ -96,6 +98,7 @@ class SubscriptionPlan {
       maxGalleryImages: (row['max_gallery_images'] as num).toInt(),
       maxVideos: (row['max_videos'] as num).toInt(),
       maxCoverImages: (row['max_cover_images'] as num).toInt(),
+      maxCampaigns: (row['max_campaigns'] as num?)?.toInt() ?? 0,
       rankingBoost: (row['ranking_boost'] as num).toDouble(),
       isVerified: row['is_verified'] as bool? ?? false,
       hasAnalyticsBasic: row['has_analytics_basic'] as bool? ?? false,
@@ -125,6 +128,7 @@ class ProviderEntitlement {
     required this.maxVideos,
     required this.maxPlaces,
     required this.maxCoverImages,
+    required this.maxCampaigns,
     required this.isVerified,
     required this.hasAnalyticsBasic,
     required this.hasAnalyticsPro,
@@ -143,6 +147,7 @@ class ProviderEntitlement {
   final int maxVideos;
   final int maxPlaces;
   final int maxCoverImages;
+  final int maxCampaigns;
   final bool isVerified;
   final bool hasAnalyticsBasic;
   final bool hasAnalyticsPro;
@@ -162,6 +167,7 @@ class ProviderEntitlement {
     maxVideos: 0,
     maxPlaces: 1,
     maxCoverImages: 1,
+    maxCampaigns: 0,
     isVerified: false,
     hasAnalyticsBasic: false,
     hasAnalyticsPro: false,
@@ -182,6 +188,7 @@ class ProviderEntitlement {
       maxVideos: (row['max_videos'] as num?)?.toInt() ?? 0,
       maxPlaces: (row['max_places'] as num?)?.toInt() ?? 1,
       maxCoverImages: (row['max_cover_images'] as num?)?.toInt() ?? 1,
+      maxCampaigns: (row['max_campaigns'] as num?)?.toInt() ?? 0,
       isVerified: row['is_verified'] as bool? ?? false,
       hasAnalyticsBasic: row['has_analytics_basic'] as bool? ?? false,
       hasAnalyticsPro: row['has_analytics_pro'] as bool? ?? false,

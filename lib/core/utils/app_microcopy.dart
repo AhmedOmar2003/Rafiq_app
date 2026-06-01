@@ -273,10 +273,13 @@ class AppCopy {
   static const subFeatVerified = 'شارة موثَّق';
   static const subFeatAnalytics = 'تحليلات';
   static const subFeatPromotions = 'إعلانات وعروض';
+  static const subFeatPromoSlots = 'عدد الإعلانات والعروض';
   static const subFeatFeatured = 'ظهور مميّز';
   static const subFeatPush = 'إشعارات ترويجية';
   static const subFeatSpotlight = 'بريميوم في الصفحة الرئيسية';
   static const subFeatSupport = 'دعم أولوية';
+  static const subFeatPlaceReview = 'مراجعة المكان خلال 24 ساعة';
+  static const subFeatCampaignReview = 'مراجعة الإعلان خلال 6 ساعات';
   static const subStatusActive = 'نشط';
   static const subStatusTrialing = 'تجربة';
   static const subStatusPastDue = 'متأخّر';
@@ -338,8 +341,8 @@ class AppCopy {
   // --- Analytics screen --------------------------------------------------------
   static const anaTitle = 'تحليلاتك';
   static const anaLast30Days = 'آخر 30 يوم';
-  static const anaProfileViews = 'مشاهدات الملف';
-  static const anaPlaceOpens = 'فتح الأماكن';
+  static const anaPlaceViews = 'مشاهدات المكان';
+  static const anaInteractions = 'إجمالي التفاعلات';
   static const anaFavorites = 'إضافة للمفضلة';
   static const anaMapClicks = 'فتح الخريطة';
   static const anaLockedTitle = 'فعّل تحليلات الأداء';
@@ -353,6 +356,10 @@ class AppCopy {
   static const promoEmptyBody =
       'اعمل حملة "Featured" أو عرض خصم — هتظهر في الواجهة الرئيسية وتجيب زوار جداد.';
   static const promoCreateCta = 'اعمل حملة جديدة';
+  static const promoCreatePendingBody =
+      'أي إعلان جديد يروح للأدمن أولًا بحالة قيد المراجعة، وهدفنا نرد خلال 6 ساعات.';
+  static const promoRejectedReason = 'سبب الرفض';
+  static const promoPendingReview = 'بانتظار مراجعة الأدمن';
   static const promoLockedTitle = 'الإعلانات تبدأ من خطة برو';
   static const promoLockedBody =
       'الإعلانات والعروض الترويجية ميزة بتساعدك تجيب زوار أكتر بسرعة.';

@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
 
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
@@ -34,7 +37,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
     if (providerId == null || providerId.isEmpty) {
       return const _PromotionsScreenData(
         places: <Place>[],
-        campaigns: <PromotionCampaignSnapshot>[],
+        allCampaigns: <PromotionCampaignSnapshot>[],
       );
     }
 
@@ -43,21 +46,21 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       forceRefresh: true,
     );
     final approvedPlaces = places.where((p) => p.status == 'approved').toList();
-    final selectedPlaceId = approvedPlaces.any((p) => p.placeUuid == _selectedPlaceId)
-        ? _selectedPlaceId
-        : (approvedPlaces.length > 1
-            ? null
-            : (approvedPlaces.isNotEmpty ? approvedPlaces.first.placeUuid : null));
+    final selectedPlaceId =
+        approvedPlaces.any((p) => p.placeUuid == _selectedPlaceId)
+            ? _selectedPlaceId
+            : (approvedPlaces.length > 1
+                ? null
+                : (approvedPlaces.isNotEmpty ? approvedPlaces.first.placeUuid : null));
     _selectedPlaceId = selectedPlaceId;
 
-    final campaigns = await ApiService().fetchPromotionCampaigns(
+    final allCampaigns = await ApiService().fetchPromotionCampaigns(
       providerId: providerId,
-      placeId: selectedPlaceId,
     );
 
     return _PromotionsScreenData(
       places: approvedPlaces,
-      campaigns: campaigns,
+      allCampaigns: allCampaigns,
     );
   }
 
@@ -65,6 +68,30 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
     final next = _load();
     setState(() => _future = next);
     await next;
+  }
+
+  Future<void> _openCreateSheet(
+    ProviderEntitlement ent,
+    _PromotionsScreenData data,
+  ) async {
+    final created = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColor.surfaceCard,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppRadii.topOnly(AppRadii.xxl),
+      ),
+      builder: (_) => _CreateCampaignSheet(
+        places: data.places,
+        entitlement: ent,
+        providerId: widget.providerId,
+        initialPlaceId: _selectedPlaceId ?? data.places.first.placeUuid,
+      ),
+    );
+
+    if (created == true) {
+      await _refresh();
+    }
   }
 
   @override
@@ -89,8 +116,11 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
               final data = snapshot.data ??
                   const _PromotionsScreenData(
                     places: <Place>[],
-                    campaigns: <PromotionCampaignSnapshot>[],
+                    allCampaigns: <PromotionCampaignSnapshot>[],
                   );
+              final visibleCampaigns = data.filteredCampaigns(_selectedPlaceId);
+              final reachedLimit =
+                  ent.maxCampaigns > 0 && data.allCampaigns.length >= ent.maxCampaigns;
 
               return RefreshIndicator(
                 onRefresh: _refresh,
@@ -127,31 +157,76 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                         PlanBadge(tier: ent.tier, size: PlanBadgeSize.header),
                       ],
                     ),
+                    gapV(AppSpacing.md),
+                    AppCard(
+                      padding: EdgeInsets.all(AppSpacing.lg.w),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            AppCopy.promoCreatePendingBody,
+                            style: AppText.bodySm.copyWith(
+                              color: AppColor.textSecondary,
+                              height: 1.5,
+                            ),
+                          ),
+                          gapV(AppSpacing.md),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'المتاح الآن: ${ent.maxCampaigns} حملة',
+                                  style: AppText.labelMd.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                'المستخدم: ${data.allCampaigns.length}',
+                                style: AppText.bodySm.copyWith(
+                                  color: AppColor.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                     if (data.places.length > 1) ...[
                       gapV(AppSpacing.lg),
                       _PlaceSelector(
                         places: data.places,
                         selectedPlaceId: _selectedPlaceId,
                         onChanged: (value) {
-                          setState(() {
-                            _selectedPlaceId = value;
-                            _future = _load();
-                          });
+                          setState(() => _selectedPlaceId = value);
                         },
                       ),
                     ],
+                    gapV(AppSpacing.lg),
+                    SizedBox(
+                      width: double.infinity,
+                      child: AppButton(
+                        text: reachedLimit
+                            ? 'وصلت لحد الخطة الحالي'
+                            : AppCopy.promoCreateCta,
+                        onPress: data.places.isEmpty || reachedLimit
+                            ? () {}
+                            : () => _openCreateSheet(ent, data),
+                        isEnabled: data.places.isNotEmpty && !reachedLimit,
+                      ),
+                    ),
                     gapV(AppSpacing.xl),
                     if (data.places.isEmpty)
                       const _NoApprovedPlacesState()
-                    else if (data.campaigns.isEmpty)
+                    else if (visibleCampaigns.isEmpty)
                       _PromotionsEmpty(
                         tier: ent.tier,
                         selectedPlaceName: _selectedPlaceLabel(data.places),
                       )
                     else ...[
-                      _PromotionStats(campaigns: data.campaigns),
+                      _PromotionStats(campaigns: visibleCampaigns),
                       gapV(AppSpacing.lg),
-                      ...data.campaigns.map(_CampaignCard.new),
+                      ...visibleCampaigns.map(_CampaignCard.new),
                     ],
                   ],
                 ),
@@ -177,11 +252,16 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
 class _PromotionsScreenData {
   const _PromotionsScreenData({
     required this.places,
-    required this.campaigns,
+    required this.allCampaigns,
   });
 
   final List<Place> places;
-  final List<PromotionCampaignSnapshot> campaigns;
+  final List<PromotionCampaignSnapshot> allCampaigns;
+
+  List<PromotionCampaignSnapshot> filteredCampaigns(String? placeId) {
+    if (placeId == null || placeId.isEmpty) return allCampaigns;
+    return allCampaigns.where((campaign) => campaign.placeId == placeId).toList();
+  }
 }
 
 class _PlaceSelector extends StatelessWidget {
@@ -311,6 +391,10 @@ class _CampaignCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fmt = DateFormat('d/M');
+    final reviewDeadline = (campaign.createdAt ?? DateTime.now()).add(
+      const Duration(hours: 6),
+    );
+    final hasImage = (campaign.imagePath ?? '').trim().isNotEmpty;
     return Padding(
       padding: EdgeInsets.only(bottom: AppSpacing.md.h),
       child: AppCard(
@@ -318,6 +402,18 @@ class _CampaignCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (hasImage)
+              ClipRRect(
+                borderRadius: AppRadii.rLg,
+                child: Image.network(
+                  campaign.imagePath!,
+                  height: 150.h,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                ),
+              ),
+            if (hasImage) gapV(AppSpacing.md),
             Row(
               children: [
                 Expanded(
@@ -334,6 +430,28 @@ class _CampaignCard extends StatelessWidget {
               '${_kindLabel(campaign.kind)} • ${campaign.startsAt != null ? fmt.format(campaign.startsAt!) : 'الآن'} - ${campaign.endsAt != null ? fmt.format(campaign.endsAt!) : 'غير محدد'}',
               style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
             ),
+            if ((campaign.ctaLabel ?? '').trim().isNotEmpty) ...[
+              gapV(AppSpacing.xs),
+              Text(
+                'زر النداء: ${campaign.ctaLabel}',
+                style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
+              ),
+            ],
+            if (campaign.status == 'pending_review') ...[
+              gapV(AppSpacing.xs),
+              Text(
+                '${AppCopy.promoPendingReview} • بحد أقصى حتى ${reviewDeadline.hour.toString().padLeft(2, '0')}:${reviewDeadline.minute.toString().padLeft(2, '0')}',
+                style: AppText.bodySm.copyWith(color: AppColor.warning),
+              ),
+            ],
+            if (campaign.status == 'rejected' &&
+                (campaign.rejectionReason ?? '').trim().isNotEmpty) ...[
+              gapV(AppSpacing.sm),
+              Text(
+                '${AppCopy.promoRejectedReason}: ${campaign.rejectionReason}',
+                style: AppText.bodySm.copyWith(color: AppColor.error),
+              ),
+            ],
             gapV(AppSpacing.md),
             Row(
               children: [
@@ -450,17 +568,9 @@ class _PromotionsEmpty extends StatelessWidget {
             ),
             gapV(AppSpacing.md),
             Text(
-              '$selectedPlaceName لسه ما عليهش حملات مفعلة. أول ما تنشئ عروض أو حملات، هتظهر هنا حسب المكان المختار.',
+              '$selectedPlaceName لسه ما عليهش حملات مفعلة. أول حملة جديدة هتدخل مراجعة الأدمن قبل ما تظهر للناس.',
               style: AppText.bodyMd.copyWith(color: AppColor.textSecondary),
               textAlign: TextAlign.center,
-            ),
-            gapV(AppSpacing.xxl),
-            SizedBox(
-              width: double.infinity,
-              child: AppButton(
-                text: AppCopy.promoCreateCta,
-                onPress: () => AppFeedback.info('جهزنا الفرز حسب المكان. مسار إنشاء الحملة نفسه هو الخطوة التالية.'),
-              ),
             ),
           ],
         ),
@@ -487,7 +597,7 @@ class _NoApprovedPlacesState extends StatelessWidget {
           ),
           gapV(AppSpacing.sm),
           Text(
-            'لو عندك أماكن تحت المراجعة، أول ما تتعتمد هتقدر تفرّق بين عروض كل مكان هنا.',
+            'لو عندك أماكن تحت المراجعة، أول ما تتعتمد هتقدر تعمل حملة مرتبطة بكل مكان على حدة.',
             style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
             textAlign: TextAlign.center,
           ),
@@ -543,6 +653,257 @@ class _PromotionsLocked extends StatelessWidget {
                   ),
                 ),
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CreateCampaignSheet extends StatefulWidget {
+  const _CreateCampaignSheet({
+    required this.places,
+    required this.entitlement,
+    required this.providerId,
+    this.initialPlaceId,
+  });
+
+  final List<Place> places;
+  final ProviderEntitlement entitlement;
+  final String? providerId;
+  final String? initialPlaceId;
+
+  @override
+  State<_CreateCampaignSheet> createState() => _CreateCampaignSheetState();
+}
+
+class _CreateCampaignSheetState extends State<_CreateCampaignSheet> {
+  final _titleCtrl = TextEditingController();
+  final _bodyCtrl = TextEditingController();
+  final _ctaCtrl = TextEditingController(text: 'اعرف العرض');
+  final ImagePicker _picker = ImagePicker();
+  String? _placeId;
+  String _kind = 'discount';
+  int _durationDays = 7;
+  bool _busy = false;
+  File? _selectedImage;
+
+  @override
+  void initState() {
+    super.initState();
+    _placeId = widget.initialPlaceId ??
+        (widget.places.isNotEmpty ? widget.places.first.placeUuid : null);
+  }
+
+  @override
+  void dispose() {
+    _titleCtrl.dispose();
+    _bodyCtrl.dispose();
+    _ctaCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    final picked = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 88,
+    );
+    if (picked == null) return;
+    setState(() => _selectedImage = File(picked.path));
+  }
+
+  List<DropdownMenuItem<String>> _kindOptions() {
+    final items = <DropdownMenuItem<String>>[
+      const DropdownMenuItem(value: 'discount', child: Text('خصم / عرض خاص')),
+    ];
+    if (widget.entitlement.hasFeaturedSlot) {
+      items.add(
+        const DropdownMenuItem(value: 'featured', child: Text('ظهور مميز')),
+      );
+    }
+    if (widget.entitlement.hasHomepageSpotlight) {
+      items.add(
+        const DropdownMenuItem(value: 'spotlight', child: Text('سبوت لايت')),
+      );
+    }
+    if (widget.entitlement.hasPushCampaigns) {
+      items.add(
+        const DropdownMenuItem(
+          value: 'push_notification',
+          child: Text('إشعار ترويجي'),
+        ),
+      );
+    }
+    return items;
+  }
+
+  Future<void> _submit() async {
+    if (_busy) return;
+    if ((_placeId ?? '').isEmpty || _titleCtrl.text.trim().length < 3) {
+      AppFeedback.warning('اختَر المكان واكتب عنوانًا واضحًا للحملة.');
+      return;
+    }
+
+    setState(() => _busy = true);
+    try {
+      final now = DateTime.now();
+      String? uploadedImageUrl;
+      if (_selectedImage != null &&
+          (widget.providerId ?? '').isNotEmpty &&
+          (_placeId ?? '').isNotEmpty) {
+        uploadedImageUrl = await ApiService().uploadCampaignImage(
+          providerId: widget.providerId!,
+          placeId: _placeId!,
+          file: _selectedImage!,
+        );
+      }
+      await ApiService().createPromotionCampaign(
+        placeId: _placeId!,
+        kind: _kind,
+        title: _titleCtrl.text.trim(),
+        body: _bodyCtrl.text.trim(),
+        imagePath: uploadedImageUrl,
+        ctaLabel: _ctaCtrl.text.trim(),
+        startsAt: now,
+        endsAt: now.add(Duration(days: _durationDays)),
+      );
+      if (!mounted) return;
+      AppFeedback.success('تم إرسال الحملة للمراجعة بنجاح ✅');
+      Navigator.pop(context, true);
+    } catch (e) {
+      if (!mounted) return;
+      AppFeedback.error(e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.xxl.w,
+          AppSpacing.lg.h,
+          AppSpacing.xxl.w,
+          MediaQuery.viewInsetsOf(context).bottom + AppSpacing.xxl.h,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 40.w,
+                height: 4.h,
+                decoration: BoxDecoration(
+                  color: AppColor.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            gapV(AppSpacing.xl),
+            Text('حملة جديدة', style: AppText.headingSm),
+            gapV(AppSpacing.sm),
+            Text(
+              AppCopy.promoCreatePendingBody,
+              style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
+            ),
+            gapV(AppSpacing.lg),
+            DropdownButtonFormField<String>(
+              initialValue: _placeId,
+              decoration: const InputDecoration(labelText: 'المكان'),
+              items: widget.places
+                  .map(
+                    (place) => DropdownMenuItem(
+                      value: place.placeUuid,
+                      child: Text(place.name),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (value) => setState(() => _placeId = value),
+            ),
+            gapV(AppSpacing.md),
+            DropdownButtonFormField<String>(
+              initialValue: _kind,
+              decoration: const InputDecoration(labelText: 'نوع الحملة'),
+              items: _kindOptions(),
+              onChanged: (value) => setState(() => _kind = value ?? 'discount'),
+            ),
+            gapV(AppSpacing.md),
+            TextField(
+              controller: _titleCtrl,
+              decoration: const InputDecoration(
+                labelText: 'عنوان الإعلان أو العرض',
+              ),
+            ),
+            gapV(AppSpacing.md),
+            TextField(
+              controller: _bodyCtrl,
+              minLines: 3,
+              maxLines: 4,
+              decoration: const InputDecoration(
+                labelText: 'تفاصيل العرض',
+              ),
+            ),
+            gapV(AppSpacing.md),
+            TextField(
+              controller: _ctaCtrl,
+              decoration: const InputDecoration(
+                labelText: 'نص الزر (اختياري)',
+              ),
+            ),
+            gapV(AppSpacing.md),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    _selectedImage == null
+                        ? 'صورة الإعلان اختيارية'
+                        : 'تم اختيار صورة للإعلان',
+                    style: AppText.bodySm.copyWith(
+                      color: AppColor.textSecondary,
+                    ),
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: _busy ? null : _pickImage,
+                  icon: const Icon(Icons.image_outlined),
+                  label: Text(_selectedImage == null ? 'اختَر صورة' : 'غيّر الصورة'),
+                ),
+              ],
+            ),
+            if (_selectedImage != null) ...[
+              gapV(AppSpacing.sm),
+              ClipRRect(
+                borderRadius: AppRadii.rLg,
+                child: Image.file(
+                  _selectedImage!,
+                  height: 140.h,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ],
+            gapV(AppSpacing.md),
+            DropdownButtonFormField<int>(
+              initialValue: _durationDays,
+              decoration: const InputDecoration(labelText: 'مدة العرض'),
+              items: const [
+                DropdownMenuItem(value: 3, child: Text('3 أيام')),
+                DropdownMenuItem(value: 7, child: Text('7 أيام')),
+                DropdownMenuItem(value: 14, child: Text('14 يوم')),
+                DropdownMenuItem(value: 30, child: Text('30 يوم')),
+              ],
+              onChanged: (value) => setState(() => _durationDays = value ?? 7),
+            ),
+            gapV(AppSpacing.xl),
+            AppButton(
+              text: _busy ? 'جارٍ الإرسال...' : 'إرسال للمراجعة',
+              onPress: _submit,
+              isEnabled: !_busy,
             ),
           ],
         ),

@@ -16,12 +16,14 @@ class DetailsItem extends StatefulWidget {
   final SuggestionItemModel model;
   final List<String> galleryImages;
   final bool isLoading;
+  final VoidCallback? onMapOpen;
 
   const DetailsItem({
     super.key,
     required this.model,
     required this.galleryImages,
     required this.isLoading,
+    this.onMapOpen,
   });
 
   @override
@@ -51,6 +53,7 @@ class _DetailsItemState extends State<DetailsItem> {
   }
 
   void openMap() async {
+    widget.onMapOpen?.call();
     final String query = "${widget.model.address}, ${widget.model.text}";
     final Uri googleMapsUri = Uri.parse(
         "https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(query)}");

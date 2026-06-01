@@ -131,7 +131,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                           Expanded(
                             child: _KpiCard(
                               icon: Icons.visibility_rounded,
-                              label: AppCopy.anaProfileViews,
+                              label: AppCopy.anaPlaceViews,
                               value: data.snapshot.views.toString(),
                               tone: AppColor.info,
                             ),
@@ -140,8 +140,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                           Expanded(
                             child: _KpiCard(
                               icon: Icons.open_in_new_rounded,
-                              label: AppCopy.anaPlaceOpens,
-                              value: data.snapshot.opens.toString(),
+                              label: AppCopy.anaInteractions,
+                              value: data.snapshot.interactions.toString(),
                               tone: AppColor.primary,
                             ),
                           ),

@@ -24,21 +24,21 @@ class AccountModeSnapshot {
 class PlaceAnalyticsSnapshot {
   const PlaceAnalyticsSnapshot({
     required this.views,
-    required this.opens,
+    required this.interactions,
     required this.favorites,
     required this.mapClicks,
     required this.trendPoints,
   });
 
   final int views;
-  final int opens;
+  final int interactions;
   final int favorites;
   final int mapClicks;
   final List<int> trendPoints;
 
   static const empty = PlaceAnalyticsSnapshot(
     views: 0,
-    opens: 0,
+    interactions: 0,
     favorites: 0,
     mapClicks: 0,
     trendPoints: <int>[],
@@ -52,10 +52,14 @@ class PromotionCampaignSnapshot {
     required this.kind,
     required this.status,
     required this.placeId,
+    required this.imagePath,
+    required this.ctaLabel,
     required this.startsAt,
     required this.endsAt,
     required this.impressions,
     required this.clicks,
+    required this.rejectionReason,
+    required this.createdAt,
   });
 
   final String id;
@@ -63,10 +67,38 @@ class PromotionCampaignSnapshot {
   final String kind;
   final String status;
   final String? placeId;
+  final String? imagePath;
+  final String? ctaLabel;
   final DateTime? startsAt;
   final DateTime? endsAt;
   final int impressions;
   final int clicks;
+  final String? rejectionReason;
+  final DateTime? createdAt;
+}
+
+class PlacePromotionBanner {
+  const PlacePromotionBanner({
+    required this.id,
+    required this.title,
+    required this.kind,
+    required this.status,
+    this.body,
+    this.imagePath,
+    this.ctaLabel,
+    this.startsAt,
+    this.endsAt,
+  });
+
+  final String id;
+  final String title;
+  final String kind;
+  final String status;
+  final String? body;
+  final String? imagePath;
+  final String? ctaLabel;
+  final DateTime? startsAt;
+  final DateTime? endsAt;
 }
 
 class ApiService {
@@ -634,22 +666,17 @@ class ApiService {
     String? placeId,
   }) async {
     await ensureSupabaseInitialized();
-    final since = DateTime.now().subtract(const Duration(days: 30));
-    var query = _client
-        .from('analytics_daily_rollups')
-        .select('place_id,day,kind,event_count')
-        .eq('provider_id', providerId)
-        .gte('day', since.toIso8601String().split('T').first);
-
-    if (placeId != null && placeId.isNotEmpty) {
-      query = query.eq('place_id', placeId);
-    }
-
-    final rows = await query.timeout(_networkTimeout);
+    final rows = await _client.rpc<List<dynamic>>(
+      'provider_place_analytics_live',
+      params: {
+        '_place_id': placeId,
+        '_days': 30,
+      },
+    ).timeout(_networkTimeout);
     if (rows.isEmpty) return PlaceAnalyticsSnapshot.empty;
 
     var views = 0;
-    var opens = 0;
+    var interactions = 0;
     var favorites = 0;
     var mapClicks = 0;
     final trendByDay = <String, int>{};
@@ -658,23 +685,32 @@ class ApiService {
       final row = Map<String, dynamic>.from(rawRow);
       final kind = row['kind']?.toString() ?? '';
       final count = (row['event_count'] as num?)?.toInt() ?? 0;
+      final uniqueSessions = (row['unique_sessions'] as num?)?.toInt() ?? 0;
       final dayKey = row['day']?.toString() ?? '';
 
       switch (kind) {
-        case 'place_impression':
-        case 'recommendation_shown':
-          views += count;
-          break;
         case 'place_open':
-        case 'recommendation_click':
-          opens += count;
-          trendByDay[dayKey] = (trendByDay[dayKey] ?? 0) + count;
+          views += uniqueSessions > 0 ? uniqueSessions : count;
+          trendByDay[dayKey] = (trendByDay[dayKey] ?? 0) +
+              (uniqueSessions > 0 ? uniqueSessions : count);
           break;
         case 'place_favorite':
           favorites += count;
+          interactions += count;
+          break;
+        case 'place_unfavorite':
+          interactions += count;
           break;
         case 'place_map_open':
           mapClicks += count;
+          interactions += count;
+          break;
+        case 'place_share':
+        case 'place_phone_call':
+        case 'place_website_click':
+        case 'place_review_submit':
+        case 'recommendation_click':
+          interactions += count;
           break;
       }
     }
@@ -688,7 +724,7 @@ class ApiService {
 
     return PlaceAnalyticsSnapshot(
       views: views,
-      opens: opens,
+      interactions: interactions,
       favorites: favorites,
       mapClicks: mapClicks,
       trendPoints: trendPoints,
@@ -703,7 +739,7 @@ class ApiService {
     var query = _client
         .from('promotional_campaigns')
         .select(
-          'id,title,kind,status,place_id,starts_at,ends_at,impressions,clicks',
+          'id,title,kind,status,place_id,image_path,cta_label,starts_at,ends_at,impressions,clicks,rejection_reason,created_at',
         )
         .eq('provider_id', providerId);
 
@@ -722,13 +758,160 @@ class ApiService {
             kind: row['kind']?.toString() ?? 'featured',
             status: row['status']?.toString() ?? 'draft',
             placeId: row['place_id']?.toString(),
+            imagePath: row['image_path']?.toString(),
+            ctaLabel: row['cta_label']?.toString(),
             startsAt: DateTime.tryParse(row['starts_at']?.toString() ?? ''),
             endsAt: DateTime.tryParse(row['ends_at']?.toString() ?? ''),
             impressions: (row['impressions'] as num?)?.toInt() ?? 0,
             clicks: (row['clicks'] as num?)?.toInt() ?? 0,
+            rejectionReason: row['rejection_reason']?.toString(),
+            createdAt: DateTime.tryParse(row['created_at']?.toString() ?? ''),
           );
         })
         .toList(growable: false);
+  }
+
+  Future<List<PlacePromotionBanner>> fetchActivePlacePromotions({
+    required String placeId,
+  }) async {
+    await ensureSupabaseInitialized();
+    final now = DateTime.now().toUtc().toIso8601String();
+    final rows = await _client
+        .from('promotional_campaigns')
+        .select(
+          'id,title,body,kind,status,image_path,cta_label,starts_at,ends_at',
+        )
+        .eq('place_id', placeId)
+        .eq('status', 'active')
+        .lte('starts_at', now)
+        .gte('ends_at', now)
+        .order('created_at', ascending: false)
+        .timeout(_networkTimeout);
+
+    return rows
+        .map((rawRow) {
+          final row = Map<String, dynamic>.from(rawRow);
+          return PlacePromotionBanner(
+            id: row['id']?.toString() ?? '',
+            title: row['title']?.toString() ?? 'عرض خاص',
+            body: row['body']?.toString(),
+            kind: row['kind']?.toString() ?? 'discount',
+            status: row['status']?.toString() ?? 'active',
+            imagePath: row['image_path']?.toString(),
+            ctaLabel: row['cta_label']?.toString(),
+            startsAt: DateTime.tryParse(row['starts_at']?.toString() ?? ''),
+            endsAt: DateTime.tryParse(row['ends_at']?.toString() ?? ''),
+          );
+        })
+        .toList(growable: false);
+  }
+
+  Future<bool> isPlaceFavorited(String placeId) async {
+    await ensureSupabaseInitialized();
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null || userId.isEmpty) return false;
+
+    final row = await _client
+        .from('favorites')
+        .select('place_id')
+        .eq('user_id', userId)
+        .eq('place_id', placeId)
+        .maybeSingle()
+        .timeout(_networkTimeout);
+    return row != null;
+  }
+
+  Future<bool> setPlaceFavorite({
+    required String placeId,
+    required bool shouldFavorite,
+  }) async {
+    await ensureSupabaseInitialized();
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null || userId.isEmpty) {
+      throw Exception('يجب تسجيل الدخول أولاً.');
+    }
+
+    if (shouldFavorite) {
+      await _client
+          .from('favorites')
+          .upsert({
+            'user_id': userId,
+            'place_id': placeId,
+          })
+          .timeout(_networkTimeout);
+      return true;
+    }
+
+    await _client
+        .from('favorites')
+        .delete()
+        .eq('user_id', userId)
+        .eq('place_id', placeId)
+        .timeout(_networkTimeout);
+    return false;
+  }
+
+  Future<void> createPromotionCampaign({
+    required String placeId,
+    required String kind,
+    required String title,
+    String? body,
+    String? imagePath,
+    String? ctaLabel,
+    required DateTime startsAt,
+    required DateTime endsAt,
+  }) async {
+    await ensureSupabaseInitialized();
+    await _client.rpc<dynamic>(
+      'create_provider_campaign',
+      params: {
+        '_place_id': placeId,
+        '_kind': kind,
+        '_title': title.trim(),
+        '_body': body?.trim().isNotEmpty == true ? body!.trim() : null,
+        '_image_path':
+            imagePath?.trim().isNotEmpty == true ? imagePath!.trim() : null,
+        '_cta_label':
+            ctaLabel?.trim().isNotEmpty == true ? ctaLabel!.trim() : null,
+        '_starts_at': startsAt.toUtc().toIso8601String(),
+        '_ends_at': endsAt.toUtc().toIso8601String(),
+      },
+    ).timeout(_networkTimeout);
+  }
+
+  Future<void> recordCampaignMetric({
+    required String campaignId,
+    required String metric,
+  }) async {
+    await ensureSupabaseInitialized();
+    await _client.rpc<dynamic>(
+      'record_campaign_metric',
+      params: {
+        '_campaign_id': campaignId,
+        '_metric': metric,
+      },
+    ).timeout(_networkTimeout);
+  }
+
+  Future<String> uploadCampaignImage({
+    required String providerId,
+    required String placeId,
+    required File file,
+  }) async {
+    await ensureSupabaseInitialized();
+    final bytes = await file.readAsBytes();
+    if (bytes.isEmpty) {
+      throw Exception('ملف الصورة فاضي، اختَر صورة تانية.');
+    }
+
+    final fileName =
+        '${DateTime.now().microsecondsSinceEpoch}.${_extensionFromPath(file.path)}';
+    final storagePath = '$providerId/$placeId/$fileName';
+    await _client.storage.from('campaign-assets').uploadBinary(
+          storagePath,
+          bytes,
+        );
+    return _client.storage.from('campaign-assets').getPublicUrl(storagePath);
   }
 
   Future<String?> _savePlaceGalleryImages({

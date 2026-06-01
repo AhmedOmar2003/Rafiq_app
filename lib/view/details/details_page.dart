@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -6,6 +8,7 @@ import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:rafiq_app/model/review_model.dart';
 import 'package:rafiq_app/service/api_service.dart';
+import 'package:rafiq_app/service/analytics_tracker.dart';
 import 'package:rafiq_app/service/profile_image_store.dart';
 import 'package:rafiq_app/view/evaluations/evaluations_page.dart';
 import '../../core/utils/app_microcopy.dart';
@@ -34,9 +37,14 @@ class _DetailsPageState extends State<DetailsPage> {
   late SuggestionItemModel currentModel;
   EvaluationsItemModel? lastEvaluation;
   List<String> galleryImages = const [];
+  List<PlacePromotionBanner> _campaigns = const [];
   bool _isReviewLoading = false;
   bool _isGalleryLoading = false;
+  bool _isFavoriteBusy = false;
+  bool _isFavorited = false;
   bool _isMounted = true;
+  String? _lastTrackedPlaceUuid;
+  final Set<String> _campaignImpressionsSeen = <String>{};
 
   @override
   void initState() {
@@ -46,6 +54,7 @@ class _DetailsPageState extends State<DetailsPage> {
     ProfileImageStore.instance.ensureLoaded();
     _fetchGalleryImages(currentModel);
     _fetchLastEvaluationFromAPI(currentModel.placeId);
+    _hydrateInteractions(currentModel);
   }
 
   @override
@@ -103,6 +112,102 @@ class _DetailsPageState extends State<DetailsPage> {
     }
   }
 
+  Future<void> _hydrateInteractions(SuggestionItemModel model) async {
+    final placeUuid = model.placeUuid;
+    if (placeUuid == null || placeUuid.isEmpty) return;
+
+    _trackPlaceOpen(placeUuid);
+
+    try {
+      final results = await Future.wait<dynamic>([
+        _apiService.isPlaceFavorited(placeUuid),
+        _apiService.fetchActivePlacePromotions(placeId: placeUuid),
+      ]);
+      if (!_isMounted) return;
+      setState(() {
+        _isFavorited = (results[0] as bool?) ?? false;
+        _campaigns =
+            (results[1] as List<PlacePromotionBanner>?) ?? const <PlacePromotionBanner>[];
+      });
+      for (final campaign in _campaigns) {
+        if (_campaignImpressionsSeen.add(campaign.id)) {
+          unawaited(_apiService.recordCampaignMetric(
+            campaignId: campaign.id,
+            metric: 'impression',
+          ));
+        }
+      }
+    } catch (_) {
+      if (!_isMounted) return;
+      setState(() => _campaigns = const []);
+    }
+  }
+
+  void _trackPlaceOpen(String placeUuid) {
+    if (_lastTrackedPlaceUuid == placeUuid) return;
+    _lastTrackedPlaceUuid = placeUuid;
+    AnalyticsTracker.instance.track(
+      AnalyticsKind.placeOpen,
+      placeId: placeUuid,
+    );
+  }
+
+  Future<void> _toggleFavorite() async {
+    final placeUuid = currentModel.placeUuid;
+    if (placeUuid == null || placeUuid.isEmpty || _isFavoriteBusy) {
+      return;
+    }
+
+    setState(() => _isFavoriteBusy = true);
+    final next = !_isFavorited;
+    try {
+      final saved = await _apiService.setPlaceFavorite(
+        placeId: placeUuid,
+        shouldFavorite: next,
+      );
+      if (!_isMounted) return;
+      setState(() => _isFavorited = saved);
+      AnalyticsTracker.instance.track(
+        saved ? AnalyticsKind.placeFavorite : AnalyticsKind.placeUnfavorite,
+        placeId: placeUuid,
+      );
+      AppFeedback.success(
+        saved ? 'اتحفظ في المفضلة' : 'اتشال من المفضلة',
+      );
+    } catch (e) {
+      if (!_isMounted) return;
+      AppFeedback.error(e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (_isMounted) {
+        setState(() => _isFavoriteBusy = false);
+      }
+    }
+  }
+
+  void _onMapOpen() {
+    final placeUuid = currentModel.placeUuid;
+    if (placeUuid == null || placeUuid.isEmpty) return;
+    AnalyticsTracker.instance.track(
+      AnalyticsKind.placeMapOpen,
+      placeId: placeUuid,
+    );
+  }
+
+  Future<void> _openCampaignDetails(PlacePromotionBanner campaign) async {
+    unawaited(_apiService.recordCampaignMetric(
+      campaignId: campaign.id,
+      metric: 'click',
+    ));
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColor.surfaceCard,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppRadii.topOnly(AppRadii.xxl),
+      ),
+      builder: (_) => _CampaignDetailsSheet(campaign: campaign),
+    );
+  }
+
   void updateModel(SuggestionItemModel newModel) {
     if (!_isMounted) return;
     setState(() {
@@ -110,6 +215,7 @@ class _DetailsPageState extends State<DetailsPage> {
     });
     _fetchGalleryImages(newModel);
     _fetchLastEvaluationFromAPI(newModel.placeId);
+    _hydrateInteractions(newModel);
   }
 
   @override
@@ -150,6 +256,13 @@ class _DetailsPageState extends State<DetailsPage> {
         title: AppCopy.detailsTitle,
         actions: [
           AppHeaderAction(
+            icon:
+                _isFavorited ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+            tone: _isFavorited ? AppColor.error : null,
+            semanticLabel: _isFavorited ? 'إزالة من المفضلة' : 'إضافة إلى المفضلة',
+            onTap: _toggleFavorite,
+          ),
+          AppHeaderAction(
             icon: Icons.flag_outlined,
             semanticLabel: 'بلّغ عن هذا المكان',
             onTap: () => _openReportSheet(context, currentModel),
@@ -168,7 +281,15 @@ class _DetailsPageState extends State<DetailsPage> {
             model: currentModel,
             galleryImages: galleryImages,
             isLoading: _isGalleryLoading,
+            onMapOpen: _onMapOpen,
           ),
+          if (_campaigns.isNotEmpty) ...[
+            gapV(AppSpacing.xl),
+            _CampaignsSection(
+              campaigns: _campaigns,
+              onOpenCampaign: _openCampaignDetails,
+            ),
+          ],
           gapV(AppSpacing.xxl),
           _ReviewsSection(
             placeId: currentModel.placeId,
@@ -223,11 +344,13 @@ class _DetailsSection extends StatelessWidget {
     required this.model,
     required this.galleryImages,
     required this.isLoading,
+    required this.onMapOpen,
   });
 
   final SuggestionItemModel model;
   final List<String> galleryImages;
   final bool isLoading;
+  final VoidCallback onMapOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -239,6 +362,7 @@ class _DetailsSection extends StatelessWidget {
             model: model,
             galleryImages: galleryImages,
             isLoading: isLoading,
+            onMapOpen: onMapOpen,
           ),
           Padding(
             padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
@@ -247,6 +371,199 @@ class _DetailsSection extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _CampaignsSection extends StatelessWidget {
+  const _CampaignsSection({
+    required this.campaigns,
+    required this.onOpenCampaign,
+  });
+
+  final List<PlacePromotionBanner> campaigns;
+  final ValueChanged<PlacePromotionBanner> onOpenCampaign;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      padding: EdgeInsets.all(AppSpacing.lg.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 38.w,
+                height: 38.w,
+                decoration: BoxDecoration(
+                  color: AppColor.primary50,
+                  borderRadius: AppRadii.rMd,
+                ),
+                child: Icon(
+                  Icons.local_offer_rounded,
+                  color: AppColor.primary,
+                  size: 20.sp,
+                ),
+              ),
+              gapH(AppSpacing.md),
+              Expanded(
+                child: Text(
+                  'عروض وإعلانات المكان',
+                  style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
+                ),
+              ),
+            ],
+          ),
+          gapV(AppSpacing.md),
+          ...campaigns.map(
+            (campaign) => Padding(
+              padding: EdgeInsets.only(bottom: AppSpacing.md.h),
+              child: _CampaignBannerCard(
+                campaign: campaign,
+                onTap: () => onOpenCampaign(campaign),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CampaignBannerCard extends StatelessWidget {
+  const _CampaignBannerCard({
+    required this.campaign,
+    required this.onTap,
+  });
+
+  final PlacePromotionBanner campaign;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasImage = (campaign.imagePath ?? '').trim().isNotEmpty;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: AppRadii.rLg,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColor.surfaceVariant,
+          borderRadius: AppRadii.rLg,
+          border: Border.all(
+            color: AppColor.primary.withValues(alpha: 0.12),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (hasImage)
+              ClipRRect(
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(AppRadii.lg)),
+                child: Image.network(
+                  campaign.imagePath!,
+                  width: double.infinity,
+                  height: 150.h,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                ),
+              ),
+            Padding(
+              padding: EdgeInsets.all(AppSpacing.md.w),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          campaign.title,
+                          style: AppText.titleMd.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm.w,
+                          vertical: 4.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColor.primary50,
+                          borderRadius: AppRadii.rPill,
+                        ),
+                        child: Text(
+                          _campaignKindLabel(campaign.kind),
+                          style: AppText.labelSm.copyWith(
+                            color: AppColor.primary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if ((campaign.body ?? '').trim().isNotEmpty) ...[
+                    gapV(AppSpacing.sm),
+                    Text(
+                      campaign.body!,
+                      style: AppText.bodyMd.copyWith(
+                        color: AppColor.textSecondary,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                  if (campaign.endsAt != null) ...[
+                    gapV(AppSpacing.sm),
+                    Text(
+                      'العرض متاح حتى ${campaign.endsAt!.day}/${campaign.endsAt!.month}',
+                      style: AppText.caption.copyWith(
+                        color: AppColor.textSecondary,
+                      ),
+                    ),
+                  ],
+                  gapV(AppSpacing.md),
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md.w,
+                        vertical: AppSpacing.sm.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColor.primary,
+                        borderRadius: AppRadii.rPill,
+                      ),
+                      child: Text(
+                        campaign.ctaLabel?.trim().isNotEmpty == true
+                            ? campaign.ctaLabel!
+                            : 'اعرف العرض',
+                        style: AppText.labelMd.copyWith(
+                          color: AppColor.white,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _campaignKindLabel(String kind) {
+    switch (kind) {
+      case 'featured':
+        return 'ظهور مميز';
+      case 'spotlight':
+        return 'سبوت لايت';
+      case 'push_notification':
+        return 'إشعار';
+      default:
+        return 'عرض خاص';
+    }
   }
 }
 
@@ -459,6 +776,84 @@ class _ReportSheet extends StatefulWidget {
 
   @override
   State<_ReportSheet> createState() => _ReportSheetState();
+}
+
+class _CampaignDetailsSheet extends StatelessWidget {
+  const _CampaignDetailsSheet({required this.campaign});
+
+  final PlacePromotionBanner campaign;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasImage = (campaign.imagePath ?? '').trim().isNotEmpty;
+    return SafeArea(
+      top: false,
+      child: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.xxl.w,
+          AppSpacing.lg.h,
+          AppSpacing.xxl.w,
+          AppSpacing.xxl.h,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 40.w,
+                height: 4.h,
+                decoration: BoxDecoration(
+                  color: AppColor.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            gapV(AppSpacing.xl),
+            Text(
+              campaign.title,
+              style: AppText.headingSm.copyWith(fontWeight: FontWeight.w800),
+            ),
+            if ((campaign.body ?? '').trim().isNotEmpty) ...[
+              gapV(AppSpacing.md),
+              Text(
+                campaign.body!,
+                style: AppText.bodyMd.copyWith(
+                  color: AppColor.textSecondary,
+                  height: 1.6,
+                ),
+              ),
+            ],
+            if (hasImage) ...[
+              gapV(AppSpacing.lg),
+              ClipRRect(
+                borderRadius: AppRadii.rLg,
+                child: Image.network(
+                  campaign.imagePath!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                ),
+              ),
+            ],
+            if (campaign.endsAt != null) ...[
+              gapV(AppSpacing.lg),
+              Text(
+                'ينتهي هذا العرض في ${campaign.endsAt!.day}/${campaign.endsAt!.month}/${campaign.endsAt!.year}',
+                style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
+              ),
+            ],
+            gapV(AppSpacing.xl),
+            AppButton(
+              text: campaign.ctaLabel?.trim().isNotEmpty == true
+                  ? campaign.ctaLabel!
+                  : 'تمام',
+              onPress: () => Navigator.pop(context),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _ReportSheetState extends State<_ReportSheet> {

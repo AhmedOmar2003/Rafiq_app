@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -111,6 +112,7 @@ class AnalyticsTracker with WidgetsBindingObserver {
 
   final Queue<_PendingEvent> _queue = Queue<_PendingEvent>();
   final String _sessionId = _generateSessionId();
+  final Map<String, DateTime> _lastSentAt = <String, DateTime>{};
 
   Timer? _flushTimer;
   bool _flushing = false;
@@ -143,9 +145,24 @@ class AnalyticsTracker with WidgetsBindingObserver {
     String? categoryId,
     Map<String, dynamic> context = const <String, dynamic>{},
   }) {
+    final now = DateTime.now();
+    final dedupeKey = _buildDedupeKey(
+      kind: kind,
+      placeId: placeId,
+      providerId: providerId,
+      cityId: cityId,
+      categoryId: categoryId,
+    );
+    final throttle = _throttleFor(kind);
+    final previousAt = _lastSentAt[dedupeKey];
+    if (previousAt != null && now.difference(previousAt) < throttle) {
+      return;
+    }
+    _lastSentAt[dedupeKey] = now;
+
     final event = _PendingEvent(
       kind: kind,
-      occurredAt: DateTime.now(),
+      occurredAt: now,
       placeId: placeId,
       providerId: providerId,
       cityId: cityId,
@@ -217,10 +234,54 @@ class AnalyticsTracker with WidgetsBindingObserver {
   }
 
   static String _generateSessionId() {
-    // Lightweight UUIDv4-ish — no crypto dep. Good enough as a session
-    // dimension; collisions across users are not a security concern.
-    final ms = DateTime.now().millisecondsSinceEpoch;
-    final rand = ms.hashCode ^ identityHashCode(Object());
-    return '${ms.toRadixString(16)}-${rand.toUnsigned(32).toRadixString(16)}';
+    final rnd = math.Random.secure();
+    String hex(int length) {
+      final buffer = StringBuffer();
+      for (var i = 0; i < length; i++) {
+        buffer.write(rnd.nextInt(16).toRadixString(16));
+      }
+      return buffer.toString();
+    }
+
+    return '${hex(8)}-${hex(4)}-4${hex(3)}-'
+        '${(8 + rnd.nextInt(4)).toRadixString(16)}${hex(3)}-${hex(12)}';
+  }
+
+  Duration _throttleFor(AnalyticsKind kind) {
+    switch (kind) {
+      case AnalyticsKind.placeOpen:
+        return const Duration(seconds: 90);
+      case AnalyticsKind.placeMapOpen:
+        return const Duration(seconds: 20);
+      case AnalyticsKind.placeFavorite:
+      case AnalyticsKind.placeUnfavorite:
+        return const Duration(seconds: 2);
+      case AnalyticsKind.placeShare:
+      case AnalyticsKind.placePhoneCall:
+      case AnalyticsKind.placeWebsiteClick:
+      case AnalyticsKind.placeReviewSubmit:
+      case AnalyticsKind.providerProfileView:
+      case AnalyticsKind.recommendationClick:
+        return const Duration(seconds: 10);
+      case AnalyticsKind.placeImpression:
+      case AnalyticsKind.recommendationShown:
+        return const Duration(seconds: 30);
+    }
+  }
+
+  String _buildDedupeKey({
+    required AnalyticsKind kind,
+    String? placeId,
+    String? providerId,
+    String? cityId,
+    String? categoryId,
+  }) {
+    return [
+      kind.wire,
+      placeId ?? '',
+      providerId ?? '',
+      cityId ?? '',
+      categoryId ?? '',
+    ].join('|');
   }
 }
