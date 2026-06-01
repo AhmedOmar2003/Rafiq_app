@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:rafiq_app/auth/login/login_screen.dart';
 import 'package:rafiq_app/auth/forget%20password/reset_password.dart';
 import 'package:rafiq_app/core/logic/helper_methods.dart';
+import 'package:rafiq_app/core/utils/app_microcopy.dart';
 import 'package:rafiq_app/on_boarding/cashe_helper.dart';
 import 'package:rafiq_app/on_boarding/on_boarding_screen.dart';
 import 'package:rafiq_app/service/auth_service.dart';
@@ -103,6 +105,9 @@ class _AuthGateState extends State<AuthGate> {
         }
 
         if (snapshot.hasError) {
+          if (kDebugMode) {
+            debugPrint('AuthGate bootstrap failed: ${snapshot.error}');
+          }
           return Scaffold(
             body: Center(
               child: Padding(
@@ -111,12 +116,12 @@ class _AuthGateState extends State<AuthGate> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Text(
-                      'حدث خطأ أثناء تجهيز التطبيق.',
+                      'تعذر تجهيز التطبيق الآن.',
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 12),
-                    Text(
-                      '${snapshot.error}',
+                    const Text(
+                      'يبدو أن هناك مشكلة مؤقتة في الاتصال أو التهيئة. جرّب مرة أخرى، ولو استمرت المشكلة هنكمل معك من نفس النقطة.',
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 16),
@@ -126,7 +131,7 @@ class _AuthGateState extends State<AuthGate> {
                           _bootstrapFuture = _bootstrap();
                         });
                       },
-                      child: const Text('إعادة المحاولة'),
+                      child: const Text(AppCopy.retry),
                     ),
                   ],
                 ),

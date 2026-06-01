@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/components/app_page_header.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
-import 'package:rafiq_app/core/config/api_config.dart';
+import 'package:rafiq_app/service/ai_chat_service.dart';
 
 class BotScreen extends StatefulWidget {
   const BotScreen({super.key});
@@ -18,9 +17,7 @@ class BotScreen extends StatefulWidget {
 class _BotScreenState extends State<BotScreen> {
   final TextEditingController _userMessage = TextEditingController();
   final FlutterTts flutterTts = FlutterTts(); // ✅ إنشاء كائن TTS
-  GenerativeModel? model;
   bool _isLoading = false;
-  bool _isConfigured = false;
 
   final List<Message> _messages = [
     Message(
@@ -34,14 +31,6 @@ class _BotScreenState extends State<BotScreen> {
   @override
   void initState() {
     super.initState();
-    final geminiKey = ApiConfig.geminiApiKey.trim();
-    _isConfigured = geminiKey.isNotEmpty;
-    if (_isConfigured) {
-      model = GenerativeModel(
-        model: 'gemini-2.0-flash',
-        apiKey: geminiKey,
-      );
-    }
     _speakWelcomeMessage(); // ✅ تشغيل الصوت الترحيبي عند فتح الصفحة
   }
 
@@ -66,21 +55,6 @@ class _BotScreenState extends State<BotScreen> {
   }
 
   Future<void> sendMessage() async {
-    if (!_isConfigured || model == null) {
-      if (!mounted) return;
-      setState(() {
-        _messages.add(
-          Message(
-            isUser: false,
-            message:
-                'المساعد الذكي غير مفعّل حاليًا. هيتفعّل لما يتم تمرير مفتاح Gemini من البيئة وقت البناء.',
-            date: DateTime.now(),
-          ),
-        );
-      });
-      return;
-    }
-
     final message = _userMessage.text.trim();
     if (message.isEmpty) return;
 
@@ -97,17 +71,7 @@ class _BotScreenState extends State<BotScreen> {
     });
 
     try {
-      // **تحسين المدخلات ليكون Gemini أكثر دقة في التوصيات**
-      final prompt = """
-        أنت مساعد افتراضي تابع لتطبيق "رفيق"، وهو تطبيق متخصص في ترشيح الأماكن السياحية، الثقافية، التعليمية، والمطاعم في مصر، مع التركيز على الأماكن الشعبية والمحلية التي تحافظ على الهوية المصرية وتشجع السياحة الداخلية. 
-        مهمتك هي اقتراح أماكن تناسب تفضيلات المستخدم بأسعار معقولة، وتقديم معلومات دقيقة عنها.
-        الآن، استجب للسؤال التالي:
-        
-        "$message"
-      """;
-
-      final content = [Content.text(prompt)];
-      final response = await model!.generateContent(content);
+      final response = await AiChatService.instance.sendMessage(message);
 
       if (!mounted) return;
 
@@ -115,22 +79,21 @@ class _BotScreenState extends State<BotScreen> {
         _messages.add(
           Message(
             isUser: false,
-            message:
-                response.text ?? 'عذرًا، لم أتمكن من العثور على إجابة مناسبة.',
+            message: response,
             date: DateTime.now(),
           ),
         );
       });
 
       // ✅ تشغيل الصوت لقراءة الرد الصوتي للمساعد الافتراضي
-      await flutterTts.speak(response.text ?? '');
+      await flutterTts.speak(response);
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _messages.add(
           Message(
             isUser: false,
-            message: 'عذرًا، حدث خطأ في معالجة طلبك. يرجى المحاولة مرة أخرى.',
+            message: e.toString().replaceFirst('Exception: ', ''),
             date: DateTime.now(),
           ),
         );

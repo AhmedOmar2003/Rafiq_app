@@ -532,6 +532,37 @@ class AuthService {
     );
   }
 
+  Future<void> changeCurrentPassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    await ensureSupabaseInitialized();
+
+    final user = _client.auth.currentUser ?? _client.auth.currentSession?.user;
+    final email = user?.email?.trim() ?? '';
+    if (email.isEmpty) {
+      throw Exception('لقيناش البريد الإلكتروني، سجل دخول تاني.');
+    }
+    if (currentPassword.trim().isEmpty) {
+      throw Exception('من فضلك اكتب كلمة السر الحالية.');
+    }
+
+    try {
+      await _client.auth.signInWithPassword(
+        email: email,
+        password: currentPassword,
+      );
+    } catch (_) {
+      throw Exception('كلمة السر الحالية غير صحيحة.');
+    }
+
+    try {
+      await updatePassword(newPassword);
+    } catch (e) {
+      throw Exception(_friendlyAuthError(e));
+    }
+  }
+
   Future<Map<String, dynamic>?> _loadProfile(String userId) async {
     final response =
         await _client.from('profiles').select().eq('id', userId).maybeSingle();
@@ -541,6 +572,47 @@ class AuthService {
     }
 
     return Map<String, dynamic>.from(response);
+  }
+
+  Future<UserModel?> fetchCurrentUserProfile() async {
+    await ensureSupabaseInitialized();
+
+    final user = _client.auth.currentUser ?? _client.auth.currentSession?.user;
+    if (user == null) {
+      return null;
+    }
+
+    final profile = await _loadProfile(user.id);
+    final resolvedEmail =
+        profile?['email']?.toString().trim().isNotEmpty == true
+            ? profile!['email'].toString().trim()
+            : (user.email?.trim().isNotEmpty == true
+                ? user.email!.trim()
+                : '');
+    final resolvedName =
+        profile?['full_name']?.toString().trim().isNotEmpty == true
+            ? profile!['full_name'].toString().trim()
+            : (user.userMetadata?['full_name']?.toString().trim().isNotEmpty ==
+                    true
+                ? user.userMetadata!['full_name'].toString().trim()
+                : (user.userMetadata?['name']?.toString().trim().isNotEmpty ==
+                        true
+                    ? user.userMetadata!['name'].toString().trim()
+                    : (resolvedEmail.isNotEmpty
+                        ? resolvedEmail.split('@').first
+                        : 'مستخدم')));
+
+    await _cacheUserSession(
+      id: user.id,
+      name: resolvedName,
+      email: resolvedEmail,
+    );
+
+    return UserModel(
+      id: user.id,
+      name: resolvedName,
+      email: resolvedEmail,
+    );
   }
 
   Future<void> _cacheUserSession({

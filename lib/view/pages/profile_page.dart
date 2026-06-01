@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:url_launcher/url_launcher.dart';
@@ -11,7 +10,6 @@ import 'package:rafiq_app/view/pages/legal/terms_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,7 +17,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
 
 import '../../auth/login/login_screen.dart';
-import '../../core/config/api_config.dart';
 import '../../core/design/components/components.dart';
 import '../../core/utils/app_microcopy.dart';
 import '../../models/subscription/plan.dart';
@@ -83,7 +80,26 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _loadUserData() async {
+    try {
+      final profile = await AuthService().fetchCurrentUserProfile();
+      if (!mounted) return;
+      if (profile != null) {
+        setState(() {
+          userName = profile.name.isNotEmpty
+              ? profile.name
+              : AppCopy.profileNameFallback;
+          userEmail = profile.email.isNotEmpty
+              ? profile.email
+              : AppCopy.profileEmailFallback;
+        });
+        return;
+      }
+    } catch (_) {
+      // Fall back to the cached identity below.
+    }
+
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
       userName = prefs.getString('userName') ?? AppCopy.profileNameFallback;
       userEmail = prefs.getString('userEmail') ?? AppCopy.profileEmailFallback;
@@ -135,19 +151,6 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  Future<void> _sendLegacyLogoutSignal(String? email) async {
-    if (email == null) return;
-
-    final deleteUrl = "${ApiConfig.baseUrl}/logout_user.php";
-
-    try {
-      await http.post(
-        Uri.parse(deleteUrl),
-        body: {"email": email},
-      ).timeout(const Duration(seconds: 5));
-    } catch (_) {}
-  }
-
   /// Context-aware **Delete account** flow.
   ///
   /// Reads the current role + entitlement so the confirmation copy tells
@@ -196,7 +199,6 @@ class _ProfilePageState extends State<ProfilePage> {
     if (!mounted) return;
     setState(() => _isLoading = true);
 
-    final email = userEmail;
     try {
       // Log out locally + Supabase first for immediate UX.
       //
@@ -214,9 +216,6 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
         (route) => false,
       );
-
-      // Legacy API signal in background (non-blocking).
-      unawaited(_sendLegacyLogoutSignal(email));
     } catch (e) {
       if (!mounted) return;
       AppFeedback.error(AppCopy.logoutError);
@@ -253,31 +252,18 @@ class _ProfilePageState extends State<ProfilePage> {
       isLoading.value = true;
       errorMessage.value = null;
       try {
-        final prefs = await SharedPreferences.getInstance();
-        final email = prefs.getString('userEmail');
-        if (email == null) {
-          errorMessage.value = AppCopy.changePwMissingEmail;
-          isLoading.value = false;
-          return;
-        }
-        final response = await http.post(
-          Uri.parse("${ApiConfig.baseUrl}/update_password_account.php"),
-          body: {
-            'email': email,
-            'old_password': currentPasswordController.text,
-            'new_password': newPasswordController.text,
-          },
+        await AuthService().changeCurrentPassword(
+          currentPassword: currentPasswordController.text,
+          newPassword: newPasswordController.text,
         );
-        final result = jsonDecode(response.body);
-        if (response.statusCode == 200 && result['status'] == 'success') {
-          if (!context.mounted) return;
-          Navigator.of(context).pop();
-          AppFeedback.success(result['message'] ?? AppCopy.changePwSuccess);
-        } else {
-          errorMessage.value = result['message'] ?? AppCopy.changePwGenericFail;
-        }
+        if (!context.mounted) return;
+        Navigator.of(context).pop();
+        AppFeedback.success(AppCopy.changePwSuccess);
       } catch (e) {
-        errorMessage.value = AppCopy.offlineBody;
+        errorMessage.value =
+            e.toString().replaceFirst('Exception: ', '').trim().isNotEmpty
+                ? e.toString().replaceFirst('Exception: ', '').trim()
+                : AppCopy.changePwGenericFail;
       } finally {
         isLoading.value = false;
       }

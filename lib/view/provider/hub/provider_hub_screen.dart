@@ -429,12 +429,13 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
                   gapV(AppSpacing.xxl),
                   // Surface anything that's still pending admin review at the
                   // top so the user always knows what the admin is sitting on.
-                  if (_places.any((p) => p.status == 'pending'))
+                  if (_places.any((p) => _isAwaitingModeration(p.status)))
                     Padding(
                       padding: EdgeInsets.only(bottom: AppSpacing.lg.h),
                       child: _ReviewQueueCard(
-                        pendingPlaces:
-                            _places.where((p) => p.status == 'pending').toList(),
+                        pendingPlaces: _places
+                            .where((p) => _isAwaitingModeration(p.status))
+                            .toList(),
                       ),
                     ),
                   // Rejected places also get a glance card so the user can
@@ -513,6 +514,11 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
   }
 }
 
+bool _isAwaitingModeration(String? status) {
+  final normalized = status?.trim().toLowerCase();
+  return normalized == 'pending' || normalized == 'under_review';
+}
+
 // ===========================================================================
 // Review queue card — 24-hour countdown for pending places
 // ===========================================================================
@@ -553,7 +559,7 @@ class _ReviewQueueCardState extends State<_ReviewQueueCard> {
   }
 
   String _formatRemaining(DateTime? createdAt) {
-    if (createdAt == null) return '—';
+    if (createdAt == null) return 'جارٍ الاحتساب';
     final deadline = createdAt.add(_slaWindow);
     final remaining = deadline.difference(DateTime.now());
     if (remaining.isNegative) return 'انتهت المهلة';
@@ -591,7 +597,7 @@ class _ReviewQueueCardState extends State<_ReviewQueueCard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'تحت المراجعة',
+                      'قيد المراجعة',
                       style: AppText.titleMd
                           .copyWith(fontWeight: FontWeight.w800),
                     ),
@@ -641,6 +647,16 @@ class _ReviewQueueCardState extends State<_ReviewQueueCard> {
                             '${p.cityName} — ${p.activityName}',
                             style: AppText.caption.copyWith(
                               color: AppColor.textSecondary,
+                            ),
+                          ),
+                          gapV(4),
+                          Text(
+                            p.status == 'under_review'
+                                ? 'المكان قيد المراجعة الآن'
+                                : 'المكان في انتظار بدء المراجعة',
+                            style: AppText.caption.copyWith(
+                              color: AppColor.warning,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ],
@@ -1619,6 +1635,7 @@ class _PlaceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cover = place.imageUrl?.trim() ?? '';
     final model = SuggestionItemModel.fromPlace(place);
+    final awaitingModeration = _isAwaitingModeration(place.status);
     return Container(
       decoration: BoxDecoration(
         color: AppColor.surfaceCard,
@@ -1669,6 +1686,13 @@ class _PlaceCard extends StatelessWidget {
                   '${place.cityName} • ${place.activityName}',
                   style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
                 ),
+                if (awaitingModeration) ...[
+                  gapV(AppSpacing.sm),
+                  _PlaceModerationBanner(
+                    status: place.status,
+                    createdAt: place.createdAt,
+                  ),
+                ],
                 gapV(AppSpacing.xs),
                 Text(
                   place.description,
@@ -1732,6 +1756,97 @@ class _PlaceCard extends StatelessWidget {
       child: Center(
         child: Icon(Icons.image_not_supported_outlined,
             color: AppColor.textTertiary, size: 38.sp),
+      ),
+    );
+  }
+}
+
+class _PlaceModerationBanner extends StatefulWidget {
+  const _PlaceModerationBanner({
+    required this.status,
+    required this.createdAt,
+  });
+
+  final String status;
+  final DateTime? createdAt;
+
+  @override
+  State<_PlaceModerationBanner> createState() => _PlaceModerationBannerState();
+}
+
+class _PlaceModerationBannerState extends State<_PlaceModerationBanner> {
+  static const Duration _slaWindow = Duration(hours: 24);
+  Timer? _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
+
+  String _formatRemaining(DateTime? createdAt) {
+    if (createdAt == null) return 'جارٍ الاحتساب';
+    final remaining = createdAt.add(_slaWindow).difference(DateTime.now());
+    if (remaining.isNegative) return 'انتهت المهلة';
+    final hours = remaining.inHours.toString().padLeft(2, '0');
+    final minutes = (remaining.inMinutes % 60).toString().padLeft(2, '0');
+    final seconds = (remaining.inSeconds % 60).toString().padLeft(2, '0');
+    return '$hours:$minutes:$seconds';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final underReview = widget.status.trim().toLowerCase() == 'under_review';
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.md.w,
+        vertical: AppSpacing.sm.h,
+      ),
+      decoration: BoxDecoration(
+        color: AppColor.warning.withValues(alpha: 0.08),
+        borderRadius: AppRadii.rMd,
+        border: Border.all(
+          color: AppColor.warning.withValues(alpha: 0.24),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            underReview ? Icons.fact_check_outlined : Icons.hourglass_top_rounded,
+            size: 16.sp,
+            color: AppColor.warning,
+          ),
+          gapH(AppSpacing.xs),
+          Expanded(
+            child: Text(
+              underReview
+                  ? 'قيد المراجعة الآن'
+                  : 'في انتظار المراجعة خلال 24 ساعة',
+              style: AppText.labelSm.copyWith(
+                color: AppColor.warning,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          gapH(AppSpacing.sm),
+          Text(
+            _formatRemaining(widget.createdAt),
+            style: AppText.labelSm.copyWith(
+              color: AppColor.warning,
+              fontWeight: FontWeight.w800,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
       ),
     );
   }

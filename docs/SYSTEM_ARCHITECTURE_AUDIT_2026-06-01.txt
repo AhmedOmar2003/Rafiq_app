@@ -1,0 +1,417 @@
+Rafiq System Architecture Audit
+Date: 2026-06-01
+Auditor: Codex
+
+Purpose
+This document is a release-oriented architecture audit of the Rafiq mobile app,
+Supabase backend, and admin dashboard. The goal is to identify what is already
+solid, what is still missing, which parts are only partially wired, and what
+must be done to make the system structurally correct, testable, and safe to
+launch at scale.
+
+Scope
+- Flutter mobile app in /lib
+- Supabase schema, RPCs, RLS, and functions in /supabase
+- Next.js admin dashboard in /admin-dashboard-rafiq-app
+- Existing operational docs in /docs
+
+What I actually validated
+1. Code-path review of the main user journey:
+   sign up -> login -> choice screen -> regular user path / provider path ->
+   subscription -> profile -> provider hub
+2. Code-path review of the admin journey:
+   login -> dashboard -> users -> providers -> places -> reports
+3. Build and static checks:
+   - flutter analyze -> PASS
+   - flutter test -> PASS (4 tests only)
+   - next build (admin dashboard) -> PASS
+4. Architecture consistency review across app code, backend migrations, and
+   operations docs
+
+Important limitation
+I did NOT create a live production test user against the real backend because
+the repository is wired to a real environment and there is no separate staging
+project clearly configured in the repo. Creating disposable live users in
+production would pollute real data and produce misleading confidence. The right
+way to do real end-to-end onboarding validation is to use a staging Supabase
+project plus a staging dashboard deployment.
+
+Executive summary
+The project has improved significantly. The core role-selection flow,
+provider-account restoration, and admin dashboard structure are much more
+coherent than before. However, the system is not yet architecturally "clean"
+enough to be called fully production-grade.
+
+The biggest remaining issue is not a single bug. It is architectural
+fragmentation:
+- some flows use Supabase
+- some flows still call legacy PHP endpoints
+- subscriptions are still "demo subscription" driven rather than true billing
+- monitoring docs and runtime behavior are out of sync
+- automated coverage is far too thin for a system with this many stateful flows
+
+If the team fixes the issues in the Critical and High sections below, the
+system can move from "working product" to "sound product architecture".
+
+Primary flow walkthrough
+1. App bootstrap
+   - AuthGate boots Supabase, onboarding state, and local role state.
+   - UserRoleStore restores local flags and attempts backend reconciliation via
+     profiles.account_mode.
+   - This is directionally correct and much better than local-only state.
+
+2. Authentication
+   - Sign-up and sign-in are Supabase-based.
+   - OTP / confirmation flows exist.
+   - PostAuthRouter refreshes role state from backend before choosing home.
+
+3. Role choice
+   - ChoiceScreen now correctly separates:
+     - regular user path
+     - first-time provider onboarding
+     - returning provider history
+
+4. Subscription / provider activation
+   - The app no longer auto-selects a plan during onboarding.
+   - Provider creation is now deferred until plan confirmation through
+     apply_demo_subscription / become_provider behavior.
+   - This is much better UX than the earlier premature provider creation.
+
+5. Profile and role switching
+   - ProfilePage supports switching between regular-user mode and provider mode.
+   - Provider history is preserved, which is the right product behavior.
+
+6. Admin moderation
+   - The dashboard now has reasonably mature surfaces for users, providers,
+     places, appeals, and reports.
+   - Recent fixes to reports and provider status display improved correctness.
+
+What is already strong
+1. Backend role recovery is better than before
+   profiles.account_mode is now part of the backend truth instead of relying
+   only on device-local flags.
+
+2. Provider onboarding is cleaner
+   The app no longer silently upgrades a user to provider before plan
+   confirmation.
+
+3. Admin dashboard structure is improving
+   Pages are separated by concern, and SSR/admin-client access patterns are
+   mostly sensible.
+
+4. Supabase schema maturity is decent
+   The project has a meaningful migration history for subscriptions,
+   moderation, appeals, abuse reports, scaling indexes, and role management.
+
+5. Production dashboard build is healthy
+   The current dashboard compiles successfully with Next.js and TypeScript.
+
+Critical findings
+
+CRITICAL-01: The system still has two backend worlds
+Evidence:
+- lib/core/config/api_config.dart
+- lib/view/pages/profile_page.dart
+- lib/service/auth_service.dart
+
+Problem:
+Most of the product has moved to Supabase, but the mobile app still contains
+legacy HTTP/PHP integration surfaces:
+- ApiConfig.baseUrl -> http://<ip>/Api
+- logout_user.php
+- update_password_account.php
+- get_places.php scaffolding remains in config
+
+Why this is dangerous:
+- Different flows can disagree about user state
+- Some features become environment-dependent on a private IP backend
+- Production debugging becomes much harder because there is no single source of
+  truth for auth/account operations
+- Security posture becomes inconsistent between Supabase-secured flows and old
+  raw HTTP endpoints
+
+What should be done:
+- Remove the PHP dependency from the app completely
+- Move password change, logout bookkeeping, and any remaining account actions
+  to Supabase-native flows or Edge Functions
+- Delete dead legacy config once migration is complete
+
+CRITICAL-02: Subscription architecture is still demo-mode, not real billing
+Evidence:
+- lib/service/subscription_service.dart
+- comments in applyDemoUpgrade / applyDemoFree / restorePersistedDemo
+- startCheckout is still described as a stub
+
+Problem:
+The app behaves as if the plan system exists, but the current implementation is
+still fundamentally "demo entitlement" logic with optimistic local state plus
+RPC persistence.
+
+Why this is dangerous:
+- Product behavior looks production-ready while billing is not
+- Revenue, entitlements, cancellation, and renewal logic are not yet governed
+  by a real payment lifecycle
+- Local persistence can mask real backend drift
+
+What should be done:
+- Replace demo entitlement paths with a real checkout flow
+- Use a payment provider Edge Function for session creation
+- Use a webhook-driven source of truth for plan activation and cancellation
+- Make provider_current_plan fully derived from billing rows, not local demo
+  fallbacks
+
+CRITICAL-03: Hard deletes do not clean storage objects
+Evidence:
+- admin-dashboard-rafiq-app/src/app/dashboard/users/actions.ts
+- supabase/migrations/0024_delete_account_hardening.sql
+- lib/service/api_service.dart
+
+Problem:
+Hard deletes remove auth/database rows, but no matching cleanup exists for
+Supabase Storage objects such as:
+- place-images bucket files
+- provider-documents bucket files
+- locally persisted profile images are also separate from backend truth
+
+Why this is dangerous:
+- Orphaned storage costs will accumulate
+- Deleted users/providers may leave artifacts behind
+- Compliance/data-erasure expectations are only partially met
+
+What should be done:
+- Add a secure server-side cleanup workflow for storage buckets during
+  account/provider deletion
+- Ensure dashboard hard delete and self-delete use the same deletion policy
+- Document exactly which data is hard-deleted vs retained for audit
+
+CRITICAL-04: There is no real end-to-end test environment
+Evidence:
+- No clear staging project or environment separation is documented in the repo
+- No integration or E2E suite exists
+
+Problem:
+The code can build, but the real product journey has not been proven in a safe,
+repeatable environment.
+
+Why this is dangerous:
+- Production becomes the test environment
+- New auth/subscription/moderation regressions will only be discovered by
+  real users
+
+What should be done:
+- Create a staging Supabase project
+- Add staging env files and deployment instructions
+- Run controlled onboarding tests there before every release
+
+High findings
+
+HIGH-01: Monitoring documentation and runtime behavior are inconsistent
+Evidence:
+- lib/main.dart
+- docs/OPERATIONS.md
+- admin-dashboard-rafiq-app/src/app/layout.tsx
+
+Problem:
+The operations doc says Sentry is part of the launch posture, but main.dart
+explicitly says Sentry was removed/disabled. Vercel Analytics is active on the
+dashboard, but mobile error monitoring is not actually live.
+
+Why this matters:
+- The team may think production error capture exists when it does not
+- Post-launch diagnosis on Android will be much slower
+
+What should be done:
+- Either re-enable Sentry properly or update the operations docs immediately
+- Add a release checklist item that verifies monitoring in the exact build
+  being shipped
+
+HIGH-02: Automated test coverage is far too small
+Evidence:
+- test/widget_test.dart
+
+Problem:
+Only 4 small tests exist, and they validate helper logic rather than real
+behavior. There are no tests for:
+- sign-up / login flow
+- role choice
+- onboarding regular user vs provider
+- plan selection
+- profile role switching
+- provider place creation/resubmission
+- admin reports moderation
+
+What should be done:
+- Add Flutter integration_test coverage for the main app journey
+- Add Playwright coverage for the dashboard critical paths
+- Add Supabase RPC contract tests where practical
+
+HIGH-03: Authentication policy is hard-coded to Gmail only
+Evidence:
+- lib/service/auth_service.dart -> isGmailEmail()
+
+Problem:
+The current app rejects non-Gmail addresses by design.
+
+Why this matters:
+- This is a severe product restriction unless it is a deliberate business rule
+- It will confuse real users and reduce sign-up conversion
+
+What should be done:
+- If Gmail-only is not a real business requirement, remove this restriction
+- If it is intentional, surface it explicitly in product requirements and UI
+
+HIGH-04: Profile surface still depends on local cached name/email
+Evidence:
+- lib/view/pages/profile_page.dart
+
+Problem:
+ProfilePage loads userName/userEmail from SharedPreferences rather than making
+the backend the visible source of truth for profile identity.
+
+Why this matters:
+- Cross-device consistency can drift
+- If a profile is corrected on the backend, the UI may not reflect it
+- It increases the number of states the team must reason about
+
+What should be done:
+- Read visible identity from profiles/auth on page load
+- Keep SharedPreferences only as a warm cache, not as the displayed truth
+
+HIGH-05: User-facing bootstrap error handling still leaks raw exceptions
+Evidence:
+- lib/auth/auth_gate.dart
+
+Problem:
+On bootstrap failure the app shows snapshot.error directly to the user.
+
+Why this matters:
+- Raw internal messages are poor UX
+- They may leak technical details
+- This contradicts the design-system guidance about not surfacing internal
+  exceptions to release users
+
+What should be done:
+- Replace raw exception output with a structured friendly state
+- Log technical details only to monitoring
+
+HIGH-06: The AI chat feature still executes LLM calls from the client
+Evidence:
+- lib/view/home/chat.dart
+- lib/core/config/api_config.dart
+
+Problem:
+The Gemini key is passed as a build-time client-side key and the model is
+called directly from the mobile app.
+
+Why this matters:
+- Client-distributed AI keys are fundamentally weak
+- Usage abuse and cost leakage become harder to control
+- Prompt policy and moderation are harder to centralize
+
+What should be done:
+- Move chat completions behind a server/Edge Function
+- Keep secrets server-side only
+- Add rate limiting and abuse safeguards per user/session
+
+Medium findings
+
+MEDIUM-01: Self-delete and admin-delete use different deletion semantics
+Problem:
+Self-delete has a hardened RPC with explicit deletion sequencing and audit
+ledger behavior. Admin-delete uses auth.admin.deleteUser() and relies on
+cascades.
+
+Risk:
+- Deletion semantics may diverge over time
+- Storage cleanup and audit behavior may differ by deletion path
+
+Recommendation:
+- Define one canonical account-deletion policy and implement both flows against
+  the same internal service contract
+
+MEDIUM-02: Operations doc overstates current production maturity
+Problem:
+The docs describe a cleaner launch posture than the code currently guarantees.
+
+Recommendation:
+- Add a "Current truth" section to OPERATIONS.md
+- Mark planned capabilities vs live capabilities explicitly
+
+MEDIUM-03: Build success does not equal scale readiness
+Problem:
+There is no actual load test, no request-volume benchmark, and no documented
+capacity envelope for the dashboard or the app backend.
+
+Recommendation:
+- Define expected launch traffic
+- Run realistic load tests on key paths:
+  auth, places browse, provider hub places, reports page, dashboard overview
+
+MEDIUM-04: Some product text and status semantics are still being stabilized
+Problem:
+Recent dashboard fixes corrected misleading labels such as provider status vs
+place moderation status. This is improving, but it indicates product semantics
+are still settling.
+
+Recommendation:
+- Freeze terminology in a shared glossary
+- Ensure backend status enums, dashboard labels, and app copy all describe the
+  same business meaning
+
+Target architecture the project should converge to
+1. One backend contract
+   All app and dashboard business actions should go through Supabase tables,
+   RLS, RPCs, and Edge Functions. No leftover PHP side-channel.
+
+2. One identity truth
+   auth.users + profiles should be the canonical source for visible user
+   identity. Local preferences should only cache for speed.
+
+3. One subscription truth
+   provider_subscriptions + billing events + webhook-confirmed status should be
+   the only entitlement source.
+
+4. One deletion policy
+   Account deletion should define:
+   - what is hard-deleted
+   - what is soft-deleted
+   - what is retained for audit
+   - how storage files are removed
+
+5. One monitored production story
+   Mobile + dashboard + backend should all be observable with current, tested,
+   documented monitoring.
+
+What should be implemented next
+Phase 1: Architecture cleanup
+- Remove remaining PHP endpoints from the mobile app
+- Replace demo subscription logic with real billing flow
+- Add storage cleanup for hard deletes
+- Reconcile operations docs with actual runtime behavior
+
+Phase 2: Release confidence
+- Add Flutter integration tests for the core app journey
+- Add Playwright tests for dashboard login, users, providers, places, reports
+- Add a staging Supabase project and staging deployment
+
+Phase 3: Production readiness
+- Re-enable Sentry properly for mobile
+- Add backend/server-side monitoring for critical RPC failures
+- Run load tests and define safe capacity thresholds
+
+Final verdict
+Current state: functional but not yet structurally complete.
+
+This is not a "broken project". It is a project that has several important
+flows working, but it still carries enough architectural leftovers and
+production gaps that I would not call it fully clean or fully hardened yet.
+
+If the team wants a strong and sustainable architecture, the main objective now
+should be consolidation:
+- consolidate backend paths
+- consolidate entitlement truth
+- consolidate deletion behavior
+- consolidate testing and monitoring
+
+Once those are done, the system will be much easier to trust, maintain, and
+scale.
