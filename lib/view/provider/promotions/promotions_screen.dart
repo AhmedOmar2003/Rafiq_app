@@ -748,6 +748,7 @@ class _CreateCampaignSheetState extends State<_CreateCampaignSheet> {
     setState(() => _busy = true);
     try {
       final now = DateTime.now();
+      final effectiveStart = now.subtract(const Duration(minutes: 1));
       String? uploadedImageUrl;
       if (_selectedImage != null &&
           (widget.providerId ?? '').isNotEmpty &&
@@ -765,7 +766,7 @@ class _CreateCampaignSheetState extends State<_CreateCampaignSheet> {
         body: _bodyCtrl.text.trim(),
         imagePath: uploadedImageUrl,
         ctaLabel: _ctaCtrl.text.trim(),
-        startsAt: now,
+        startsAt: effectiveStart,
         endsAt: now.add(Duration(days: _durationDays)),
       );
       if (!mounted) return;
