@@ -21,6 +21,54 @@ class AccountModeSnapshot {
   final String? providerId;
 }
 
+class PlaceAnalyticsSnapshot {
+  const PlaceAnalyticsSnapshot({
+    required this.views,
+    required this.opens,
+    required this.favorites,
+    required this.mapClicks,
+    required this.trendPoints,
+  });
+
+  final int views;
+  final int opens;
+  final int favorites;
+  final int mapClicks;
+  final List<int> trendPoints;
+
+  static const empty = PlaceAnalyticsSnapshot(
+    views: 0,
+    opens: 0,
+    favorites: 0,
+    mapClicks: 0,
+    trendPoints: <int>[],
+  );
+}
+
+class PromotionCampaignSnapshot {
+  const PromotionCampaignSnapshot({
+    required this.id,
+    required this.title,
+    required this.kind,
+    required this.status,
+    required this.placeId,
+    required this.startsAt,
+    required this.endsAt,
+    required this.impressions,
+    required this.clicks,
+  });
+
+  final String id;
+  final String title;
+  final String kind;
+  final String status;
+  final String? placeId;
+  final DateTime? startsAt;
+  final DateTime? endsAt;
+  final int impressions;
+  final int clicks;
+}
+
 class ApiService {
   static Future<void>? _supabaseInitFuture;
   static const int _placesPageSize = 80;
@@ -579,6 +627,108 @@ class ApiService {
       cachedAt: DateTime.now(),
     );
     return urls;
+  }
+
+  Future<PlaceAnalyticsSnapshot> fetchPlaceAnalytics({
+    required String providerId,
+    String? placeId,
+  }) async {
+    await ensureSupabaseInitialized();
+    final since = DateTime.now().subtract(const Duration(days: 30));
+    var query = _client
+        .from('analytics_daily_rollups')
+        .select('place_id,day,kind,event_count')
+        .eq('provider_id', providerId)
+        .gte('day', since.toIso8601String().split('T').first);
+
+    if (placeId != null && placeId.isNotEmpty) {
+      query = query.eq('place_id', placeId);
+    }
+
+    final rows = await query.timeout(_networkTimeout);
+    if (rows.isEmpty) return PlaceAnalyticsSnapshot.empty;
+
+    var views = 0;
+    var opens = 0;
+    var favorites = 0;
+    var mapClicks = 0;
+    final trendByDay = <String, int>{};
+
+    for (final rawRow in rows) {
+      final row = Map<String, dynamic>.from(rawRow);
+      final kind = row['kind']?.toString() ?? '';
+      final count = (row['event_count'] as num?)?.toInt() ?? 0;
+      final dayKey = row['day']?.toString() ?? '';
+
+      switch (kind) {
+        case 'place_impression':
+        case 'recommendation_shown':
+          views += count;
+          break;
+        case 'place_open':
+        case 'recommendation_click':
+          opens += count;
+          trendByDay[dayKey] = (trendByDay[dayKey] ?? 0) + count;
+          break;
+        case 'place_favorite':
+          favorites += count;
+          break;
+        case 'place_map_open':
+          mapClicks += count;
+          break;
+      }
+    }
+
+    final trendPoints = List<int>.generate(14, (index) {
+      final day = DateTime.now().subtract(Duration(days: 13 - index));
+      final key =
+          '${day.year.toString().padLeft(4, '0')}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
+      return trendByDay[key] ?? 0;
+    });
+
+    return PlaceAnalyticsSnapshot(
+      views: views,
+      opens: opens,
+      favorites: favorites,
+      mapClicks: mapClicks,
+      trendPoints: trendPoints,
+    );
+  }
+
+  Future<List<PromotionCampaignSnapshot>> fetchPromotionCampaigns({
+    required String providerId,
+    String? placeId,
+  }) async {
+    await ensureSupabaseInitialized();
+    var query = _client
+        .from('promotional_campaigns')
+        .select(
+          'id,title,kind,status,place_id,starts_at,ends_at,impressions,clicks',
+        )
+        .eq('provider_id', providerId);
+
+    if (placeId != null && placeId.isNotEmpty) {
+      query = query.eq('place_id', placeId);
+    }
+
+    final rows =
+        await query.order('created_at', ascending: false).timeout(_networkTimeout);
+    return rows
+        .map((rawRow) {
+          final row = Map<String, dynamic>.from(rawRow);
+          return PromotionCampaignSnapshot(
+            id: row['id']?.toString() ?? '',
+            title: row['title']?.toString() ?? 'حملة بدون عنوان',
+            kind: row['kind']?.toString() ?? 'featured',
+            status: row['status']?.toString() ?? 'draft',
+            placeId: row['place_id']?.toString(),
+            startsAt: DateTime.tryParse(row['starts_at']?.toString() ?? ''),
+            endsAt: DateTime.tryParse(row['ends_at']?.toString() ?? ''),
+            impressions: (row['impressions'] as num?)?.toInt() ?? 0,
+            clicks: (row['clicks'] as num?)?.toInt() ?? 0,
+          );
+        })
+        .toList(growable: false);
   }
 
   Future<String?> _savePlaceGalleryImages({

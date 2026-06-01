@@ -125,7 +125,7 @@ class FilterCubit extends Cubit<FilterState> {
         activity: state.activity!,
         cityName: state.city!,
         budget: state.budget!,
-        forceRefresh: forceRefresh,
+        forceRefresh: true,
       );
 
       if (requestId != _requestCounter) {

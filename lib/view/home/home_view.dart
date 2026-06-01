@@ -136,6 +136,7 @@ class _HomeViewState extends State<HomeView> {
         cityName: _cityName,
         budget: _budget,
         activity: _activity,
+        forceRefresh: true,
       );
       if (places.isEmpty) {
         AppFeedback.info(AppCopy.emptyResultsBody);
