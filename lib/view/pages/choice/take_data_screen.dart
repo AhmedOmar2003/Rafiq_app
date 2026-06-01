@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -237,7 +236,6 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
 
       if (!_isMounted) return;
 
-      await _saveUserPlaceLocally();
       _showSnackBar(
         _isEditing ? 'تم تعديل المكان بنجاح' : AppCopy.providerAddedSuccess,
       );
@@ -252,26 +250,6 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
         setState(() => _isLoading = false);
       }
     }
-  }
-
-  Future<void> _saveUserPlaceLocally() async {
-    final prefs = await SharedPreferences.getInstance();
-    final userPlacesJson = prefs.getStringList('user_places') ?? [];
-    final newPlace = {
-      'name': _placeNameController.text.trim(),
-      'description': _descriptionController.text.trim(),
-      'priceRange': _selectedBudget ?? '',
-      'budget': _selectedBudget ?? '',
-      'rating': 5.0,
-      'placeAddress': _addressController.text.trim(),
-      'imageUrl': _images.isEmpty ? '' : _images.first.path,
-      'galleryImageUrls': _images.map((f) => f.path).toList(),
-      'activityName': _selectedPlaceType ?? '',
-      'cityName': _selectedCity ?? '',
-      'placeId': DateTime.now().millisecondsSinceEpoch,
-    };
-    userPlacesJson.add(jsonEncode(newPlace));
-    await prefs.setStringList('user_places', userPlacesJson);
   }
 
   void _returnToHub() {

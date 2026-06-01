@@ -388,8 +388,10 @@ class ApiService {
     final isSurpriseActivity = _isSurpriseActivity(normalizedActivity);
 
     var query = _client.from('places').select(
-          'id,provider_id,place_id,place_name,description,price_range,budget,rating,place_address,image_path,activity_name,city_name,created_at',
-        );
+          'id,provider_id,place_id,place_name,description,price_range,budget,rating,place_address,image_path,activity_name,city_name,created_at,status,deleted_at',
+        )
+      ..eq('status', 'approved')
+      ..isFilter('deleted_at', null);
     if (!isAnyCity) {
       query = query.eq('city_name', normalizedCity);
     }

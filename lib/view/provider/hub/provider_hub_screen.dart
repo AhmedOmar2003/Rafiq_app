@@ -75,7 +75,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
 
   Future<void> _bootstrapProviderState(String providerId) async {
     await SubscriptionService.instance.loadEntitlement(providerId);
-    await _loadProviderPlaces(providerId);
+    await _loadProviderPlaces(providerId, forceRefresh: true);
     _subscribeToPlacesRealtime(providerId);
   }
 
@@ -209,12 +209,17 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
     }
   }
 
-  Future<void> _loadProviderPlaces(String providerId) async {
+  Future<void> _loadProviderPlaces(
+    String providerId, {
+    bool forceRefresh = false,
+  }) async {
     if (!mounted) return;
     setState(() => _loadingPlaces = true);
     try {
-      final places =
-          await ApiService().fetchProviderPlaces(providerId: providerId);
+      final places = await ApiService().fetchProviderPlaces(
+        providerId: providerId,
+        forceRefresh: forceRefresh,
+      );
       if (!mounted) return;
       setState(() => _places = places);
     } catch (_) {
@@ -232,7 +237,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
       return;
     }
     await SubscriptionService.instance.loadEntitlement(pid, force: true);
-    await _loadProviderPlaces(pid);
+    await _loadProviderPlaces(pid, forceRefresh: true);
   }
 
   Future<void> _openAddPlace() async {
