@@ -237,7 +237,11 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
       if (!_isMounted) return;
 
       _showSnackBar(
-        _isEditing ? 'تم تعديل المكان بنجاح' : AppCopy.providerAddedSuccess,
+        _isEditing
+            ? (widget.editingPlace?.status == 'rejected'
+                ? AppCopy.providerResubmittedSuccess
+                : 'تم تعديل المكان بنجاح')
+            : AppCopy.providerAddedSuccess,
       );
       _returnToHub();
     } catch (e) {

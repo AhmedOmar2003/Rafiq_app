@@ -213,6 +213,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 ),
                 children: [
                   _Hero(currentTier: ent.tier, onboarding: widget.onboarding),
+                  gapV(AppSpacing.lg),
+                  _ReviewExpectationCard(onboarding: widget.onboarding),
                   gapV(AppSpacing.xl),
                   _BillingToggle(
                     yearly: _yearly,
@@ -320,6 +322,49 @@ class _Hero extends StatelessWidget {
           style: AppText.bodyLg.copyWith(color: AppColor.textSecondary),
         ),
       ],
+    );
+  }
+}
+
+class _ReviewExpectationCard extends StatelessWidget {
+  const _ReviewExpectationCard({required this.onboarding});
+
+  final bool onboarding;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg.w,
+        vertical: AppSpacing.md.h,
+      ),
+      decoration: BoxDecoration(
+        color: AppColor.warning.withValues(alpha: 0.08),
+        borderRadius: AppRadii.rLg,
+        border: Border.all(
+          color: AppColor.warning.withValues(alpha: 0.18),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            onboarding ? Icons.hourglass_top_rounded : Icons.info_outline_rounded,
+            color: AppColor.warning,
+            size: 20.sp,
+          ),
+          gapH(AppSpacing.sm),
+          Expanded(
+            child: Text(
+              AppCopy.subReviewWindowNotice,
+              style: AppText.bodySm.copyWith(
+                color: AppColor.textPrimary,
+                height: 1.45,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

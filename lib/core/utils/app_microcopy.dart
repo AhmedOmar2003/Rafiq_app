@@ -93,7 +93,10 @@ class AppCopy {
   static const providerFormTitle = 'بيانات مكانك';
   static const providerSessionExpired =
       'انتهت جلسة الدخول، سجّل تاني عشان نكمّل.';
-  static const providerAddedSuccess = 'اتضاف بنجاح ✅';
+  static const providerAddedSuccess =
+      'تم استلام المكان وهو الآن قيد المراجعة. الاعتماد عادة يتم خلال 24 ساعة.';
+  static const providerResubmittedSuccess =
+      'تم حفظ التعديلات وإرجاع المكان للمراجعة من جديد.';
   static const providerImagePickError =
       'حصلت مشكلة وانت بتختار الصورة، جرّب تاني.';
   static const providerSavedTitle = 'مبروك! بيانات مكانك اتسجلت';
@@ -286,6 +289,8 @@ class AppCopy {
   static const subOnboardingTitle = 'اختار خطتك';
   static const subOnboardingSubtitle =
       'كل خطة بتفتحلك مميزات أكتر لمكانك. ولا خطة هتتحدد إلا باختيارك أنت.';
+  static const subReviewWindowNotice =
+      'بعد اختيار الخطة وإضافة خدمتك أو مكانك، بيظهر في لوحتك بحالة مراجعة ومعاه عدّاد واضح. الاعتماد يتم عادة خلال 24 ساعة.';
   static const subOnboardingFreeCta = 'كمّل بالخطة المجانية';
   static const subOnboardingContinueCta = 'يلا نضيف مكانك';
   static const subSaveFailed =

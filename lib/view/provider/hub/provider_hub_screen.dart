@@ -1640,7 +1640,6 @@ class _PlaceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cover = place.imageUrl?.trim() ?? '';
     final model = SuggestionItemModel.fromPlace(place);
-    final awaitingModeration = _isAwaitingModeration(place.status);
     return Container(
       decoration: BoxDecoration(
         color: AppColor.surfaceCard,
@@ -1691,13 +1690,11 @@ class _PlaceCard extends StatelessWidget {
                   '${place.cityName} • ${place.activityName}',
                   style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
                 ),
-                if (awaitingModeration) ...[
-                  gapV(AppSpacing.sm),
-                  _PlaceModerationBanner(
-                    status: place.status,
-                    createdAt: place.createdAt,
-                  ),
-                ],
+                gapV(AppSpacing.sm),
+                _PlaceModerationBanner(
+                  status: place.status,
+                  createdAt: place.createdAt,
+                ),
                 gapV(AppSpacing.xs),
                 Text(
                   place.description,
@@ -1809,7 +1806,38 @@ class _PlaceModerationBannerState extends State<_PlaceModerationBanner> {
 
   @override
   Widget build(BuildContext context) {
-    final underReview = widget.status.trim().toLowerCase() == 'under_review';
+    final normalized = widget.status.trim().toLowerCase();
+    final underReview = normalized == 'under_review';
+    final awaitingReview = normalized == 'pending' || underReview;
+    final rejected = normalized == 'rejected';
+    final suspended = normalized == 'suspended';
+
+    final Color tone = rejected
+        ? AppColor.error
+        : suspended
+            ? AppColor.textSecondary
+            : awaitingReview
+                ? AppColor.warning
+                : AppColor.success;
+    final IconData icon = rejected
+        ? Icons.cancel_outlined
+        : suspended
+            ? Icons.pause_circle_outline_rounded
+            : awaitingReview
+                ? (underReview
+                    ? Icons.fact_check_outlined
+                    : Icons.hourglass_top_rounded)
+                : Icons.check_circle_outline_rounded;
+    final String label = rejected
+        ? 'تم الرفض'
+        : suspended
+            ? 'موقوف مؤقتًا'
+            : awaitingReview
+                ? (underReview ? 'قيد المراجعة الآن' : 'في انتظار المراجعة')
+                : 'تم الاعتماد';
+    final String? trailing =
+        awaitingReview ? _formatRemaining(widget.createdAt) : null;
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(
@@ -1817,40 +1845,51 @@ class _PlaceModerationBannerState extends State<_PlaceModerationBanner> {
         vertical: AppSpacing.sm.h,
       ),
       decoration: BoxDecoration(
-        color: AppColor.warning.withValues(alpha: 0.08),
+        color: tone.withValues(alpha: 0.08),
         borderRadius: AppRadii.rMd,
         border: Border.all(
-          color: AppColor.warning.withValues(alpha: 0.24),
+          color: tone.withValues(alpha: 0.24),
         ),
       ),
       child: Row(
         children: [
           Icon(
-            underReview ? Icons.fact_check_outlined : Icons.hourglass_top_rounded,
+            icon,
             size: 16.sp,
-            color: AppColor.warning,
+            color: tone,
           ),
           gapH(AppSpacing.xs),
           Expanded(
             child: Text(
-              underReview
-                  ? 'قيد المراجعة الآن'
-                  : 'في انتظار المراجعة خلال 24 ساعة',
+              label,
               style: AppText.labelSm.copyWith(
-                color: AppColor.warning,
+                color: tone,
                 fontWeight: FontWeight.w800,
               ),
             ),
           ),
-          gapH(AppSpacing.sm),
-          Text(
-            _formatRemaining(widget.createdAt),
-            style: AppText.labelSm.copyWith(
-              color: AppColor.warning,
-              fontWeight: FontWeight.w800,
-              fontFeatures: const [FontFeature.tabularFigures()],
+          if (trailing != null) ...[
+            gapH(AppSpacing.sm),
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm.w,
+                vertical: 3.h,
+              ),
+              decoration: BoxDecoration(
+                color: AppColor.surfaceCard,
+                borderRadius: AppRadii.rPill,
+                border: Border.all(color: tone.withValues(alpha: 0.28)),
+              ),
+              child: Text(
+                trailing,
+                style: AppText.labelSm.copyWith(
+                  color: tone,
+                  fontWeight: FontWeight.w800,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
