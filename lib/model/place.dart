@@ -41,7 +41,8 @@ class Place {
   final int placeId;
 
   /// Moderation state. Matches `public.moderation_status` SQL enum:
-  /// `pending` | `approved` | `rejected` | `suspended`. Used by the provider
+  /// `pending` | `under_review` | `approved` | `rejected` | `suspended`.
+  /// Used by the provider
   /// hub to render the 24-hour review countdown card while the admin
   /// hasn't acted yet.
   final String status;
@@ -69,7 +70,7 @@ class Place {
       required this.activityName,
       required this.cityName,
       required this.placeId,
-      this.status = 'approved',
+      this.status = 'pending',
       this.createdAt,
       this.rejectionReason,
       this.editAllowed = false});
@@ -122,14 +123,24 @@ class Place {
         }
         return int.tryParse(placeIdValue?.toString() ?? '0') ?? 0;
       }(),
-      status: (json['status'] as String?) ?? 'approved',
+      status: () {
+        final rawStatus = json['status'] ?? json['Status'];
+        final normalized = rawStatus?.toString().trim().toLowerCase();
+        if (normalized == null || normalized.isEmpty) {
+          return 'pending';
+        }
+        return normalized;
+      }(),
       createdAt: () {
-        final raw = json['created_at'] ?? json['createdAt'];
+        final raw = json['created_at'] ?? json['createdAt'] ?? json['CreatedAt'];
         if (raw == null) return null;
         return DateTime.tryParse(raw.toString());
       }(),
-      rejectionReason: json['rejection_reason'] as String?,
-      editAllowed: (json['edit_allowed'] as bool?) ?? false,
+      rejectionReason:
+          json['rejection_reason']?.toString() ?? json['RejectionReason']?.toString(),
+      editAllowed: (json['edit_allowed'] as bool?) ??
+          (json['editAllowed'] as bool?) ??
+          false,
     );
   }
 }
