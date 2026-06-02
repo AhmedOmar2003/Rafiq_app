@@ -55,6 +55,7 @@ class PromotionCampaignSnapshot {
   const PromotionCampaignSnapshot({
     required this.id,
     required this.title,
+    required this.body,
     required this.kind,
     required this.status,
     required this.placeId,
@@ -66,10 +67,17 @@ class PromotionCampaignSnapshot {
     required this.clicks,
     required this.rejectionReason,
     required this.createdAt,
+    required this.editRequestStatus,
+    required this.editRequestNote,
+    required this.editRequestResponse,
+    required this.editRequestRequestedAt,
+    required this.editRequestReviewedAt,
+    required this.editAllowed,
   });
 
   final String id;
   final String title;
+  final String? body;
   final String kind;
   final String status;
   final String? placeId;
@@ -81,6 +89,12 @@ class PromotionCampaignSnapshot {
   final int clicks;
   final String? rejectionReason;
   final DateTime? createdAt;
+  final String editRequestStatus;
+  final String? editRequestNote;
+  final String? editRequestResponse;
+  final DateTime? editRequestRequestedAt;
+  final DateTime? editRequestReviewedAt;
+  final bool editAllowed;
 }
 
 class PlacePromotionBanner {
@@ -670,13 +684,14 @@ class ApiService {
   Future<PlaceAnalyticsSnapshot> fetchPlaceAnalytics({
     required String providerId,
     String? placeId,
+    int days = 30,
   }) async {
     await ensureSupabaseInitialized();
     final rows = await _client.rpc<List<dynamic>>(
       'provider_place_analytics_live',
       params: {
         '_place_id': placeId,
-        '_days': 30,
+        '_days': days,
       },
     ).timeout(_networkTimeout);
     if (rows.isEmpty) return PlaceAnalyticsSnapshot.empty;
@@ -720,8 +735,9 @@ class ApiService {
       }
     }
 
-    final trendPoints = List<int>.generate(14, (index) {
-      final day = DateTime.now().subtract(Duration(days: 13 - index));
+    final safeDays = days < 1 ? 1 : days;
+    final trendPoints = List<int>.generate(safeDays, (index) {
+      final day = DateTime.now().subtract(Duration(days: safeDays - 1 - index));
       final key =
           '${day.year.toString().padLeft(4, '0')}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
       return trendByDay[key] ?? 0;
@@ -796,7 +812,7 @@ class ApiService {
     var query = _client
         .from('promotional_campaigns')
         .select(
-          'id,title,kind,status,place_id,image_path,cta_label,starts_at,ends_at,impressions,clicks,rejection_reason,created_at',
+          'id,title,body,kind,status,place_id,image_path,cta_label,starts_at,ends_at,impressions,clicks,rejection_reason,created_at,edit_request_status,edit_request_note,edit_request_response,edit_request_requested_at,edit_request_reviewed_at,edit_allowed',
         )
         .eq('provider_id', providerId);
 
@@ -812,6 +828,7 @@ class ApiService {
       return PromotionCampaignSnapshot(
         id: row['id']?.toString() ?? '',
         title: row['title']?.toString() ?? 'حملة بدون عنوان',
+        body: row['body']?.toString(),
         kind: row['kind']?.toString() ?? 'featured',
         status: row['status']?.toString() ?? 'draft',
         placeId: row['place_id']?.toString(),
@@ -823,6 +840,16 @@ class ApiService {
         clicks: (row['clicks'] as num?)?.toInt() ?? 0,
         rejectionReason: row['rejection_reason']?.toString(),
         createdAt: DateTime.tryParse(row['created_at']?.toString() ?? ''),
+        editRequestStatus: row['edit_request_status']?.toString() ?? 'none',
+        editRequestNote: row['edit_request_note']?.toString(),
+        editRequestResponse: row['edit_request_response']?.toString(),
+        editRequestRequestedAt: DateTime.tryParse(
+          row['edit_request_requested_at']?.toString() ?? '',
+        ),
+        editRequestReviewedAt: DateTime.tryParse(
+          row['edit_request_reviewed_at']?.toString() ?? '',
+        ),
+        editAllowed: row['edit_allowed'] as bool? ?? false,
       );
     }).toList(growable: false);
   }
@@ -916,6 +943,50 @@ class ApiService {
     await _client.rpc<dynamic>(
       'create_provider_campaign',
       params: {
+        '_place_id': placeId,
+        '_kind': kind,
+        '_title': title.trim(),
+        '_body': body?.trim().isNotEmpty == true ? body!.trim() : null,
+        '_image_path':
+            imagePath?.trim().isNotEmpty == true ? imagePath!.trim() : null,
+        '_cta_label':
+            ctaLabel?.trim().isNotEmpty == true ? ctaLabel!.trim() : null,
+        '_starts_at': startsAt.toUtc().toIso8601String(),
+        '_ends_at': endsAt.toUtc().toIso8601String(),
+      },
+    ).timeout(_networkTimeout);
+  }
+
+  Future<void> requestPromotionCampaignEdit({
+    required String campaignId,
+    String? note,
+  }) async {
+    await ensureSupabaseInitialized();
+    await _client.rpc<dynamic>(
+      'request_campaign_edit',
+      params: {
+        '_campaign_id': campaignId,
+        '_note': note?.trim().isNotEmpty == true ? note!.trim() : null,
+      },
+    ).timeout(_networkTimeout);
+  }
+
+  Future<void> updatePromotionCampaign({
+    required String campaignId,
+    required String placeId,
+    required String kind,
+    required String title,
+    String? body,
+    String? imagePath,
+    String? ctaLabel,
+    required DateTime startsAt,
+    required DateTime endsAt,
+  }) async {
+    await ensureSupabaseInitialized();
+    await _client.rpc<dynamic>(
+      'update_provider_campaign',
+      params: {
+        '_campaign_id': campaignId,
         '_place_id': placeId,
         '_kind': kind,
         '_title': title.trim(),

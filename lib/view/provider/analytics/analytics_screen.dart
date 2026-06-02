@@ -23,6 +23,7 @@ class AnalyticsScreen extends StatefulWidget {
 
 class _AnalyticsScreenState extends State<AnalyticsScreen> {
   String? _selectedPlaceId;
+  int _selectedRangeDays = 30;
   late Future<_AnalyticsScreenData> _future;
 
   @override
@@ -59,6 +60,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     final snapshot = await ApiService().fetchPlaceAnalytics(
       providerId: providerId,
       placeId: selectedPlaceId,
+      days: _selectedRangeDays,
     );
 
     return _AnalyticsScreenData(
@@ -111,17 +113,29 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     _Header(
                       tier: ent.tier,
                       selectedPlaceName: _selectedPlaceLabel(data.places),
+                      selectedRangeDays: _selectedRangeDays,
                     ),
                     gapV(AppSpacing.sm),
                     AppCard(
                       padding: EdgeInsets.all(AppSpacing.lg.w),
                       child: Text(
-                        AppCopy.anaRealDataHint,
+                        _rangeHint(_selectedRangeDays),
                         style: AppText.bodySm.copyWith(
                           color: AppColor.textSecondary,
                           height: 1.5,
                         ),
                       ),
+                    ),
+                    gapV(AppSpacing.lg),
+                    _RangeSelector(
+                      selectedDays: _selectedRangeDays,
+                      onChanged: (days) {
+                        if (days == _selectedRangeDays) return;
+                        setState(() {
+                          _selectedRangeDays = days;
+                          _future = _load();
+                        });
+                      },
                     ),
                     if (data.places.length > 1) ...[
                       gapV(AppSpacing.lg),
@@ -227,6 +241,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         );
     return place?.name ?? 'مكان محدد';
   }
+
+  String _rangeHint(int days) {
+    return 'الأرقام هنا من تفاعل حقيقي لمستخدمين مسجلين خلال آخر $days يوم: فتح صفحة المكان، حفظه في المفضلة، وفتح الاتجاهات.';
+  }
 }
 
 class _AnalyticsScreenData {
@@ -243,10 +261,12 @@ class _Header extends StatelessWidget {
   const _Header({
     required this.tier,
     required this.selectedPlaceName,
+    required this.selectedRangeDays,
   });
 
   final PlanTier tier;
   final String selectedPlaceName;
+  final int selectedRangeDays;
 
   @override
   Widget build(BuildContext context) {
@@ -257,7 +277,7 @@ class _Header extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                AppCopy.anaLast30Days,
+                'آخر $selectedRangeDays يوم',
                 style: AppText.bodyMd.copyWith(color: AppColor.textSecondary),
               ),
               gapV(AppSpacing.xs / 2),
@@ -275,6 +295,59 @@ class _Header extends StatelessWidget {
         ),
         PlanBadge(tier: tier, size: PlanBadgeSize.header),
       ],
+    );
+  }
+}
+
+class _RangeSelector extends StatelessWidget {
+  const _RangeSelector({
+    required this.selectedDays,
+    required this.onChanged,
+  });
+
+  final int selectedDays;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    const values = <int>[7, 14, 30, 90];
+    return SizedBox(
+      height: 40.h,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: values.length,
+        separatorBuilder: (_, __) => gapH(AppSpacing.xs),
+        itemBuilder: (_, index) {
+          final days = values[index];
+          final selected = days == selectedDays;
+          return InkWell(
+            onTap: () => onChanged(days),
+            borderRadius: AppRadii.rPill,
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.md.w,
+                vertical: AppSpacing.xs.h,
+              ),
+              decoration: BoxDecoration(
+                color: selected ? AppColor.primary : AppColor.surfaceCard,
+                borderRadius: AppRadii.rPill,
+                border: Border.all(
+                  color: selected ? AppColor.primary : AppColor.border,
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  'آخر $days يوم',
+                  style: AppText.labelSm.copyWith(
+                    color: selected ? AppColor.white : AppColor.textPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }
