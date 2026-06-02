@@ -19,19 +19,27 @@ import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import '../../auth/login/login_screen.dart';
 import '../../core/design/components/components.dart';
 import '../../core/utils/app_microcopy.dart';
+import '../../model/place.dart';
 import '../../models/subscription/plan.dart';
+import '../../models/suggestion_item_model/suggestion_item.dart';
 import '../../service/api_service.dart';
 import '../../service/auth_service.dart';
 import '../../service/profile_image_store.dart';
 import '../../service/subscription_service.dart';
 import '../../auth/post_auth_router.dart';
 import '../../service/user_role_store.dart';
+import '../details/details_page.dart';
 import '../provider/hub/provider_hub_screen.dart';
 import '../provider/subscription/subscription_screen.dart';
 import 'delete_account_sheet.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+  const ProfilePage({
+    super.key,
+    this.enableRemoteBootstrap = true,
+  });
+
+  final bool enableRemoteBootstrap;
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -45,20 +53,38 @@ class _ProfilePageState extends State<ProfilePage> {
   /// Number of places this provider owns. Decides the singular vs plural
   /// copy on the "return" banner.
   int _myPlacesCount = 0;
+  late Future<List<Place>> _favoritePlacesFuture;
 
   @override
   void initState() {
     super.initState();
-    _loadUserData();
+    if (widget.enableRemoteBootstrap) {
+      _loadUserData();
+    } else {
+      _loadCachedUserData();
+    }
     // ProfileImageStore is the single source of truth — just make sure it's
     // loaded. The hero image listens to its ValueNotifier so we never need
     // local setState plumbing for the picture.
-    ProfileImageStore.instance.ensureLoaded();
+    unawaited(ProfileImageStore.instance.ensureLoaded());
     // Make sure the role flag + subscription catalog are warm before the
     // user expects to see plan-specific copy in the row.
-    UserRoleStore.instance.ensureLoaded();
-    SubscriptionService.instance.loadCatalog();
-    _resolveProviderContext();
+    if (widget.enableRemoteBootstrap) {
+      unawaited(UserRoleStore.instance.ensureLoaded());
+      unawaited(() async {
+        try {
+          await SubscriptionService.instance.loadCatalog();
+        } catch (_) {
+          // Keep the profile page resilient when catalog/network bootstrap fails.
+        }
+      }());
+      _resolveProviderContext();
+      _favoritePlacesFuture = ApiService()
+          .fetchFavoritePlaces()
+          .catchError((_) => <Place>[]);
+    } else {
+      _favoritePlacesFuture = Future<List<Place>>.value(const <Place>[]);
+    }
   }
 
   /// Resolve provider id + place count in the background so the banner
@@ -104,6 +130,24 @@ class _ProfilePageState extends State<ProfilePage> {
       userName = prefs.getString('userName') ?? AppCopy.profileNameFallback;
       userEmail = prefs.getString('userEmail') ?? AppCopy.profileEmailFallback;
     });
+  }
+
+  Future<void> _loadCachedUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      userName = prefs.getString('userName') ?? AppCopy.profileNameFallback;
+      userEmail = prefs.getString('userEmail') ?? AppCopy.profileEmailFallback;
+    });
+  }
+
+  Future<void> _refreshFavoritePlaces() async {
+    final next = ApiService()
+        .fetchFavoritePlaces(forceRefresh: true)
+        .catchError((_) => <Place>[]);
+    if (!mounted) return;
+    setState(() => _favoritePlacesFuture = next);
+    await next;
   }
 
   Future<void> _pickImage() async {
@@ -488,6 +532,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   children: [
                     _buildRoleBanner(),
                     _buildInfoSection(),
+                    gapV(AppSpacing.xl),
+                    _buildFavoritesSection(),
                     gapV(AppSpacing.xxxl),
                     const _SupportSection(),
                     gapV(AppSpacing.xxxl),
@@ -677,6 +723,35 @@ class _ProfilePageState extends State<ProfilePage> {
               ],
             ],
           ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFavoritesSection() {
+    return FutureBuilder<List<Place>>(
+      future: _favoritePlacesFuture,
+      builder: (context, snapshot) {
+        final places = snapshot.data ?? const <Place>[];
+        final isLoading = snapshot.connectionState != ConnectionState.done;
+        return _FavoritePlacesSection(
+          isLoading: isLoading,
+          places: places,
+          onRefresh: _refreshFavoritePlaces,
+          onOpenPlace: (place) async {
+            final items = places.map(SuggestionItemModel.fromPlace).toList();
+            final current = SuggestionItemModel.fromPlace(place);
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => DetailsPage(
+                  model: current,
+                  suggestionItemList: items,
+                ),
+              ),
+            );
+            await _refreshFavoritePlaces();
+          },
         );
       },
     );
@@ -930,6 +1005,239 @@ class _SupportSection extends StatelessWidget {
   }
 }
 
+class _FavoritePlacesSection extends StatelessWidget {
+  const _FavoritePlacesSection({
+    required this.isLoading,
+    required this.places,
+    required this.onRefresh,
+    required this.onOpenPlace,
+  });
+
+  final bool isLoading;
+  final List<Place> places;
+  final Future<void> Function() onRefresh;
+  final ValueChanged<Place> onOpenPlace;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      padding: EdgeInsets.all(AppSpacing.lg.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 42.w,
+                height: 42.w,
+                decoration: BoxDecoration(
+                  color: AppColor.error.withValues(alpha: 0.10),
+                  borderRadius: AppRadii.rMd,
+                ),
+                child: Icon(
+                  Icons.favorite_rounded,
+                  color: AppColor.error,
+                  size: 22.sp,
+                ),
+              ),
+              gapH(AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      AppCopy.profileFavoritesTitle,
+                      style: AppText.titleMd.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    gapV(AppSpacing.xs / 2),
+                    Text(
+                      AppCopy.profileFavoritesBody,
+                      style: AppText.bodySm.copyWith(
+                        color: AppColor.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: isLoading ? null : onRefresh,
+                icon: Icon(
+                  Icons.refresh_rounded,
+                  color: AppColor.primary,
+                  size: 22.sp,
+                ),
+                tooltip: AppCopy.profileFavoritesRefresh,
+              ),
+            ],
+          ),
+          gapV(AppSpacing.lg),
+          if (isLoading)
+            SizedBox(
+              height: 96.h,
+              child: const Center(child: CircularProgressIndicator()),
+            )
+          else if (places.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(AppSpacing.lg.w),
+              decoration: BoxDecoration(
+                color: AppColor.surfaceVariant,
+                borderRadius: AppRadii.rLg,
+                border: Border.all(color: AppColor.border),
+              ),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.favorite_border_rounded,
+                    color: AppColor.textTertiary,
+                    size: 28.sp,
+                  ),
+                  gapV(AppSpacing.sm),
+                  Text(
+                    AppCopy.emptyFavoritesTitle,
+                    style: AppText.labelLg.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  gapV(AppSpacing.xs),
+                  Text(
+                    AppCopy.emptyFavoritesBody,
+                    style: AppText.bodySm.copyWith(
+                      color: AppColor.textSecondary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            )
+          else
+            Column(
+              children: [
+                for (var index = 0;
+                    index < places.length && index < 4;
+                    index++) ...[
+                  _FavoritePlaceRow(
+                    place: places[index],
+                    onTap: () => onOpenPlace(places[index]),
+                  ),
+                  if (index < places.length - 1 && index < 3)
+                    const Divider(height: 1, color: AppColor.border),
+                ],
+                if (places.length > 4) ...[
+                  gapV(AppSpacing.md),
+                  Text(
+                    AppCopy.profileFavoritesMore
+                        .replaceFirst('%n', '${places.length - 4}'),
+                    style: AppText.bodySm.copyWith(
+                      color: AppColor.textSecondary,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FavoritePlaceRow extends StatelessWidget {
+  const _FavoritePlaceRow({
+    required this.place,
+    required this.onTap,
+  });
+
+  final Place place;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: AppRadii.rLg,
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: AppSpacing.md.h),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: AppRadii.rMd,
+              child: SizedBox(
+                width: 68.w,
+                height: 68.w,
+                child:
+                    place.imageUrl != null && place.imageUrl!.trim().isNotEmpty
+                        ? Image.network(
+                            place.imageUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => _favoriteFallback(),
+                          )
+                        : _favoriteFallback(),
+              ),
+            ),
+            gapH(AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    place.name,
+                    style: AppText.labelLg.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  gapV(AppSpacing.xs / 2),
+                  Text(
+                    place.activityName,
+                    style: AppText.bodySm.copyWith(
+                      color: AppColor.primary,
+                    ),
+                  ),
+                  gapV(AppSpacing.xs / 2),
+                  Text(
+                    place.placeAddress,
+                    style: AppText.bodySm.copyWith(
+                      color: AppColor.textSecondary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: EdgeInsets.all(AppSpacing.sm.w),
+              decoration: const BoxDecoration(
+                color: AppColor.primary50,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.arrow_back_ios_new_rounded,
+                size: 14.sp,
+                color: AppColor.primary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _favoriteFallback() {
+    return Container(
+      color: AppColor.surfaceVariant,
+      child: Icon(
+        Icons.place_outlined,
+        color: AppColor.textTertiary,
+        size: 24.sp,
+      ),
+    );
+  }
+}
+
 class _GroupLabel extends StatelessWidget {
   const _GroupLabel({required this.text});
   final String text;
@@ -1007,10 +1315,14 @@ class _SupportRow extends StatelessWidget {
             ),
             if (trailing != null) ...[
               gapH(AppSpacing.sm),
-              Text(
-                trailing!,
-                style: AppText.caption.copyWith(
-                  color: AppColor.textTertiary,
+              Flexible(
+                child: Text(
+                  trailing!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppText.caption.copyWith(
+                    color: AppColor.textTertiary,
+                  ),
                 ),
               ),
               gapH(AppSpacing.xs),

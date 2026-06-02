@@ -423,11 +423,11 @@ class AuthService {
 
   /// Permanently deletes the caller's account.
   ///
-  /// Calls the SECURITY DEFINER `delete_my_account(reason)` RPC which:
-  ///   1. Cancels any active subscription on the provider.
-  ///   2. Deletes the provider row (cascades to places, reviews, etc.).
-  ///   3. Deletes the auth.users row.
-  ///   4. Appends an audit entry in `account_deletions`.
+  /// Preferred path:
+  ///   1. Invoke the `delete-account` Edge Function so storage artefacts are
+  ///      removed before the account disappears from the app.
+  ///   2. Fall back to the hardened `delete_my_account(reason)` RPC if the
+  ///      function is unavailable in the current environment.
   ///
   /// After the RPC returns, the Supabase session is invalid; this method
   /// also issues a local `signOut()` so the client cache + prefs are
@@ -436,15 +436,34 @@ class AuthService {
     await ensureSupabaseInitialized();
     Map<String, dynamic> summary = const {};
     try {
-      final raw = await _client.rpc(
-        'delete_my_account',
-        params: {'_reason': reason},
+      final functionResponse = await _client.functions.invoke(
+        'delete-account',
+        body: {'reason': reason},
       );
-      if (raw is Map) {
-        summary = Map<String, dynamic>.from(raw);
+      final functionData = functionResponse.data;
+      if (functionData is Map) {
+        summary = Map<String, dynamic>.from(functionData);
+      } else {
+        final raw = await _client.rpc(
+          'delete_my_account',
+          params: {'_reason': reason},
+        );
+        if (raw is Map) {
+          summary = Map<String, dynamic>.from(raw);
+        }
       }
     } catch (e) {
-      throw Exception(_friendlyAuthError(e));
+      try {
+        final raw = await _client.rpc(
+          'delete_my_account',
+          params: {'_reason': reason},
+        );
+        if (raw is Map) {
+          summary = Map<String, dynamic>.from(raw);
+        }
+      } catch (_) {
+        throw Exception(_friendlyAuthError(e));
+      }
     }
     // Local cleanup runs even if the auth row was already invalidated.
     try {
@@ -586,21 +605,17 @@ class AuthService {
     final resolvedEmail =
         profile?['email']?.toString().trim().isNotEmpty == true
             ? profile!['email'].toString().trim()
-            : (user.email?.trim().isNotEmpty == true
-                ? user.email!.trim()
-                : '');
-    final resolvedName =
-        profile?['full_name']?.toString().trim().isNotEmpty == true
-            ? profile!['full_name'].toString().trim()
-            : (user.userMetadata?['full_name']?.toString().trim().isNotEmpty ==
-                    true
-                ? user.userMetadata!['full_name'].toString().trim()
-                : (user.userMetadata?['name']?.toString().trim().isNotEmpty ==
-                        true
-                    ? user.userMetadata!['name'].toString().trim()
-                    : (resolvedEmail.isNotEmpty
-                        ? resolvedEmail.split('@').first
-                        : 'مستخدم')));
+            : (user.email?.trim().isNotEmpty == true ? user.email!.trim() : '');
+    final resolvedName = profile?['full_name']?.toString().trim().isNotEmpty ==
+            true
+        ? profile!['full_name'].toString().trim()
+        : (user.userMetadata?['full_name']?.toString().trim().isNotEmpty == true
+            ? user.userMetadata!['full_name'].toString().trim()
+            : (user.userMetadata?['name']?.toString().trim().isNotEmpty == true
+                ? user.userMetadata!['name'].toString().trim()
+                : (resolvedEmail.isNotEmpty
+                    ? resolvedEmail.split('@').first
+                    : 'مستخدم')));
 
     await _cacheUserSession(
       id: user.id,

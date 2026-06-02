@@ -1,0 +1,1304 @@
+RAFIQ Architecture Audit
+Date: 2026-06-02
+Auditor: Codex
+
+Purpose
+This document is a full architecture and launch-readiness audit for the RAFIQ
+project in its current repository state. The goal is not to change code, but
+to describe the actual system as-built:
+
+- what is structurally solid
+- what is functionally working
+- what is still incomplete
+- what is risky before production launch
+- what should be done next, in priority order
+
+This audit is intentionally direct. It does not assume that a feature is
+"production ready" just because a UI exists or because a flow passes locally.
+
+===============================================================================
+1. Methodology
+===============================================================================
+
+What was reviewed
+- Flutter mobile app under /lib
+- Supabase migrations, SQL functions, RLS, storage policies, and Edge Functions
+- Admin dashboard under /admin-dashboard-rafiq-app
+- Existing operational docs under /docs
+- Current smoke-test utility under /scripts
+
+What was validated directly
+- Source-level review of the main app flows:
+  - register
+  - login
+  - role choice
+  - regular user browsing
+  - place details
+  - profile
+  - subscriptions
+  - provider hub
+  - place submission
+  - promotions / campaigns
+- Source-level review of the admin flows:
+  - login
+  - dashboard access protection
+  - users
+  - providers
+  - places moderation
+  - reports
+  - appeals
+  - campaigns moderation
+- Source-level review of Supabase schema and migrations
+- Review of current operational documentation
+
+Important limitations
+- This is still primarily a code and architecture audit, not a full live
+  penetration test.
+- The current repository does not contain a fully separated, proven staging
+  environment configuration.
+- Some operational claims in docs cannot be fully verified from code alone,
+  especially billing plan status, backup configuration inside the Supabase
+  dashboard, and live Sentry wiring.
+
+===============================================================================
+2. Executive Summary
+===============================================================================
+
+Current judgment:
+READY FOR BETA, NOT FULLY READY FOR HARD PRODUCTION
+
+Why this is the verdict
+- The system is much more coherent than before.
+- Supabase is now the real backend center of gravity.
+- The provider flow, real analytics flow, and campaign moderation flow are
+  significantly more real than a mock/demo UI.
+- Admin moderation surfaces exist and are wired to real data.
+
+However, several launch-critical architectural gaps remain:
+- subscription and billing are still demo-driven, not true payment lifecycle
+- Sentry is documented but not active in the app runtime
+- analytics integrity is not fully hardened against abuse
+- admin schema source-of-truth is split between migrations and a manual SQL file
+- staging and automated integration coverage are still insufficient
+- storage cleanup is incomplete across all deletion paths
+
+Bottom line
+- The product is not "fake" anymore.
+- It is functional and increasingly credible.
+- But it is not yet a fully hardened production system for paid growth at scale.
+
+===============================================================================
+3. System Architecture Overview
+===============================================================================
+
+3.1 Main system components
+
+1. Flutter Mobile App
+- End-user application for regular users and providers
+- Handles auth, role selection, place browsing, place details, favorites,
+  provider flow, subscriptions UI, provider hub, analytics surfaces, and
+  campaign creation UI
+
+2. Supabase Backend
+- Primary operational source of truth for:
+  - auth
+  - profiles
+  - roles
+  - providers
+  - places
+  - subscriptions
+  - reviews
+  - favorites
+  - moderation reports
+  - appeals
+  - analytics events
+  - promotional campaigns
+
+3. Admin Dashboard
+- Next.js server-rendered back office
+- Protected behind Supabase auth + admin role checks
+- Uses service-role server client for moderation and admin operations
+
+4. Provider Hub
+- Provider-facing dashboard inside the Flutter app
+- Loads provider entitlement, provider places, live analytics, and campaign
+  status
+
+5. Supabase Storage
+- Buckets for place images, provider documents, banners, and campaign assets
+- Bucket RLS is defined in SQL migrations
+
+6. Analytics
+- Raw event ingestion via analytics_events
+- Historical aggregates via analytics_daily_rollups
+- Live provider reads via provider_place_analytics_live RPC
+
+7. Campaigns / Ads
+- Provider creates place-linked campaigns
+- Campaign is held in pending_review
+- Admin dashboard approves or rejects
+- Only active approved campaigns appear to end users
+
+8. Authentication
+- Supabase Auth is the active auth backbone
+- Account mode and role state are reconciled against backend state
+
+3.2 How components communicate
+
+Flutter -> Supabase
+- supabase_flutter client
+- direct table reads/writes
+- RPC calls for guarded business actions
+- Edge Function invocation for Gemini chat
+
+Admin Dashboard -> Supabase
+- SSR client for session/user
+- service-role client for admin operations and broad reads
+
+Supabase -> Flutter/Admin
+- direct PostgREST reads
+- RLS-governed visibility
+- real-time place updates in Provider Hub
+
+3.3 Primary source of truth
+
+The primary source of truth is now Supabase for most business entities.
+
+This is true for:
+- auth state
+- profile/account mode
+- provider rows
+- places
+- subscriptions rows
+- favorites
+- analytics events
+- reports
+- appeals
+- promotional campaigns
+
+However, there are still secondary local state layers:
+- SharedPreferences for role state caching
+- SharedPreferences for auth identity caching
+- SharedPreferences for demo entitlement caching
+- local device profile image storage
+
+This means the architecture is improved, but not yet fully single-source.
+
+3.4 Is there more than one backend truth?
+
+Mostly no for current active business flows.
+
+Important nuance:
+- I did not find active PHP endpoint calls in the current production flows
+  reviewed here.
+- This is a major improvement over older architecture.
+- But there are still legacy or dead remnants:
+  - old networking packages
+  - legacy helper code
+  - stale assumptions in docs
+
+So the current state is:
+- active truth = Supabase
+- residual technical debt = dead legacy artifacts, not active core flows
+
+===============================================================================
+4. Flutter App Audit
+===============================================================================
+
+4.1 App bootstrap
+
+Files
+- /D:/rafiq_master/lib/main.dart
+- /D:/rafiq_master/lib/rafiq_app.dart
+- /D:/rafiq_master/lib/auth/auth_gate.dart
+- /D:/rafiq_master/lib/auth/post_auth_router.dart
+
+Current behavior
+- App pre-warms local caches and services on startup
+- Supabase init is triggered during splash
+- Subscription catalog is preloaded
+- role store is loaded early
+- analytics tracker attaches on app start
+
+Strengths
+- Better cold-start preparation than a naive lazy-only bootstrap
+- AuthGate no longer routes users using a brittle timeout fallback
+- Post-auth routing refreshes role state from backend before choosing surface
+
+Weaknesses
+- Sentry is still disabled in runtime
+- SharedPreferences remains deeply involved in bootstrap behavior
+- Some startup assumptions are still optimistic about local state integrity
+
+4.2 Login and registration screens
+
+Files
+- /D:/rafiq_master/lib/auth/login/login_screen.dart
+- /D:/rafiq_master/lib/auth/register/register_screen.dart
+- /D:/rafiq_master/lib/service/auth_service.dart
+
+Role
+- Sign up
+- Sign in
+- Google sign-in
+- OTP confirmation
+- password reset
+
+Backend wiring
+- Uses Supabase Auth correctly for primary auth flows
+- Uses lookup_auth_email_state RPC to improve pre-login messaging
+
+Strengths
+- Friendly Arabic auth error translation exists
+- Email verification and password reset are Supabase-native
+- Post-auth route selection is centralized
+
+Weaknesses
+- Gmail-only rule is hard-coded in AuthService
+- This is a major product restriction unless explicitly intended
+- Error messaging is user-friendly, but some messages still embed operational
+  instructions intended for developers/admins
+
+Verdict
+- Functionally coherent
+- Product-policy-constrained
+- Not globally launch-friendly if non-Gmail signups are expected
+
+4.3 Choice screen
+
+Files
+- /D:/rafiq_master/lib/view/pages/choice/choice_screen.dart
+- /D:/rafiq_master/lib/service/user_role_store.dart
+
+Role
+- Decides whether the user continues as a regular user or starts provider flow
+
+Strengths
+- Current flow no longer auto-creates provider mode before plan confirmation
+- Backend account mode is now considered, not just local flags
+
+Weaknesses
+- Local state still seeds backend in legacy-null cases
+- This is practical, but it means some migration-era complexity still lives
+  in runtime code
+
+4.4 Home / regular user surface
+
+Files
+- /D:/rafiq_master/lib/view/home/home_view.dart
+- /D:/rafiq_master/lib/service/api_service.dart
+
+Role
+- Multi-step place discovery
+- Fetches public approved places
+
+Strengths
+- Public places query is filtered defensively to approved + not deleted
+- Caching exists
+- Force-refresh path exists to avoid stale moderation visibility
+
+Weaknesses
+- No pagination in the current mobile place browsing flow
+- Default page size is 80; workable now, but not future-proof for large city
+  catalogs
+
+4.5 Place details screen
+
+Files
+- /D:/rafiq_master/lib/view/details/details_page.dart
+- /D:/rafiq_master/lib/view/details/widget/details_item.dart
+
+Role
+- Displays place details, gallery, last review, related places, report form,
+  favorite action, map open, and promotion banners
+
+Backend wiring
+- fetchPlaceGalleryImages
+- fetchLastReview
+- isPlaceFavorited
+- setPlaceFavorite
+- fetchActivePlacePromotions
+- recordCampaignMetric
+- analytics tracking on open/map/favorite/unfavorite
+
+Strengths
+- This page is now meaningfully real
+- User interactions are tracked and visible upstream
+- Promotions are place-specific and gated by moderation state
+
+Weaknesses
+- No dedicated favorites page exists elsewhere in the app yet
+- Some interaction types exist in the analytics enum but are not fully exposed
+  as user-visible buttons yet, such as phone/website/share in a structured way
+
+4.6 Favorites
+
+Current state
+- The backend table and app-side toggle now work
+- But there is no dedicated favorites surface/page in the reviewed app flow
+
+Implication
+- Favorites exist as a stored signal and provider analytics input
+- But the user-facing retrieval experience is incomplete
+
+Verdict
+- Feature is partially productized, not fully surfaced
+
+4.7 Profile page
+
+File
+- /D:/rafiq_master/lib/view/pages/profile_page.dart
+
+Role
+- Displays identity, plan badge, provider/regular role state, support links,
+  password change, logout, delete account, profile image
+
+Strengths
+- Role banner logic is much stronger than before
+- Switching back to regular user preserves provider history
+- Delete account path uses backend RPC
+
+Weaknesses
+- UI still falls back to SharedPreferences for name/email when live profile
+  fetch fails
+- Profile images are device-local, not synchronized through Supabase Storage
+- The project has an avatars bucket, but the app is not currently wired to it
+
+Verdict
+- Good UX surface
+- Not yet fully backend-canonical for identity/avatar
+
+4.8 Subscription screen
+
+Files
+- /D:/rafiq_master/lib/view/provider/subscription/subscription_screen.dart
+- /D:/rafiq_master/lib/service/subscription_service.dart
+- /D:/rafiq_master/lib/models/subscription/plan.dart
+
+Role
+- Shows plan tiers, places limits, campaign limits, moderation timelines, and
+  current entitlement
+
+Strengths
+- No more forced free-plan preselection during onboarding
+- Plan value is explained much better than before
+- Campaign limits are now modeled explicitly
+
+Weaknesses
+- Billing is still not real
+- startCheckout and cancelAtPeriodEnd call RPC names that are not present in
+  migrations
+- The live behavior is still demo-subscription driven through
+  apply_demo_subscription
+
+Verdict
+- UX is strong
+- architecture is still transitional
+
+4.9 Provider Hub
+
+File
+- /D:/rafiq_master/lib/view/provider/hub/provider_hub_screen.dart
+
+Role
+- Central provider dashboard for:
+  - current entitlement
+  - provider places
+  - 24-hour moderation countdown
+  - rejected state handling
+  - live status updates
+  - feature entry points
+
+Strengths
+- Realtime place moderation updates are wired
+- 24-hour review countdown is visible on pending places
+- Provider sees true moderation state per place
+
+Weaknesses
+- Still depends on some SharedPreferences fallback for provider ID recovery
+- Large widget surface with a lot of business logic inside one file
+
+Verdict
+- Product-valuable and functional
+- should eventually be split into smaller state-focused modules
+
+4.10 Add Place
+
+Files
+- /D:/rafiq_master/lib/view/pages/choice/take_data_screen.dart
+- /D:/rafiq_master/lib/service/api_service.dart
+
+Role
+- Provider submits a place
+
+Backend wiring
+- direct insert into public.places through Supabase client
+- gallery image upload to place-images storage
+
+Strengths
+- Place remains pending until moderation
+- Gallery and cover image flow are real
+
+Weaknesses
+- No provider-document/KYC collection in the current app flow
+- This means the original provider-documents moderation design exists in the
+  backend, but is not fully exercised in the mobile onboarding UX
+
+4.11 Promotions / Ads screen
+
+Files
+- /D:/rafiq_master/lib/view/provider/promotions/promotions_screen.dart
+- /D:/rafiq_master/lib/service/api_service.dart
+
+Role
+- Provider creates and reviews campaigns tied to a specific approved place
+
+Strengths
+- Real campaign creation flow exists
+- Plan-based max campaign limits exist
+- Rejection reason is shown back to provider
+- Review target of 6 hours is reflected in UX copy
+
+Weaknesses
+- Campaign availability is plan-bound and place-bound, which is good, but still
+  ultimately sits on demo subscription truth rather than payment-backed truth
+
+===============================================================================
+5. Supabase Backend Audit
+===============================================================================
+
+5.1 Data model organization
+
+The backend is reasonably well structured and covers the major business domains:
+- profiles
+- user_roles
+- providers
+- provider_documents
+- provider_requests
+- places
+- place_images
+- reviews
+- favorites
+- provider_subscriptions
+- subscription_plans
+- analytics_events
+- analytics_daily_rollups
+- promotional_campaigns
+- moderation_reports
+- moderation_history
+- admin_logs
+- place_appeals
+- login_attempts
+- rate_limit_buckets
+
+This is a serious schema, not a toy schema.
+
+5.2 Data relationships
+
+General assessment
+- Relationships are mostly sensible
+- Foreign keys are used consistently
+- Soft-delete and moderation semantics are present where needed
+
+Strong areas
+- provider -> places
+- place -> place_images
+- place -> reviews
+- provider -> subscriptions
+- provider/place -> campaigns
+- reports and appeals have clear review surfaces
+
+Potentially confusing areas
+- multiple moderation-related tables and trigger paths
+- role ownership split between user_roles and admin_roles
+- admin_roles is not represented in the main migration chain
+
+5.3 Source of truth concern: admin_roles drift
+
+Important finding
+- The dashboard depends on public.admin_roles
+- But that table is not created inside the main Supabase migration history
+- It exists in:
+  /D:/rafiq_master/admin-dashboard-rafiq-app/supabase_admin_setup.sql
+
+Why this matters
+- The repository has two schema truth sources:
+  1. supabase/migrations/
+  2. admin-dashboard-rafiq-app/supabase_admin_setup.sql
+
+This is an architectural smell.
+
+Impact
+- New environments can drift
+- A fresh database restored only from migrations may miss admin_roles entirely
+- Security and access assumptions become setup-script dependent
+
+Severity
+- High
+
+5.4 RLS posture
+
+General assessment
+- The project has a mature RLS mindset
+- Key tables are protected
+- Public read rules are intentionally narrow
+- role escalation is mostly prevented through user_roles design
+
+Strong areas
+- profiles not public
+- user_roles write-blocked for users
+- public places limited to approved + not deleted
+- reviews limited to approved places
+- provider document access is private and ownership-aware
+- campaign creation is server-validated through SECURITY DEFINER RPC
+
+Weak areas
+- Some docs are stale and still describe favorites as disabled, while 0041
+  re-enabled them
+- admin_roles security model is outside main migrations, so the auditability
+  of that surface is weaker than the rest of the backend
+
+5.5 RPC Functions
+
+Important active RPCs
+- become_provider
+- apply_demo_subscription
+- delete_my_account
+- lookup_auth_email_state
+- provider_place_analytics_live
+- create_provider_campaign
+- record_campaign_metric
+- insert_event_batch
+- submit_abuse_report
+
+Good use cases
+- provider creation
+- account deletion
+- live analytics aggregation
+- guarded campaign creation
+- abuse reports
+
+Concerning gaps
+- SubscriptionService calls:
+  - start_subscription_checkout
+  - cancel_subscription_at_period_end
+  but these RPCs do not appear in the migration history
+
+This means the codebase exposes a billing-ready interface that the backend does
+not yet fully implement.
+
+5.6 Edge Functions
+
+Present functions
+- approve-place
+- reject-place
+- approve-provider
+- reject-provider
+- suspend-provider
+- assign-role
+- sign-document-url
+- gemini-chat
+
+Strengths
+- Edge Functions use shared auth helper
+- requireAuth re-validates caller role via database, not JWT claims
+- Gemini moved server-side, which is a meaningful security improvement
+
+Weaknesses
+- The moderation flow is split between:
+  - Edge Functions
+  - direct dashboard service-role writes
+  - trigger-based audit effects
+
+This is workable, but not yet as consolidated as it could be.
+
+5.7 Storage buckets
+
+Observed buckets from migrations
+- avatars
+- place-images
+- provider-documents
+- banners
+- campaign-assets
+
+Strengths
+- Storage path ownership checks are well designed
+- provider-documents are private
+- campaign-assets support provider/place hierarchy
+
+Weaknesses
+- avatars bucket exists, but the app profile image flow is still local-device
+  based, not backend-based
+- cleanup is not unified across all delete paths and all buckets
+
+5.8 Migrations quality
+
+Strengths
+- Rich migration history
+- Good evidence of iterative hardening:
+  - account mode
+  - appeals
+  - moderation RPCs
+  - growth indexes
+  - analytics
+  - campaigns
+
+Weaknesses
+- admin_roles table is not part of the authoritative migration chain
+- some older docs describe earlier states that no longer match current SQL
+
+===============================================================================
+6. Service and API Layer Audit
+===============================================================================
+
+6.1 ApiService
+
+File
+- /D:/rafiq_master/lib/service/api_service.dart
+
+Role
+- Main application gateway into Supabase tables and RPCs
+
+Strengths
+- Centralizes most app/backend interaction
+- Includes public place fetch, provider place fetch, reviews, favorites,
+  account mode, promotions, storage uploads, analytics reads
+- Defensive approved-place filtering exists on public place fetch
+
+Weaknesses
+- This class is now very large and owns many unrelated domains
+- It mixes:
+  - auth identity persistence
+  - place data
+  - reviews
+  - provider resolution
+  - promotions
+  - favorites
+  - storage upload
+  - analytics summaries
+
+Recommendation
+- Split by bounded context:
+  - PlacesRepository
+  - ReviewsRepository
+  - ProviderRepository
+  - CampaignRepository
+  - AccountModeRepository
+
+6.2 AuthService
+
+Strengths
+- Supabase-native
+- friendly localized errors
+- proper profile fetch after auth
+- delete account uses backend RPC
+
+Weaknesses
+- Gmail-only restriction
+- still writes local cached identity aggressively
+
+6.3 UserRoleStore
+
+Strengths
+- Backend account_mode is now the cross-device truth
+- local state is clearly documented as cache/mirror
+
+Weaknesses
+- still complex because it carries migration-era reconciliation logic
+
+6.4 SubscriptionService
+
+Strengths
+- Clean notifier-based API
+- entitlement cache design is reasonable
+
+Weaknesses
+- still explicitly labeled demo in core logic
+- persistent demo tier keys remain in SharedPreferences
+- backend billing RPCs referenced by code are missing from SQL history
+
+Severity
+- Critical for true paid launch
+
+6.5 AnalyticsTracker
+
+Strengths
+- batched insert_event_batch ingestion
+- bounded queue
+- lifecycle-aware flush
+- client-side throttling by event kind
+
+Weaknesses
+- client-side throttling is not enough for trustable analytics
+- a malicious client can still bypass it completely
+
+6.6 AI Chat service
+
+Files
+- /D:/rafiq_master/lib/service/ai_chat_service.dart
+- /D:/rafiq_master/supabase/functions/gemini-chat/index.ts
+
+Strengths
+- Gemini key is server-side now
+- rate limiting exists in Edge Function
+- user-facing errors are friendlier
+
+Remaining concerns
+- package dependencies dart_openai and google_generative_ai still remain in
+  pubspec even though chat routing is server-side now
+- they look like dead dependencies and should be removed
+
+6.7 Legacy API/PHP usage
+
+Current finding
+- I did not find active PHP endpoint usage in the reviewed production app flows
+- This is a meaningful improvement
+
+Residual debt
+- old/dead packages still exist
+- old helper code remains in the repo
+- docs and comments still carry transitional language in some places
+
+Verdict
+- Active backend contract is now primarily Supabase
+- cleanup debt still exists
+
+===============================================================================
+7. Admin Dashboard Audit
+===============================================================================
+
+7.1 Authentication and authorization
+
+Files
+- /D:/rafiq_master/admin-dashboard-rafiq-app/src/app/login/actions.ts
+- /D:/rafiq_master/admin-dashboard-rafiq-app/src/proxy.ts
+- /D:/rafiq_master/admin-dashboard-rafiq-app/src/lib/auth/role.ts
+- /D:/rafiq_master/admin-dashboard-rafiq-app/src/lib/supabase/admin.ts
+
+Strengths
+- Dashboard routes are protected
+- Non-admin users are redirected away
+- login attempts are rate-limited using backend RPC
+- super_admin-only sections are defined explicitly
+
+Weaknesses
+- Some server actions rely mainly on route-level protection and service-role
+  execution, rather than repeating per-action role checks
+- This is common in internal apps, but weaker than defense-in-depth
+
+7.2 Overview page
+
+Strengths
+- Useful KPIs and aggregations
+- user listing helper paginates through auth users correctly
+
+Weaknesses
+- overview still performs large in-memory aggregation
+- some queries use broad limits (1000, 2000) rather than true pagination
+- acceptable now, but not ideal for large scale
+
+7.3 Users page
+
+Strengths
+- delete protection exists
+- cannot delete current admin
+- cannot delete last super_admin
+- dashboard hard delete now includes storage cleanup for place-images and
+  provider-documents
+
+Weaknesses
+- hard delete cleanup does not include campaign-assets
+- self-delete path does not share the same cleanup service
+- schema dependency on admin_roles remains outside main migrations
+
+7.4 Providers page
+
+Strengths
+- provider status semantics improved
+- counts and active-subscription relationships are more truthful than before
+
+Weaknesses
+- dashboard provider state still depends on interpreting several tables rather
+  than a single pre-shaped backend view
+
+7.5 Places moderation
+
+Strengths
+- status moderation works from dashboard
+- provider-facing state reflects moderation outcomes
+- analytics and campaign counts are visible on places page
+
+Weaknesses
+- places page uses broad queries and in-memory aggregation
+- no real pagination for large moderation queues
+
+7.6 Reports
+
+Strengths
+- reports are visible
+- reporter identity is enriched
+- status lifecycle exists: open/reviewed/actioned/dismissed
+
+Weaknesses
+- page currently limits to 500 rows
+- acceptable for now, but not durable for larger production history
+
+7.7 Appeals
+
+Strengths
+- place appeals surface exists
+- place/provider context is shown
+- workflow semantics are visible
+
+Weaknesses
+- similar pagination concerns apply
+
+7.8 Campaigns moderation
+
+Strengths
+- campaign review surface exists
+- admin can approve or reject with reason
+- provider/place context is shown
+- performance counters are shown
+
+Weaknesses
+- currently limited to 250 campaigns on page
+- no explicit SLA automation for "6 hours max"; it is shown as target copy,
+  not enforced by job/escalation system
+
+===============================================================================
+8. Provider Hub Audit
+===============================================================================
+
+General assessment
+- The provider experience is now one of the strongest parts of the product
+
+What is good
+- provider mode is explicit
+- plan selection is explicit
+- add-place flow is real
+- moderation countdown exists
+- place statuses are visible
+- live analytics are real enough to be meaningful
+- campaigns are place-bound and review-gated
+- switching back to regular-user mode preserves provider history
+
+Main issues
+- billing truth is still demo-based
+- provider document/KYC flow exists in backend but is not surfaced in the
+  mobile product flow
+- place and campaign limits rely on backend checks plus current entitlement
+  view, which is good, but the commercial layer underneath is still demo
+
+Verdict
+- Strong experience for a beta
+- not yet commercially final
+
+===============================================================================
+9. Authentication Audit
+===============================================================================
+
+What works
+- Supabase Auth is the active auth system
+- login, signup, OTP verification, password reset, Google sign-in exist
+- role routing is much cleaner than before
+- account mode is persisted in backend
+
+What is risky
+- Gmail-only restriction
+- local auth identity cache is still broad
+- operations and product constraints around email confirmation are not fully
+  abstracted from user-facing messages
+
+Overall
+- Structurally sound
+- product-policy constrained
+
+===============================================================================
+10. Performance and Scalability Audit
+===============================================================================
+
+10.1 Current performance posture
+
+Positive signals
+- image disk cache warmup exists
+- Supabase init is pre-warmed
+- analytics batching exists
+- provider live analytics read is scoped and place-aware
+- indexes have been added in several growth-focused migrations
+
+10.2 Likely bottlenecks
+
+1. Admin dashboard list pages
+- places page:
+  - broad row fetch
+  - analytics events up to 5000 rows
+  - campaign aggregation in memory
+- reports page:
+  - 500-row hard cap
+- campaigns page:
+  - 250-row hard cap
+
+2. Public place browsing
+- fixed-size fetch (80)
+- no proper pagination
+
+3. Raw analytics trust and growth
+- live analytics RPC aggregates directly from analytics_events
+- this is useful now, but event volume growth will eventually need stronger
+  rollup/summary strategy for hot dashboards
+
+4. Storage assets
+- place and campaign images are public URLs with no visible image resizing or
+  transformation strategy in the reviewed flow
+
+10.3 Indexing
+
+Good
+- explicit scale-focused migrations exist
+- analytics, subscriptions, roles, places, and appeals have targeted indexes
+
+Needs more later
+- dashboard-specific filtered indexes once row volume rises
+- possible materialized views for admin-heavy summaries
+
+10.4 Is the system currently fast?
+
+Answer
+- likely yes for current low-to-medium scale
+- not yet proven for large-scale launch
+
+===============================================================================
+11. Storage and File Audit
+===============================================================================
+
+11.1 Current organization
+
+Good
+- bucket structure is sensible
+- ownership path conventions are sensible
+- provider-documents are private
+- campaign-assets are place/provider hierarchical
+
+11.2 Orphan risk
+
+Current state
+- dashboard hard delete cleans:
+  - place-images
+  - provider-documents
+
+But gaps remain
+- campaign-assets cleanup is not included in the reviewed delete path
+- avatars are not backend-driven in app flow
+- self-delete path does not appear to perform equivalent bucket cleanup
+
+11.3 File lifecycle maturity
+
+Verdict
+- better than before
+- still incomplete
+
+===============================================================================
+12. Security Audit
+===============================================================================
+
+12.1 Strong security areas
+
+- RLS is a real architectural pillar, not an afterthought
+- user_roles write path is protected
+- provider campaign creation is backend-checked
+- Gemini API key no longer lives in Flutter client code
+- admin dashboard requires auth and admin role
+- login throttling exists for admin login
+
+12.2 Critical security concerns
+
+CRITICAL-01: Analytics can be inflated by malicious clients
+
+Evidence
+- insert_event_batch is executable by anon and authenticated
+- client sends session_id and dimensions
+- server does not appear to validate place/provider consistency or apply
+  server-side per-user rate limiting inside insert_event_batch
+
+Impact
+- place analytics can be artificially inflated
+- provider trust in analytics can be undermined
+- admin interpretation of place performance can be distorted
+
+Recommendation
+- move analytics ingestion to a stricter contract
+- at minimum:
+  - require authenticated writes for core analytics
+  - rate-limit by user/session/IP
+  - validate that provider_id matches place.provider_id when both are sent
+  - optionally dedupe place_open by session/place/time window server-side
+
+CRITICAL-02: Campaign impressions/clicks are incrementable by public callers
+
+Evidence
+- record_campaign_metric is granted to anon and authenticated
+- it increments counters directly if campaign is active
+- no dedupe, no server-side rate limiting, no signed one-time token, no
+  session uniqueness
+
+Impact
+- campaign metrics are easy to game
+- provider campaign ROI becomes untrustworthy
+
+Recommendation
+- do not increment counters directly from public callers without protection
+- record raw click/impression events instead
+- dedupe by session/IP/user/time window
+- roll up metrics server-side
+
+12.3 High security concerns
+
+HIGH-01: Sentry is not active
+- not a direct exploit
+- but incident detection is weaker than ops docs imply
+
+HIGH-02: admin_roles infrastructure drift
+- schema not in main migrations
+- environment parity risk
+
+HIGH-03: delete cleanup is incomplete
+- data erasure and storage hygiene are not fully consistent
+
+HIGH-04: Gmail-only auth policy
+- not a security exploit, but a strong product gate that can cause operational
+  confusion if undocumented
+
+12.4 Medium security concerns
+
+MEDIUM-01: server actions often trust route-level guards
+- acceptable internally
+- but stronger per-action authorization would be better
+
+MEDIUM-02: dead dependencies remain
+- unnecessary packages increase audit surface and maintenance cost
+
+12.5 API keys and secrets
+
+Current state
+- Gemini key is server-side
+- service-role usage is server-side
+- I did not find active service-role leakage in Flutter client code
+
+Positive assessment
+- This area is materially better than earlier architecture
+
+===============================================================================
+13. Analytics and Views Audit
+===============================================================================
+
+What is now real
+- place details open
+- favorite add/remove
+- map open
+- provider live analytics view
+- campaign impressions
+- campaign clicks
+
+What is good
+- client throttling exists
+- provider analytics screen is tied to real data
+- admin places page surfaces analytics per place
+
+What is still weak
+- server-side integrity is not strong enough yet
+- same event can still be spammed by a modified client
+- unique-user and unique-session semantics depend on client honesty more than
+  ideal
+
+Verdict
+- real, but not fully tamper-resistant
+
+===============================================================================
+14. Campaigns and Ads Audit
+===============================================================================
+
+What works
+- provider creates campaign tied to a place
+- backend enforces plan capabilities and approved-place requirement
+- campaign starts as pending_review
+- admin can approve or reject
+- only active campaigns show to users
+- impressions/clicks are recorded
+
+What is good
+- This is a real product loop now
+- It is place-specific
+- It is not directly publishing unreviewed content
+
+What is incomplete
+- metrics integrity is weak
+- 6-hour moderation is a target, not an enforced workflow SLA
+- billing layer underneath campaign entitlements is still demo-based
+
+===============================================================================
+15. Strengths
+===============================================================================
+
+1. Supabase is now the real operating backbone
+2. Role/account-mode restoration is backend-aware
+3. Provider hub is materially useful, not decorative
+4. Campaign moderation exists end-to-end
+5. Real analytics exist end-to-end
+6. Admin dashboard has broad moderation coverage
+7. Storage RLS design is generally good
+8. Gemini is server-side now
+
+===============================================================================
+16. Critical Issues
+===============================================================================
+
+1. Billing/subscription architecture is still demo-mode
+2. Analytics ingestion and campaign metrics are too easy to manipulate
+3. admin_roles is outside the authoritative migration chain
+4. No real staging + no real integration/E2E coverage
+
+===============================================================================
+17. High Issues
+===============================================================================
+
+1. Sentry not active despite runbook expectations
+2. Gmail-only restriction
+3. Storage cleanup incomplete across all paths/buckets
+4. Profile identity/avatar not fully backend canonical
+5. Dashboard pages rely on broad fetch + in-memory aggregation + limited hard
+   caps instead of pagination
+6. Provider-documents/KYC architecture exists in backend but is not fully
+   surfaced in current mobile UX
+
+===============================================================================
+18. Medium Issues
+===============================================================================
+
+1. Documentation drift in operations/backend docs
+2. Dead dependencies remain in Flutter app:
+   - dart_openai
+   - google_generative_ai
+   - likely legacy networking helpers
+3. ApiService is too large and mixes domains
+4. Some role/bootstrap fallback logic is still more complex than ideal
+
+===============================================================================
+19. Opportunities for Improvement
+===============================================================================
+
+1. Split app repositories/services by bounded context
+2. Move analytics to a more secure event ingestion pipeline
+3. Convert campaign counters to event-derived summaries
+4. Add avatar upload/storage sync
+5. Add dedicated favorites page
+6. Add provider document/KYC UI if the business actually needs it
+7. Add proper dashboard pagination and filter-backed queries
+8. Add materialized/rollup views for admin-heavy summaries
+
+===============================================================================
+20. Performance Rating
+===============================================================================
+
+Current rating
+- Good for beta / small-to-medium launch
+- Not yet benchmarked for heavy production scale
+
+Most likely slow points at growth
+- admin list pages
+- raw analytics live aggregation
+- image payload size if catalog grows
+- broad "fetch then aggregate in memory" patterns in dashboard pages
+
+===============================================================================
+21. Security Rating
+===============================================================================
+
+Current rating
+- Better than average for an early product because RLS is taken seriously
+- Not yet hard enough for claims of full production security
+
+Top priorities before harder production launch
+1. Harden analytics ingestion and campaign metric integrity
+2. Activate real monitoring
+3. unify admin schema source-of-truth
+4. unify deletion cleanup behavior
+
+===============================================================================
+22. Launch Readiness Rating
+===============================================================================
+
+Verdict
+READY FOR BETA
+
+Why not "Ready for production"
+- billing is not production-grade
+- analytics trust can still be abused
+- monitoring is incomplete
+- staging and automated confidence are still weak
+- schema management is not fully unified
+
+Why not "Needs major redesign"
+- the product is coherent
+- the data model is meaningful
+- the flows are real
+- the moderation architecture is real
+- the provider value loop is real
+
+===============================================================================
+23. Recommended Implementation Plan
+===============================================================================
+
+Phase 1: Pre-production critical fixes
+- Replace demo subscriptions with real billing lifecycle
+- Implement start_subscription_checkout and cancel_subscription_at_period_end
+  for real, or remove those calls until real billing exists
+- Harden analytics ingestion and campaign metric integrity
+- Move admin_roles into authoritative migrations
+- Activate Sentry for release builds
+
+Phase 2: Reliability and consistency
+- Create a true staging Supabase + staging dashboard deployment
+- Add Flutter integration tests for:
+  - signup
+  - login
+  - role choice
+  - provider onboarding
+  - place submission
+  - campaign creation
+- Add dashboard E2E coverage for:
+  - admin login
+  - places moderation
+  - reports
+  - appeals
+  - campaigns moderation
+
+Phase 3: Scale and product maturity
+- Add dashboard pagination for large tables
+- Add stronger rollups/materialized summaries for admin analytics
+- Add storage cleanup for campaign-assets and self-delete path
+- Replace local-only profile image system with backend-backed avatar flow
+- Remove dead dependencies and legacy helpers
+
+===============================================================================
+24. Final Verdict
+===============================================================================
+
+Final judgment:
+READY FOR BETA
+
+Plain-English meaning
+- The system is no longer a fake shell.
+- It already contains real business flows, real moderation, real provider
+  utility, and real analytics/campaign mechanics.
+- But it still has enough architectural and operational gaps that calling it
+  fully production-ready would be misleading.
+
+The most important theme now is consolidation:
+- one billing truth
+- one schema truth
+- one monitoring truth
+- one analytics trust model
+- one staging/release confidence path
+
+Once those are done, RAFIQ will be much easier to trust, operate, and scale.

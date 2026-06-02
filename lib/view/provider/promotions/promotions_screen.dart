@@ -51,7 +51,9 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
             ? _selectedPlaceId
             : (approvedPlaces.length > 1
                 ? null
-                : (approvedPlaces.isNotEmpty ? approvedPlaces.first.placeUuid : null));
+                : (approvedPlaces.isNotEmpty
+                    ? approvedPlaces.first.placeUuid
+                    : null));
     _selectedPlaceId = selectedPlaceId;
 
     final allCampaigns = await ApiService().fetchPromotionCampaigns(
@@ -119,8 +121,9 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                     allCampaigns: <PromotionCampaignSnapshot>[],
                   );
               final visibleCampaigns = data.filteredCampaigns(_selectedPlaceId);
+              final countedCampaigns = data.countedCampaignsForPlan();
               final reachedLimit =
-                  ent.maxCampaigns > 0 && data.allCampaigns.length >= ent.maxCampaigns;
+                  ent.maxCampaigns > 0 && countedCampaigns >= ent.maxCampaigns;
 
               return RefreshIndicator(
                 onRefresh: _refresh,
@@ -182,12 +185,19 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                                 ),
                               ),
                               Text(
-                                'المستخدم: ${data.allCampaigns.length}',
+                                'المستخدم الآن: $countedCampaigns',
                                 style: AppText.bodySm.copyWith(
                                   color: AppColor.textSecondary,
                                 ),
                               ),
                             ],
+                          ),
+                          gapV(AppSpacing.sm),
+                          Text(
+                            'العدد المستخدم هنا يحسب الحملات النشطة أو المعلّقة للمراجعة فقط، وليس الحملات المنتهية أو المرفوضة.',
+                            style: AppText.caption.copyWith(
+                              color: AppColor.textSecondary,
+                            ),
                           ),
                         ],
                       ),
@@ -260,7 +270,18 @@ class _PromotionsScreenData {
 
   List<PromotionCampaignSnapshot> filteredCampaigns(String? placeId) {
     if (placeId == null || placeId.isEmpty) return allCampaigns;
-    return allCampaigns.where((campaign) => campaign.placeId == placeId).toList();
+    return allCampaigns
+        .where((campaign) => campaign.placeId == placeId)
+        .toList();
+  }
+
+  int countedCampaignsForPlan() {
+    return allCampaigns.where((campaign) {
+      return switch (campaign.status) {
+        'draft' || 'pending_review' || 'active' || 'paused' => true,
+        _ => false,
+      };
+    }).length;
   }
 }
 
@@ -345,17 +366,28 @@ class _PromotionStats extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final active = campaigns.where((c) => c.status == 'active').length;
+    final pending = campaigns.where((c) => c.status == 'pending_review').length;
     final impressions = campaigns.fold<int>(0, (sum, c) => sum + c.impressions);
     final clicks = campaigns.fold<int>(0, (sum, c) => sum + c.clicks);
     return Row(
       children: [
-        Expanded(child: _StatCard(label: 'حملات', value: campaigns.length.toString())),
+        Expanded(
+            child:
+                _StatCard(label: 'حملات', value: campaigns.length.toString())),
         gapH(AppSpacing.sm),
         Expanded(child: _StatCard(label: 'نشطة', value: active.toString())),
         gapH(AppSpacing.sm),
-        Expanded(child: _StatCard(label: 'مشاهدات', value: impressions.toString())),
+        Expanded(
+            child: _StatCard(label: 'قيد المراجعة', value: pending.toString())),
         gapH(AppSpacing.sm),
-        Expanded(child: _StatCard(label: 'نقرات', value: clicks.toString())),
+        Expanded(
+          child: _StatCard(
+            label: 'CTR',
+            value: impressions == 0
+                ? '0%'
+                : '${((clicks / impressions) * 100).toStringAsFixed(0)}%',
+          ),
+        ),
       ],
     );
   }
@@ -374,9 +406,11 @@ class _StatCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(value, style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800)),
+          Text(value,
+              style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800)),
           gapV(AppSpacing.xs / 2),
-          Text(label, style: AppText.caption.copyWith(color: AppColor.textSecondary)),
+          Text(label,
+              style: AppText.caption.copyWith(color: AppColor.textSecondary)),
         ],
       ),
     );
@@ -419,7 +453,8 @@ class _CampaignCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     campaign.title,
-                    style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
+                    style:
+                        AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
                   ),
                 ),
                 _StatusPill(status: campaign.status),
@@ -455,7 +490,8 @@ class _CampaignCard extends StatelessWidget {
             gapV(AppSpacing.md),
             Row(
               children: [
-                _MiniMetric(label: 'مشاهدات', value: campaign.impressions.toString()),
+                _MiniMetric(
+                    label: 'مشاهدات', value: campaign.impressions.toString()),
                 gapH(AppSpacing.lg),
                 _MiniMetric(label: 'نقرات', value: campaign.clicks.toString()),
               ],
@@ -493,8 +529,10 @@ class _MiniMetric extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(value, style: AppText.labelLg.copyWith(fontWeight: FontWeight.w800)),
-        Text(label, style: AppText.caption.copyWith(color: AppColor.textSecondary)),
+        Text(value,
+            style: AppText.labelLg.copyWith(fontWeight: FontWeight.w800)),
+        Text(label,
+            style: AppText.caption.copyWith(color: AppColor.textSecondary)),
       ],
     );
   }
@@ -525,7 +563,8 @@ class _StatusPill extends StatelessWidget {
       ),
       child: Text(
         map.$1,
-        style: AppText.labelSm.copyWith(color: map.$2, fontWeight: FontWeight.w800),
+        style: AppText.labelSm
+            .copyWith(color: map.$2, fontWeight: FontWeight.w800),
       ),
     );
   }
@@ -588,7 +627,8 @@ class _NoApprovedPlacesState extends StatelessWidget {
       padding: EdgeInsets.all(AppSpacing.xl.w),
       child: Column(
         children: [
-          Icon(Icons.hourglass_empty_rounded, color: AppColor.warning, size: 36.sp),
+          Icon(Icons.hourglass_empty_rounded,
+              color: AppColor.warning, size: 36.sp),
           gapV(AppSpacing.md),
           Text(
             'هتظهر العروض حسب المكان بعد اعتماد أول مكان',
@@ -872,7 +912,8 @@ class _CreateCampaignSheetState extends State<_CreateCampaignSheet> {
                 TextButton.icon(
                   onPressed: _busy ? null : _pickImage,
                   icon: const Icon(Icons.image_outlined),
-                  label: Text(_selectedImage == null ? 'اختَر صورة' : 'غيّر الصورة'),
+                  label: Text(
+                      _selectedImage == null ? 'اختَر صورة' : 'غيّر الصورة'),
                 ),
               ],
             ),

@@ -134,132 +134,93 @@ class _DetailsItemState extends State<DetailsItem> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Image Section
         SizedBox(
-          height: 240.h,
+          height: 220.h,
           width: double.infinity,
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20.r),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColor.black.withValues(alpha: 0.1),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20.r),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                PageView.builder(
+                  controller: _galleryController,
+                  itemCount: gallery.length,
+                  onPageChanged: (index) {
+                    if (!mounted) return;
+                    setState(() => _currentGalleryIndex = index);
+                  },
+                  itemBuilder: (_, index) =>
+                      _buildGalleryImage(context, gallery[index]),
                 ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20.r),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  PageView.builder(
-                    controller: _galleryController,
-                    itemCount: gallery.length,
-                    onPageChanged: (index) {
-                      if (!mounted) return;
-                      setState(() => _currentGalleryIndex = index);
-                    },
-                    itemBuilder: (_, index) =>
-                        _buildGalleryImage(context, gallery[index]),
-                  ),
-                  // Gradient overlay
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    height: 100.h,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            AppColor.black.withValues(alpha: 0.7),
-                          ],
-                        ),
-                      ),
+                Positioned(
+                  top: 16.h,
+                  right: 16.w,
+                  child: Container(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                    decoration: BoxDecoration(
+                      color: AppColor.surfaceCard,
+                      borderRadius: BorderRadius.circular(999),
                     ),
-                  ),
-                  // Rating badge
-                  Positioned(
-                    top: 16.h,
-                    right: 16.w,
-                    child: Container(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                      decoration: BoxDecoration(
-                        color: AppColor.surfaceCard,
-                        borderRadius: BorderRadius.circular(20.r),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColor.black.withValues(alpha: 0.1),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.star,
-                            color: Colors.amber,
-                            size: 16,
-                          ),
-                          horizontalSpace(4),
-                          Text(
-                            widget.model.rate.toString(),
-                            style: TextStyleTheme.textStyle12Medium.copyWith(
-                              color: AppColor.textPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  if (hasGallery)
-                    Positioned(
-                      left: 16.w,
-                      top: 16.h,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 10.w,
-                          vertical: 4.h,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.star_rounded,
+                          color: Colors.amber,
+                          size: 16,
                         ),
-                        decoration: BoxDecoration(
-                          color: AppColor.surfaceCard.withValues(alpha: 0.9),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Text(
-                          '${_currentGalleryIndex + 1}/${gallery.length}',
+                        horizontalSpace(4),
+                        Text(
+                          widget.model.rate > 0
+                              ? widget.model.rate.toString()
+                              : 'جديد',
                           style: TextStyleTheme.textStyle12Medium.copyWith(
                             color: AppColor.textPrimary,
                           ),
                         ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (hasGallery)
+                  Positioned(
+                    left: 16.w,
+                    top: 16.h,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10.w,
+                        vertical: 4.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColor.surfaceCard.withValues(alpha: 0.92),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        '${_currentGalleryIndex + 1}/${gallery.length}',
+                        style: TextStyleTheme.textStyle12Medium.copyWith(
+                          color: AppColor.textPrimary,
+                        ),
                       ),
                     ),
-                  if (widget.isLoading)
-                    Positioned.fill(
-                      child: Container(
-                        color: Colors.black.withValues(alpha: 0.12),
-                        child: const Center(
-                          child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              AppColor.white,
-                            ),
+                  ),
+                if (widget.isLoading)
+                  Positioned.fill(
+                    child: Container(
+                      color: AppColor.black.withValues(alpha: 0.10),
+                      child: const Center(
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            AppColor.white,
                           ),
                         ),
                       ),
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
           ),
         ),
-        // Padded Content Section
         Padding(
           padding: EdgeInsets.fromLTRB(
             AppSpacing.lg.w,
@@ -310,19 +271,11 @@ class _DetailsItemState extends State<DetailsItem> {
                 ),
                 verticalSpace(20),
               ],
-              // Category badge
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
                 decoration: BoxDecoration(
                   color: model.color.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(12.r),
-                  boxShadow: [
-                    BoxShadow(
-                      color: model.color.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -345,17 +298,15 @@ class _DetailsItemState extends State<DetailsItem> {
                 ),
               ),
               verticalSpace(16),
-              // Title
               Text(
                 model.text,
                 style: TextStyleTheme.textStyle20Bold.copyWith(
                   color: AppColor.textPrimary,
                   height: 1.3,
-                  fontSize: 24.sp,
+                  fontSize: 22.sp,
                 ),
               ),
               verticalSpace(12),
-              // Description
               Text(
                 model.body.toString(),
                 style: TextStyleTheme.textStyle16Medium.copyWith(
@@ -364,13 +315,12 @@ class _DetailsItemState extends State<DetailsItem> {
                 ),
               ),
               verticalSpace(20),
-              // Location section
               Container(
                 padding: EdgeInsets.all(16.w),
                 decoration: BoxDecoration(
-                  color: AppColor.neutral50,
+                  color: AppColor.surfaceVariant,
                   borderRadius: BorderRadius.circular(12.r),
-                  border: Border.all(color: AppColor.neutral200),
+                  border: Border.all(color: AppColor.border),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -423,14 +373,14 @@ class _DetailsItemState extends State<DetailsItem> {
                       child: Container(
                         padding: EdgeInsets.symmetric(vertical: 12.h),
                         decoration: BoxDecoration(
-                          color: AppColor.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8.r),
+                          color: AppColor.primary,
+                          borderRadius: BorderRadius.circular(10.r),
                         ),
                         child: Center(
                           child: Text(
                             "عرض على الخريطة",
                             style: TextStyleTheme.textStyle16Medium.copyWith(
-                              color: AppColor.primary,
+                              color: AppColor.white,
                             ),
                           ),
                         ),
@@ -440,12 +390,14 @@ class _DetailsItemState extends State<DetailsItem> {
                 ),
               ),
               verticalSpace(20),
-              // Price section
               Container(
                 padding: EdgeInsets.all(16.w),
                 decoration: BoxDecoration(
                   color: AppColor.primary.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(
+                    color: AppColor.primary.withValues(alpha: 0.08),
+                  ),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -478,13 +430,13 @@ class _DetailsItemState extends State<DetailsItem> {
                       child: Row(
                         children: [
                           Icon(
-                            Icons.star,
+                            Icons.star_rounded,
                             color: Colors.amber,
                             size: 16.sp,
                           ),
                           horizontalSpace(4),
                           Text(
-                            "${model.rate} (4.1k)",
+                            model.rate > 0 ? "${model.rate}" : 'جديد',
                             style: TextStyleTheme.textStyle16Medium.copyWith(
                               color: AppColor.textPrimary,
                               fontSize: 14.sp,

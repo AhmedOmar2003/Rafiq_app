@@ -23,6 +23,9 @@ class SubscriptionService {
   static final SubscriptionService instance = SubscriptionService._();
 
   static const Duration _entitlementTtl = Duration(seconds: 60);
+  static const bool _realBillingEnabled = false;
+  static const String _billingBetaMessage =
+      'الدفع الحقيقي لم يُفعَّل بعد في هذه النسخة. الخطط الحالية تعمل كتجربة Beta مربوطة بالباك إند وليست اشتراكًا مدفوعًا نهائيًا.';
 
   /// SharedPreferences keys for the **demo** entitlement.
   /// They survive an app kill so the user keeps seeing the plan they
@@ -140,6 +143,9 @@ class SubscriptionService {
     required PlanTier targetTier,
     required bool yearly,
   }) async {
+    if (!_realBillingEnabled) {
+      throw Exception(_billingBetaMessage);
+    }
     await ApiService.ensureSupabaseInitialized();
     await _client.rpc(
       'start_subscription_checkout',
@@ -153,6 +159,10 @@ class SubscriptionService {
 
   /// Cancel at end of current billing period (keeps benefits till period_end).
   Future<void> cancelAtPeriodEnd(String providerId) async {
+    if (!_realBillingEnabled) {
+      await applyDemoFree(providerId: providerId);
+      return;
+    }
     await ApiService.ensureSupabaseInitialized();
     await _client.rpc(
       'cancel_subscription_at_period_end',

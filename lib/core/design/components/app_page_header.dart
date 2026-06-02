@@ -87,7 +87,8 @@ class AppPageHeader extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Size get preferredSize => Size.fromHeight(
-        (subtitle == null ? kToolbarHeight : kToolbarHeight + 18) + AppSpacing.sm.h * 2,
+        (subtitle == null ? kToolbarHeight : kToolbarHeight + 28) +
+            AppSpacing.sm.h * 2,
       );
 
   @override
@@ -96,7 +97,8 @@ class AppPageHeader extends StatelessWidget implements PreferredSizeWidget {
     final showLeading = leading != null || canPop;
     final hasActions = actions != null && actions!.isNotEmpty;
     final fg = _fg;
-    final headerHeight = subtitle == null ? kToolbarHeight : kToolbarHeight + 18;
+    final headerHeight =
+        subtitle == null ? kToolbarHeight : kToolbarHeight + 28;
     // When a slot is empty we render nothing instead of a 48dp spacer so the
     // title sits flush with the page padding — matching the right-aligned
     // body content underneath (per design-system "title is anchored to the
@@ -114,6 +116,7 @@ class AppPageHeader extends StatelessWidget implements PreferredSizeWidget {
         ? Row(mainAxisSize: MainAxisSize.min, children: actions!)
         : null;
     final titleBlock = Column(
+      mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment:
           centerTitle ? CrossAxisAlignment.center : CrossAxisAlignment.start,

@@ -9,11 +9,25 @@ Keep it short. Update it the day something changes.
 
 ---
 
+## Current truth
+
+- `Sentry` is now wired in code and activates only when `SENTRY_DSN` is
+  supplied at build time.
+- `Vercel Analytics` stays dashboard-only.
+- Self-delete now prefers the `delete-account` Edge Function so storage
+  cleanup runs before the account disappears.
+- Staging env templates now live in:
+  - [D:\rafiq_master\.env.staging.example](D:/rafiq_master/.env.staging.example)
+  - [D:\rafiq_master\supabase\.env.staging.example](D:/rafiq_master/supabase/.env.staging.example)
+  - [D:\rafiq_master\admin-dashboard-rafiq-app\.env.staging.example](D:/rafiq_master/admin-dashboard-rafiq-app/.env.staging.example)
+
+---
+
 ## 1 · Error monitoring (Sentry)
 
-We ship `sentry_flutter` in the app but **only activate it when a DSN is
-supplied at build time**. That way the open-source codebase stays free of
-credentials, and dev builds don't pollute the dashboard.
+We ship `sentry_flutter` in the app and **only activate it when a DSN is
+supplied at build time**. That way the codebase stays free of credentials,
+and dev builds don't pollute the dashboard.
 
 ### Enable Sentry for a release
 

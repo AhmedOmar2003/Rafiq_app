@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:provider/provider.dart';
 import 'package:rafiq_app/rafiq_app.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:rafiq_app/service/analytics_tracker.dart';
 import 'package:rafiq_app/service/api_service.dart';
 import 'package:rafiq_app/service/image_disk_cache.dart';
@@ -14,10 +15,6 @@ import 'package:rafiq_app/service/subscription_service.dart';
 import 'package:rafiq_app/service/user_role_store.dart';
 import 'package:rafiq_app/view/pages/cubit.dart';
 
-// Sentry temporarily removed — the package's Kotlin sources don't compile
-// against our current Android Gradle/Kotlin toolchain. The init flow stays
-// behind an env-gated stub so re-adding the package later is a one-line
-// change. Track in docs/OPERATIONS.md.
 const _sentryDsn = String.fromEnvironment('SENTRY_DSN', defaultValue: '');
 
 Future<void> main() async {
@@ -80,11 +77,18 @@ Future<void> main() async {
         child: const RafiqApp(),
       );
 
-  // Sentry wiring temporarily disabled — see import comment above.
-  // The DSN-gated branch is kept so re-enabling is mechanical: drop the
-  // sentry_flutter dep back in, swap the `else` branch's runApp for the
-  // SentryFlutter.init call, done.
-  runApp(appRoot());
+  if (_sentryDsn.isEmpty) {
+    runApp(appRoot());
+  } else {
+    await SentryFlutter.init(
+      (options) {
+        options.dsn = _sentryDsn;
+        options.tracesSampleRate = 0.20;
+        options.attachScreenshot = false;
+      },
+      appRunner: () => runApp(appRoot()),
+    );
+  }
 
   WidgetsBinding.instance.addPostFrameCallback((_) {
     FlutterNativeSplash.remove();

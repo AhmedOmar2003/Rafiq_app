@@ -45,11 +45,14 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       forceRefresh: true,
     );
     final approvedPlaces = places.where((p) => p.status == 'approved').toList();
-    final selectedPlaceId = approvedPlaces.any((p) => p.placeUuid == _selectedPlaceId)
-        ? _selectedPlaceId
-        : (approvedPlaces.length > 1
-            ? null
-            : (approvedPlaces.isNotEmpty ? approvedPlaces.first.placeUuid : null));
+    final selectedPlaceId =
+        approvedPlaces.any((p) => p.placeUuid == _selectedPlaceId)
+            ? _selectedPlaceId
+            : (approvedPlaces.length > 1
+                ? null
+                : (approvedPlaces.isNotEmpty
+                    ? approvedPlaces.first.placeUuid
+                    : null));
 
     _selectedPlaceId = selectedPlaceId;
 
@@ -109,6 +112,17 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       tier: ent.tier,
                       selectedPlaceName: _selectedPlaceLabel(data.places),
                     ),
+                    gapV(AppSpacing.sm),
+                    AppCard(
+                      padding: EdgeInsets.all(AppSpacing.lg.w),
+                      child: Text(
+                        AppCopy.anaRealDataHint,
+                        style: AppText.bodySm.copyWith(
+                          color: AppColor.textSecondary,
+                          height: 1.5,
+                        ),
+                      ),
+                    ),
                     if (data.places.length > 1) ...[
                       gapV(AppSpacing.lg),
                       _PlaceSelector(
@@ -131,7 +145,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                           Expanded(
                             child: _KpiCard(
                               icon: Icons.visibility_rounded,
-                              label: AppCopy.anaPlaceViews,
+                              label: AppCopy.anaViewsReal,
                               value: data.snapshot.views.toString(),
                               tone: AppColor.info,
                             ),
@@ -139,9 +153,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                           gapH(AppSpacing.sm),
                           Expanded(
                             child: _KpiCard(
-                              icon: Icons.open_in_new_rounded,
-                              label: AppCopy.anaInteractions,
-                              value: data.snapshot.interactions.toString(),
+                              icon: Icons.touch_app_rounded,
+                              label: AppCopy.anaTotalActions,
+                              value: data.snapshot.totalActions.toString(),
                               tone: AppColor.primary,
                             ),
                           ),
@@ -153,8 +167,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                           Expanded(
                             child: _KpiCard(
                               icon: Icons.favorite_rounded,
-                              label: AppCopy.anaFavorites,
-                              value: data.snapshot.favorites.toString(),
+                              label: AppCopy.anaFavoriteAdds,
+                              value: data.snapshot.favoriteAdds.toString(),
                               tone: AppColor.error,
                             ),
                           ),
@@ -165,6 +179,28 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                               label: AppCopy.anaMapClicks,
                               value: data.snapshot.mapClicks.toString(),
                               tone: AppColor.success,
+                            ),
+                          ),
+                        ],
+                      ),
+                      gapV(AppSpacing.sm),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _KpiCard(
+                              icon: Icons.heart_broken_outlined,
+                              label: AppCopy.anaFavoriteRemovals,
+                              value: data.snapshot.favoriteRemovals.toString(),
+                              tone: AppColor.warning,
+                            ),
+                          ),
+                          gapH(AppSpacing.sm),
+                          Expanded(
+                            child: _KpiCard(
+                              icon: Icons.bolt_rounded,
+                              label: AppCopy.anaOtherActions,
+                              value: data.snapshot.otherActions.toString(),
+                              tone: AppColor.info,
                             ),
                           ),
                         ],

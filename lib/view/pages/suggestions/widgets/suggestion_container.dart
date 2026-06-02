@@ -11,11 +11,7 @@ import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:rafiq_app/core/utils/app_microcopy.dart';
 import 'package:rafiq_app/models/suggestion_item_model/suggestion_item.dart';
 
-/// Suggestion card — the primary discovery surface.
-///
-/// Premium feel: large hero image, floating rating chip, category pill,
-/// title, address, and price block with a clear forward affordance. All
-/// values come from design tokens; no magic numbers, no raw colors.
+/// Suggestion card — simple, readable, and close to the design system.
 class CustomSuggestionContainer extends StatelessWidget {
   const CustomSuggestionContainer({
     super.key,
@@ -26,22 +22,22 @@ class CustomSuggestionContainer extends StatelessWidget {
   final SuggestionItemModel model;
   final VoidCallback onTap;
 
-  static const double _heroHeight = 220;
+  static const double _heroHeight = 188;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.symmetric(
         horizontal: AppSpacing.lg.w,
-        vertical: AppSpacing.md.h,
+        vertical: AppSpacing.sm.h,
       ),
       child: AppCard(
         onTap: onTap,
         padding: EdgeInsets.zero,
-        elevation: 2,
-        radius: AppRadii.rXl,
+        elevation: 1,
+        radius: AppRadii.rLg,
         child: ClipRRect(
-          borderRadius: AppRadii.rXl,
+          borderRadius: AppRadii.rLg,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -56,16 +52,16 @@ class CustomSuggestionContainer extends StatelessWidget {
                       icon: model.icon,
                       color: model.color,
                     ),
-                    gapV(AppSpacing.lg),
+                    gapV(AppSpacing.md),
                     Text(
                       model.text,
                       style: AppText.titleLg,
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    gapV(AppSpacing.md),
+                    gapV(AppSpacing.sm),
                     _AddressRow(address: model.address),
-                    gapV(AppSpacing.lg),
+                    gapV(AppSpacing.md),
                     _PriceRow(price: model.price),
                   ],
                 ),
@@ -226,31 +222,48 @@ class _PriceRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(AppCopy.priceStartsFrom, style: AppText.bodySm),
-            gapV(AppSpacing.xs),
-            Text(
-              _formatPrice(price),
-              style: AppText.titleMd.copyWith(
-                color: AppColor.primary,
-                fontWeight: FontWeight.w700,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(AppCopy.priceStartsFrom, style: AppText.bodySm),
+              gapV(AppSpacing.xs),
+              Text(
+                _formatPrice(price),
+                style: AppText.titleMd.copyWith(
+                  color: AppColor.primary,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-            ),
-          ],
-        ),
-        const Spacer(),
-        Container(
-          padding: EdgeInsets.all(AppSpacing.sm.w + 2),
-          decoration: const BoxDecoration(
-            color: AppColor.primary50,
-            shape: BoxShape.circle,
+            ],
           ),
-          child: Icon(
-            Icons.arrow_forward,
-            color: AppColor.primary,
-            size: 22.sp,
+        ),
+        Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: AppSpacing.md.w,
+            vertical: AppSpacing.sm.h,
+          ),
+          decoration: BoxDecoration(
+            color: AppColor.primary50,
+            borderRadius: AppRadii.rPill,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'افتح',
+                style: AppText.labelSm.copyWith(
+                  color: AppColor.primary,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              gapH(AppSpacing.xs),
+              Icon(
+                Icons.arrow_forward_rounded,
+                color: AppColor.primary,
+                size: 18.sp,
+              ),
+            ],
           ),
         ),
       ],

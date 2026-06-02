@@ -206,6 +206,11 @@ class AnalyticsTracker with WidgetsBindingObserver {
   Future<void> _flush() async {
     if (_flushing) return;
     if (_queue.isEmpty) return;
+    if (_client.auth.currentUser == null &&
+        _client.auth.currentSession?.user == null) {
+      _queue.clear();
+      return;
+    }
     _flushing = true;
 
     final batch = <_PendingEvent>[];

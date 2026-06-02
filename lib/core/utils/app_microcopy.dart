@@ -158,6 +158,11 @@ class AppCopy {
       'هتدخل صفحة الخطط تختار اللي يناسبك (مجاني، Pro، أو Max). تقدر ترجع مستخدم عادي في أي وقت وكل حاجة هتفضل محفوظة.';
   static const profileSwitchConfirmUser =
       'هتنتقل لمسار المستخدم العادي عشان تشوف الأماكن زي أي زائر. متقلقش، اشتراكك وأماكنك محفوظة بالكامل لما تحب ترجع.';
+  static const profileFavoritesTitle = 'أماكنك المفضلة';
+  static const profileFavoritesBody =
+      'ارجعلها بسرعة وقت ما تحب من غير ما تدور من جديد.';
+  static const profileFavoritesRefresh = 'تحديث المفضلة';
+  static const profileFavoritesMore = 'فيه %n أماكن مفضلة كمان محفوظين عندك.';
 
   // --- Profile banners (context-aware CTA, personalized by name) ----------
   /// Regular user who never confirmed a provider plan — friendly invite.
@@ -341,6 +346,13 @@ class AppCopy {
   // --- Analytics screen --------------------------------------------------------
   static const anaTitle = 'تحليلاتك';
   static const anaLast30Days = 'آخر 30 يوم';
+  static const anaRealDataHint =
+      'الأرقام هنا من تفاعل حقيقي لمستخدمين مسجلين خلال آخر 30 يوم: فتح صفحة المكان، حفظه في المفضلة، وفتح الاتجاهات.';
+  static const anaViewsReal = 'فتح صفحة المكان';
+  static const anaTotalActions = 'إجمالي التفاعلات';
+  static const anaFavoriteAdds = 'إضافات للمفضلة';
+  static const anaFavoriteRemovals = 'إزالة من المفضلة';
+  static const anaOtherActions = 'تفاعلات أخرى';
   static const anaPlaceViews = 'مشاهدات المكان';
   static const anaInteractions = 'إجمالي التفاعلات';
   static const anaFavorites = 'إضافة للمفضلة';

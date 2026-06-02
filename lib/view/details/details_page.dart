@@ -126,8 +126,8 @@ class _DetailsPageState extends State<DetailsPage> {
       if (!_isMounted) return;
       setState(() {
         _isFavorited = (results[0] as bool?) ?? false;
-        _campaigns =
-            (results[1] as List<PlacePromotionBanner>?) ?? const <PlacePromotionBanner>[];
+        _campaigns = (results[1] as List<PlacePromotionBanner>?) ??
+            const <PlacePromotionBanner>[];
       });
       for (final campaign in _campaigns) {
         if (_campaignImpressionsSeen.add(campaign.id)) {
@@ -256,10 +256,12 @@ class _DetailsPageState extends State<DetailsPage> {
         title: AppCopy.detailsTitle,
         actions: [
           AppHeaderAction(
-            icon:
-                _isFavorited ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+            icon: _isFavorited
+                ? Icons.favorite_rounded
+                : Icons.favorite_border_rounded,
             tone: _isFavorited ? AppColor.error : null,
-            semanticLabel: _isFavorited ? 'إزالة من المفضلة' : 'إضافة إلى المفضلة',
+            semanticLabel:
+                _isFavorited ? 'إزالة من المفضلة' : 'إضافة إلى المفضلة',
             onTap: _toggleFavorite,
           ),
           AppHeaderAction(
@@ -412,6 +414,23 @@ class _CampaignsSection extends StatelessWidget {
                   style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
                 ),
               ),
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm.w,
+                  vertical: 4.h,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColor.success.withValues(alpha: 0.10),
+                  borderRadius: AppRadii.rPill,
+                ),
+                child: Text(
+                  'معتمد',
+                  style: AppText.labelSm.copyWith(
+                    color: AppColor.success,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
             ],
           ),
           gapV(AppSpacing.md),
@@ -447,10 +466,10 @@ class _CampaignBannerCard extends StatelessWidget {
       borderRadius: AppRadii.rLg,
       child: Container(
         decoration: BoxDecoration(
-          color: AppColor.surfaceVariant,
+          color: AppColor.surfaceCard,
           borderRadius: AppRadii.rLg,
           border: Border.all(
-            color: AppColor.primary.withValues(alpha: 0.12),
+            color: AppColor.primary.withValues(alpha: 0.14),
           ),
         ),
         child: Column(
@@ -458,12 +477,12 @@ class _CampaignBannerCard extends StatelessWidget {
           children: [
             if (hasImage)
               ClipRRect(
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(AppRadii.lg)),
+                borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(AppRadii.lg)),
                 child: Image.network(
                   campaign.imagePath!,
                   width: double.infinity,
-                  height: 150.h,
+                  height: 170.h,
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                 ),
@@ -473,6 +492,24 @@ class _CampaignBannerCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm.w,
+                      vertical: 4.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColor.primary50,
+                      borderRadius: AppRadii.rPill,
+                    ),
+                    child: Text(
+                      'عرض ظاهر للمستخدمين الآن',
+                      style: AppText.labelSm.copyWith(
+                        color: AppColor.primary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  gapV(AppSpacing.sm),
                   Row(
                     children: [
                       Expanded(
@@ -522,26 +559,34 @@ class _CampaignBannerCard extends StatelessWidget {
                     ),
                   ],
                   gapV(AppSpacing.md),
-                  Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md.w,
-                        vertical: AppSpacing.sm.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColor.primary,
-                        borderRadius: AppRadii.rPill,
-                      ),
-                      child: Text(
-                        campaign.ctaLabel?.trim().isNotEmpty == true
-                            ? campaign.ctaLabel!
-                            : 'اعرف العرض',
-                        style: AppText.labelMd.copyWith(
-                          color: AppColor.white,
-                          fontWeight: FontWeight.w800,
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md.w,
+                      vertical: AppSpacing.md.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColor.primary,
+                      borderRadius: AppRadii.rMd,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          campaign.ctaLabel?.trim().isNotEmpty == true
+                              ? campaign.ctaLabel!
+                              : 'اعرف العرض',
+                          style: AppText.labelMd.copyWith(
+                            color: AppColor.white,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
-                      ),
+                        Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: AppColor.white,
+                          size: 14.sp,
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -858,13 +903,13 @@ class _CampaignDetailsSheet extends StatelessWidget {
 
 class _ReportSheetState extends State<_ReportSheet> {
   static const _reasons = <_ReasonOption>[
-    _ReasonOption('spam',       'إعلانات مزعجة'),
-    _ReasonOption('offensive',  'محتوى مسيء'),
-    _ReasonOption('fake',       'معلومات مزيفة'),
-    _ReasonOption('off_topic',  'خارج الموضوع'),
-    _ReasonOption('illegal',    'محتوى غير قانوني'),
+    _ReasonOption('spam', 'إعلانات مزعجة'),
+    _ReasonOption('offensive', 'محتوى مسيء'),
+    _ReasonOption('fake', 'معلومات مزيفة'),
+    _ReasonOption('off_topic', 'خارج الموضوع'),
+    _ReasonOption('illegal', 'محتوى غير قانوني'),
     _ReasonOption('harassment', 'تحرش'),
-    _ReasonOption('other',      'أخرى'),
+    _ReasonOption('other', 'أخرى'),
   ];
 
   String? _selected;
@@ -895,9 +940,9 @@ class _ReportSheetState extends State<_ReportSheet> {
         'submit_abuse_report',
         params: {
           '_target_type': 'place',
-          '_target_id':   uuid,
+          '_target_id': uuid,
           '_reason_code': _selected,
-          '_details':     _detailsCtrl.text.trim().isEmpty
+          '_details': _detailsCtrl.text.trim().isEmpty
               ? null
               : _detailsCtrl.text.trim(),
         },
@@ -956,8 +1001,8 @@ class _ReportSheetState extends State<_ReportSheet> {
                   children: [
                     Text(
                       'بلّغ عن هذا المكان',
-                      style: AppText.titleMd
-                          .copyWith(fontWeight: FontWeight.w800),
+                      style:
+                          AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
                     ),
                     Text(
                       widget.place.text,
@@ -993,9 +1038,7 @@ class _ReportSheetState extends State<_ReportSheet> {
                     vertical: AppSpacing.sm.h,
                   ),
                   decoration: BoxDecoration(
-                    color: selected
-                        ? AppColor.primary
-                        : AppColor.surface,
+                    color: selected ? AppColor.primary : AppColor.surface,
                     borderRadius: AppRadii.rPill,
                     border: Border.all(
                       color: selected ? AppColor.primary : AppColor.border,

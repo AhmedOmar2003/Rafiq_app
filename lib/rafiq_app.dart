@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rafiq_app/auth/auth_gate.dart';
 import 'package:rafiq_app/core/design/components/app_offline_banner.dart';
 import 'package:rafiq_app/core/logic/helper_methods.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'core/themes/theme_services.dart';
 import 'core/utils/app_strings.dart';
 
@@ -19,6 +20,9 @@ class RafiqApp extends StatelessWidget {
   ///
   /// The [key] parameter is passed to the superclass constructor.
   const RafiqApp({super.key});
+
+  static const _sentryDsn =
+      String.fromEnvironment('SENTRY_DSN', defaultValue: '');
 
   @override
   Widget build(BuildContext context) {
@@ -61,6 +65,8 @@ class RafiqApp extends StatelessWidget {
             );
           },
           navigatorKey: navigatorKey,
+          navigatorObservers:
+              _sentryDsn.isEmpty ? const [] : [SentryNavigatorObserver()],
           home: child,
         );
       },

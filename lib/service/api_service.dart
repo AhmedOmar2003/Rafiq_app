@@ -24,23 +24,29 @@ class AccountModeSnapshot {
 class PlaceAnalyticsSnapshot {
   const PlaceAnalyticsSnapshot({
     required this.views,
-    required this.interactions,
-    required this.favorites,
+    required this.totalActions,
+    required this.favoriteAdds,
+    required this.favoriteRemovals,
     required this.mapClicks,
+    required this.otherActions,
     required this.trendPoints,
   });
 
   final int views;
-  final int interactions;
-  final int favorites;
+  final int totalActions;
+  final int favoriteAdds;
+  final int favoriteRemovals;
   final int mapClicks;
+  final int otherActions;
   final List<int> trendPoints;
 
   static const empty = PlaceAnalyticsSnapshot(
     views: 0,
-    interactions: 0,
-    favorites: 0,
+    totalActions: 0,
+    favoriteAdds: 0,
+    favoriteRemovals: 0,
     mapClicks: 0,
+    otherActions: 0,
     trendPoints: <int>[],
   );
 }
@@ -676,9 +682,10 @@ class ApiService {
     if (rows.isEmpty) return PlaceAnalyticsSnapshot.empty;
 
     var views = 0;
-    var interactions = 0;
-    var favorites = 0;
+    var favoriteAdds = 0;
+    var favoriteRemovals = 0;
     var mapClicks = 0;
+    var otherActions = 0;
     final trendByDay = <String, int>{};
 
     for (final rawRow in rows) {
@@ -695,22 +702,20 @@ class ApiService {
               (uniqueSessions > 0 ? uniqueSessions : count);
           break;
         case 'place_favorite':
-          favorites += count;
-          interactions += count;
+          favoriteAdds += count;
           break;
         case 'place_unfavorite':
-          interactions += count;
+          favoriteRemovals += count;
           break;
         case 'place_map_open':
           mapClicks += count;
-          interactions += count;
           break;
         case 'place_share':
         case 'place_phone_call':
         case 'place_website_click':
         case 'place_review_submit':
         case 'recommendation_click':
-          interactions += count;
+          otherActions += count;
           break;
       }
     }
@@ -724,11 +729,63 @@ class ApiService {
 
     return PlaceAnalyticsSnapshot(
       views: views,
-      interactions: interactions,
-      favorites: favorites,
+      totalActions: favoriteAdds + favoriteRemovals + mapClicks + otherActions,
+      favoriteAdds: favoriteAdds,
+      favoriteRemovals: favoriteRemovals,
       mapClicks: mapClicks,
+      otherActions: otherActions,
       trendPoints: trendPoints,
     );
+  }
+
+  Future<List<Place>> fetchFavoritePlaces({bool forceRefresh = false}) async {
+    await ensureSupabaseInitialized();
+    final userId =
+        _client.auth.currentUser?.id ?? _client.auth.currentSession?.user.id;
+    if (userId == null || userId.isEmpty) {
+      return const <Place>[];
+    }
+
+    final favoriteRows = await _client
+        .from('favorites')
+        .select('place_id, created_at')
+        .eq('user_id', userId)
+        .order('created_at', ascending: false)
+        .timeout(_networkTimeout);
+
+    final orderedIds = favoriteRows
+        .map((row) => row['place_id']?.toString())
+        .whereType<String>()
+        .where((id) => id.isNotEmpty)
+        .toList(growable: false);
+
+    if (orderedIds.isEmpty) return const <Place>[];
+
+    final placeRows = await _client
+        .from('places')
+        .select(
+          'id,provider_id,place_id,place_name,description,price_range,budget,rating,place_address,image_path,activity_name,city_name,created_at,status,deleted_at',
+        )
+        .inFilter('id', orderedIds)
+        .eq('status', 'approved')
+        .isFilter('deleted_at', null)
+        .timeout(_networkTimeout);
+
+    final byId = <String, Place>{};
+    for (final row in placeRows) {
+      final place = Place.fromJson(Map<String, dynamic>.from(row));
+      final id = place.placeUuid;
+      if (id != null && id.isNotEmpty && place.status == 'approved') {
+        byId[id] = place;
+      }
+    }
+
+    final orderedPlaces = <Place>[];
+    for (final id in orderedIds) {
+      final place = byId[id];
+      if (place != null) orderedPlaces.add(place);
+    }
+    return orderedPlaces;
   }
 
   Future<List<PromotionCampaignSnapshot>> fetchPromotionCampaigns({
@@ -747,28 +804,27 @@ class ApiService {
       query = query.eq('place_id', placeId);
     }
 
-    final rows =
-        await query.order('created_at', ascending: false).timeout(_networkTimeout);
-    return rows
-        .map((rawRow) {
-          final row = Map<String, dynamic>.from(rawRow);
-          return PromotionCampaignSnapshot(
-            id: row['id']?.toString() ?? '',
-            title: row['title']?.toString() ?? 'حملة بدون عنوان',
-            kind: row['kind']?.toString() ?? 'featured',
-            status: row['status']?.toString() ?? 'draft',
-            placeId: row['place_id']?.toString(),
-            imagePath: row['image_path']?.toString(),
-            ctaLabel: row['cta_label']?.toString(),
-            startsAt: DateTime.tryParse(row['starts_at']?.toString() ?? ''),
-            endsAt: DateTime.tryParse(row['ends_at']?.toString() ?? ''),
-            impressions: (row['impressions'] as num?)?.toInt() ?? 0,
-            clicks: (row['clicks'] as num?)?.toInt() ?? 0,
-            rejectionReason: row['rejection_reason']?.toString(),
-            createdAt: DateTime.tryParse(row['created_at']?.toString() ?? ''),
-          );
-        })
-        .toList(growable: false);
+    final rows = await query
+        .order('created_at', ascending: false)
+        .timeout(_networkTimeout);
+    return rows.map((rawRow) {
+      final row = Map<String, dynamic>.from(rawRow);
+      return PromotionCampaignSnapshot(
+        id: row['id']?.toString() ?? '',
+        title: row['title']?.toString() ?? 'حملة بدون عنوان',
+        kind: row['kind']?.toString() ?? 'featured',
+        status: row['status']?.toString() ?? 'draft',
+        placeId: row['place_id']?.toString(),
+        imagePath: row['image_path']?.toString(),
+        ctaLabel: row['cta_label']?.toString(),
+        startsAt: DateTime.tryParse(row['starts_at']?.toString() ?? ''),
+        endsAt: DateTime.tryParse(row['ends_at']?.toString() ?? ''),
+        impressions: (row['impressions'] as num?)?.toInt() ?? 0,
+        clicks: (row['clicks'] as num?)?.toInt() ?? 0,
+        rejectionReason: row['rejection_reason']?.toString(),
+        createdAt: DateTime.tryParse(row['created_at']?.toString() ?? ''),
+      );
+    }).toList(growable: false);
   }
 
   Future<List<PlacePromotionBanner>> fetchActivePlacePromotions({
@@ -788,22 +844,20 @@ class ApiService {
         .order('created_at', ascending: false)
         .timeout(_networkTimeout);
 
-    return rows
-        .map((rawRow) {
-          final row = Map<String, dynamic>.from(rawRow);
-          return PlacePromotionBanner(
-            id: row['id']?.toString() ?? '',
-            title: row['title']?.toString() ?? 'عرض خاص',
-            body: row['body']?.toString(),
-            kind: row['kind']?.toString() ?? 'discount',
-            status: row['status']?.toString() ?? 'active',
-            imagePath: row['image_path']?.toString(),
-            ctaLabel: row['cta_label']?.toString(),
-            startsAt: DateTime.tryParse(row['starts_at']?.toString() ?? ''),
-            endsAt: DateTime.tryParse(row['ends_at']?.toString() ?? ''),
-          );
-        })
-        .toList(growable: false);
+    return rows.map((rawRow) {
+      final row = Map<String, dynamic>.from(rawRow);
+      return PlacePromotionBanner(
+        id: row['id']?.toString() ?? '',
+        title: row['title']?.toString() ?? 'عرض خاص',
+        body: row['body']?.toString(),
+        kind: row['kind']?.toString() ?? 'discount',
+        status: row['status']?.toString() ?? 'active',
+        imagePath: row['image_path']?.toString(),
+        ctaLabel: row['cta_label']?.toString(),
+        startsAt: DateTime.tryParse(row['starts_at']?.toString() ?? ''),
+        endsAt: DateTime.tryParse(row['ends_at']?.toString() ?? ''),
+      );
+    }).toList(growable: false);
   }
 
   Future<bool> isPlaceFavorited(String placeId) async {
@@ -832,13 +886,10 @@ class ApiService {
     }
 
     if (shouldFavorite) {
-      await _client
-          .from('favorites')
-          .upsert({
-            'user_id': userId,
-            'place_id': placeId,
-          })
-          .timeout(_networkTimeout);
+      await _client.from('favorites').upsert({
+        'user_id': userId,
+        'place_id': placeId,
+      }).timeout(_networkTimeout);
       return true;
     }
 
