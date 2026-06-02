@@ -24,6 +24,7 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
   final List<EvaluationsItemModel> evaluationsItemList = [];
   bool isLoading = false;
   bool _showSuccessView = false;
+  int _selectedRating = 0;
 
   @override
   void initState() {
@@ -84,8 +85,12 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
     final userName =
         prefs.getString('userName') ?? AppCopy.reviewAuthorAnonymous;
 
-    if (userId == null || textController.text.isEmpty) {
-      AppFeedback.warning(AppCopy.reviewEmptyText);
+    if (userId == null || _selectedRating == 0 || textController.text.trim().isEmpty) {
+      AppFeedback.warning(
+        _selectedRating == 0
+            ? AppCopy.reviewPickStars
+            : AppCopy.reviewEmptyText,
+      );
       setState(() => isLoading = false);
       return;
     }
@@ -97,7 +102,7 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
         userId: userId,
         name: userName,
         reviewText: textController.text.trim(),
-        rating: 5,
+        rating: _selectedRating,
         image: imagePath,
       );
 
@@ -105,6 +110,7 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
       setState(() {
         evaluationsItemList.insert(0, insertedReview);
         textController.clear();
+        _selectedRating = 0;
         _showSuccessView = true;
       });
     } catch (_) {
@@ -156,78 +162,61 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
 
   /// Sticky comment composer pinned above the keyboard.
   Widget _buildCommentBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColor.surfaceCard,
-        boxShadow: AppShadows.level3,
-      ),
-      padding: EdgeInsets.fromLTRB(
-          AppSpacing.lg.w, AppSpacing.md.h, AppSpacing.lg.w, AppSpacing.md.h),
-      child: SafeArea(
-        top: false,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Container(
-                height: 50.h,
-                padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
-                decoration: BoxDecoration(
-                  color: AppColor.surface,
-                  borderRadius: AppRadii.rPill,
-                  border: Border.all(color: AppColor.border),
-                ),
-                alignment: Alignment.center,
-                child: TextField(
-                  controller: textController,
-                  textAlign: TextAlign.right,
-                  textAlignVertical: TextAlignVertical.center,
-                  style: AppText.bodyLg.copyWith(color: AppColor.textPrimary),
-                  minLines: 1,
-                  maxLines: 3,
-                  textInputAction: TextInputAction.send,
-                  onSubmitted: isLoading ? null : (_) => submitReview(),
-                  decoration: InputDecoration(
-                    isDense: true,
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
-                    hintText: AppCopy.reviewInputHint,
-                    hintStyle:
-                        AppText.bodyLg.copyWith(color: AppColor.textTertiary),
-                  ),
-                ),
+    return AppStickyFooter(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            AppCopy.reviewPickStars,
+            style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
+          ),
+          gapV(AppSpacing.xs),
+          Text(
+            AppCopy.reviewStarsHelper,
+            style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
+          ),
+          gapV(AppSpacing.md),
+          _RatingSelector(
+            value: _selectedRating,
+            onChanged: (value) => setState(() => _selectedRating = value),
+          ),
+          gapV(AppSpacing.md),
+          Container(
+            decoration: BoxDecoration(
+              color: AppColor.surface,
+              borderRadius: AppRadii.rLg,
+              border: Border.all(color: AppColor.border),
+            ),
+            padding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg.w,
+              vertical: AppSpacing.md.h,
+            ),
+            child: TextField(
+              controller: textController,
+              textAlign: TextAlign.right,
+              style: AppText.bodyMd.copyWith(color: AppColor.textPrimary),
+              minLines: 3,
+              maxLines: 5,
+              textInputAction: TextInputAction.newline,
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                hintText: AppCopy.reviewWriteOptional,
+                hintStyle:
+                    AppText.bodyMd.copyWith(color: AppColor.textTertiary),
               ),
             ),
-            gapH(AppSpacing.sm),
-            Material(
-              color: isLoading
-                  ? AppColor.primary.withValues(alpha: 0.5)
-                  : AppColor.primary,
-              shape: const CircleBorder(),
-              clipBehavior: Clip.antiAlias,
-              child: InkWell(
-                onTap: isLoading ? null : submitReview,
-                child: SizedBox(
-                  height: 50.h,
-                  width: 50.h,
-                  child: Center(
-                    child: isLoading
-                        ? SizedBox(
-                            width: 20.w,
-                            height: 20.w,
-                            child: const CircularProgressIndicator(
-                                color: AppColor.white, strokeWidth: 2),
-                          )
-                        : Icon(Icons.send_rounded,
-                            size: 22.w, color: AppColor.white),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+          gapV(AppSpacing.md),
+          AppButton(
+            text: isLoading ? 'جارٍ الإرسال...' : AppCopy.reviewSendCta,
+            onPress: submitReview,
+            isEnabled: !isLoading,
+            isLoading: isLoading,
+          ),
+        ],
       ),
     );
   }
@@ -322,7 +311,7 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildAvatar(),
+          _ReviewerAvatar(name: evaluation.name, imagePath: evaluation.image),
           gapH(AppSpacing.lg),
           Expanded(
             child: Column(
@@ -337,14 +326,19 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
                         (i) => Padding(
                               padding: EdgeInsets.only(left: 2.w),
                               child: Icon(Icons.star_rounded,
-                                  color: Colors.amber, size: 18.w),
+                                  color: i < evaluation.rating
+                                      ? AppColor.warning
+                                      : AppColor.border,
+                                  size: 18.w),
                             )),
                     gapH(AppSpacing.sm),
                     Text(formattedDate, style: AppText.bodySm),
                   ],
                 ),
                 gapV(AppSpacing.sm),
-                Text(evaluation.body,
+                Text(evaluation.body.isNotEmpty
+                        ? evaluation.body
+                        : AppCopy.reviewNoCommentFallback,
                     style: AppText.bodyMd.copyWith(height: 1.6)),
               ],
             ),
@@ -354,38 +348,95 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
     );
   }
 
-  Widget _buildAvatar() {
+}
+
+class _RatingSelector extends StatelessWidget {
+  const _RatingSelector({
+    required this.value,
+    required this.onChanged,
+  });
+
+  final int value;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: List.generate(5, (index) {
+        final rating = index + 1;
+        final selected = rating <= value;
+        return Padding(
+          padding: EdgeInsets.only(left: AppSpacing.sm.w),
+          child: InkWell(
+            borderRadius: AppRadii.rPill,
+            onTap: () => onChanged(rating),
+            child: Container(
+              padding: EdgeInsets.all(AppSpacing.sm.w),
+              decoration: BoxDecoration(
+                color: selected
+                    ? AppColor.warning.withValues(alpha: 0.12)
+                    : AppColor.surfaceMuted,
+                borderRadius: AppRadii.rPill,
+                border: Border.all(
+                  color: selected ? AppColor.warning : AppColor.border,
+                ),
+              ),
+              child: Icon(
+                Icons.star_rounded,
+                size: 24.sp,
+                color: selected ? AppColor.warning : AppColor.textTertiary,
+              ),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+}
+
+class _ReviewerAvatar extends StatelessWidget {
+  const _ReviewerAvatar({
+    required this.name,
+    required this.imagePath,
+  });
+
+  final String name;
+  final String imagePath;
+
+  @override
+  Widget build(BuildContext context) {
+    final trimmed = imagePath.trim();
+    final initial = name.trim().isNotEmpty ? name.trim()[0] : '؟';
+    final imageProvider = trimmed.startsWith('http')
+        ? NetworkImage(trimmed)
+        : trimmed.startsWith('assets/')
+            ? AssetImage(trimmed) as ImageProvider
+            : null;
+
     return Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: AppColor.black.withValues(alpha: 0.1),
+            color: AppColor.black.withValues(alpha: 0.08),
             blurRadius: 8,
             spreadRadius: 1,
           ),
         ],
       ),
-      // Only the avatar rebuilds when the user changes their picture; the
-      // surrounding evaluation row stays cached.
-      child: ValueListenableBuilder<ProfileImageState>(
-        valueListenable: ProfileImageStore.instance,
-        builder: (_, snap, __) {
-          final ImageProvider provider = snap.bytes != null
-              ? MemoryImage(snap.bytes!)
-              : snap.file != null
-                  ? FileImage(snap.file!)
-                  : const AssetImage('assets/images/default_profile.webp')
-                      as ImageProvider;
-          return CircleAvatar(
-            backgroundImage: provider,
-            radius: 26.r,
-            backgroundColor: AppColor.primary.withValues(alpha: 0.1),
-            child: snap.hasImage
-                ? null
-                : Icon(Icons.person, color: AppColor.primary, size: 26.w),
-          );
-        },
+      child: CircleAvatar(
+        backgroundImage: imageProvider,
+        radius: 26.r,
+        backgroundColor: AppColor.primary.withValues(alpha: 0.10),
+        child: imageProvider == null
+            ? Text(
+                initial,
+                style: AppText.titleMd.copyWith(
+                  color: AppColor.primary,
+                  fontWeight: FontWeight.w800,
+                ),
+              )
+            : null,
       ),
     );
   }

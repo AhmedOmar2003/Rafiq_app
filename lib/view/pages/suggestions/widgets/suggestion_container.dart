@@ -22,7 +22,7 @@ class CustomSuggestionContainer extends StatelessWidget {
   final SuggestionItemModel model;
   final VoidCallback onTap;
 
-  static const double _heroHeight = 188;
+  static const double _heroHeight = 176;
 
   @override
   Widget build(BuildContext context) {
@@ -57,6 +57,16 @@ class CustomSuggestionContainer extends StatelessWidget {
                       model.text,
                       style: AppText.titleLg,
                       maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    gapV(AppSpacing.sm),
+                    Text(
+                      model.body,
+                      style: AppText.bodySm.copyWith(
+                        color: AppColor.textSecondary,
+                        height: 1.5,
+                      ),
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                     gapV(AppSpacing.sm),

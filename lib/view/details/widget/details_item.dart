@@ -307,12 +307,19 @@ class _DetailsItemState extends State<DetailsItem> {
                 ),
               ),
               verticalSpace(12),
-              Text(
-                model.body.toString(),
-                style: TextStyleTheme.textStyle16Medium.copyWith(
-                  color: AppColor.textSecondary,
-                  height: 1.6,
-                ),
+              Wrap(
+                spacing: 8.w,
+                runSpacing: 8.h,
+                children: [
+                  _MetaChip(
+                    icon: Icons.place_outlined,
+                    label: model.city.isNotEmpty ? model.city : model.address,
+                  ),
+                  _MetaChip(
+                    icon: Icons.category_outlined,
+                    label: model.suggestionText,
+                  ),
+                ],
               ),
               verticalSpace(20),
               Container(
@@ -373,16 +380,26 @@ class _DetailsItemState extends State<DetailsItem> {
                       child: Container(
                         padding: EdgeInsets.symmetric(vertical: 12.h),
                         decoration: BoxDecoration(
-                          color: AppColor.primary,
+                          color: AppColor.surfaceCard,
                           borderRadius: BorderRadius.circular(10.r),
+                          border: Border.all(color: AppColor.primary),
                         ),
-                        child: Center(
-                          child: Text(
-                            "عرض على الخريطة",
-                            style: TextStyleTheme.textStyle16Medium.copyWith(
-                              color: AppColor.white,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.map_outlined,
+                              color: AppColor.primary,
+                              size: 18.sp,
                             ),
-                          ),
+                            horizontalSpace(8),
+                            Text(
+                              "عرض على الخريطة",
+                              style: TextStyleTheme.textStyle16Medium.copyWith(
+                                color: AppColor.primary,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -479,5 +496,40 @@ class _DetailsItemState extends State<DetailsItem> {
     }
 
     return "$normalized جنيه مصري";
+  }
+}
+
+class _MetaChip extends StatelessWidget {
+  const _MetaChip({
+    required this.icon,
+    required this.label,
+  });
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+      decoration: BoxDecoration(
+        color: AppColor.surfaceVariant,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: AppColor.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14.sp, color: AppColor.textSecondary),
+          horizontalSpace(6),
+          Text(
+            label,
+            style: TextStyleTheme.textStyle12Medium.copyWith(
+              color: AppColor.textPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

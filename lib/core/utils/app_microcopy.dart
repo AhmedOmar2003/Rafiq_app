@@ -125,6 +125,11 @@ class AppCopy {
   static const reviewAuthorAnonymous = 'مستخدم مجهول';
   static const reviewInputHint = 'قول لنا رأيك في المكان...';
   static const reviewEmptyText = 'اكتب تقييمك الأول، وبعدها ابعته.';
+  static const reviewPickStars = 'اختر تقييمك بالنجوم';
+  static const reviewSendCta = 'أرسل التقييم';
+  static const reviewStarsHelper = 'النجوم بتوضح رأيك بسرعة قبل ما تكتب تعليقك.';
+  static const reviewWriteOptional = 'اكتب تعليقك هنا';
+  static const reviewNoCommentFallback = 'أضاف تقييمًا بدون تعليق نصي.';
   static const reviewThanksTitle = 'وصل رأيك! شكراً ليك';
   static const reviewThanksBody = 'تقييمك هيساعد ناس تختار صح';
   static const reviewsEmptyHeadline = 'كن أول واحد يشارك تجربته!';
@@ -136,6 +141,11 @@ class AppCopy {
   static const detailsTitle = 'التفاصيل';
   static const detailsBeFirstReview = 'كن أول واحد يعلّق';
   static const detailsAddYourComment = 'ضيف تعليقك';
+  static const detailsDescriptionTitle = 'عن المكان';
+  static const detailsOffersTitle = 'العروض الحالية';
+  static const detailsOfferActiveNow = 'نشط الآن';
+  static const detailsOfferEndsSoon = 'متاح حتى %date';
+  static const detailsOfferNoEndDate = 'العرض متاح حاليًا لفترة مفتوحة';
   static const detailsSimilarHeading = 'فعاليات مشابهة';
   static const detailsNoSimilar = 'مفيش أماكن مشابهة دلوقتي';
 

@@ -193,21 +193,6 @@ class _DetailsPageState extends State<DetailsPage> {
     );
   }
 
-  Future<void> _openCampaignDetails(PlacePromotionBanner campaign) async {
-    unawaited(_apiService.recordCampaignMetric(
-      campaignId: campaign.id,
-      metric: 'click',
-    ));
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: AppColor.surfaceCard,
-      shape: RoundedRectangleBorder(
-        borderRadius: AppRadii.topOnly(AppRadii.xxl),
-      ),
-      builder: (_) => _CampaignDetailsSheet(campaign: campaign),
-    );
-  }
-
   void updateModel(SuggestionItemModel newModel) {
     if (!_isMounted) return;
     setState(() {
@@ -287,10 +272,11 @@ class _DetailsPageState extends State<DetailsPage> {
           ),
           if (_campaigns.isNotEmpty) ...[
             gapV(AppSpacing.xl),
-            _CampaignsSection(
-              campaigns: _campaigns,
-              onOpenCampaign: _openCampaignDetails,
-            ),
+            _CampaignsSection(campaigns: _campaigns),
+          ],
+          if (currentModel.body.trim().isNotEmpty) ...[
+            gapV(AppSpacing.xl),
+            _DescriptionSection(description: currentModel.body),
           ],
           gapV(AppSpacing.xxl),
           _ReviewsSection(
@@ -377,13 +363,9 @@ class _DetailsSection extends StatelessWidget {
 }
 
 class _CampaignsSection extends StatelessWidget {
-  const _CampaignsSection({
-    required this.campaigns,
-    required this.onOpenCampaign,
-  });
+  const _CampaignsSection({required this.campaigns});
 
   final List<PlacePromotionBanner> campaigns;
-  final ValueChanged<PlacePromotionBanner> onOpenCampaign;
 
   @override
   Widget build(BuildContext context) {
@@ -410,37 +392,48 @@ class _CampaignsSection extends StatelessWidget {
               gapH(AppSpacing.md),
               Expanded(
                 child: Text(
-                  'عروض وإعلانات المكان',
+                  AppCopy.detailsOffersTitle,
                   style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
                 ),
               ),
-              Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: AppSpacing.sm.w,
-                  vertical: 4.h,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColor.success.withValues(alpha: 0.10),
-                  borderRadius: AppRadii.rPill,
-                ),
-                child: Text(
-                  'معتمد',
-                  style: AppText.labelSm.copyWith(
-                    color: AppColor.success,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
+              _CountChip(count: campaigns.length),
             ],
           ),
           gapV(AppSpacing.md),
           ...campaigns.map(
             (campaign) => Padding(
               padding: EdgeInsets.only(bottom: AppSpacing.md.h),
-              child: _CampaignBannerCard(
-                campaign: campaign,
-                onTap: () => onOpenCampaign(campaign),
-              ),
+              child: _CampaignBannerCard(campaign: campaign),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DescriptionSection extends StatelessWidget {
+  const _DescriptionSection({required this.description});
+
+  final String description;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      padding: EdgeInsets.all(AppSpacing.lg.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            AppCopy.detailsDescriptionTitle,
+            style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
+          ),
+          gapV(AppSpacing.md),
+          Text(
+            description,
+            style: AppText.bodyMd.copyWith(
+              color: AppColor.textSecondary,
+              height: 1.7,
             ),
           ),
         ],
@@ -450,150 +443,115 @@ class _CampaignsSection extends StatelessWidget {
 }
 
 class _CampaignBannerCard extends StatelessWidget {
-  const _CampaignBannerCard({
-    required this.campaign,
-    required this.onTap,
-  });
+  const _CampaignBannerCard({required this.campaign});
 
   final PlacePromotionBanner campaign;
-  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final hasImage = (campaign.imagePath ?? '').trim().isNotEmpty;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: AppRadii.rLg,
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColor.surfaceCard,
-          borderRadius: AppRadii.rLg,
-          border: Border.all(
-            color: AppColor.primary.withValues(alpha: 0.14),
-          ),
+    final endLabel = campaign.endsAt != null
+        ? AppCopy.detailsOfferEndsSoon.replaceFirst(
+            '%date',
+            '${campaign.endsAt!.day}/${campaign.endsAt!.month}',
+          )
+        : AppCopy.detailsOfferNoEndDate;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColor.surfaceCard,
+        borderRadius: AppRadii.rLg,
+        border: Border.all(
+          color: AppColor.primary.withValues(alpha: 0.10),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (hasImage)
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(AppRadii.lg)),
-                child: Image.network(
-                  campaign.imagePath!,
-                  width: double.infinity,
-                  height: 170.h,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (hasImage)
+            ClipRRect(
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(AppRadii.lg)),
+              child: Image.network(
+                campaign.imagePath!,
+                width: double.infinity,
+                height: 156.h,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
               ),
-            Padding(
-              padding: EdgeInsets.all(AppSpacing.md.w),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: AppSpacing.sm.w,
-                      vertical: 4.h,
+            ),
+          Padding(
+            padding: EdgeInsets.all(AppSpacing.md.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  spacing: AppSpacing.sm.w,
+                  runSpacing: AppSpacing.sm.h,
+                  children: [
+                    _OfferPill(
+                      label: AppCopy.detailsOfferActiveNow,
+                      color: AppColor.success,
+                      background: AppColor.success.withValues(alpha: 0.10),
                     ),
-                    decoration: BoxDecoration(
-                      color: AppColor.primary50,
-                      borderRadius: AppRadii.rPill,
+                    _OfferPill(
+                      label: _campaignKindLabel(campaign.kind),
+                      color: AppColor.primary,
+                      background: AppColor.primary50,
                     ),
-                    child: Text(
-                      'عرض ظاهر للمستخدمين الآن',
-                      style: AppText.labelSm.copyWith(
-                        color: AppColor.primary,
-                        fontWeight: FontWeight.w800,
-                      ),
+                  ],
+                ),
+                gapV(AppSpacing.sm),
+                Text(
+                  campaign.title,
+                  style: AppText.titleMd.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                if ((campaign.body ?? '').trim().isNotEmpty) ...[
+                  gapV(AppSpacing.sm),
+                  Text(
+                    campaign.body!,
+                    style: AppText.bodyMd.copyWith(
+                      color: AppColor.textSecondary,
+                      height: 1.6,
                     ),
                   ),
-                  gapV(AppSpacing.sm),
-                  Row(
+                ],
+                gapV(AppSpacing.md),
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md.w,
+                    vertical: AppSpacing.sm.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColor.surfaceVariant,
+                    borderRadius: AppRadii.rMd,
+                  ),
+                  child: Row(
                     children: [
+                      Icon(
+                        Icons.schedule_rounded,
+                        size: 16.sp,
+                        color: AppColor.textSecondary,
+                      ),
+                      gapH(AppSpacing.sm),
                       Expanded(
                         child: Text(
-                          campaign.title,
-                          style: AppText.titleMd.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm.w,
-                          vertical: 4.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColor.primary50,
-                          borderRadius: AppRadii.rPill,
-                        ),
-                        child: Text(
-                          _campaignKindLabel(campaign.kind),
-                          style: AppText.labelSm.copyWith(
-                            color: AppColor.primary,
-                            fontWeight: FontWeight.w700,
+                          endLabel,
+                          style: AppText.bodySm.copyWith(
+                            color: AppColor.textSecondary,
                           ),
                         ),
                       ),
                     ],
                   ),
-                  if ((campaign.body ?? '').trim().isNotEmpty) ...[
-                    gapV(AppSpacing.sm),
-                    Text(
-                      campaign.body!,
-                      style: AppText.bodyMd.copyWith(
-                        color: AppColor.textSecondary,
-                        height: 1.5,
-                      ),
-                    ),
-                  ],
-                  if (campaign.endsAt != null) ...[
-                    gapV(AppSpacing.sm),
-                    Text(
-                      'العرض متاح حتى ${campaign.endsAt!.day}/${campaign.endsAt!.month}',
-                      style: AppText.caption.copyWith(
-                        color: AppColor.textSecondary,
-                      ),
-                    ),
-                  ],
-                  gapV(AppSpacing.md),
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md.w,
-                      vertical: AppSpacing.md.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColor.primary,
-                      borderRadius: AppRadii.rMd,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          campaign.ctaLabel?.trim().isNotEmpty == true
-                              ? campaign.ctaLabel!
-                              : 'اعرف العرض',
-                          style: AppText.labelMd.copyWith(
-                            color: AppColor.white,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          color: AppColor.white,
-                          size: 14.sp,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -781,6 +739,39 @@ class _CountChip extends StatelessWidget {
   }
 }
 
+class _OfferPill extends StatelessWidget {
+  const _OfferPill({
+    required this.label,
+    required this.color,
+    required this.background,
+  });
+
+  final String label;
+  final Color color;
+  final Color background;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm.w,
+        vertical: 4.h,
+      ),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: AppRadii.rPill,
+      ),
+      child: Text(
+        label,
+        style: AppText.labelSm.copyWith(
+          color: color,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+}
+
 class _NoSimilarSection extends StatelessWidget {
   const _NoSimilarSection();
 
@@ -821,84 +812,6 @@ class _ReportSheet extends StatefulWidget {
 
   @override
   State<_ReportSheet> createState() => _ReportSheetState();
-}
-
-class _CampaignDetailsSheet extends StatelessWidget {
-  const _CampaignDetailsSheet({required this.campaign});
-
-  final PlacePromotionBanner campaign;
-
-  @override
-  Widget build(BuildContext context) {
-    final hasImage = (campaign.imagePath ?? '').trim().isNotEmpty;
-    return SafeArea(
-      top: false,
-      child: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(
-          AppSpacing.xxl.w,
-          AppSpacing.lg.h,
-          AppSpacing.xxl.w,
-          AppSpacing.xxl.h,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
-                width: 40.w,
-                height: 4.h,
-                decoration: BoxDecoration(
-                  color: AppColor.border,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            gapV(AppSpacing.xl),
-            Text(
-              campaign.title,
-              style: AppText.headingSm.copyWith(fontWeight: FontWeight.w800),
-            ),
-            if ((campaign.body ?? '').trim().isNotEmpty) ...[
-              gapV(AppSpacing.md),
-              Text(
-                campaign.body!,
-                style: AppText.bodyMd.copyWith(
-                  color: AppColor.textSecondary,
-                  height: 1.6,
-                ),
-              ),
-            ],
-            if (hasImage) ...[
-              gapV(AppSpacing.lg),
-              ClipRRect(
-                borderRadius: AppRadii.rLg,
-                child: Image.network(
-                  campaign.imagePath!,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                ),
-              ),
-            ],
-            if (campaign.endsAt != null) ...[
-              gapV(AppSpacing.lg),
-              Text(
-                'ينتهي هذا العرض في ${campaign.endsAt!.day}/${campaign.endsAt!.month}/${campaign.endsAt!.year}',
-                style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
-              ),
-            ],
-            gapV(AppSpacing.xl),
-            AppButton(
-              text: campaign.ctaLabel?.trim().isNotEmpty == true
-                  ? campaign.ctaLabel!
-                  : 'تمام',
-              onPress: () => Navigator.pop(context),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _ReportSheetState extends State<_ReportSheet> {

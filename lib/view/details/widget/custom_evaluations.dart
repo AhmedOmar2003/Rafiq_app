@@ -1,11 +1,10 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/material.dart';
 
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:rafiq_app/core/utils/app_microcopy.dart';
 import 'package:rafiq_app/model/review_model.dart';
-import 'package:rafiq_app/service/profile_image_store.dart';
 import '../../../core/utils/spacing.dart';
 import '../../evaluations/evaluations_page.dart';
 
@@ -45,7 +44,7 @@ class CustomEvaluations extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _Header(),
+          _Header(hasReview: lastEvaluation != null),
           verticalSpace(16),
           if (lastEvaluation != null)
             _LastReviewRow(
@@ -69,6 +68,10 @@ class CustomEvaluations extends StatelessWidget {
 }
 
 class _Header extends StatelessWidget {
+  const _Header({required this.hasReview});
+
+  final bool hasReview;
+
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -77,8 +80,10 @@ class _Header extends StatelessWidget {
         Row(
           children: [
             Text(AppCopy.reviewsTitle, style: AppText.titleLg),
-            horizontalSpace(5),
-            Text(AppCopy.detailsBeFirstReview, style: AppText.bodySm),
+            if (!hasReview) ...[
+              horizontalSpace(5),
+              Text(AppCopy.detailsBeFirstReview, style: AppText.bodySm),
+            ],
           ],
         ),
       ],
@@ -100,7 +105,7 @@ class _LastReviewRow extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const _UserAvatar(),
+            _UserAvatar(name: review.name, imagePath: review.image),
             horizontalSpace(12.w),
             Expanded(
               child: Column(
@@ -115,7 +120,7 @@ class _LastReviewRow extends StatelessWidget {
                   verticalSpace(3),
                   Row(
                     children: [
-                      const _StarsRow(),
+                      _StarsRow(rating: review.rating),
                       horizontalSpace(8.w),
                       Text(formattedDate, style: AppText.caption),
                     ],
@@ -126,7 +131,12 @@ class _LastReviewRow extends StatelessWidget {
           ],
         ),
         verticalSpace(17),
-        Text(review.body, style: AppText.bodySm),
+        Text(
+          review.body.isNotEmpty
+              ? review.body
+              : AppCopy.reviewNoCommentFallback,
+          style: AppText.bodySm,
+        ),
       ],
     );
   }
@@ -135,59 +145,69 @@ class _LastReviewRow extends StatelessWidget {
 /// Five-star row. `const` so it's a single Element shared between rebuilds
 /// instead of allocating 5 Icons every time the row builds.
 class _StarsRow extends StatelessWidget {
-  const _StarsRow();
+  const _StarsRow({required this.rating});
+
+  final int rating;
 
   @override
   Widget build(BuildContext context) {
-    return const Row(
+    return Row(
       mainAxisSize: MainAxisSize.min,
-      children: [
-        _Star(),
-        _Star(),
-        _Star(),
-        _Star(),
-        _Star(),
-      ],
+      children: List.generate(5, (index) => _Star(active: index < rating)),
     );
   }
 }
 
 class _Star extends StatelessWidget {
-  const _Star();
+  const _Star({required this.active});
+
+  final bool active;
 
   @override
   Widget build(BuildContext context) {
-    // Use a brand-warm amber via the warning token rather than Colors.yellow.
-    return const Padding(
-      padding: EdgeInsetsDirectional.only(start: 1),
-      child: Icon(Icons.star, size: 15, color: AppColor.warning),
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(start: 1),
+      child: Icon(
+        Icons.star,
+        size: 15,
+        color: active ? AppColor.warning : AppColor.border,
+      ),
     );
   }
 }
 
 class _UserAvatar extends StatelessWidget {
-  const _UserAvatar();
+  const _UserAvatar({
+    required this.name,
+    required this.imagePath,
+  });
+
+  final String name;
+  final String imagePath;
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<ProfileImageState>(
-      valueListenable: ProfileImageStore.instance,
-      builder: (_, snap, __) {
-        final ImageProvider? provider = snap.bytes != null
-            ? MemoryImage(snap.bytes!)
-            : snap.file != null
-                ? FileImage(snap.file!)
-                : null;
+    final trimmed = imagePath.trim();
+    final provider = trimmed.startsWith('http')
+        ? NetworkImage(trimmed)
+        : trimmed.startsWith('assets/')
+            ? AssetImage(trimmed) as ImageProvider
+            : null;
+    final initial = name.trim().isNotEmpty ? name.trim()[0] : '؟';
 
-        if (provider == null) {
-          return CircleAvatar(
-            radius: 20.w,
-            backgroundColor: AppColor.primary50,
-            child: Icon(Icons.person, color: AppColor.primary, size: 22.sp),
-          );
-        }
-        return CircleAvatar(radius: 20.w, backgroundImage: provider);
-      },
+    return CircleAvatar(
+      radius: 20.w,
+      backgroundColor: AppColor.primary50,
+      backgroundImage: provider,
+      child: provider == null
+          ? Text(
+              initial,
+              style: AppText.labelMd.copyWith(
+                color: AppColor.primary,
+                fontWeight: FontWeight.w800,
+              ),
+            )
+          : null,
     );
   }
 }
