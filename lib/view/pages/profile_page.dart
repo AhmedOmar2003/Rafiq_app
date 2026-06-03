@@ -19,6 +19,7 @@ import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import '../../auth/login/login_screen.dart';
 import '../../core/design/components/components.dart';
 import '../../core/utils/app_microcopy.dart';
+import '../../core/utils/app_error_formatter.dart';
 import '../../model/place.dart';
 import '../../models/subscription/plan.dart';
 import '../../models/suggestion_item_model/suggestion_item.dart';
@@ -305,10 +306,7 @@ class _ProfilePageState extends State<ProfilePage> {
         Navigator.of(context).pop();
         AppFeedback.success(AppCopy.changePwSuccess);
       } catch (e) {
-        errorMessage.value =
-            e.toString().replaceFirst('Exception: ', '').trim().isNotEmpty
-                ? e.toString().replaceFirst('Exception: ', '').trim()
-                : AppCopy.changePwGenericFail;
+        errorMessage.value = AppErrorFormatter.userMessage(e);
       } finally {
         isLoading.value = false;
       }

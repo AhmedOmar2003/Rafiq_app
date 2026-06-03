@@ -117,7 +117,7 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      AppFeedback.error(e.toString().replaceFirst('Exception: ', ''));
+      AppFeedback.error('$e');
     } finally {
       if (mounted) setState(() => _isVerifying = false);
     }
@@ -134,7 +134,7 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
       AppFeedback.success(AppCopy.forgotCodeSent);
     } catch (e) {
       if (!mounted) return;
-      AppFeedback.error(e.toString().replaceFirst('Exception: ', ''));
+      AppFeedback.error('$e');
     } finally {
       if (mounted) setState(() => _isResending = false);
     }

@@ -141,7 +141,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       await _refresh();
     } catch (e) {
       if (!mounted) return;
-      AppFeedback.error(e.toString().replaceFirst('Exception: ', ''));
+      AppFeedback.error('$e');
     } finally {
       if (mounted) setState(() => _busyCampaignId = null);
     }
@@ -1023,7 +1023,7 @@ class _CreateCampaignSheetState extends State<_CreateCampaignSheet> {
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
-      AppFeedback.error(e.toString().replaceFirst('Exception: ', ''));
+      AppFeedback.error('$e');
     } finally {
       if (mounted) setState(() => _busy = false);
     }

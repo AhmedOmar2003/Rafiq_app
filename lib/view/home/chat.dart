@@ -5,6 +5,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/components/app_page_header.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
+import 'package:rafiq_app/core/utils/app_error_formatter.dart';
 import 'package:rafiq_app/service/ai_chat_service.dart';
 
 class BotScreen extends StatefulWidget {
@@ -22,8 +23,7 @@ class _BotScreenState extends State<BotScreen> {
   final List<Message> _messages = [
     Message(
       isUser: false,
-      message:
-          "أهلاً بك في تطبيق 'رفيق'! نحن هنا لنساعدك في العثور على أفضل الأماكن السياحية، الثقافية، والتعليمية في مصر، مع التركيز على الأماكن التي تحافظ على الهوية المصرية وتشجع السياحة الداخلية. كيف يمكنني مساعدتك اليوم؟",
+      message: "أهلاً بيك. اسألني وأنا أساعدك بسرعة.",
       date: DateTime.now(),
     ),
   ];
@@ -93,7 +93,7 @@ class _BotScreenState extends State<BotScreen> {
         _messages.add(
           Message(
             isUser: false,
-            message: e.toString().replaceFirst('Exception: ', ''),
+            message: AppErrorFormatter.userMessage(e),
             date: DateTime.now(),
           ),
         );

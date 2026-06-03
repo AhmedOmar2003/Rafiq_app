@@ -179,7 +179,7 @@ class _DetailsPageState extends State<DetailsPage> {
       );
     } catch (e) {
       if (!_isMounted) return;
-      AppFeedback.error(e.toString().replaceFirst('Exception: ', ''));
+      AppFeedback.error('$e');
     } finally {
       if (_isMounted) {
         setState(() => _isFavoriteBusy = false);

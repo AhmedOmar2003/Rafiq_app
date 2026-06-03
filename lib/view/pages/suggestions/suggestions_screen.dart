@@ -90,31 +90,35 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
   Widget _buildProfileAvatar() {
     return Padding(
       padding: EdgeInsets.only(right: AppSpacing.sm.w),
-      child: InkResponse(
-        radius: 24.w,
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const ProfilePage()),
-        ).then((_) => ProfileImageStore.instance.refresh()),
-        // Only the avatar rebuilds when the picture changes, not the whole
-        // suggestions screen.
-        child: ValueListenableBuilder<ProfileImageState>(
-          valueListenable: ProfileImageStore.instance,
-          builder: (_, snap, __) {
-            ImageProvider provider;
-            if (snap.bytes != null) {
-              provider = MemoryImage(snap.bytes!);
-            } else if (snap.file != null) {
-              provider = FileImage(snap.file!);
-            } else {
-              provider = const AssetImage('assets/images/default_profile.webp');
-            }
-            return CircleAvatar(
-              radius: 18.w,
-              backgroundColor: AppColor.surfaceMuted,
-              backgroundImage: provider,
-            );
-          },
+      child: Semantics(
+        button: true,
+        label: 'افتح البروفايل',
+        child: InkResponse(
+          radius: 24.w,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ProfilePage()),
+          ).then((_) => ProfileImageStore.instance.refresh()),
+          // Only the avatar rebuilds when the picture changes, not the whole
+          // suggestions screen.
+          child: ValueListenableBuilder<ProfileImageState>(
+            valueListenable: ProfileImageStore.instance,
+            builder: (_, snap, __) {
+              ImageProvider provider;
+              if (snap.bytes != null) {
+                provider = MemoryImage(snap.bytes!);
+              } else if (snap.file != null) {
+                provider = FileImage(snap.file!);
+              } else {
+                provider = const AssetImage('assets/images/default_profile.webp');
+              }
+              return CircleAvatar(
+                radius: 18.w,
+                backgroundColor: AppColor.surfaceMuted,
+                backgroundImage: provider,
+              );
+            },
+          ),
         ),
       ),
     );

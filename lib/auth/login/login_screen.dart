@@ -46,7 +46,7 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _showSuccessOverlay = true);
     } catch (e) {
       if (!mounted) return;
-      AppFeedback.error(e.toString().replaceFirst('Exception: ', ''));
+      AppFeedback.error('$e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -60,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _showSuccessOverlay = true);
     } catch (e) {
       if (!mounted) return;
-      AppFeedback.error(e.toString().replaceFirst('Exception: ', ''));
+      AppFeedback.error('$e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -163,6 +163,7 @@ class _LoginScreenState extends State<LoginScreen> {
       label: AppCopy.authEmailLabel,
       hintText: AppCopy.authEmailHint,
       controller: emailController,
+      autofillHints: const [AutofillHints.username, AutofillHints.email],
       suffixIcon:
           const Icon(Icons.email_outlined, color: AppColor.textSecondary),
       textInputAction: TextInputAction.next,
@@ -180,8 +181,11 @@ class _LoginScreenState extends State<LoginScreen> {
       label: AppCopy.authPasswordLabel,
       hintText: AppCopy.authPasswordHint,
       controller: passwordController,
+      helperText: 'اكتب كلمة السر وكمل.',
+      autofillHints: const [AutofillHints.password],
       isPassword: true,
       textInputAction: TextInputAction.done,
+      onFieldSubmitted: (_) => _handleLogin(),
       validator: (value) =>
           (value == null || value.isEmpty) ? AppCopy.passwordRequired : null,
     );

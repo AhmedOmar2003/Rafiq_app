@@ -47,7 +47,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       setState(() => _showSuccessOverlay = true);
     } catch (e) {
       if (!mounted) return;
-      AppFeedback.error(e.toString().replaceFirst('Exception: ', ''));
+      AppFeedback.error('$e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -61,7 +61,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       setState(() => _showSuccessOverlay = true);
     } catch (e) {
       if (!mounted) return;
-      AppFeedback.error(e.toString().replaceFirst('Exception: ', ''));
+      AppFeedback.error('$e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -165,6 +165,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       label: AppCopy.registerNameLabel,
       hintText: AppCopy.registerNameHint,
       controller: userNameController,
+      autofillHints: const [AutofillHints.name],
       suffixIcon: const Icon(Icons.person_outline_rounded,
           color: AppColor.textSecondary),
       textInputAction: TextInputAction.next,
@@ -179,6 +180,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       label: AppCopy.authEmailLabel,
       hintText: AppCopy.authEmailHint,
       controller: emailController,
+      autofillHints: const [AutofillHints.username, AutofillHints.email],
       suffixIcon:
           const Icon(Icons.email_outlined, color: AppColor.textSecondary),
       textInputAction: TextInputAction.next,
@@ -196,8 +198,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       label: AppCopy.authPasswordLabel,
       hintText: AppCopy.authPasswordHint,
       controller: passwordController,
+      helperText: 'لازم 6 حروف أو أكتر.',
+      autofillHints: const [AutofillHints.newPassword],
       isPassword: true,
       textInputAction: TextInputAction.done,
+      onFieldSubmitted: (_) => _handleRegister(),
       validator: (value) {
         if (value == null || value.isEmpty) return AppCopy.passwordRequired;
         if (!AuthService.isStrongPassword(value)) return AppCopy.passwordShort;
@@ -209,8 +214,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget _buildPasswordRules() {
     return Padding(
       padding: EdgeInsets.only(top: AppSpacing.xs.h, bottom: AppSpacing.sm.h),
-      child:
-          Text(AuthService.passwordRequirementMessage(), style: AppText.bodySm),
+      child: Text(
+        'يفضل تبقى قوية وسهلة تفتكرها.',
+        style: AppText.bodySm,
+      ),
     );
   }
 

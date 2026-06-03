@@ -15,6 +15,7 @@ import 'package:rafiq_app/service/subscription_service.dart';
 import 'package:rafiq_app/view/provider/hub/provider_hub_screen.dart';
 import 'package:rafiq_app/view/provider/subscription/subscription_screen.dart';
 
+import '../../../core/utils/app_error_formatter.dart';
 import '../../../core/utils/app_microcopy.dart';
 import '../../../core/utils/spacing.dart';
 
@@ -246,7 +247,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
       _returnToHub();
     } catch (e) {
       _showSnackBar(
-        e.toString().replaceFirst('Exception: ', ''),
+        AppErrorFormatter.userMessage(e),
         isError: true,
       );
     } finally {

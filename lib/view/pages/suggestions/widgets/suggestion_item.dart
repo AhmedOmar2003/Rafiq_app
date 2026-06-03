@@ -61,14 +61,17 @@ class SuggestionItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () async {
-        await _openFilterSheet(context);
-      },
-      // PERFORMANCE: only rebuild this chip when *its own* slot in FilterState
-      // changes. Without buildWhen, every state emit (loading toggle, places
-      // update, error update) would rebuild all 3 chips needlessly.
-      child: BlocBuilder<FilterCubit, FilterState>(
+    return Semantics(
+      button: true,
+      label: 'فلتر ${model.text}',
+      child: GestureDetector(
+        onTap: () async {
+          await _openFilterSheet(context);
+        },
+        // PERFORMANCE: only rebuild this chip when *its own* slot in FilterState
+        // changes. Without buildWhen, every state emit (loading toggle, places
+        // update, error update) would rebuild all 3 chips needlessly.
+        child: BlocBuilder<FilterCubit, FilterState>(
         buildWhen: (prev, curr) =>
             _getSelectedFilterFromState(model.text, prev) !=
             _getSelectedFilterFromState(model.text, curr),
@@ -77,7 +80,7 @@ class SuggestionItem extends StatelessWidget {
           final isSelected = selectedFilter != null;
           return Container(
             margin: EdgeInsets.only(left: 12.w),
-            height: 44.h,
+            height: 48.h,
             decoration: BoxDecoration(
               color: isSelected ? AppColor.primary : AppColor.white,
               borderRadius: BorderRadius.circular(24.r),
@@ -130,6 +133,7 @@ class SuggestionItem extends StatelessWidget {
             ),
           );
         },
+      ),
       ),
     );
   }
@@ -266,7 +270,7 @@ class SuggestionItem extends StatelessWidget {
                         onPress: () async {
                           await cubit.applyFilters();
                           if (sheetContext.mounted) Navigator.pop(sheetContext);
-                          AppFeedback.success("تم تطبيق الفلاتر");
+                          AppFeedback.success("تم التحديث");
                         },
                       ),
                     ),

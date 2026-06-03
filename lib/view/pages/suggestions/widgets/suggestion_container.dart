@@ -31,52 +31,57 @@ class CustomSuggestionContainer extends StatelessWidget {
         horizontal: AppSpacing.lg.w,
         vertical: AppSpacing.sm.h,
       ),
-      child: AppCard(
-        onTap: onTap,
-        padding: EdgeInsets.zero,
-        elevation: 1,
-        radius: AppRadii.rLg,
-        child: ClipRRect(
-          borderRadius: AppRadii.rLg,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _Hero(image: model.image, rating: model.rate),
-              Padding(
-                padding: EdgeInsets.all(AppSpacing.lg.w),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _CategoryPill(
-                      label: model.suggestionText,
-                      icon: model.icon,
-                      color: model.color,
-                    ),
-                    gapV(AppSpacing.md),
-                    Text(
-                      model.text,
-                      style: AppText.titleLg,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    gapV(AppSpacing.sm),
-                    Text(
-                      model.body,
-                      style: AppText.bodySm.copyWith(
-                        color: AppColor.textSecondary,
-                        height: 1.5,
+      child: Semantics(
+        button: true,
+        label: 'افتح ${model.text}',
+        hint: '${model.suggestionText} - ${model.address}',
+        child: AppCard(
+          onTap: onTap,
+          padding: EdgeInsets.zero,
+          elevation: 1,
+          radius: AppRadii.rLg,
+          child: ClipRRect(
+            borderRadius: AppRadii.rLg,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _Hero(image: model.image, rating: model.rate),
+                Padding(
+                  padding: EdgeInsets.all(AppSpacing.lg.w),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _CategoryPill(
+                        label: model.suggestionText,
+                        icon: model.icon,
+                        color: model.color,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    gapV(AppSpacing.sm),
-                    _AddressRow(address: model.address),
-                    gapV(AppSpacing.md),
-                    _PriceRow(price: model.price),
-                  ],
+                      gapV(AppSpacing.md),
+                      Text(
+                        model.text,
+                        style: AppText.titleLg,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      gapV(AppSpacing.sm),
+                      Text(
+                        model.body,
+                        style: AppText.bodySm.copyWith(
+                          color: AppColor.textSecondary,
+                          height: 1.5,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      gapV(AppSpacing.sm),
+                      _AddressRow(address: model.address),
+                      gapV(AppSpacing.md),
+                      _PriceRow(price: model.price),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -257,23 +262,10 @@ class _PriceRow extends StatelessWidget {
             color: AppColor.primary50,
             borderRadius: AppRadii.rPill,
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'افتح',
-                style: AppText.labelSm.copyWith(
-                  color: AppColor.primary,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              gapH(AppSpacing.xs),
-              Icon(
-                Icons.arrow_forward_rounded,
-                color: AppColor.primary,
-                size: 18.sp,
-              ),
-            ],
+          child: Icon(
+            Icons.arrow_forward_rounded,
+            color: AppColor.primary,
+            size: 18.sp,
           ),
         ),
       ],

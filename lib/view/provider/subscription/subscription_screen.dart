@@ -315,11 +315,11 @@ class _Hero extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: AppText.displayMd),
-        gapV(AppSpacing.sm),
+        Text(title, style: AppText.headingLg.copyWith(fontWeight: FontWeight.w800)),
+        gapV(AppSpacing.xs),
         Text(
           subtitle,
-          style: AppText.bodyLg.copyWith(color: AppColor.textSecondary),
+          style: AppText.bodyMd.copyWith(color: AppColor.textSecondary),
         ),
       ],
     );
@@ -359,7 +359,7 @@ class _ReviewExpectationCard extends StatelessWidget {
               AppCopy.subReviewWindowNotice,
               style: AppText.bodySm.copyWith(
                 color: AppColor.textPrimary,
-                height: 1.45,
+                height: 1.4,
               ),
             ),
           ),
