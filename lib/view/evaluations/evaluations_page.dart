@@ -85,7 +85,9 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
     final userName =
         prefs.getString('userName') ?? AppCopy.reviewAuthorAnonymous;
 
-    if (userId == null || _selectedRating == 0 || textController.text.trim().isEmpty) {
+    if (userId == null ||
+        _selectedRating == 0 ||
+        textController.text.trim().isEmpty) {
       AppFeedback.warning(
         _selectedRating == 0
             ? AppCopy.reviewPickStars
@@ -163,10 +165,13 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
   /// Sticky comment composer pinned above the keyboard.
   Widget _buildCommentBar() {
     return AppStickyFooter(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      child: Semantics(
+        container: true,
+        label: 'إضافة تقييم جديد',
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           Text(
             AppCopy.reviewPickStars,
             style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
@@ -217,6 +222,7 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
             isLoading: isLoading,
           ),
         ],
+        ),
       ),
     );
   }
@@ -241,22 +247,16 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
               ),
             ),
             gapV(AppSpacing.xxl),
-            TweenAnimationBuilder<double>(
-              duration: const Duration(milliseconds: 600),
-              curve: Curves.easeOut,
-              tween: Tween<double>(begin: 0.8, end: 1.0),
-              builder: (context, value, child) => Transform.scale(
-                scale: value,
-                child: Text(
-                  AppCopy.reviewsEmptyHeadline,
-                  style: AppText.headingLg.copyWith(color: AppColor.primary),
-                ),
-              ),
+            Text(
+              AppCopy.reviewsEmptyHeadline,
+              style: AppText.headingLg.copyWith(color: AppColor.primary),
             ),
             gapV(AppSpacing.lg),
             Container(
               padding: EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg.w, vertical: AppSpacing.xxl.h),
+                horizontal: AppSpacing.lg.w,
+                vertical: AppSpacing.xl.h,
+              ),
               decoration: BoxDecoration(
                 color: AppColor.surfaceCard,
                 borderRadius: AppRadii.rXl,
@@ -268,10 +268,9 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
                       AppCopy.reviewsEmptyShare, Icons.share_outlined),
                   gapV(AppSpacing.lg),
                   _buildEmptyStateItem(
-                      AppCopy.reviewsEmptyHelp, Icons.lightbulb_outline),
-                  gapV(AppSpacing.lg),
-                  _buildEmptyStateItem(
-                      AppCopy.reviewsEmptyDiscover, Icons.explore_outlined),
+                    AppCopy.reviewsEmptyHelp,
+                    Icons.lightbulb_outline,
+                  ),
                 ],
               ),
             ),
@@ -300,17 +299,21 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
 
   Widget _buildEvaluationItem(
       EvaluationsItemModel evaluation, String formattedDate) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 16.h),
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: AppColor.surfaceCard,
-        borderRadius: AppRadii.rLg,
-        boxShadow: AppShadows.level1,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return Semantics(
+      container: true,
+      label:
+          '${evaluation.name}. تقييم ${evaluation.rating} من 5. ${evaluation.body.isNotEmpty ? evaluation.body : AppCopy.reviewNoCommentFallback}',
+      child: Container(
+        margin: EdgeInsets.only(bottom: 16.h),
+        padding: EdgeInsets.all(16.w),
+        decoration: BoxDecoration(
+          color: AppColor.surfaceCard,
+          borderRadius: AppRadii.rLg,
+          boxShadow: AppShadows.level1,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           _ReviewerAvatar(name: evaluation.name, imagePath: evaluation.image),
           gapH(AppSpacing.lg),
           Expanded(
@@ -328,7 +331,7 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
                               child: Icon(Icons.star_rounded,
                                   color: i < evaluation.rating
                                       ? AppColor.warning
-                                      : AppColor.border,
+                                      : AppColor.textMuted,
                                   size: 18.w),
                             )),
                     gapH(AppSpacing.sm),
@@ -344,6 +347,7 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
             ),
           ),
         ],
+        ),
       ),
     );
   }
@@ -361,12 +365,16 @@ class _RatingSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Wrap(
+      spacing: AppSpacing.sm.w,
+      runSpacing: AppSpacing.sm.h,
       children: List.generate(5, (index) {
         final rating = index + 1;
         final selected = rating <= value;
-        return Padding(
-          padding: EdgeInsets.only(left: AppSpacing.sm.w),
+        return Semantics(
+          button: true,
+          selected: selected,
+          label: 'تقييم $rating نجوم',
           child: InkWell(
             borderRadius: AppRadii.rPill,
             onTap: () => onChanged(rating),
@@ -374,17 +382,17 @@ class _RatingSelector extends StatelessWidget {
               padding: EdgeInsets.all(AppSpacing.sm.w),
               decoration: BoxDecoration(
                 color: selected
-                    ? AppColor.warning.withValues(alpha: 0.12)
+                    ? AppColor.warning.withValues(alpha: 0.16)
                     : AppColor.surfaceMuted,
                 borderRadius: AppRadii.rPill,
                 border: Border.all(
-                  color: selected ? AppColor.warning : AppColor.border,
+                  color: selected ? AppColor.warning : AppColor.textMuted,
                 ),
               ),
               child: Icon(
                 Icons.star_rounded,
                 size: 24.sp,
-                color: selected ? AppColor.warning : AppColor.textTertiary,
+                color: selected ? AppColor.warning : AppColor.textSecondary,
               ),
             ),
           ),

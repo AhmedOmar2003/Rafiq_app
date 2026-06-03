@@ -124,18 +124,18 @@ class AppCopy {
   static const reviewDateUnknown = 'بدون تاريخ';
   static const reviewAuthorAnonymous = 'مستخدم مجهول';
   static const reviewInputHint = 'قول لنا رأيك في المكان...';
-  static const reviewEmptyText = 'اكتب تقييمك الأول، وبعدها ابعته.';
+  static const reviewEmptyText = 'اكتب تعليق قصير وبعدين ابعته.';
   static const reviewPickStars = 'اختر تقييمك بالنجوم';
   static const reviewSendCta = 'أرسل التقييم';
-  static const reviewStarsHelper = 'حدد النجوم الأول، ولو حابب اكتب تعليق.';
+  static const reviewStarsHelper = 'اختار النجوم، ولو حابب اكتب تعليق.';
   static const reviewWriteOptional = 'اكتب تعليقك هنا';
   static const reviewNoCommentFallback = 'أضاف تقييمًا بدون تعليق نصي.';
   static const reviewThanksTitle = 'وصل تقييمك';
   static const reviewThanksBody = 'رأيك هيساعد ناس تختار أسهل';
   static const reviewsEmptyHeadline = 'لسه مفيش تقييمات';
-  static const reviewsEmptyShare = 'شارك رأيك';
-  static const reviewsEmptyHelp = 'ساعد الناس تختار صح';
-  static const reviewsEmptyDiscover = 'اكتشف أماكن جديدة مع الجميع';
+  static const reviewsEmptyShare = 'ابدأ أول تقييم';
+  static const reviewsEmptyHelp = 'رأيك هيفرق مع غيرك';
+  static const reviewsEmptyDiscover = 'قول رأيك ببساطة';
 
   // --- Details page ------------------------------------------------------------
   static const detailsTitle = 'التفاصيل';
@@ -233,10 +233,10 @@ class AppCopy {
   // --- Forgot password ---------------------------------------------------------
   static const forgotTitle = 'نسيت كلمة السر؟';
   static const forgotBody =
-      'اكتب بريدك وهنبعتلك كود عشان تغيّر كلمة السر.';
+      'اكتب بريدك وهنبعتلك كود ترجع تدخل بيه.';
   static const forgotSendCode = 'ابعت الكود';
   static const forgotCodeSent = 'بعتنالك كود التأكيد على بريدك ✉️';
-  static const forgotHint = 'أول ما الكود يوصلك اكتبه وكمل.';
+  static const forgotHint = 'لما الكود يوصلك اكتبه وكمل.';
 
   // --- Verify code -------------------------------------------------------------
   static const verifyTitle = 'تأكيد الكود';
@@ -261,7 +261,7 @@ class AppCopy {
 
   // --- Reset password ----------------------------------------------------------
   static const resetTitle = 'كلمة سر جديدة';
-  static const resetBody = 'اختار كلمة سر جديدة وسهلة تفتكرها.';
+  static const resetBody = 'اختار كلمة سر جديدة وسهلة.';
   static const resetCta = 'حفظ كلمة السر';
   static const resetSuccess = 'تمام! كلمة السر اتغيّرت ✅';
   static const resetSuccessBody = 'تقدر دلوقتي تسجّل دخولك بكلمة السر الجديدة.';
