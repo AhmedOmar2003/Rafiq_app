@@ -326,7 +326,7 @@ class _Hero extends StatelessWidget {
                   Text(
                     email,
                     style: AppText.labelMd.copyWith(
-                      color: AppColor.white.withValues(alpha: 0.88),
+                      color: AppColor.white.withValues(alpha: 0.94),
                     ),
                     textAlign: TextAlign.center,
                     maxLines: 1,
@@ -386,7 +386,7 @@ class _BodyText extends StatelessWidget {
         gapV(AppSpacing.xs),
         Text(
           tail,
-          style: AppText.bodyMd.copyWith(color: AppColor.textSecondary),
+          style: AppText.bodyMd.copyWith(color: AppColor.neutral700),
           textAlign: TextAlign.center,
         ),
       ],
@@ -421,7 +421,7 @@ class _PinField extends StatelessWidget {
           fieldWidth: 46.w,
           borderWidth: 1.4,
           activeBorderWidth: 1.8,
-          inactiveColor: AppColor.border,
+          inactiveColor: AppColor.borderStrong,
           activeColor: AppColor.primary,
           selectedColor: AppColor.primary,
           disabledColor: AppColor.neutral200,
@@ -487,8 +487,10 @@ class _ResendBlock extends StatelessWidget {
                     gapH(AppSpacing.sm),
                     Text(
                       '${AppCopy.verifyResendIn} $countdown',
-                      style: AppText.labelSm
-                          .copyWith(color: AppColor.textSecondary),
+                      style: AppText.labelSm.copyWith(
+                        color: AppColor.textPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ],
                 ),

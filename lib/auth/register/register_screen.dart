@@ -1,4 +1,3 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rafiq_app/auth/login/login_screen.dart';
@@ -110,7 +109,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget _buildLogo() {
-    return Center(child: AppImage(AppImages.logo, height: 100.h, width: 180.w));
+    return ExcludeSemantics(
+      child: Center(
+        child: AppImage(AppImages.logo, height: 100.h, width: 180.w),
+      ),
+    );
   }
 
   Widget _buildRegisterForm() {
@@ -133,6 +136,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 style: AppText.displayMd.copyWith(
                     color: AppColor.textPrimary, fontWeight: FontWeight.w700),
               ),
+            ),
+            gapV(AppSpacing.sm),
+            Text(
+              AppCopy.registerSubtitle,
+              style: AppText.bodyMd.copyWith(color: AppColor.textSecondary),
+              textAlign: TextAlign.center,
             ),
             gapV(AppSpacing.xxl),
             _buildUsernameInput(),
@@ -216,31 +225,43 @@ class _RegisterScreenState extends State<RegisterScreen> {
       padding: EdgeInsets.only(top: AppSpacing.xs.h, bottom: AppSpacing.sm.h),
       child: Text(
         'يفضل تبقى قوية وسهلة تفتكرها.',
-        style: AppText.bodySm,
+        style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
       ),
     );
   }
 
   Widget _buildLoginLink() {
     return Center(
-      child: RichText(
-        text: TextSpan(
-          children: [
-            TextSpan(
-                text: AppCopy.registerHasAccountPrefix,
-                style: AppText.bodyMd.copyWith(color: AppColor.textPrimary)),
-            TextSpan(
-              text: AppCopy.registerGoToLogin,
-              recognizer: TapGestureRecognizer()
-                ..onTap = () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const LoginScreen()),
-                    ),
-              style: AppText.labelMd.copyWith(color: AppColor.primary),
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: AppSpacing.xs.w,
+        runSpacing: AppSpacing.xs.h,
+        children: [
+          Text(
+            AppCopy.registerHasAccountPrefix,
+            style: AppText.bodyMd.copyWith(color: AppColor.textPrimary),
+          ),
+          TextButton(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const LoginScreen()),
             ),
-          ],
-        ),
+            style: TextButton.styleFrom(
+              minimumSize: Size(0, 44.h),
+              foregroundColor: AppColor.primary700,
+              padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs.w),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: Text(
+              AppCopy.registerGoToLogin,
+              style: AppText.labelMd.copyWith(
+                color: AppColor.primary700,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

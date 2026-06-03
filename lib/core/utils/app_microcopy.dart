@@ -216,19 +216,21 @@ class AppCopy {
   static const loginTitle = 'تسجيل الدخول';
   static const loginCta = 'دخول';
   static const loginGoogle = 'كمّل بـ Google';
-  static const loginSuccess = 'دخلت بنجاح ✅';
+  static const loginSuccess = 'تمام، دخلت بنجاح ✅';
   static const loginNoAccountPrefix = 'لسه ما عملتش حساب؟ ';
   static const loginGoToRegister = 'سجّل دلوقتي';
+  static const loginSubtitle = 'ادخل وكمل مكان ما وقفت.';
 
   // --- Register ----------------------------------------------------------------
   static const registerTitle = 'إنشاء حساب';
   static const registerCta = 'سجّل';
   static const registerGoogle = 'سجّل بـ Google';
-  static const registerSuccess = 'حسابك اتعمل بنجاح ✅';
+  static const registerSuccess = 'حسابك جاهز ✅';
   static const registerNameLabel = 'اسمك';
   static const registerNameHint = 'مثلاً: أحمد عصام';
   static const registerHasAccountPrefix = 'عندك حساب بالفعل؟ ';
   static const registerGoToLogin = 'سجّل دخول';
+  static const registerSubtitle = 'خطوة صغيرة ونبدأ.';
 
   // --- Forgot password ---------------------------------------------------------
   static const forgotTitle = 'نسيت كلمة السر؟';
@@ -249,15 +251,15 @@ class AppCopy {
 
   // --- Signup verification (new flow after register) --------------------------
   static const signupVerifyTitle = 'أكّد إيميلك';
-  static const signupVerifyBody = 'بعتنالك كود على بريدك،';
-  static const signupVerifyTail = 'اكتبه تحت عشان نفعّل حسابك.';
+  static const signupVerifyBody = 'بعتنالك كود على بريدك.';
+  static const signupVerifyTail = 'اكتبه تحت ونكمّل.';
   static const signupVerifySuccessTitle = 'حسابك اتفعّل ✅';
   static const signupVerifySuccessBody = 'يلا نبدأ';
 
   // --- Password reset verification --------------------------------------------
   static const resetVerifyTitle = 'تأكيد الهوية';
-  static const resetVerifyBody = 'بعتنالك كود على بريدك،';
-  static const resetVerifyTail = 'اكتبه عشان نأكّد إنك إنت.';
+  static const resetVerifyBody = 'بعتنالك كود على بريدك.';
+  static const resetVerifyTail = 'اكتبه عشان نكمّل بأمان.';
 
   // --- Reset password ----------------------------------------------------------
   static const resetTitle = 'كلمة سر جديدة';

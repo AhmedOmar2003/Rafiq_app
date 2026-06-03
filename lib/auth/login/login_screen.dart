@@ -1,4 +1,3 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rafiq_app/auth/forget%20password/forget_password.dart';
@@ -109,7 +108,11 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildLogo() {
-    return Center(child: AppImage(AppImages.logo, height: 100.h, width: 180.w));
+    return ExcludeSemantics(
+      child: Center(
+        child: AppImage(AppImages.logo, height: 100.h, width: 180.w),
+      ),
+    );
   }
 
   Widget _buildLoginForm() {
@@ -132,6 +135,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: AppText.displayMd.copyWith(
                     color: AppColor.textPrimary, fontWeight: FontWeight.w700),
               ),
+            ),
+            gapV(AppSpacing.sm),
+            Text(
+              AppCopy.loginSubtitle,
+              style: AppText.bodyMd.copyWith(color: AppColor.textSecondary),
+              textAlign: TextAlign.center,
             ),
             gapV(AppSpacing.xxl),
             _buildEmailInput(),
@@ -194,12 +203,23 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildForgotPassword() {
     return Align(
       alignment: AlignmentDirectional.centerStart,
-      child: GestureDetector(
-        onTap: () => navigateTo(const ForgotPasswordScreen()),
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: AppSpacing.sm.h),
-          child: Text(AppCopy.authForgotPasswordLink,
-              style: AppText.labelMd.copyWith(color: AppColor.primary)),
+      child: TextButton(
+        onPressed: () => navigateTo(const ForgotPasswordScreen()),
+        style: TextButton.styleFrom(
+          minimumSize: Size(0, 44.h),
+          padding: EdgeInsets.symmetric(
+            horizontal: AppSpacing.xs.w,
+            vertical: AppSpacing.xs.h,
+          ),
+          foregroundColor: AppColor.primary700,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+        child: Text(
+          AppCopy.authForgotPasswordLink,
+          style: AppText.labelMd.copyWith(
+            color: AppColor.primary700,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
     );
@@ -207,24 +227,36 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildRegisterLink() {
     return Center(
-      child: RichText(
-        text: TextSpan(
-          children: [
-            TextSpan(
-                text: AppCopy.loginNoAccountPrefix,
-                style: AppText.bodyMd.copyWith(color: AppColor.textPrimary)),
-            TextSpan(
-              text: AppCopy.loginGoToRegister,
-              recognizer: TapGestureRecognizer()
-                ..onTap = () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const RegisterScreen()),
-                    ),
-              style: AppText.labelMd.copyWith(color: AppColor.primary),
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: AppSpacing.xs.w,
+        runSpacing: AppSpacing.xs.h,
+        children: [
+          Text(
+            AppCopy.loginNoAccountPrefix,
+            style: AppText.bodyMd.copyWith(color: AppColor.textPrimary),
+          ),
+          TextButton(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const RegisterScreen()),
             ),
-          ],
-        ),
+            style: TextButton.styleFrom(
+              minimumSize: Size(0, 44.h),
+              foregroundColor: AppColor.primary700,
+              padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs.w),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: Text(
+              AppCopy.loginGoToRegister,
+              style: AppText.labelMd.copyWith(
+                color: AppColor.primary700,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
