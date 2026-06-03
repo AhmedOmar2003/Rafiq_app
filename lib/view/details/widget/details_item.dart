@@ -130,7 +130,11 @@ class _DetailsItemState extends State<DetailsItem> {
         ? widget.galleryImages
         : <String>[widget.model.image];
     final hasGallery = gallery.length > 1;
-    return Column(
+    return Semantics(
+      container: true,
+      label:
+          '${model.text}. ${model.city.isNotEmpty ? model.city : model.address}. السعر ${_formatPriceLabel(model.price)}.',
+      child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
@@ -240,28 +244,34 @@ class _DetailsItemState extends State<DetailsItem> {
                     itemBuilder: (context, index) {
                       final thumb = gallery[index];
                       final isActive = index == _currentGalleryIndex;
-                      return GestureDetector(
-                        onTap: () {
-                          _galleryController.animateToPage(
-                            index,
-                            duration: const Duration(milliseconds: 250),
-                            curve: Curves.easeOutCubic,
-                          );
-                        },
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          width: 64.w,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(14.r),
-                            border: Border.all(
-                              color:
-                                  isActive ? AppColor.primary : AppColor.border,
-                              width: isActive ? 2 : 1,
+                      return Semantics(
+                        button: true,
+                        selected: isActive,
+                        label: 'صورة ${index + 1} من ${gallery.length}',
+                        child: GestureDetector(
+                          onTap: () {
+                            _galleryController.animateToPage(
+                              index,
+                              duration: const Duration(milliseconds: 250),
+                              curve: Curves.easeOutCubic,
+                            );
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            width: 64.w,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(14.r),
+                              border: Border.all(
+                                color: isActive
+                                    ? AppColor.primary
+                                    : AppColor.border,
+                                width: isActive ? 2 : 1,
+                              ),
                             ),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(13.r),
-                            child: _buildGalleryImage(context, thumb),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(13.r),
+                              child: _buildGalleryImage(context, thumb),
+                            ),
                           ),
                         ),
                       );
@@ -270,31 +280,7 @@ class _DetailsItemState extends State<DetailsItem> {
                 ),
                 verticalSpace(20),
               ],
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-                decoration: BoxDecoration(
-                  color: model.color.withValues(alpha: 0.9),
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AppImage(
-                      model.icon,
-                      color: AppColor.white,
-                      width: 20.w,
-                      height: 20.h,
-                    ),
-                    horizontalSpace(8),
-                    Text(
-                      model.suggestionText,
-                      style: AppText.labelMd.copyWith(
-                        color: AppColor.surfaceCard,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              _TypeBadge(model: model),
               verticalSpace(16),
               Text(
                 model.text,
@@ -319,149 +305,20 @@ class _DetailsItemState extends State<DetailsItem> {
                 ],
               ),
               verticalSpace(20),
-              Container(
-                padding: EdgeInsets.all(16.w),
-                decoration: BoxDecoration(
-                  color: AppColor.surfaceVariant,
-                  borderRadius: BorderRadius.circular(12.r),
-                  border: Border.all(color: AppColor.border),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: EdgeInsets.all(8.w),
-                          decoration: BoxDecoration(
-                            color: AppColor.primary.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                          child: Icon(
-                            Icons.location_on_outlined,
-                            color: AppColor.primary,
-                            size: 20.sp,
-                          ),
-                        ),
-                        horizontalSpace(12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "الموقع",
-                                style: AppText.labelSm.copyWith(
-                                  color: AppColor.textSecondary,
-                                ),
-                              ),
-                              verticalSpace(4),
-                              Text(
-                                model.address,
-                                style: AppText.bodyMd.copyWith(
-                                  color: AppColor.textPrimary,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    verticalSpace(16),
-                    GestureDetector(
-                      onTap: openMap,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(vertical: 12.h),
-                        decoration: BoxDecoration(
-                          color: AppColor.surfaceCard,
-                          borderRadius: BorderRadius.circular(10.r),
-                          border: Border.all(color: AppColor.primary),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.map_outlined,
-                              color: AppColor.primary,
-                              size: 18.sp,
-                            ),
-                            horizontalSpace(8),
-                            Text(
-                              "عرض على الخريطة",
-                              style: AppText.labelMd.copyWith(
-                                color: AppColor.primary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+              _LocationCard(
+                address: model.address,
+                onOpenMap: openMap,
               ),
               verticalSpace(20),
-              Container(
-                padding: EdgeInsets.all(16.w),
-                decoration: BoxDecoration(
-                  color: AppColor.primary.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(12.r),
-                  border: Border.all(
-                    color: AppColor.primary.withValues(alpha: 0.08),
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "السعر يبدأ من",
-                          style: AppText.labelSm.copyWith(
-                            color: AppColor.textSecondary,
-                          ),
-                        ),
-                        verticalSpace(4),
-                        Text(
-                          _formatPriceLabel(model.price),
-                          style: AppText.titleLg.copyWith(
-                            color: AppColor.primary,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Container(
-                      padding: EdgeInsets.all(8.w),
-                      decoration: BoxDecoration(
-                        color: AppColor.surfaceCard,
-                        borderRadius: BorderRadius.circular(8.r),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.star_rounded,
-                            color: AppColor.warning,
-                            size: 16.sp,
-                          ),
-                          horizontalSpace(4),
-                          Text(
-                            model.rate > 0 ? "${model.rate}" : 'جديد',
-                            style: AppText.labelMd.copyWith(
-                              color: AppColor.textPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+              _PriceCard(
+                priceLabel: _formatPriceLabel(model.price),
+                rateLabel: model.rate > 0 ? "${model.rate}" : 'جديد',
               ),
             ],
           ),
         ),
       ],
+      ),
     );
   }
 
@@ -489,6 +346,214 @@ class _DetailsItemState extends State<DetailsItem> {
     }
 
     return "$normalized جنيه مصري";
+  }
+}
+
+class _TypeBadge extends StatelessWidget {
+  const _TypeBadge({required this.model});
+
+  final SuggestionItemModel model;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+      decoration: BoxDecoration(
+        color: model.color.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(12.r),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AppImage(
+            model.icon,
+            color: AppColor.white,
+            width: 20.w,
+            height: 20.h,
+          ),
+          horizontalSpace(8),
+          Text(
+            model.suggestionText,
+            style: AppText.labelMd.copyWith(
+              color: AppColor.surfaceCard,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LocationCard extends StatelessWidget {
+  const _LocationCard({
+    required this.address,
+    required this.onOpenMap,
+  });
+
+  final String address;
+  final VoidCallback onOpenMap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: AppColor.surfaceVariant,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: AppColor.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(8.w),
+                decoration: BoxDecoration(
+                  color: AppColor.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: Icon(
+                  Icons.location_on_outlined,
+                  color: AppColor.primary,
+                  size: 20.sp,
+                ),
+              ),
+              horizontalSpace(12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "الموقع",
+                      style: AppText.labelSm.copyWith(
+                        color: AppColor.textSecondary,
+                      ),
+                    ),
+                    verticalSpace(4),
+                    Text(
+                      address,
+                      style: AppText.bodyMd.copyWith(
+                        color: AppColor.textPrimary,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          verticalSpace(16),
+          Semantics(
+            button: true,
+            label: 'عرض المكان على الخريطة',
+            child: InkWell(
+              borderRadius: BorderRadius.circular(10.r),
+              onTap: onOpenMap,
+              child: Container(
+                padding: EdgeInsets.symmetric(vertical: 12.h),
+                decoration: BoxDecoration(
+                  color: AppColor.surfaceCard,
+                  borderRadius: BorderRadius.circular(10.r),
+                  border: Border.all(color: AppColor.primary),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.map_outlined,
+                      color: AppColor.primary,
+                      size: 18.sp,
+                    ),
+                    horizontalSpace(8),
+                    Text(
+                      "عرض على الخريطة",
+                      style: AppText.labelMd.copyWith(
+                        color: AppColor.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PriceCard extends StatelessWidget {
+  const _PriceCard({
+    required this.priceLabel,
+    required this.rateLabel,
+  });
+
+  final String priceLabel;
+  final String rateLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: AppColor.primary.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(
+          color: AppColor.primary.withValues(alpha: 0.08),
+        ),
+      ),
+      child: Wrap(
+        alignment: WrapAlignment.spaceBetween,
+        runSpacing: 12.h,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "السعر",
+                style: AppText.labelSm.copyWith(
+                  color: AppColor.textSecondary,
+                ),
+              ),
+              verticalSpace(4),
+              Text(
+                priceLabel,
+                style: AppText.titleLg.copyWith(
+                  color: AppColor.primary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          Container(
+            padding: EdgeInsets.all(8.w),
+            decoration: BoxDecoration(
+              color: AppColor.surfaceCard,
+              borderRadius: BorderRadius.circular(8.r),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.star_rounded,
+                  color: AppColor.warning,
+                  size: 16.sp,
+                ),
+                horizontalSpace(4),
+                Text(
+                  rateLabel,
+                  style: AppText.labelMd.copyWith(
+                    color: AppColor.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

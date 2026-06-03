@@ -372,11 +372,14 @@ class _CampaignsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppCard(
-      padding: EdgeInsets.all(AppSpacing.lg.w),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return Semantics(
+      container: true,
+      label: 'العروض الحالية. عدد العروض ${campaigns.length}',
+      child: AppCard(
+        padding: EdgeInsets.all(AppSpacing.lg.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           Row(
             children: [
               Container(
@@ -410,6 +413,7 @@ class _CampaignsSection extends StatelessWidget {
             ),
           ),
         ],
+        ),
       ),
     );
   }
@@ -422,11 +426,14 @@ class _DescriptionSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppCard(
-      padding: EdgeInsets.all(AppSpacing.lg.w),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return Semantics(
+      container: true,
+      label: 'وصف المكان',
+      child: AppCard(
+        padding: EdgeInsets.all(AppSpacing.lg.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           Text(
             AppCopy.detailsDescriptionTitle,
             style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
@@ -436,10 +443,11 @@ class _DescriptionSection extends StatelessWidget {
             description,
             style: AppText.bodyMd.copyWith(
               color: AppColor.textSecondary,
-              height: 1.7,
+              height: 1.6,
             ),
           ),
         ],
+        ),
       ),
     );
   }
@@ -460,17 +468,21 @@ class _CampaignBannerCard extends StatelessWidget {
           )
         : AppCopy.detailsOfferNoEndDate;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColor.surfaceCard,
-        borderRadius: AppRadii.rLg,
-        border: Border.all(
-          color: AppColor.primary.withValues(alpha: 0.10),
+    return Semantics(
+      container: true,
+      label:
+          '${campaign.title}. ${_campaignKindLabel(campaign.kind)}. $endLabel',
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColor.surfaceCard,
+          borderRadius: AppRadii.rLg,
+          border: Border.all(
+            color: AppColor.primary.withValues(alpha: 0.10),
+          ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           if (hasImage)
             ClipRRect(
               borderRadius:
@@ -555,6 +567,7 @@ class _CampaignBannerCard extends StatelessWidget {
             ),
           ),
         ],
+        ),
       ),
     );
   }
@@ -621,13 +634,16 @@ class _EmptyReviews extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: AppRadii.rLg,
-      child: Padding(
-        padding: EdgeInsets.all(AppSpacing.md.w),
-        child: Column(
-          children: [
+    return Semantics(
+      button: true,
+      label: 'اكتب أول تقييم لهذا المكان',
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppRadii.rLg,
+        child: Padding(
+          padding: EdgeInsets.all(AppSpacing.md.w),
+          child: Column(
+            children: [
             Icon(
               Icons.rate_review_outlined,
               size: 48.sp,
@@ -665,6 +681,7 @@ class _EmptyReviews extends StatelessWidget {
               ),
             ),
           ],
+          ),
         ),
       ),
     );
@@ -679,11 +696,14 @@ class _SimilarSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppCard(
-      padding: EdgeInsets.zero,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return Semantics(
+      container: true,
+      label: 'أماكن شبهه. العدد ${items.length}',
+      child: AppCard(
+        padding: EdgeInsets.zero,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           Padding(
             padding: EdgeInsets.all(AppSpacing.lg.w),
             child: Row(
@@ -702,6 +722,7 @@ class _SimilarSection extends StatelessWidget {
             onItemSelected: onItemSelected,
           ),
         ],
+        ),
       ),
     );
   }
@@ -727,8 +748,6 @@ class _CountChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.place_outlined, size: 14.sp, color: AppColor.primary),
-          gapH(AppSpacing.xs),
           Text(
             '$count',
             style: AppText.labelMd.copyWith(
@@ -946,25 +965,30 @@ class _ReportSheetState extends State<_ReportSheet> {
             runSpacing: AppSpacing.sm.h,
             children: _reasons.map((r) {
               final selected = _selected == r.code;
-              return GestureDetector(
-                onTap: () => setState(() => _selected = r.code),
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md.w,
-                    vertical: AppSpacing.sm.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: selected ? AppColor.primary : AppColor.surface,
-                    borderRadius: AppRadii.rPill,
-                    border: Border.all(
-                      color: selected ? AppColor.primary : AppColor.border,
+              return Semantics(
+                button: true,
+                selected: selected,
+                label: 'سبب البلاغ ${r.label}',
+                child: GestureDetector(
+                  onTap: () => setState(() => _selected = r.code),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md.w,
+                      vertical: AppSpacing.sm.h,
                     ),
-                  ),
-                  child: Text(
-                    r.label,
-                    style: AppText.labelMd.copyWith(
-                      color: selected ? AppColor.white : AppColor.textPrimary,
-                      fontWeight: FontWeight.w700,
+                    decoration: BoxDecoration(
+                      color: selected ? AppColor.primary : AppColor.surface,
+                      borderRadius: AppRadii.rPill,
+                      border: Border.all(
+                        color: selected ? AppColor.primary : AppColor.border,
+                      ),
+                    ),
+                    child: Text(
+                      r.label,
+                      style: AppText.labelMd.copyWith(
+                        color: selected ? AppColor.white : AppColor.textPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ),

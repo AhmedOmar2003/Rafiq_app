@@ -139,14 +139,14 @@ class AppCopy {
 
   // --- Details page ------------------------------------------------------------
   static const detailsTitle = 'التفاصيل';
-  static const detailsBeFirstReview = 'كن أول واحد يعلّق';
-  static const detailsAddYourComment = 'ضيف تعليقك';
+  static const detailsBeFirstReview = 'لسه مفيش تقييمات';
+  static const detailsAddYourComment = 'اكتب أول تقييم';
   static const detailsDescriptionTitle = 'عن المكان';
   static const detailsOffersTitle = 'العروض الحالية';
   static const detailsOfferActiveNow = 'نشط الآن';
   static const detailsOfferEndsSoon = 'متاح حتى %date';
   static const detailsOfferNoEndDate = 'العرض شغال حاليًا';
-  static const detailsSimilarHeading = 'فعاليات مشابهة';
+  static const detailsSimilarHeading = 'أماكن شبهه';
   static const detailsNoSimilar = 'مفيش أماكن مشابهة دلوقتي';
 
   // --- Profile page ------------------------------------------------------------
@@ -270,7 +270,7 @@ class AppCopy {
 
   // --- Subscription page -------------------------------------------------------
   static const subTitle = 'خطط الاشتراك';
-  static const subSubtitle = 'اختار الخطة اللي تناسب نشاطك';
+  static const subSubtitle = 'اختار الأنسب لعدد أماكنك وعروضك';
   static const subBillingMonthly = 'شهري';
   static const subBillingYearly = 'سنوي';
   static const subYearlyDiscount = 'وفّر %p%'; // %p replaced with discount pct
@@ -311,9 +311,9 @@ class AppCopy {
   // --- Onboarding (provider plan picker) --------------------------------------
   static const subOnboardingTitle = 'اختار خطتك';
   static const subOnboardingSubtitle =
-      'اختار الخطة اللي تناسبك. مفيش أي خطة هتتحدد من غير اختيارك.';
+      'اختار اللي يناسبك. مفيش خطة بتتحدد من غير موافقتك.';
   static const subReviewWindowNotice =
-      'بعد ما تضيف مكانك هيدخل مراجعة، وغالبًا بيرد خلال 24 ساعة.';
+      'مكانك بيروح للمراجعة بعد الإضافة، وغالبًا بنرد خلال 24 ساعة.';
   static const subOnboardingFreeCta = 'كمّل بالخطة المجانية';
   static const subOnboardingContinueCta = 'يلا نضيف مكانك';
   static const subSaveFailed =
@@ -332,7 +332,7 @@ class AppCopy {
   static const subSuccessCta = 'يلا نبدأ';
   static const subDemoBadge = 'تجربة عرض';
   static const subDemoExplainer =
-      'ده وضع تجريبي — مفيش دفع حقيقي حتى الربط ببوابة الدفع.';
+      'الدفع الحقيقي لسه ما اتفعلش.';
 
   // --- Provider hub ------------------------------------------------------------
   static const hubTitle = 'تابع خدمتك';

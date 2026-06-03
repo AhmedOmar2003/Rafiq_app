@@ -312,16 +312,23 @@ class _Hero extends StatelessWidget {
     final title = onboarding ? AppCopy.subOnboardingTitle : AppCopy.subTitle;
     final subtitle =
         onboarding ? AppCopy.subOnboardingSubtitle : AppCopy.subSubtitle;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: AppText.headingLg.copyWith(fontWeight: FontWeight.w800)),
-        gapV(AppSpacing.xs),
-        Text(
-          subtitle,
-          style: AppText.bodyMd.copyWith(color: AppColor.textSecondary),
-        ),
-      ],
+    return Semantics(
+      header: true,
+      label: '$title. $subtitle',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: AppText.headingLg.copyWith(fontWeight: FontWeight.w800),
+          ),
+          gapV(AppSpacing.xs),
+          Text(
+            subtitle,
+            style: AppText.bodyMd.copyWith(color: AppColor.textSecondary),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -333,37 +340,42 @@ class _ReviewExpectationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg.w,
-        vertical: AppSpacing.md.h,
-      ),
-      decoration: BoxDecoration(
-        color: AppColor.warning.withValues(alpha: 0.08),
-        borderRadius: AppRadii.rLg,
-        border: Border.all(
-          color: AppColor.warning.withValues(alpha: 0.18),
+    return Semantics(
+      label: AppCopy.subReviewWindowNotice,
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg.w,
+          vertical: AppSpacing.md.h,
         ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            onboarding ? Icons.hourglass_top_rounded : Icons.info_outline_rounded,
-            color: AppColor.warning,
-            size: 20.sp,
+        decoration: BoxDecoration(
+          color: AppColor.warning.withValues(alpha: 0.08),
+          borderRadius: AppRadii.rLg,
+          border: Border.all(
+            color: AppColor.warning.withValues(alpha: 0.18),
           ),
-          gapH(AppSpacing.sm),
-          Expanded(
-            child: Text(
-              AppCopy.subReviewWindowNotice,
-              style: AppText.bodySm.copyWith(
-                color: AppColor.textPrimary,
-                height: 1.4,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              onboarding
+                  ? Icons.hourglass_top_rounded
+                  : Icons.info_outline_rounded,
+              color: AppColor.warning,
+              size: 20.sp,
+            ),
+            gapH(AppSpacing.sm),
+            Expanded(
+              child: Text(
+                AppCopy.subReviewWindowNotice,
+                style: AppText.bodySm.copyWith(
+                  color: AppColor.textPrimary,
+                  height: 1.35,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -394,8 +406,10 @@ class _BillingToggle extends StatelessWidget {
           borderRadius: AppRadii.rPill,
           border: Border.all(color: AppColor.border),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
+        child: Wrap(
+          spacing: AppSpacing.xs.w,
+          runSpacing: AppSpacing.xs.h,
+          alignment: WrapAlignment.center,
           children: [
             _ToggleChip(
               label: AppCopy.subBillingMonthly,
@@ -435,48 +449,53 @@ class _ToggleChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: selected ? AppColor.primary : Colors.transparent,
-      shape: const StadiumBorder(),
-      child: InkWell(
-        customBorder: const StadiumBorder(),
-        onTap: onTap,
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: AppSpacing.xl.w,
-            vertical: AppSpacing.sm.h,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                label,
-                style: AppText.labelMd.copyWith(
-                  color: selected ? AppColor.white : AppColor.textPrimary,
-                  fontWeight: FontWeight.w700,
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: trailing == null ? label : '$label، $trailing',
+      child: Material(
+        color: selected ? AppColor.primary : Colors.transparent,
+        shape: const StadiumBorder(),
+        child: InkWell(
+          customBorder: const StadiumBorder(),
+          onTap: onTap,
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.xl.w,
+              vertical: AppSpacing.sm.h,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: AppText.labelMd.copyWith(
+                    color: selected ? AppColor.white : AppColor.textPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-              if (trailing != null) ...[
-                gapH(AppSpacing.sm),
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm.w,
-                    vertical: 2.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: selected ? AppColor.white : AppColor.successBg,
-                    borderRadius: AppRadii.rSm,
-                  ),
-                  child: Text(
-                    trailing!,
-                    style: AppText.caption.copyWith(
-                      color: selected ? AppColor.primary : AppColor.success,
-                      fontWeight: FontWeight.w700,
+                if (trailing != null) ...[
+                  gapH(AppSpacing.sm),
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm.w,
+                      vertical: 2.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: selected ? AppColor.white : AppColor.successBg,
+                      borderRadius: AppRadii.rSm,
+                    ),
+                    child: Text(
+                      trailing!,
+                      style: AppText.caption.copyWith(
+                        color: selected ? AppColor.primary : AppColor.success,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
-                ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -513,20 +532,24 @@ class _PlanCard extends StatelessWidget {
     final per = yearly ? AppCopy.subPerYear : AppCopy.subPerMonth;
     final accent = isCurrent ? AppColor.success : plan.accentColor;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColor.surfaceCard,
-        borderRadius: AppRadii.rXl,
-        border: Border.all(
-          color: isCurrent || isRecommended ? accent : AppColor.border,
-          width: isCurrent || isRecommended ? 2 : 1,
+    return Semantics(
+      container: true,
+      label:
+          '${plan.displayName}. ${plan.tagline}. ${plan.isFree ? AppCopy.subFreeForever : '$price ج.م ${per.trim()}'}',
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColor.surfaceCard,
+          borderRadius: AppRadii.rXl,
+          border: Border.all(
+            color: isCurrent || isRecommended ? accent : AppColor.border,
+            width: isCurrent || isRecommended ? 2 : 1,
+          ),
+          boxShadow: isRecommended ? AppShadows.primaryGlow : AppShadows.level1,
         ),
-        boxShadow: isRecommended ? AppShadows.primaryGlow : AppShadows.level1,
-      ),
-      padding: EdgeInsets.all(AppSpacing.xxl.w),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+        padding: EdgeInsets.all(AppSpacing.xxl.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           Row(
             children: [
               Text(
@@ -572,7 +595,10 @@ class _PlanCard extends StatelessWidget {
               ],
             ),
           gapV(AppSpacing.lg),
-          ..._featureBullets(),
+          Wrap(
+            runSpacing: AppSpacing.xs.h,
+            children: _featureBullets(),
+          ),
           gapV(AppSpacing.xl),
           SizedBox(
             width: double.infinity,
@@ -596,6 +622,7 @@ class _PlanCard extends StatelessWidget {
             ),
           ),
         ],
+        ),
       ),
     );
   }
