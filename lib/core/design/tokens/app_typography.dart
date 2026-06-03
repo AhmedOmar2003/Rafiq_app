@@ -68,13 +68,13 @@ class AppText {
   static final TextStyle bodyLg =
       _rubik(size: 16, weight: FontWeight.w400, height: 1.55);
   static final TextStyle bodyMd = _rubik(
-    size: 14,
+    size: 15,
     weight: FontWeight.w400,
     height: 1.55,
     color: AppColor.textSecondary,
   );
   static final TextStyle bodySm = _rubik(
-    size: 12,
+    size: 13,
     weight: FontWeight.w400,
     height: 1.5,
     color: AppColor.textSecondary,
@@ -84,13 +84,13 @@ class AppText {
   static final TextStyle labelLg =
       _rubik(size: 16, weight: FontWeight.w500, height: 1.2);
   static final TextStyle labelMd =
-      _rubik(size: 14, weight: FontWeight.w500, height: 1.2);
+      _rubik(size: 15, weight: FontWeight.w500, height: 1.25);
   static final TextStyle labelSm =
-      _rubik(size: 12, weight: FontWeight.w500, height: 1.2);
+      _rubik(size: 13, weight: FontWeight.w500, height: 1.25);
 
   // Caption / overline -----------------------------------------------------
   static final TextStyle caption = _rubik(
-    size: 11,
+    size: 12,
     weight: FontWeight.w400,
     height: 1.4,
     color: AppColor.textTertiary,

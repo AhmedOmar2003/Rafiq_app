@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:rafiq_app/service/api_service.dart';
 
@@ -25,6 +26,8 @@ class UserRoleStore {
   static const _kIsProviderKey = 'is_provider_role';
   static const _kRoleChosenKey = 'role_chosen';
   static const _kEverProviderKey = 'ever_chosen_provider_role';
+  static const _kRoleOwnerUserIdKey = 'role_owner_user_id';
+  static const _kAuthUserIdKey = 'authUserId';
 
   final ValueNotifier<bool> isProvider = ValueNotifier<bool>(false);
   final ValueNotifier<bool> hasChosenRole = ValueNotifier<bool>(false);
@@ -46,12 +49,28 @@ class UserRoleStore {
   Future<void> _load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      final currentUserId = _currentAuthUserId(prefs);
+      final storedRoleOwnerId = prefs.getString(_kRoleOwnerUserIdKey);
+      final sameUser = currentUserId != null &&
+          currentUserId.isNotEmpty &&
+          storedRoleOwnerId != null &&
+          storedRoleOwnerId == currentUserId;
+
       _publish(
-        isProviderMode: prefs.getBool(_kIsProviderKey) ?? false,
-        hasChosen: prefs.getBool(_kRoleChosenKey) ?? false,
-        hasHistory: prefs.getBool(_kEverProviderKey) ??
-            (prefs.getBool(_kIsProviderKey) ?? false),
+        isProviderMode: sameUser ? (prefs.getBool(_kIsProviderKey) ?? false) : false,
+        hasChosen: sameUser ? (prefs.getBool(_kRoleChosenKey) ?? false) : false,
+        hasHistory: sameUser
+            ? (prefs.getBool(_kEverProviderKey) ??
+                (prefs.getBool(_kIsProviderKey) ?? false))
+            : false,
       );
+
+      if (!sameUser && storedRoleOwnerId != null) {
+        await prefs.remove(_kIsProviderKey);
+        await prefs.remove(_kRoleChosenKey);
+        await prefs.remove(_kEverProviderKey);
+        await prefs.remove(_kRoleOwnerUserIdKey);
+      }
 
       // Cross-device truth lives in Supabase. If this request fails (offline,
       // transient auth race), we still keep the last-known local state so the
@@ -89,7 +108,13 @@ class UserRoleStore {
 
       // Legacy installs may still know the choice locally while the backend
       // column is null. Seed the backend exactly once from the device state.
-      if (hasChosenRole.value) {
+      final prefs = await SharedPreferences.getInstance();
+      final currentUserId = _currentAuthUserId(prefs);
+      final sameUser = currentUserId != null &&
+          currentUserId.isNotEmpty &&
+          prefs.getString(_kRoleOwnerUserIdKey) == currentUserId;
+
+      if (hasChosenRole.value && sameUser) {
         await ApiService().persistAccountMode(
           isProviderMode: isProvider.value,
         );
@@ -142,6 +167,7 @@ class UserRoleStore {
       await prefs.remove(_kIsProviderKey);
       await prefs.remove(_kRoleChosenKey);
       await prefs.remove(_kEverProviderKey);
+      await prefs.remove(_kRoleOwnerUserIdKey);
     } catch (_) {/* swallow */}
   }
 
@@ -159,9 +185,13 @@ class UserRoleStore {
     );
     try {
       final prefs = await SharedPreferences.getInstance();
+      final currentUserId = _currentAuthUserId(prefs);
       await prefs.setBool(_kIsProviderKey, isProviderMode);
       await prefs.setBool(_kRoleChosenKey, hasChosen);
       await prefs.setBool(_kEverProviderKey, hasHistory);
+      if (currentUserId != null && currentUserId.isNotEmpty) {
+        await prefs.setString(_kRoleOwnerUserIdKey, currentUserId);
+      }
     } catch (_) {
       // Keep in-memory state even if local persistence fails.
     }
@@ -175,5 +205,11 @@ class UserRoleStore {
     isProvider.value = isProviderMode;
     hasChosenRole.value = hasChosen;
     hasProviderHistory.value = hasHistory;
+  }
+
+  String? _currentAuthUserId(SharedPreferences prefs) {
+    final liveUser = Supabase.instance.client.auth.currentUser ??
+        Supabase.instance.client.auth.currentSession?.user;
+    return liveUser?.id ?? prefs.getString(_kAuthUserIdKey);
   }
 }

@@ -59,9 +59,18 @@ class RafiqApp extends StatelessWidget {
             if (child == null) {
               return const SizedBox.shrink();
             }
+            final mediaQuery = MediaQuery.of(context);
             return Directionality(
               textDirection: TextDirection.rtl,
-              child: AppConnectivityScope(child: child),
+              child: MediaQuery(
+                data: mediaQuery.copyWith(
+                  textScaler: mediaQuery.textScaler.clamp(
+                    minScaleFactor: 1.0,
+                    maxScaleFactor: 1.35,
+                  ),
+                ),
+                child: AppConnectivityScope(child: child),
+              ),
             );
           },
           navigatorKey: navigatorKey,

@@ -10,17 +10,17 @@ class AppCopy {
   AppCopy._();
 
   // --- Offline / connectivity --------------------------------------------------
-  static const offlineTitle = 'النت واخد بريك صغير 😅';
-  static const offlineBody = 'أول ما يرجع هنكمّل علطول. جرّب تاني كمان شوية.';
-  static const offlineBanner = 'مفيش نت دلوقتي — بنحاول نوصل تاني...';
-  static const backOnline = 'رجع النت! 🎉';
+  static const offlineTitle = 'النت فاصل شوية';
+  static const offlineBody = 'أول ما يرجع هنكمّل. جرّب تاني بعد شوية.';
+  static const offlineBanner = 'مفيش نت دلوقتي. بنحاول نوصل تاني.';
+  static const backOnline = 'النت رجع';
 
   // --- Generic errors (friendly, no jargon) ------------------------------------
-  static const errorTitle = 'حصل لخبطة بسيطة';
+  static const errorTitle = 'حصلت مشكلة بسيطة';
   static const errorBody =
-      'مقدرناش نكمّل دلوقتي. جرّب تاني، ولو فضلت، استنّى شوية.';
+      'مقدرناش نكمّل دلوقتي. جرّب تاني بعد شوية.';
   static const errorRetry = 'حاول تاني';
-  static const errorGeneric = 'في حاجة مش ظابطة، جرّب تاني بعد شوية.';
+  static const errorGeneric = 'في حاجة مش ظابطة. جرّب تاني بعد شوية.';
 
   // --- Empty states ------------------------------------------------------------
   static const emptyResultsTitle = 'مفيش حاجة هنا لسه';
@@ -32,18 +32,18 @@ class AppCopy {
       'أول ما يعجبك مكان، دوس على القلب وهيتحفظ هنا.';
 
   // --- Loading -----------------------------------------------------------------
-  static const loading = 'ثانية واحدة...';
+  static const loading = 'ثانية بس...';
   static const loadingSuggestions = 'بندوّرلك على أحلى أماكن...';
   static const loadingSaving = 'بنحفظ بياناتك...';
 
   // --- Success -----------------------------------------------------------------
   static const successGeneric = 'تمام! اتعمل بنجاح ✅';
   static const successSaved = 'اتحفظ بنجاح';
-  static const welcomeBack = 'نوّرت تاني! 👋';
+  static const welcomeBack = 'نورت تاني';
 
   // --- Form validation (soft, guiding) -----------------------------------------
-  static const fieldRequired = 'الحقل ده مهم، اكتبه عشان نكمّل';
-  static const emailInvalid = 'البريد شكله مش مظبوط، راجعه بسرعة';
+  static const fieldRequired = 'اكتب البيانات دي عشان نكمّل';
+  static const emailInvalid = 'راجع الإيميل كده';
   static const emailGmailOnly = 'لازم يكون بريد @gmail.com';
   static const passwordRequired = 'اكتب كلمة السر';
   static const passwordShort = 'كلمة السر قصيّرة شوية، خليها 6 حروف على الأقل';
@@ -94,9 +94,9 @@ class AppCopy {
   static const providerSessionExpired =
       'انتهت جلسة الدخول، سجّل تاني عشان نكمّل.';
   static const providerAddedSuccess =
-      'تم استلام المكان وهو الآن قيد المراجعة. الاعتماد عادة يتم خلال 24 ساعة.';
+      'استلمنا المكان. هو دلوقتي قيد المراجعة وعادة بيرد خلال 24 ساعة.';
   static const providerResubmittedSuccess =
-      'تم حفظ التعديلات وإرجاع المكان للمراجعة من جديد.';
+      'اتحفظت التعديلات ورجع للمراجعة تاني.';
   static const providerImagePickError =
       'حصلت مشكلة وانت بتختار الصورة، جرّب تاني.';
   static const providerSavedTitle = 'مبروك! بيانات مكانك اتسجلت';
@@ -127,13 +127,13 @@ class AppCopy {
   static const reviewEmptyText = 'اكتب تقييمك الأول، وبعدها ابعته.';
   static const reviewPickStars = 'اختر تقييمك بالنجوم';
   static const reviewSendCta = 'أرسل التقييم';
-  static const reviewStarsHelper = 'النجوم بتوضح رأيك بسرعة قبل ما تكتب تعليقك.';
+  static const reviewStarsHelper = 'حدد النجوم الأول، ولو حابب اكتب تعليق.';
   static const reviewWriteOptional = 'اكتب تعليقك هنا';
   static const reviewNoCommentFallback = 'أضاف تقييمًا بدون تعليق نصي.';
-  static const reviewThanksTitle = 'وصل رأيك! شكراً ليك';
-  static const reviewThanksBody = 'تقييمك هيساعد ناس تختار صح';
-  static const reviewsEmptyHeadline = 'كن أول واحد يشارك تجربته!';
-  static const reviewsEmptyShare = 'شارك تجربتك مع غيرك';
+  static const reviewThanksTitle = 'وصل تقييمك';
+  static const reviewThanksBody = 'رأيك هيساعد ناس تختار أسهل';
+  static const reviewsEmptyHeadline = 'لسه مفيش تقييمات';
+  static const reviewsEmptyShare = 'شارك رأيك';
   static const reviewsEmptyHelp = 'ساعد الناس تختار صح';
   static const reviewsEmptyDiscover = 'اكتشف أماكن جديدة مع الجميع';
 
@@ -145,14 +145,14 @@ class AppCopy {
   static const detailsOffersTitle = 'العروض الحالية';
   static const detailsOfferActiveNow = 'نشط الآن';
   static const detailsOfferEndsSoon = 'متاح حتى %date';
-  static const detailsOfferNoEndDate = 'العرض متاح حاليًا لفترة مفتوحة';
+  static const detailsOfferNoEndDate = 'العرض شغال حاليًا';
   static const detailsSimilarHeading = 'فعاليات مشابهة';
   static const detailsNoSimilar = 'مفيش أماكن مشابهة دلوقتي';
 
   // --- Profile page ------------------------------------------------------------
   static const profileTitle = 'الملف الشخصي';
   static const profileNameFallback = 'مستخدم رفيق';
-  static const profileEmailFallback = 'لسه ما اضفتش بريد';
+  static const profileEmailFallback = 'لسه مفيش بريد ظاهر';
   static const profileNameLabel = 'الاسم';
   static const profileEmailLabel = 'البريد الإلكتروني';
   static const profilePasswordLabel = 'كلمة السر';
@@ -165,12 +165,12 @@ class AppCopy {
       'استكشف الأماكن كزائر (خطتك وأماكنك محفوظة بأمان)';
   static const profileSwitchConfirmTitle = 'تأكيد تغيير الدور';
   static const profileSwitchConfirmProvider =
-      'هتدخل صفحة الخطط تختار اللي يناسبك (مجاني، Pro، أو Max). تقدر ترجع مستخدم عادي في أي وقت وكل حاجة هتفضل محفوظة.';
+      'هتروح للخطط وتختار اللي يناسبك. تقدر ترجع مستخدم عادي في أي وقت.';
   static const profileSwitchConfirmUser =
-      'هتنتقل لمسار المستخدم العادي عشان تشوف الأماكن زي أي زائر. متقلقش، اشتراكك وأماكنك محفوظة بالكامل لما تحب ترجع.';
+      'هترجع تتصفح كمستخدم عادي. اشتراكك وأماكنك هيفضلوا محفوظين.';
   static const profileFavoritesTitle = 'أماكنك المفضلة';
   static const profileFavoritesBody =
-      'ارجعلها بسرعة وقت ما تحب من غير ما تدور من جديد.';
+      'ارجعلها بسرعة من غير تدوير من الأول.';
   static const profileFavoritesRefresh = 'تحديث المفضلة';
   static const profileFavoritesMore = 'فيه %n أماكن مفضلة كمان محفوظين عندك.';
 
@@ -181,7 +181,7 @@ class AppCopy {
   /// in human terms; the CTA is short and warm ("يلا أبدأ").
   static const profileBannerInviteTitle = 'ابدأ رحلتك كمقدم خدمة';
   static const profileBannerInviteBody =
-      'وسّع فرصك داخل التطبيق، واختار الخطة المناسبة لك بحرية كاملة من غير أي فرض أو استعجال.';
+      'ضيف خدمتك واختار الخطة اللي تناسبك براحتك.';
   static const profileBannerInviteCta = 'يلا نبدأ';
 
   /// Provider who switched to user mode — invite them back to their hub.
@@ -189,7 +189,7 @@ class AppCopy {
   static const profileBannerReturnTitleSingle = 'خدمتك مستنياك';
   static const profileBannerReturnTitleMulti = 'خدماتك مستنياك';
   static const profileBannerReturnBody =
-      'ارجع لإدارة نشاطك. خطتك ومكانك واشتراكك كله محفوظ زي ما سيبته.';
+      'ارجع كمل شغلك. خطتك ومكانك محفوظين زي ما هم.';
   static const profileBannerReturnCtaSingle = 'ارجع تابع خدمتك';
   static const profileBannerReturnCtaMulti = 'ارجع تابع خدماتك';
   static const logoutTitle = 'هتسجل خروج؟';
@@ -227,11 +227,10 @@ class AppCopy {
   // --- Forgot password ---------------------------------------------------------
   static const forgotTitle = 'نسيت كلمة السر؟';
   static const forgotBody =
-      'اكتب بريد Gmail بتاعك وهنبعتلك كود تأكيد عشان تختار كلمة سر جديدة.';
+      'اكتب بريدك وهنبعتلك كود عشان تغيّر كلمة السر.';
   static const forgotSendCode = 'ابعت الكود';
   static const forgotCodeSent = 'بعتنالك كود التأكيد على بريدك ✉️';
-  static const forgotHint =
-      'أول ما يوصلك الكود، اكتبه في الشاشة اللي بعدها واختار كلمة سر جديدة.';
+  static const forgotHint = 'أول ما الكود يوصلك اكتبه وكمل.';
 
   // --- Verify code -------------------------------------------------------------
   static const verifyTitle = 'تأكيد الكود';
@@ -244,10 +243,10 @@ class AppCopy {
 
   // --- Signup verification (new flow after register) --------------------------
   static const signupVerifyTitle = 'أكّد إيميلك';
-  static const signupVerifyBody = 'بعتنالك كود على بريد جيميل بتاعك،';
+  static const signupVerifyBody = 'بعتنالك كود على بريدك،';
   static const signupVerifyTail = 'اكتبه تحت عشان نفعّل حسابك.';
   static const signupVerifySuccessTitle = 'حسابك اتفعّل ✅';
-  static const signupVerifySuccessBody = 'يلا نبدأ نلاقيلك أحلى الأماكن!';
+  static const signupVerifySuccessBody = 'يلا نبدأ';
 
   // --- Password reset verification --------------------------------------------
   static const resetVerifyTitle = 'تأكيد الهوية';
@@ -256,7 +255,7 @@ class AppCopy {
 
   // --- Reset password ----------------------------------------------------------
   static const resetTitle = 'كلمة سر جديدة';
-  static const resetBody = 'اختار كلمة سر قوية وسهل تفتكرها.';
+  static const resetBody = 'اختار كلمة سر جديدة وسهلة تفتكرها.';
   static const resetCta = 'حفظ كلمة السر';
   static const resetSuccess = 'تمام! كلمة السر اتغيّرت ✅';
   static const resetSuccessBody = 'تقدر دلوقتي تسجّل دخولك بكلمة السر الجديدة.';
@@ -306,9 +305,9 @@ class AppCopy {
   // --- Onboarding (provider plan picker) --------------------------------------
   static const subOnboardingTitle = 'اختار خطتك';
   static const subOnboardingSubtitle =
-      'كل خطة بتفتحلك مميزات أكتر لمكانك. ولا خطة هتتحدد إلا باختيارك أنت.';
+      'اختار الخطة اللي تناسبك. مفيش أي خطة هتتحدد من غير اختيارك.';
   static const subReviewWindowNotice =
-      'بعد اختيار الخطة وإضافة خدمتك أو مكانك، بيظهر في لوحتك بحالة مراجعة ومعاه عدّاد واضح. الاعتماد يتم عادة خلال 24 ساعة.';
+      'بعد ما تضيف مكانك هيدخل مراجعة، وغالبًا بيرد خلال 24 ساعة.';
   static const subOnboardingFreeCta = 'كمّل بالخطة المجانية';
   static const subOnboardingContinueCta = 'يلا نضيف مكانك';
   static const subSaveFailed =
@@ -357,7 +356,7 @@ class AppCopy {
   static const anaTitle = 'تحليلاتك';
   static const anaLast30Days = 'آخر 30 يوم';
   static const anaRealDataHint =
-      'الأرقام هنا من تفاعل حقيقي لمستخدمين مسجلين خلال آخر 30 يوم: فتح صفحة المكان، حفظه في المفضلة، وفتح الاتجاهات.';
+      'الأرقام دي من تفاعل حقيقي: فتح التفاصيل، المفضلة، وفتح الخريطة.';
   static const anaViewsReal = 'فتح صفحة المكان';
   static const anaTotalActions = 'إجمالي التفاعلات';
   static const anaFavoriteAdds = 'إضافات للمفضلة';
@@ -369,22 +368,22 @@ class AppCopy {
   static const anaMapClicks = 'فتح الخريطة';
   static const anaLockedTitle = 'فعّل تحليلات الأداء';
   static const anaLockedBody =
-      'متاحة لخطة برو أو ماكس — شوف ناس بتزور صفحتك من فين، وكام مرة بيفتحوا أماكنك.';
+      'متاحة في برو أو ماكس عشان تتابع تفاعل الناس مع مكانك.';
   static const anaUpgradeCta = 'رقّي لـ برو';
 
   // --- Promotions screen -------------------------------------------------------
   static const promoTitle = 'إعلاناتك';
   static const promoEmptyTitle = 'لسه ما عملتش حملة';
   static const promoEmptyBody =
-      'اعمل حملة "Featured" أو عرض خصم — هتظهر في الواجهة الرئيسية وتجيب زوار جداد.';
+      'اعمل عرض أو إعلان لمكانك وهيوصل لناس أكتر بعد المراجعة.';
   static const promoCreateCta = 'اعمل حملة جديدة';
   static const promoCreatePendingBody =
-      'أي إعلان جديد يروح للأدمن أولًا بحالة قيد المراجعة، وهدفنا نرد خلال 6 ساعات.';
+      'أي إعلان جديد بيروح للمراجعة الأول، وغالبًا بيرد خلال 6 ساعات.';
   static const promoRejectedReason = 'سبب الرفض';
   static const promoPendingReview = 'بانتظار مراجعة الأدمن';
   static const promoLockedTitle = 'الإعلانات تبدأ من خطة برو';
   static const promoLockedBody =
-      'الإعلانات والعروض الترويجية ميزة بتساعدك تجيب زوار أكتر بسرعة.';
+      'الإعلانات والعروض بتساعدك توصل لناس أكتر.';
 
   // --- Admin overview ----------------------------------------------------------
   static const adminTitle = 'لوحة الإدارة';

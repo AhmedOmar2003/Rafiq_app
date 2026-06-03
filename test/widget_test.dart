@@ -34,14 +34,14 @@ void main() {
     expect(snapshot.providerId, 'provider-123');
   });
 
-  test('Legacy provider without backend mode falls back to regular surface',
+  test('Provider history without backend choice stays unchosen until user decides',
       () {
     final snapshot = ApiService.resolveAccountMode(
       accountMode: null,
       providerId: 'provider-123',
     );
 
-    expect(snapshot.hasChosenRole, isTrue);
+    expect(snapshot.hasChosenRole, isFalse);
     expect(snapshot.isProviderMode, isFalse);
     expect(snapshot.hasProviderHistory, isTrue);
     expect(snapshot.providerId, 'provider-123');

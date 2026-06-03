@@ -273,7 +273,7 @@ class ApiService {
           providerId: hasProviderHistory ? normalizedProviderId : null,
         ),
       _ when hasProviderHistory => AccountModeSnapshot(
-          hasChosenRole: true,
+          hasChosenRole: false,
           isProviderMode: false,
           hasProviderHistory: true,
           providerId: normalizedProviderId,

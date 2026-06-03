@@ -47,6 +47,10 @@ class ThemeServices {
       scaffoldBackgroundColor: pageBg,
       primaryColor: scheme.primary,
       dividerColor: AppColor.divider,
+      materialTapTargetSize: MaterialTapTargetSize.padded,
+      visualDensity: VisualDensity.adaptivePlatformDensity,
+      focusColor: scheme.primary.withValues(alpha: 0.12),
+      hoverColor: scheme.primary.withValues(alpha: 0.04),
       textTheme: base.textTheme.apply(
         bodyColor: scheme.onSurface,
         displayColor: scheme.onSurface,
@@ -67,8 +71,7 @@ class ThemeServices {
           disabledBackgroundColor: scheme.primary.withValues(alpha: 0.4),
           disabledForegroundColor: scheme.onPrimary.withValues(alpha: 0.8),
           elevation: 0,
-          minimumSize: Size(double.infinity, 52.h),
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          minimumSize: Size(double.infinity, 56.h),
           textStyle: AppText.labelLg,
           shape: RoundedRectangleBorder(borderRadius: AppRadii.rMd),
         ),
@@ -80,6 +83,13 @@ class ThemeServices {
           side: BorderSide(color: scheme.primary, width: 1.5),
           textStyle: AppText.labelLg,
           shape: RoundedRectangleBorder(borderRadius: AppRadii.rMd),
+        ),
+      ),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          minimumSize: Size(48.w, 48.w),
+          tapTargetSize: MaterialTapTargetSize.padded,
+          foregroundColor: scheme.onSurface,
         ),
       ),
       textButtonTheme: TextButtonThemeData(
@@ -143,6 +153,14 @@ class ThemeServices {
         backgroundColor: scheme.onSurface,
         contentTextStyle: AppText.bodyMd.copyWith(color: scheme.surface),
         shape: RoundedRectangleBorder(borderRadius: AppRadii.rMd),
+      ),
+      tooltipTheme: TooltipThemeData(
+        decoration: BoxDecoration(
+          color: AppColor.textPrimary,
+          borderRadius: AppRadii.rSm,
+        ),
+        textStyle: AppText.bodySm.copyWith(color: AppColor.white),
+        waitDuration: const Duration(milliseconds: 300),
       ),
       chipTheme: ChipThemeData(
         backgroundColor: AppColor.sand200,
