@@ -156,6 +156,12 @@ class AppCopy {
   static const profileNameLabel = 'الاسم';
   static const profileEmailLabel = 'البريد الإلكتروني';
   static const profilePasswordLabel = 'كلمة السر';
+  static const profileAppearanceSection = 'الوضوح والشكل';
+  static const profileTextSizeLabel = 'حجم الخط';
+  static const profileTextSizeHint = 'اختار الحجم اللي يريح عينك.';
+  static const profileTextSizeSmall = 'عادي';
+  static const profileTextSizeMedium = 'أوضح';
+  static const profileTextSizeLarge = 'كبير';
   static const profileChangeAvatarHint = 'دوس عشان تغيّر الصورة';
   static const profileImageSaveError = 'معرفناش نحفظ الصورة، جرّب تاني.';
   static const profileSwitchToProvider = 'حوّل لمقدم خدمة';

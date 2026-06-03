@@ -1,0 +1,36 @@
+import 'app_microcopy.dart';
+
+class AppErrorFormatter {
+  AppErrorFormatter._();
+
+  static String userMessage(Object error) {
+    final raw = error.toString().replaceFirst('Exception: ', '').trim();
+    if (raw.isEmpty) return AppCopy.errorGeneric;
+
+    final normalized = raw.toLowerCase();
+
+    if (normalized.contains('socketexception') ||
+        normalized.contains('timeout') ||
+        normalized.contains('network') ||
+        normalized.contains('connection')) {
+      return AppCopy.offlineBody;
+    }
+
+    if (normalized.contains('jwt') ||
+        normalized.contains('auth') ||
+        normalized.contains('session') ||
+        raw.contains('يجب تسجيل الدخول')) {
+      return AppCopy.providerSessionExpired;
+    }
+
+    if (normalized.contains('supabase') ||
+        normalized.contains('postgres') ||
+        normalized.contains('rpc') ||
+        normalized.contains('failed to') ||
+        normalized.contains('unexpected')) {
+      return AppCopy.errorGeneric;
+    }
+
+    return raw;
+  }
+}

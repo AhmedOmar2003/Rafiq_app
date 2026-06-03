@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rafiq_app/core/design/components/app_badge.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:rafiq_app/core/logic/helper_methods.dart';
+import 'package:rafiq_app/core/utils/app_error_formatter.dart';
 
 /// Unified, token-driven transient feedback (snackbars).
 ///
@@ -16,7 +17,11 @@ class AppFeedback {
   static void success(String message) =>
       _show(message, AppTone.success, Icons.check_circle_rounded);
   static void error(String message) =>
-      _show(message, AppTone.error, Icons.error_rounded);
+      _show(
+        AppErrorFormatter.userMessage(message),
+        AppTone.error,
+        Icons.error_rounded,
+      );
   static void warning(String message) =>
       _show(message, AppTone.warning, Icons.warning_amber_rounded);
   static void info(String message) =>

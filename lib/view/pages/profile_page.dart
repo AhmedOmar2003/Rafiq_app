@@ -23,6 +23,7 @@ import '../../model/place.dart';
 import '../../models/subscription/plan.dart';
 import '../../models/suggestion_item_model/suggestion_item.dart';
 import '../../service/api_service.dart';
+import '../../service/accessibility_preferences.dart';
 import '../../service/auth_service.dart';
 import '../../service/profile_image_store.dart';
 import '../../service/subscription_service.dart';
@@ -534,9 +535,11 @@ class _ProfilePageState extends State<ProfilePage> {
                     _buildInfoSection(),
                     gapV(AppSpacing.xl),
                     _buildFavoritesSection(),
-                    gapV(AppSpacing.xxxl),
+                    gapV(AppSpacing.xl),
+                    _buildAppearanceSection(),
+                    gapV(AppSpacing.xl),
                     const _SupportSection(),
-                    gapV(AppSpacing.xxxl),
+                    gapV(AppSpacing.xxl),
                     _buildLogoutButton(),
                     gapV(AppSpacing.lg),
                     _buildDeleteAccountButton(),
@@ -757,6 +760,79 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  Widget _buildAppearanceSection() {
+    return AppCard(
+      padding: EdgeInsets.all(AppSpacing.lg.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            AppCopy.profileAppearanceSection,
+            style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
+          ),
+          gapV(AppSpacing.xs),
+          Text(
+            AppCopy.profileTextSizeHint,
+            style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
+          ),
+          gapV(AppSpacing.md),
+          ValueListenableBuilder<double>(
+            valueListenable: AccessibilityPreferences.instance.textScale,
+            builder: (_, scale, __) {
+              final options = <(double, String)>[
+                (0.95, AppCopy.profileTextSizeSmall),
+                (1.10, AppCopy.profileTextSizeMedium),
+                (1.25, AppCopy.profileTextSizeLarge),
+              ];
+              return Wrap(
+                spacing: AppSpacing.sm.w,
+                runSpacing: AppSpacing.sm.h,
+                children: options.map((option) {
+                  final isSelected = (scale - option.$1).abs() < 0.01;
+                  return Semantics(
+                    button: true,
+                    selected: isSelected,
+                    label: '${AppCopy.profileTextSizeLabel} ${option.$2}',
+                    child: InkWell(
+                      onTap: () => AccessibilityPreferences.instance
+                          .setTextScale(option.$1),
+                      borderRadius: AppRadii.rPill,
+                      child: Ink(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md.w,
+                          vertical: AppSpacing.sm.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color:
+                              isSelected ? AppColor.primary : AppColor.surface,
+                          borderRadius: AppRadii.rPill,
+                          border: Border.all(
+                            color: isSelected
+                                ? AppColor.primary
+                                : AppColor.border,
+                          ),
+                        ),
+                        child: Text(
+                          option.$2,
+                          style: AppText.labelMd.copyWith(
+                            color: isSelected
+                                ? AppColor.white
+                                : AppColor.textPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Flip the user-role flag and route to the right home for the new role.
   ///
   /// Session and subscription state are preserved; the user can switch back
@@ -928,79 +1004,93 @@ class _SupportSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Group 1 — Legal & Help
-        const _GroupLabel(text: 'معلومات'),
-        AppCard(
-          padding: EdgeInsets.zero,
-          child: Column(
-            children: [
-              _SupportRow(
-                icon: Icons.privacy_tip_outlined,
-                label: AppCopy.profilePrivacyPolicy,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const PrivacyPolicyScreen()),
-                ),
-              ),
-              const _Hairline(),
-              _SupportRow(
-                icon: Icons.gavel_outlined,
-                label: AppCopy.profileTerms,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const TermsScreen()),
-                ),
-              ),
-              const _Hairline(),
-              _SupportRow(
-                icon: Icons.help_outline_rounded,
-                label: AppCopy.profileHelp,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const HelpScreen()),
-                ),
-              ),
-            ],
+    return AppCard(
+      padding: EdgeInsets.zero,
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          tilePadding: EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg.w,
+            vertical: AppSpacing.sm.h,
           ),
-        ),
-        gapV(AppSpacing.xl),
-        // Group 2 — Contact
-        const _GroupLabel(text: AppCopy.profileContactUs),
-        AppCard(
-          padding: EdgeInsets.zero,
-          child: Column(
-            children: [
-              _SupportRow(
-                icon: Icons.phone_outlined,
-                label: 'اتصال مباشر',
-                trailing: AppCopy.supportPhone1,
-                onTap: () => _call(AppCopy.supportPhone1),
-              ),
-              const _Hairline(),
-              _SupportRow(
-                icon: Icons.chat_bubble_outline_rounded,
-                label: 'واتساب',
-                trailing: AppCopy.supportPhone2,
-                onTap: () => _whatsapp(
-                  AppCopy.supportPhone2,
-                  'مرحباً، أحتاج مساعدة في تطبيق رفيق.',
-                ),
-              ),
-              const _Hairline(),
-              _SupportRow(
-                icon: Icons.email_outlined,
-                label: 'البريد الإلكتروني',
-                trailing: AppCopy.supportEmail,
-                onTap: _email,
-              ),
-            ],
+          childrenPadding: EdgeInsets.only(bottom: AppSpacing.md.h),
+          leading: Container(
+            width: 40.w,
+            height: 40.w,
+            decoration: BoxDecoration(
+              color: AppColor.primary.withValues(alpha: 0.08),
+              borderRadius: AppRadii.rMd,
+            ),
+            child: Icon(
+              Icons.support_agent_rounded,
+              color: AppColor.primary,
+              size: 20.sp,
+            ),
           ),
+          title: Text(
+            AppCopy.profileSupportSection,
+            style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
+          ),
+          subtitle: Text(
+            'المساعدة والقوانين وطرق التواصل.',
+            style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
+          ),
+          children: [
+            const _GroupLabel(text: 'معلومات'),
+            _SupportRow(
+              icon: Icons.privacy_tip_outlined,
+              label: AppCopy.profilePrivacyPolicy,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
+              ),
+            ),
+            const _Hairline(),
+            _SupportRow(
+              icon: Icons.gavel_outlined,
+              label: AppCopy.profileTerms,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const TermsScreen()),
+              ),
+            ),
+            const _Hairline(),
+            _SupportRow(
+              icon: Icons.help_outline_rounded,
+              label: AppCopy.profileHelp,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const HelpScreen()),
+              ),
+            ),
+            gapV(AppSpacing.lg),
+            const _GroupLabel(text: AppCopy.profileContactUs),
+            _SupportRow(
+              icon: Icons.phone_outlined,
+              label: 'اتصال مباشر',
+              trailing: AppCopy.supportPhone1,
+              onTap: () => _call(AppCopy.supportPhone1),
+            ),
+            const _Hairline(),
+            _SupportRow(
+              icon: Icons.chat_bubble_outline_rounded,
+              label: 'واتساب',
+              trailing: AppCopy.supportPhone2,
+              onTap: () => _whatsapp(
+                AppCopy.supportPhone2,
+                'مرحباً، أحتاج مساعدة في تطبيق رفيق.',
+              ),
+            ),
+            const _Hairline(),
+            _SupportRow(
+              icon: Icons.email_outlined,
+              label: 'البريد الإلكتروني',
+              trailing: AppCopy.supportEmail,
+              onTap: _email,
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

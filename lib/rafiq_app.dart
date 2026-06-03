@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rafiq_app/auth/auth_gate.dart';
 import 'package:rafiq_app/core/design/components/app_offline_banner.dart';
 import 'package:rafiq_app/core/logic/helper_methods.dart';
+import 'package:rafiq_app/service/accessibility_preferences.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'core/themes/theme_services.dart';
 import 'core/utils/app_strings.dart';
@@ -60,17 +61,22 @@ class RafiqApp extends StatelessWidget {
               return const SizedBox.shrink();
             }
             final mediaQuery = MediaQuery.of(context);
-            return Directionality(
-              textDirection: TextDirection.rtl,
-              child: MediaQuery(
-                data: mediaQuery.copyWith(
-                  textScaler: mediaQuery.textScaler.clamp(
-                    minScaleFactor: 1.0,
-                    maxScaleFactor: 1.35,
+            return ValueListenableBuilder<double>(
+              valueListenable: AccessibilityPreferences.instance.textScale,
+              builder: (_, customTextScale, __) {
+                final systemScale = mediaQuery.textScaler.scale(1);
+                final effectiveScale =
+                    (systemScale * customTextScale).clamp(1.0, 1.45);
+                return Directionality(
+                  textDirection: TextDirection.rtl,
+                  child: MediaQuery(
+                    data: mediaQuery.copyWith(
+                      textScaler: TextScaler.linear(effectiveScale),
+                    ),
+                    child: AppConnectivityScope(child: child),
                   ),
-                ),
-                child: AppConnectivityScope(child: child),
-              ),
+                );
+              },
             );
           },
           navigatorKey: navigatorKey,

@@ -9,6 +9,7 @@ import 'package:rafiq_app/rafiq_app.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:rafiq_app/service/analytics_tracker.dart';
 import 'package:rafiq_app/service/api_service.dart';
+import 'package:rafiq_app/service/accessibility_preferences.dart';
 import 'package:rafiq_app/service/image_disk_cache.dart';
 import 'package:rafiq_app/service/profile_image_store.dart';
 import 'package:rafiq_app/service/subscription_service.dart';
@@ -39,6 +40,7 @@ Future<void> main() async {
   // Restore the provider-track flag so the Profile shows the right tiles
   // on first frame.
   unawaited(UserRoleStore.instance.ensureLoaded());
+  unawaited(AccessibilityPreferences.instance.ensureLoaded());
 
   // Pre-warm the subscription plan catalog. The first screen that needs to
   // resolve a tier's display name / price (Profile, Hub, Subscription) used
