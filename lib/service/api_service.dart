@@ -1004,6 +1004,7 @@ class ApiService {
   Future<void> recordCampaignMetric({
     required String campaignId,
     required String metric,
+    String? sessionId,
   }) async {
     await ensureSupabaseInitialized();
     await _client.rpc<dynamic>(
@@ -1011,6 +1012,10 @@ class ApiService {
       params: {
         '_campaign_id': campaignId,
         '_metric': metric,
+        // Pass the app session_id so the server can deduplicate impressions
+        // and clicks within the rate-limit window. Falls back to null if the
+        // caller did not supply one (older call sites).
+        '_session_id': sessionId,
       },
     ).timeout(_networkTimeout);
   }

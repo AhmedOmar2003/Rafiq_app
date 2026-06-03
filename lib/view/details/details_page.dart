@@ -134,6 +134,9 @@ class _DetailsPageState extends State<DetailsPage> {
           unawaited(_apiService.recordCampaignMetric(
             campaignId: campaign.id,
             metric: 'impression',
+            // Pass the per-app-session id so the backend can deduplicate
+            // impressions within the 60-minute rate-limit window.
+            sessionId: AnalyticsTracker.instance.sessionId,
           ));
         }
       }

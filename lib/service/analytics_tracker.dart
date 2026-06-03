@@ -114,6 +114,13 @@ class AnalyticsTracker with WidgetsBindingObserver {
   final String _sessionId = _generateSessionId();
   final Map<String, DateTime> _lastSentAt = <String, DateTime>{};
 
+  /// The UUID that identifies this app session.
+  ///
+  /// Stable for the lifetime of the app process. Pass this to
+  /// [ApiService.recordCampaignMetric] so the backend can deduplicate
+  /// campaign impressions / clicks within the rate-limit window.
+  String get sessionId => _sessionId;
+
   Timer? _flushTimer;
   bool _flushing = false;
   bool _attached = false;
