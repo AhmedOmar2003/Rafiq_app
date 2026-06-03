@@ -3,9 +3,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/design/app_image.dart';
 import '../../../core/design/cached_network_image.dart';
-import '../../../core/utils/app_color.dart';
+import '../../../core/design/tokens/tokens.dart';
 import '../../../core/utils/spacing.dart';
-import '../../../core/utils/text_style_theme.dart';
 import '../../../models/suggestion_item_model/suggestion_item.dart';
 
 class SimilarEvents extends StatelessWidget {
@@ -122,15 +121,14 @@ class SimilarEventsItem extends StatelessWidget {
                         children: [
                           Icon(
                             Icons.star,
-                            color: Colors.amber,
+                            color: AppColor.warning,
                             size: 12.sp,
                           ),
                           horizontalSpace(2),
                           Text(
                             model.rate.toString(),
-                            style: TextStyleTheme.textStyle12Medium.copyWith(
+                            style: AppText.caption.copyWith(
                               color: AppColor.textPrimary,
-                              fontSize: 10.sp,
                             ),
                           ),
                         ],
@@ -169,9 +167,8 @@ class SimilarEventsItem extends StatelessWidget {
                           Flexible(
                             child: Text(
                               model.suggestionText,
-                              style: TextStyleTheme.textStyle12Medium.copyWith(
+                              style: AppText.caption.copyWith(
                                 color: AppColor.surfaceCard,
-                                fontSize: 11.sp,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -185,10 +182,9 @@ class SimilarEventsItem extends StatelessWidget {
                     Flexible(
                       child: Text(
                         model.text,
-                        style: TextStyleTheme.textStyle16Medium.copyWith(
+                        style: AppText.labelMd.copyWith(
                           color: AppColor.textPrimary,
                           height: 1.2,
-                          fontSize: 15.sp,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -206,19 +202,15 @@ class SimilarEventsItem extends StatelessWidget {
                             children: [
                               Text(
                                 "يبدأ من",
-                                style:
-                                    TextStyleTheme.textStyle12Medium.copyWith(
+                                style: AppText.caption.copyWith(
                                   color: AppColor.textSecondary,
-                                  fontSize: 11.sp,
                                 ),
                               ),
                               Text(
                                 "${model.price} جنية",
-                                style:
-                                    TextStyleTheme.textStyle16Medium.copyWith(
+                                style: AppText.labelMd.copyWith(
                                   color: AppColor.primary,
                                   fontWeight: FontWeight.w600,
-                                  fontSize: 15.sp,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,

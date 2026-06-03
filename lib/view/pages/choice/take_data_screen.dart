@@ -629,7 +629,6 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
           labelText: label,
           labelStyle: AppText.bodyLg.copyWith(
             color: AppColor.textTertiary,
-            fontSize: 16.sp,
           ),
           prefixIcon: Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.w),
@@ -691,7 +690,6 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
           labelText: label,
           labelStyle: AppText.bodyLg.copyWith(
             color: AppColor.textTertiary,
-            fontSize: 16.sp,
           ),
           prefixIcon: Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.w),

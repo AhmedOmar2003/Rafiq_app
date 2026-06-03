@@ -9,7 +9,6 @@ import '../../../core/design/app_image.dart';
 import '../../../core/design/cached_network_image.dart';
 import '../../../core/design/tokens/tokens.dart';
 import '../../../core/utils/spacing.dart';
-import '../../../core/utils/text_style_theme.dart';
 import '../../../models/suggestion_item_model/suggestion_item.dart';
 
 class DetailsItem extends StatefulWidget {
@@ -167,7 +166,7 @@ class _DetailsItemState extends State<DetailsItem> {
                       children: [
                         const Icon(
                           Icons.star_rounded,
-                          color: Colors.amber,
+                          color: AppColor.warning,
                           size: 16,
                         ),
                         horizontalSpace(4),
@@ -175,7 +174,7 @@ class _DetailsItemState extends State<DetailsItem> {
                           widget.model.rate > 0
                               ? widget.model.rate.toString()
                               : 'جديد',
-                          style: TextStyleTheme.textStyle12Medium.copyWith(
+                          style: AppText.labelSm.copyWith(
                             color: AppColor.textPrimary,
                           ),
                         ),
@@ -198,7 +197,7 @@ class _DetailsItemState extends State<DetailsItem> {
                       ),
                       child: Text(
                         '${_currentGalleryIndex + 1}/${gallery.length}',
-                        style: TextStyleTheme.textStyle12Medium.copyWith(
+                        style: AppText.labelSm.copyWith(
                           color: AppColor.textPrimary,
                         ),
                       ),
@@ -289,9 +288,8 @@ class _DetailsItemState extends State<DetailsItem> {
                     horizontalSpace(8),
                     Text(
                       model.suggestionText,
-                      style: TextStyleTheme.textStyle16Medium.copyWith(
+                      style: AppText.labelMd.copyWith(
                         color: AppColor.surfaceCard,
-                        fontSize: 14.sp,
                       ),
                     ),
                   ],
@@ -300,10 +298,9 @@ class _DetailsItemState extends State<DetailsItem> {
               verticalSpace(16),
               Text(
                 model.text,
-                style: TextStyleTheme.textStyle20Bold.copyWith(
+                style: AppText.headingMd.copyWith(
                   color: AppColor.textPrimary,
                   height: 1.3,
-                  fontSize: 22.sp,
                 ),
               ),
               verticalSpace(12),
@@ -353,17 +350,14 @@ class _DetailsItemState extends State<DetailsItem> {
                             children: [
                               Text(
                                 "الموقع",
-                                style:
-                                    TextStyleTheme.textStyle16Medium.copyWith(
+                                style: AppText.labelSm.copyWith(
                                   color: AppColor.textSecondary,
-                                  fontSize: 14.sp,
                                 ),
                               ),
                               verticalSpace(4),
                               Text(
                                 model.address,
-                                style:
-                                    TextStyleTheme.textStyle16Medium.copyWith(
+                                style: AppText.bodyMd.copyWith(
                                   color: AppColor.textPrimary,
                                 ),
                                 maxLines: 2,
@@ -395,7 +389,7 @@ class _DetailsItemState extends State<DetailsItem> {
                             horizontalSpace(8),
                             Text(
                               "عرض على الخريطة",
-                              style: TextStyleTheme.textStyle16Medium.copyWith(
+                              style: AppText.labelMd.copyWith(
                                 color: AppColor.primary,
                               ),
                             ),
@@ -424,16 +418,16 @@ class _DetailsItemState extends State<DetailsItem> {
                       children: [
                         Text(
                           "السعر يبدأ من",
-                          style: TextStyleTheme.textStyle16Medium.copyWith(
+                          style: AppText.labelSm.copyWith(
                             color: AppColor.textSecondary,
-                            fontSize: 14.sp,
                           ),
                         ),
                         verticalSpace(4),
                         Text(
                           _formatPriceLabel(model.price),
-                          style: TextStyleTheme.textStyle20Bold.copyWith(
+                          style: AppText.titleLg.copyWith(
                             color: AppColor.primary,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ],
@@ -448,15 +442,14 @@ class _DetailsItemState extends State<DetailsItem> {
                         children: [
                           Icon(
                             Icons.star_rounded,
-                            color: Colors.amber,
+                            color: AppColor.warning,
                             size: 16.sp,
                           ),
                           horizontalSpace(4),
                           Text(
                             model.rate > 0 ? "${model.rate}" : 'جديد',
-                            style: TextStyleTheme.textStyle16Medium.copyWith(
+                            style: AppText.labelMd.copyWith(
                               color: AppColor.textPrimary,
-                              fontSize: 14.sp,
                             ),
                           ),
                         ],
@@ -524,7 +517,7 @@ class _MetaChip extends StatelessWidget {
           horizontalSpace(6),
           Text(
             label,
-            style: TextStyleTheme.textStyle12Medium.copyWith(
+            style: AppText.labelSm.copyWith(
               color: AppColor.textPrimary,
             ),
           ),

@@ -73,7 +73,7 @@ class EvaluationItem extends StatelessWidget {
                               child: Icon(
                                 Icons.star_rounded,
                                 size: 20.w,
-                                color: Colors.amber,
+                                color: AppColor.warning,
                               ),
                             ),
                           ),
