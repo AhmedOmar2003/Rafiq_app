@@ -346,15 +346,15 @@ class AppCopy {
   static const hubKpiAnalytics = 'تحليلات';
   static const hubFeatTitleAnalytics = 'تحليلات الأداء';
   static const hubFeatBodyAnalytics =
-      'شوف ناس بتزور صفحتك إزاي والوقت المفضّل ليهم.';
+      'شوف الحركة الحقيقية على مكانك.';
   static const hubFeatTitlePromotions = 'إعلانات وعروض';
   static const hubFeatBodyPromotions =
-      'اعمل عروض ترويجية تظهر في الواجهة الرئيسية للزوار.';
+      'اعمل عرض بسيط وخلّيه يوصل للناس بعد المراجعة.';
   static const hubFeatTitlePlaces = 'أماكنك';
   static const hubFeatBodyPlaces = 'إدارة الأماكن، التعديل، وإضافة جديد.';
   static const hubFeatTitleSubscription = 'الاشتراك';
   static const hubFeatBodySubscription =
-      'رقّي خطتك في أي وقت أو إلغي الاشتراك بسهولة.';
+      'بدّل أو رقّي خطتك في أي وقت.';
   static const hubLockedTag = 'يفتح مع برو';
   static const hubLockedMax = 'يفتح مع ماكس';
 
@@ -362,7 +362,7 @@ class AppCopy {
   static const anaTitle = 'تحليلاتك';
   static const anaLast30Days = 'آخر 30 يوم';
   static const anaRealDataHint =
-      'الأرقام دي من تفاعل حقيقي: فتح التفاصيل، المفضلة، وفتح الخريطة.';
+      'الأرقام دي من فتح المكان، المفضلة، والخريطة.';
   static const anaViewsReal = 'فتح صفحة المكان';
   static const anaTotalActions = 'إجمالي التفاعلات';
   static const anaFavoriteAdds = 'إضافات للمفضلة';
@@ -384,12 +384,12 @@ class AppCopy {
       'اعمل عرض أو إعلان لمكانك وهيوصل لناس أكتر بعد المراجعة.';
   static const promoCreateCta = 'اعمل حملة جديدة';
   static const promoCreatePendingBody =
-      'أي إعلان جديد بيروح للمراجعة الأول، وغالبًا بيرد خلال 6 ساعات.';
+      'أي حملة جديدة بتدخل مراجعة، وغالبًا بنرد خلال 6 ساعات.';
   static const promoRejectedReason = 'سبب الرفض';
   static const promoPendingReview = 'بانتظار مراجعة الأدمن';
   static const promoLockedTitle = 'الإعلانات تبدأ من خطة برو';
   static const promoLockedBody =
-      'الإعلانات والعروض بتساعدك توصل لناس أكتر.';
+      'فعّل الإعلانات عشان توصّل عرضك لناس أكتر.';
 
   // --- Admin overview ----------------------------------------------------------
   static const adminTitle = 'لوحة الإدارة';

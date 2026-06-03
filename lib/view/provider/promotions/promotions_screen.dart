@@ -221,7 +221,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                             AppCopy.promoCreatePendingBody,
                             style: AppText.bodySm.copyWith(
                               color: AppColor.textSecondary,
-                              height: 1.5,
+                              height: 1.45,
                             ),
                           ),
                           gapV(AppSpacing.md),
@@ -245,7 +245,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                           ),
                           gapV(AppSpacing.sm),
                           Text(
-                            'العدد المستخدم هنا يحسب الحملات النشطة أو المعلّقة للمراجعة فقط، وليس الحملات المنتهية أو المرفوضة.',
+                            'الحملات النشطة أو تحت المراجعة فقط هي اللي بتتحسب على الخطة.',
                             style: AppText.caption.copyWith(
                               color: AppColor.textSecondary,
                             ),
@@ -308,7 +308,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
 
   String _selectedPlaceLabel(List<Place> places) {
     if (places.isEmpty) return 'لا توجد أماكن معتمدة بعد';
-    if (_selectedPlaceId == null) return 'كل الأماكن المعتمدة';
+    if (_selectedPlaceId == null) return 'كل الأماكن';
     final place = places.cast<Place?>().firstWhere(
           (p) => p?.placeUuid == _selectedPlaceId,
           orElse: () => null,
@@ -356,29 +356,23 @@ class _PlaceSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 40.h,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: places.length + 1,
-        separatorBuilder: (_, __) => gapH(AppSpacing.xs),
-        itemBuilder: (_, index) {
-          if (index == 0) {
-            return _chip(
-              label: 'كل الأماكن',
-              selected: selectedPlaceId == null,
-              onTap: () => onChanged(null),
-            );
-          }
-
-          final place = places[index - 1];
-          return _chip(
+    return Wrap(
+      spacing: AppSpacing.xs.w,
+      runSpacing: AppSpacing.xs.h,
+      children: [
+        _chip(
+          label: 'كل الأماكن',
+          selected: selectedPlaceId == null,
+          onTap: () => onChanged(null),
+        ),
+        ...places.map(
+          (place) => _chip(
             label: place.name,
             selected: place.placeUuid == selectedPlaceId,
             onTap: () => onChanged(place.placeUuid),
-          );
-        },
-      ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -387,27 +381,33 @@ class _PlaceSelector extends StatelessWidget {
     required bool selected,
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: AppRadii.rPill,
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: AppSpacing.md.w,
-          vertical: AppSpacing.xs.h,
-        ),
-        decoration: BoxDecoration(
-          color: selected ? AppColor.primary : AppColor.surfaceCard,
-          borderRadius: AppRadii.rPill,
-          border: Border.all(
-            color: selected ? AppColor.primary : AppColor.border,
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: 'تصفية الحملات حسب $label',
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppRadii.rPill,
+        child: Container(
+          constraints: BoxConstraints(minHeight: 48.h),
+          padding: EdgeInsets.symmetric(
+            horizontal: AppSpacing.md.w,
+            vertical: AppSpacing.sm.h,
           ),
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: AppText.labelSm.copyWith(
-              color: selected ? AppColor.white : AppColor.textPrimary,
-              fontWeight: FontWeight.w700,
+          decoration: BoxDecoration(
+            color: selected ? AppColor.primary : AppColor.surfaceCard,
+            borderRadius: AppRadii.rPill,
+            border: Border.all(
+              color: selected ? AppColor.primary : AppColor.border,
+            ),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: AppText.labelSm.copyWith(
+                color: selected ? AppColor.white : AppColor.textPrimary,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ),
@@ -427,26 +427,43 @@ class _PromotionStats extends StatelessWidget {
     final pending = campaigns.where((c) => c.status == 'pending_review').length;
     final impressions = campaigns.fold<int>(0, (sum, c) => sum + c.impressions);
     final clicks = campaigns.fold<int>(0, (sum, c) => sum + c.clicks);
-    return Row(
-      children: [
-        Expanded(
-            child:
-                _StatCard(label: 'حملات', value: campaigns.length.toString())),
-        gapH(AppSpacing.sm),
-        Expanded(child: _StatCard(label: 'نشطة', value: active.toString())),
-        gapH(AppSpacing.sm),
-        Expanded(
-            child: _StatCard(label: 'قيد المراجعة', value: pending.toString())),
-        gapH(AppSpacing.sm),
-        Expanded(
-          child: _StatCard(
-            label: 'CTR',
-            value: impressions == 0
-                ? '0%'
-                : '${((clicks / impressions) * 100).toStringAsFixed(0)}%',
-          ),
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cardWidth = (constraints.maxWidth - AppSpacing.sm.w) / 2;
+        return Wrap(
+          spacing: AppSpacing.sm.w,
+          runSpacing: AppSpacing.sm.h,
+          children: [
+            SizedBox(
+              width: cardWidth,
+              child: _StatCard(
+                label: 'كل الحملات',
+                value: campaigns.length.toString(),
+              ),
+            ),
+            SizedBox(
+              width: cardWidth,
+              child: _StatCard(label: 'نشطة', value: active.toString()),
+            ),
+            SizedBox(
+              width: cardWidth,
+              child: _StatCard(
+                label: 'قيد المراجعة',
+                value: pending.toString(),
+              ),
+            ),
+            SizedBox(
+              width: cardWidth,
+              child: _StatCard(
+                label: 'CTR',
+                value: impressions == 0
+                    ? '0%'
+                    : '${((clicks / impressions) * 100).toStringAsFixed(0)}%',
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -497,11 +514,15 @@ class _CampaignCard extends StatelessWidget {
     final hasImage = (campaign.imagePath ?? '').trim().isNotEmpty;
     return Padding(
       padding: EdgeInsets.only(bottom: AppSpacing.md.h),
-      child: AppCard(
-        padding: EdgeInsets.all(AppSpacing.lg.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      child: Semantics(
+        container: true,
+        label:
+            '${campaign.title}. حالة الإعلان ${campaign.status}. المشاهدات ${campaign.impressions}. النقرات ${campaign.clicks}.',
+        child: AppCard(
+          padding: EdgeInsets.all(AppSpacing.lg.w),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             if (hasImage)
               ClipRRect(
                 borderRadius: AppRadii.rLg,
@@ -531,26 +552,21 @@ class _CampaignCard extends StatelessWidget {
               '${_kindLabel(campaign.kind)} • ${campaign.startsAt != null ? fmt.format(campaign.startsAt!) : 'الآن'} - ${campaign.endsAt != null ? fmt.format(campaign.endsAt!) : 'غير محدد'}',
               style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
             ),
-            if ((campaign.ctaLabel ?? '').trim().isNotEmpty) ...[
-              gapV(AppSpacing.xs),
-              Text(
-                'زر النداء: ${campaign.ctaLabel}',
-                style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
-              ),
-            ],
             if (campaign.status == 'pending_review') ...[
               gapV(AppSpacing.xs),
-              Text(
-                '${AppCopy.promoPendingReview} • بحد أقصى حتى ${reviewDeadline.hour.toString().padLeft(2, '0')}:${reviewDeadline.minute.toString().padLeft(2, '0')}',
-                style: AppText.bodySm.copyWith(color: AppColor.warning),
+              _InlineNotice(
+                tone: AppColor.warning,
+                text:
+                    '${AppCopy.promoPendingReview} حتى ${reviewDeadline.hour.toString().padLeft(2, '0')}:${reviewDeadline.minute.toString().padLeft(2, '0')}',
               ),
             ],
             if (campaign.status == 'rejected' &&
                 (campaign.rejectionReason ?? '').trim().isNotEmpty) ...[
               gapV(AppSpacing.sm),
-              Text(
-                '${AppCopy.promoRejectedReason}: ${campaign.rejectionReason}',
-                style: AppText.bodySm.copyWith(color: AppColor.error),
+              _InlineNotice(
+                tone: AppColor.error,
+                text:
+                    '${AppCopy.promoRejectedReason}: ${campaign.rejectionReason}',
               ),
             ],
             if ((campaign.body ?? '').trim().isNotEmpty) ...[
@@ -611,7 +627,8 @@ class _CampaignCard extends StatelessWidget {
                 ),
               ),
             ],
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -772,17 +789,17 @@ class _PromotionsEmpty extends StatelessWidget {
                   color: AppColor.primary, size: 44.sp),
             ),
             gapV(AppSpacing.xl),
-            Text(
-              AppCopy.promoEmptyTitle,
-              style: AppText.headingSm,
-              textAlign: TextAlign.center,
-            ),
-            gapV(AppSpacing.md),
-            Text(
-              '$selectedPlaceName لسه ما عليهش حملات مفعلة. أول حملة جديدة هتدخل مراجعة الأدمن قبل ما تظهر للناس.',
-              style: AppText.bodyMd.copyWith(color: AppColor.textSecondary),
-              textAlign: TextAlign.center,
-            ),
+          Text(
+            AppCopy.promoEmptyTitle,
+            style: AppText.headingSm,
+            textAlign: TextAlign.center,
+          ),
+          gapV(AppSpacing.md),
+          Text(
+            '$selectedPlaceName لسه ما عليهش حملات. أول حملة هتدخل مراجعة قبل ما تظهر للناس.',
+            style: AppText.bodyMd.copyWith(color: AppColor.textSecondary),
+            textAlign: TextAlign.center,
+          ),
           ],
         ),
       ),
@@ -803,13 +820,13 @@ class _NoApprovedPlacesState extends StatelessWidget {
               color: AppColor.warning, size: 36.sp),
           gapV(AppSpacing.md),
           Text(
-            'هتظهر العروض حسب المكان بعد اعتماد أول مكان',
+            'العروض هتظهر بعد اعتماد أول مكان',
             style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
             textAlign: TextAlign.center,
           ),
           gapV(AppSpacing.sm),
           Text(
-            'لو عندك أماكن تحت المراجعة، أول ما تتعتمد هتقدر تعمل حملة مرتبطة بكل مكان على حدة.',
+            'أول ما مكانك يتعتمد هتقدر تعمل له حملة خاصة.',
             style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
             textAlign: TextAlign.center,
           ),

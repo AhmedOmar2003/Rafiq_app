@@ -122,7 +122,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                         _rangeHint(_selectedRangeDays),
                         style: AppText.bodySm.copyWith(
                           color: AppColor.textSecondary,
-                          height: 1.5,
+                          height: 1.45,
                         ),
                       ),
                     ),
@@ -154,70 +154,72 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     if (data.places.isEmpty)
                       const _NoApprovedPlacesState()
                     else ...[
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _KpiCard(
-                              icon: Icons.visibility_rounded,
-                              label: AppCopy.anaViewsReal,
-                              value: data.snapshot.views.toString(),
-                              tone: AppColor.info,
-                            ),
-                          ),
-                          gapH(AppSpacing.sm),
-                          Expanded(
-                            child: _KpiCard(
-                              icon: Icons.touch_app_rounded,
-                              label: AppCopy.anaTotalActions,
-                              value: data.snapshot.totalActions.toString(),
-                              tone: AppColor.primary,
-                            ),
-                          ),
-                        ],
-                      ),
-                      gapV(AppSpacing.sm),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _KpiCard(
-                              icon: Icons.favorite_rounded,
-                              label: AppCopy.anaFavoriteAdds,
-                              value: data.snapshot.favoriteAdds.toString(),
-                              tone: AppColor.error,
-                            ),
-                          ),
-                          gapH(AppSpacing.sm),
-                          Expanded(
-                            child: _KpiCard(
-                              icon: Icons.map_rounded,
-                              label: AppCopy.anaMapClicks,
-                              value: data.snapshot.mapClicks.toString(),
-                              tone: AppColor.success,
-                            ),
-                          ),
-                        ],
-                      ),
-                      gapV(AppSpacing.sm),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _KpiCard(
-                              icon: Icons.heart_broken_outlined,
-                              label: AppCopy.anaFavoriteRemovals,
-                              value: data.snapshot.favoriteRemovals.toString(),
-                              tone: AppColor.warning,
-                            ),
-                          ),
-                          gapH(AppSpacing.sm),
-                          Expanded(
-                            child: _KpiCard(
-                              icon: Icons.bolt_rounded,
-                              label: AppCopy.anaOtherActions,
-                              value: data.snapshot.otherActions.toString(),
-                              tone: AppColor.info,
-                            ),
-                          ),
-                        ],
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final cardWidth =
+                              (constraints.maxWidth - AppSpacing.sm.w) / 2;
+                          return Wrap(
+                            spacing: AppSpacing.sm.w,
+                            runSpacing: AppSpacing.sm.h,
+                            children: [
+                              SizedBox(
+                                width: cardWidth,
+                                child: _KpiCard(
+                                  icon: Icons.visibility_rounded,
+                                  label: AppCopy.anaViewsReal,
+                                  value: data.snapshot.views.toString(),
+                                  tone: AppColor.info,
+                                ),
+                              ),
+                              SizedBox(
+                                width: cardWidth,
+                                child: _KpiCard(
+                                  icon: Icons.touch_app_rounded,
+                                  label: AppCopy.anaTotalActions,
+                                  value: data.snapshot.totalActions.toString(),
+                                  tone: AppColor.primary,
+                                ),
+                              ),
+                              SizedBox(
+                                width: cardWidth,
+                                child: _KpiCard(
+                                  icon: Icons.favorite_rounded,
+                                  label: AppCopy.anaFavoriteAdds,
+                                  value: data.snapshot.favoriteAdds.toString(),
+                                  tone: AppColor.error,
+                                ),
+                              ),
+                              SizedBox(
+                                width: cardWidth,
+                                child: _KpiCard(
+                                  icon: Icons.map_rounded,
+                                  label: AppCopy.anaMapClicks,
+                                  value: data.snapshot.mapClicks.toString(),
+                                  tone: AppColor.success,
+                                ),
+                              ),
+                              SizedBox(
+                                width: cardWidth,
+                                child: _KpiCard(
+                                  icon: Icons.heart_broken_outlined,
+                                  label: AppCopy.anaFavoriteRemovals,
+                                  value:
+                                      data.snapshot.favoriteRemovals.toString(),
+                                  tone: AppColor.warning,
+                                ),
+                              ),
+                              SizedBox(
+                                width: cardWidth,
+                                child: _KpiCard(
+                                  icon: Icons.bolt_rounded,
+                                  label: AppCopy.anaOtherActions,
+                                  value: data.snapshot.otherActions.toString(),
+                                  tone: AppColor.info,
+                                ),
+                              ),
+                            ],
+                          );
+                        },
                       ),
                       gapV(AppSpacing.xxl),
                       _TrendCard(points: data.snapshot.trendPoints),
@@ -234,7 +236,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
   String _selectedPlaceLabel(List<Place> places) {
     if (places.isEmpty) return 'لا توجد أماكن معتمدة بعد';
-    if (_selectedPlaceId == null) return 'كل الأماكن المعتمدة';
+    if (_selectedPlaceId == null) return 'كل الأماكن';
     final place = places.cast<Place?>().firstWhere(
           (p) => p?.placeUuid == _selectedPlaceId,
           orElse: () => null,
@@ -243,7 +245,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   }
 
   String _rangeHint(int days) {
-    return 'الأرقام هنا من تفاعل حقيقي لمستخدمين مسجلين خلال آخر $days يوم: فتح صفحة المكان، حفظه في المفضلة، وفتح الاتجاهات.';
+    return 'الأرقام دي من تفاعل حقيقي خلال آخر $days يوم.';
   }
 }
 
@@ -271,19 +273,20 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'آخر $selectedRangeDays يوم',
-                style: AppText.bodyMd.copyWith(color: AppColor.textSecondary),
+                AppCopy.anaTitle,
+                style: AppText.headingMd.copyWith(fontWeight: FontWeight.w800),
               ),
               gapV(AppSpacing.xs / 2),
               Text(
-                AppCopy.anaTitle,
-                style: AppText.headingMd.copyWith(fontWeight: FontWeight.w800),
+                'آخر $selectedRangeDays يوم',
+                style: AppText.bodyMd.copyWith(color: AppColor.textSecondary),
               ),
               gapV(AppSpacing.xs / 2),
               Text(
@@ -311,22 +314,23 @@ class _RangeSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const values = <int>[7, 14, 30, 90];
-    return SizedBox(
-      height: 40.h,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: values.length,
-        separatorBuilder: (_, __) => gapH(AppSpacing.xs),
-        itemBuilder: (_, index) {
-          final days = values[index];
-          final selected = days == selectedDays;
-          return InkWell(
+    return Wrap(
+      spacing: AppSpacing.xs.w,
+      runSpacing: AppSpacing.xs.h,
+      children: values.map((days) {
+        final selected = days == selectedDays;
+        return Semantics(
+          button: true,
+          selected: selected,
+          label: 'فلتر آخر $days يوم',
+          child: InkWell(
             onTap: () => onChanged(days),
             borderRadius: AppRadii.rPill,
             child: Container(
+              constraints: BoxConstraints(minHeight: 48.h),
               padding: EdgeInsets.symmetric(
                 horizontal: AppSpacing.md.w,
-                vertical: AppSpacing.xs.h,
+                vertical: AppSpacing.sm.h,
               ),
               decoration: BoxDecoration(
                 color: selected ? AppColor.primary : AppColor.surfaceCard,
@@ -345,9 +349,9 @@ class _RangeSelector extends StatelessWidget {
                 ),
               ),
             ),
-          );
-        },
-      ),
+          ),
+        );
+      }).toList(growable: false),
     );
   }
 }
@@ -365,31 +369,24 @@ class _PlaceSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 40.h,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemBuilder: (_, index) {
-          if (index == 0) {
-            final selected = selectedPlaceId == null;
-            return _selectorChip(
-              label: 'كل الأماكن',
-              selected: selected,
-              onTap: () => onChanged(null),
-            );
-          }
-
-          final place = places[index - 1];
+    return Wrap(
+      spacing: AppSpacing.xs.w,
+      runSpacing: AppSpacing.xs.h,
+      children: [
+        _selectorChip(
+          label: 'كل الأماكن',
+          selected: selectedPlaceId == null,
+          onTap: () => onChanged(null),
+        ),
+        ...places.map((place) {
           final selected = place.placeUuid == selectedPlaceId;
           return _selectorChip(
             label: place.name,
             selected: selected,
             onTap: () => onChanged(place.placeUuid),
           );
-        },
-        separatorBuilder: (_, __) => gapH(AppSpacing.xs),
-        itemCount: places.length + 1,
-      ),
+        }),
+      ],
     );
   }
 
@@ -398,27 +395,33 @@ class _PlaceSelector extends StatelessWidget {
     required bool selected,
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: AppRadii.rPill,
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: AppSpacing.md.w,
-          vertical: AppSpacing.xs.h,
-        ),
-        decoration: BoxDecoration(
-          color: selected ? AppColor.primary : AppColor.surfaceCard,
-          borderRadius: AppRadii.rPill,
-          border: Border.all(
-            color: selected ? AppColor.primary : AppColor.border,
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: 'تصفية حسب $label',
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppRadii.rPill,
+        child: Container(
+          constraints: BoxConstraints(minHeight: 48.h),
+          padding: EdgeInsets.symmetric(
+            horizontal: AppSpacing.md.w,
+            vertical: AppSpacing.sm.h,
           ),
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: AppText.labelSm.copyWith(
-              color: selected ? AppColor.white : AppColor.textPrimary,
-              fontWeight: FontWeight.w700,
+          decoration: BoxDecoration(
+            color: selected ? AppColor.primary : AppColor.surfaceCard,
+            borderRadius: AppRadii.rPill,
+            border: Border.all(
+              color: selected ? AppColor.primary : AppColor.border,
+            ),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: AppText.labelSm.copyWith(
+                color: selected ? AppColor.white : AppColor.textPrimary,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ),
@@ -442,29 +445,35 @@ class _KpiCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppCard(
-      padding: EdgeInsets.all(AppSpacing.lg.w),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 36.w,
-            height: 36.w,
-            decoration: BoxDecoration(
-              color: tone.withValues(alpha: 0.12),
-              borderRadius: AppRadii.rSm,
+    return Semantics(
+      label: '$label: $value',
+      child: AppCard(
+        padding: EdgeInsets.all(AppSpacing.lg.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 40.w,
+              height: 40.w,
+              decoration: BoxDecoration(
+                color: tone.withValues(alpha: 0.12),
+                borderRadius: AppRadii.rSm,
+              ),
+              child: Icon(icon, color: tone, size: 20.sp),
             ),
-            child: Icon(icon, color: tone, size: 20.sp),
-          ),
-          gapV(AppSpacing.md),
-          Text(
-            value,
-            style: AppText.headingMd.copyWith(fontWeight: FontWeight.w800),
-          ),
-          gapV(AppSpacing.xs / 2),
-          Text(label,
-              style: AppText.bodySm.copyWith(color: AppColor.textSecondary)),
-        ],
+            gapV(AppSpacing.md),
+            Text(
+              value,
+              style: AppText.headingMd.copyWith(fontWeight: FontWeight.w800),
+            ),
+            gapV(AppSpacing.xs / 2),
+            Text(
+              label,
+              style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
+              maxLines: 2,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -484,6 +493,11 @@ class _TrendCard extends StatelessWidget {
         children: [
           Text('اتجاه فتح المكان', style: AppText.titleMd),
           gapV(AppSpacing.sm),
+          Text(
+            'كل نقطة بتوضح الحركة اليومية في الفترة اللي اخترتها.',
+            style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
+          ),
+          gapV(AppSpacing.md),
           SizedBox(
             height: 140.h,
             child: CustomPaint(
@@ -572,13 +586,13 @@ class _NoApprovedPlacesState extends StatelessWidget {
           ),
           gapV(AppSpacing.md),
           Text(
-            'هتظهر التحليلات أول ما يتعتمد لك مكان',
+            'التحليلات هتظهر أول ما مكانك يتعتمد',
             style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
             textAlign: TextAlign.center,
           ),
           gapV(AppSpacing.sm),
           Text(
-            'لو عندك أماكن لسه تحت المراجعة، هتظهر هنا تلقائيًا بعد الاعتماد.',
+            'لو مكانك لسه تحت المراجعة، هتلاقي الأرقام هنا بعد الاعتماد.',
             style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
             textAlign: TextAlign.center,
           ),

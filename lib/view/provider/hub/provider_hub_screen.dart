@@ -607,7 +607,7 @@ class _ReviewQueueCardState extends State<_ReviewQueueCard> {
                           .copyWith(fontWeight: FontWeight.w800),
                     ),
                     Text(
-                      'مهلة المراجعة 24 ساعة من وقت الإضافة',
+                      'المراجعة عادة خلال 24 ساعة من وقت الإضافة',
                       style: AppText.bodySm.copyWith(
                         color: AppColor.textSecondary,
                       ),
@@ -657,8 +657,8 @@ class _ReviewQueueCardState extends State<_ReviewQueueCard> {
                           gapV(4),
                           Text(
                             p.status == 'under_review'
-                                ? 'المكان قيد المراجعة الآن'
-                                : 'المكان في انتظار بدء المراجعة',
+                                ? 'جاري مراجعته الآن'
+                                : 'في انتظار المراجعة',
                             style: AppText.caption.copyWith(
                               color: AppColor.warning,
                               fontWeight: FontWeight.w700,
@@ -1088,9 +1088,13 @@ class _Greeting extends StatelessWidget {
     final greeting = name != null && name!.isNotEmpty
         ? '${AppCopy.hubGreetingPrefix}، $name 👋'
         : '${AppCopy.hubGreetingPrefix} 👋';
-    return Text(
-      greeting,
-      style: AppText.headingMd.copyWith(fontWeight: FontWeight.w800),
+    return Semantics(
+      header: true,
+      label: greeting,
+      child: Text(
+        greeting,
+        style: AppText.headingMd.copyWith(fontWeight: FontWeight.w800),
+      ),
     );
   }
 }
@@ -1114,49 +1118,56 @@ class _PlanSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isPaid = entitlement.tier != PlanTier.free;
-    return AppCard(
-      padding: EdgeInsets.all(AppSpacing.xxl.w),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(AppCopy.hubCurrentPlan, style: AppText.caption),
-              const Spacer(),
-              PlanBadge(tier: entitlement.tier, size: PlanBadgeSize.header),
-            ],
-          ),
-          gapV(AppSpacing.sm),
-          if (isPaid) ...[
+    return Semantics(
+      label:
+          'ملخص الخطة الحالية. ${entitlement.tier.name}. أماكنك المتاحة ${entitlement.maxPlaces}.',
+      child: AppCard(
+        padding: EdgeInsets.all(AppSpacing.xxl.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Row(
               children: [
-                Icon(Icons.event_repeat_rounded,
-                    color: AppColor.textSecondary, size: 16.sp),
-                gapH(AppSpacing.xs),
-                Text(
-                  '${AppCopy.subRenewsOn} ${_formatDate(entitlement.periodEnd)}',
-                  style: AppText.bodySm,
-                ),
+                Text(AppCopy.hubCurrentPlan, style: AppText.caption),
+                const Spacer(),
+                PlanBadge(tier: entitlement.tier, size: PlanBadgeSize.header),
               ],
             ),
-            gapV(AppSpacing.md),
-          ] else ...[
-            Text(
-              AppCopy.subFreeForever,
-              style: AppText.titleMd.copyWith(color: AppColor.textPrimary),
+            gapV(AppSpacing.sm),
+            if (isPaid) ...[
+              Row(
+                children: [
+                  Icon(Icons.event_repeat_rounded,
+                      color: AppColor.textSecondary, size: 16.sp),
+                  gapH(AppSpacing.xs),
+                  Expanded(
+                    child: Text(
+                      '${AppCopy.subRenewsOn} ${_formatDate(entitlement.periodEnd)}',
+                      style: AppText.bodySm,
+                    ),
+                  ),
+                ],
+              ),
+              gapV(AppSpacing.md),
+            ] else ...[
+              Text(
+                AppCopy.subFreeForever,
+                style: AppText.titleMd.copyWith(color: AppColor.textPrimary),
+              ),
+              gapV(AppSpacing.md),
+            ],
+            SizedBox(
+              width: double.infinity,
+              child: AppButton(
+                text: isPaid ? AppCopy.hubManagePlan : AppCopy.subUpgrade,
+                onPress: onManage,
+                variant: isPaid
+                    ? AppButtonVariant.outline
+                    : AppButtonVariant.primary,
+              ),
             ),
-            gapV(AppSpacing.md),
           ],
-          SizedBox(
-            width: double.infinity,
-            child: AppButton(
-              text: isPaid ? AppCopy.hubManagePlan : AppCopy.subUpgrade,
-              onPress: onManage,
-              variant:
-                  isPaid ? AppButtonVariant.outline : AppButtonVariant.primary,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -1175,34 +1186,42 @@ class _KpiStrip extends StatelessWidget {
     String unlimited(int v) =>
         v >= 999 ? AppCopy.subFeatureUnlimited : v.toString();
 
-    return Row(
-      children: [
-        Expanded(
-          child: _KpiCell(
-            icon: Icons.store_rounded,
-            label: AppCopy.hubKpiPlaces,
-            value: unlimited(entitlement.maxPlaces),
-          ),
-        ),
-        gapH(AppSpacing.sm),
-        Expanded(
-          child: _KpiCell(
-            icon: Icons.photo_library_rounded,
-            label: AppCopy.hubKpiImages,
-            value: unlimited(entitlement.maxGalleryImages),
-          ),
-        ),
-        gapH(AppSpacing.sm),
-        Expanded(
-          child: _KpiCell(
-            icon: Icons.insights_rounded,
-            label: AppCopy.hubKpiAnalytics,
-            value: entitlement.hasAnalyticsPro
-                ? 'PRO'
-                : (entitlement.hasAnalyticsBasic ? '✓' : '—'),
-          ),
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final itemWidth = (constraints.maxWidth - (AppSpacing.sm.w * 2)) / 3;
+        return Wrap(
+          spacing: AppSpacing.sm.w,
+          runSpacing: AppSpacing.sm.h,
+          children: [
+            SizedBox(
+              width: itemWidth,
+              child: _KpiCell(
+                icon: Icons.store_rounded,
+                label: AppCopy.hubKpiPlaces,
+                value: unlimited(entitlement.maxPlaces),
+              ),
+            ),
+            SizedBox(
+              width: itemWidth,
+              child: _KpiCell(
+                icon: Icons.photo_library_rounded,
+                label: AppCopy.hubKpiImages,
+                value: unlimited(entitlement.maxGalleryImages),
+              ),
+            ),
+            SizedBox(
+              width: itemWidth,
+              child: _KpiCell(
+                icon: Icons.insights_rounded,
+                label: AppCopy.hubKpiAnalytics,
+                value: entitlement.hasAnalyticsPro
+                    ? 'PRO'
+                    : (entitlement.hasAnalyticsBasic ? '✓' : '—'),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -1220,31 +1239,35 @@ class _KpiCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppSpacing.md.w,
-        vertical: AppSpacing.lg.h,
-      ),
-      decoration: BoxDecoration(
-        color: AppColor.surfaceCard,
-        borderRadius: AppRadii.rLg,
-        border: Border.all(color: AppColor.border),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: AppColor.primary, size: 20.sp),
-          gapV(AppSpacing.sm),
-          Text(
-            value,
-            style: AppText.titleLg.copyWith(fontWeight: FontWeight.w800),
-          ),
-          gapV(AppSpacing.xs),
-          Text(
-            label,
-            style: AppText.caption,
-            textAlign: TextAlign.center,
-          ),
-        ],
+    return Semantics(
+      label: '$label: $value',
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: AppSpacing.md.w,
+          vertical: AppSpacing.lg.h,
+        ),
+        decoration: BoxDecoration(
+          color: AppColor.surfaceCard,
+          borderRadius: AppRadii.rLg,
+          border: Border.all(color: AppColor.border),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: AppColor.primary, size: 20.sp),
+            gapV(AppSpacing.sm),
+            Text(
+              value,
+              style: AppText.titleLg.copyWith(fontWeight: FontWeight.w800),
+            ),
+            gapV(AppSpacing.xs),
+            Text(
+              label,
+              style: AppText.caption,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1272,83 +1295,87 @@ class _FeatureTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final locked = lockedLabel != null;
-    return AppCard(
-      onTap: onTap,
-      padding: EdgeInsets.all(AppSpacing.lg.w),
-      child: Row(
-        children: [
-          Container(
-            width: 48.w,
-            height: 48.w,
-            decoration: BoxDecoration(
-              color: locked ? AppColor.neutral100 : AppColor.primary50,
-              borderRadius: AppRadii.rMd,
+    return Semantics(
+      button: true,
+      label: '$title. $body',
+      child: AppCard(
+        onTap: onTap,
+        padding: EdgeInsets.all(AppSpacing.lg.w),
+        child: Row(
+          children: [
+            Container(
+              width: 48.w,
+              height: 48.w,
+              decoration: BoxDecoration(
+                color: locked ? AppColor.neutral100 : AppColor.primary50,
+                borderRadius: AppRadii.rMd,
+              ),
+              child: Icon(
+                icon,
+                color: locked ? AppColor.textTertiary : AppColor.primary,
+                size: 24.sp,
+              ),
             ),
-            child: Icon(
-              icon,
-              color: locked ? AppColor.textTertiary : AppColor.primary,
-              size: 24.sp,
-            ),
-          ),
-          gapH(AppSpacing.lg),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        title,
-                        style: AppText.titleMd.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: locked
-                              ? AppColor.textSecondary
-                              : AppColor.textPrimary,
+            gapH(AppSpacing.lg),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: AppText.titleMd.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: locked
+                                ? AppColor.textSecondary
+                                : AppColor.textPrimary,
+                          ),
                         ),
                       ),
-                    ),
-                    if (locked)
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm.w,
-                          vertical: 2.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColor.warningBg,
-                          borderRadius: AppRadii.rSm,
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.lock_rounded,
-                                color: AppColor.warning, size: 12.sp),
-                            gapH(AppSpacing.xs),
-                            Text(
-                              lockedLabel!,
-                              style: AppText.caption.copyWith(
-                                color: AppColor.warning,
-                                fontWeight: FontWeight.w700,
+                      if (locked)
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppSpacing.sm.w,
+                            vertical: 2.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColor.warningBg,
+                            borderRadius: AppRadii.rSm,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.lock_rounded,
+                                  color: AppColor.warning, size: 12.sp),
+                              gapH(AppSpacing.xs),
+                              Text(
+                                lockedLabel!,
+                                style: AppText.caption.copyWith(
+                                  color: AppColor.warning,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                  ],
-                ),
-                gapV(AppSpacing.xs / 2),
-                Text(
-                  body,
-                  style: AppText.bodySm,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+                    ],
+                  ),
+                  gapV(AppSpacing.xs / 2),
+                  Text(
+                    body,
+                    style: AppText.bodySm,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
-          ),
-          Icon(Icons.chevron_left_rounded,
-              color: AppColor.textTertiary, size: 24.sp),
-        ],
+            Icon(Icons.chevron_left_rounded,
+                color: AppColor.textTertiary, size: 24.sp),
+          ],
+        ),
       ),
     );
   }
@@ -1403,8 +1430,8 @@ class _ProviderFlowCard extends StatelessWidget {
           gapV(AppSpacing.xs),
           Text(
             placeCount == 0
-                ? 'ابدأ بإضافة مكانك الأول، وبعدها هتشوف لوحة التحكم كاملة.'
-                : 'عندك $placeCount من $maxPlaces أماكن. كل مكان يقدر يحمل حتى $imagesPerPlace صورة حسب الخطة.',
+                ? 'أضف مكانك الأول وابدأ شغلك.'
+                : 'عندك $placeCount من $maxPlaces أماكن. ولكل مكان حتى $imagesPerPlace صورة.',
             style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
           ),
           gapV(AppSpacing.lg),
@@ -1432,7 +1459,7 @@ class _ProviderFlowCard extends StatelessWidget {
                   currentIndex: stepIndex,
                   onTap: onRefresh,
                   icon: AppImages.search,
-                  label: 'Preview',
+                  label: 'المعاينة',
                   isLast: true,
                 ),
               ],
@@ -1517,8 +1544,8 @@ class _PlacesSection extends StatelessWidget {
           gapV(AppSpacing.sm),
           Text(
             places.isEmpty
-                ? 'أضف مكانك الأول، وبعدها هتلاقيه هنا عشان تعدّل أو تحذف أو تعمل Preview.'
-                : 'كل مكان تقدر تديره من هنا بسرعة.',
+                ? 'أضف مكانك الأول، وهتلاقيه هنا فورًا.'
+                : 'من هنا تقدر تعاين أو تعدّل أو تحذف.',
             style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
           ),
           gapV(AppSpacing.lg),
@@ -1640,114 +1667,143 @@ class _PlaceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cover = place.imageUrl?.trim() ?? '';
     final model = SuggestionItemModel.fromPlace(place);
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColor.surfaceCard,
-        borderRadius: AppRadii.rLg,
-        border: Border.all(color: AppColor.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
-            child: SizedBox(
-              height: 172.h,
-              width: double.infinity,
-              child: cover.isNotEmpty
-                  ? Image.network(
-                      cover,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _placePlaceholder(),
-                    )
-                  : _placePlaceholder(),
+    return Semantics(
+      container: true,
+      label:
+          '${place.name}. ${place.cityName}. ${place.activityName}. حالة المكان ${place.status}.',
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColor.surfaceCard,
+          borderRadius: AppRadii.rLg,
+          border: Border.all(color: AppColor.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+              child: SizedBox(
+                height: 172.h,
+                width: double.infinity,
+                child: cover.isNotEmpty
+                    ? Image.network(
+                        cover,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => _placePlaceholder(),
+                      )
+                    : _placePlaceholder(),
+              ),
             ),
-          ),
-          Padding(
-            padding: EdgeInsets.all(AppSpacing.lg.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        place.name,
-                        style: AppText.titleMd.copyWith(
-                          fontWeight: FontWeight.w800,
+            Padding(
+              padding: EdgeInsets.all(AppSpacing.lg.w),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          place.name,
+                          style: AppText.titleMd.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    PlanBadge(
-                      tier: SubscriptionService.instance.entitlement.value.tier,
+                      gapH(AppSpacing.sm),
+                      PlanBadge(
+                        tier:
+                            SubscriptionService.instance.entitlement.value.tier,
+                      ),
+                    ],
+                  ),
+                  gapV(AppSpacing.sm),
+                  Wrap(
+                    spacing: AppSpacing.xs.w,
+                    runSpacing: AppSpacing.xs.h,
+                    children: [
+                      _MetaChip(
+                        icon: Icons.location_city_rounded,
+                        text: place.cityName,
+                      ),
+                      _MetaChip(
+                        icon: Icons.category_rounded,
+                        text: place.activityName,
+                      ),
+                    ],
+                  ),
+                  gapV(AppSpacing.sm),
+                  _PlaceModerationBanner(
+                    status: place.status,
+                    createdAt: place.createdAt,
+                  ),
+                  if (place.description.trim().isNotEmpty) ...[
+                    gapV(AppSpacing.sm),
+                    Text(
+                      place.description,
+                      style: AppText.bodySm,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
-                ),
-                gapV(AppSpacing.xs),
-                Text(
-                  '${place.cityName} • ${place.activityName}',
-                  style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
-                ),
-                gapV(AppSpacing.sm),
-                _PlaceModerationBanner(
-                  status: place.status,
-                  createdAt: place.createdAt,
-                ),
-                gapV(AppSpacing.xs),
-                Text(
-                  place.description,
-                  style: AppText.bodySm,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                gapV(AppSpacing.md),
-                Row(
-                  children: [
-                    Expanded(
-                      child: AppButton(
-                        text: 'Preview كما يراه المستخدم',
-                        onPress: onPreview,
-                        size: AppButtonSize.sm,
-                      ),
+                  gapV(AppSpacing.md),
+                  SizedBox(
+                    width: double.infinity,
+                    child: AppButton(
+                      text: 'المعاينة',
+                      onPress: onPreview,
+                      size: AppButtonSize.sm,
                     ),
-                  ],
-                ),
-                gapV(AppSpacing.sm),
-                Row(
-                  children: [
-                    Expanded(
-                      child: AppButton(
-                        text: 'تعديل',
-                        onPress: onEdit,
-                        size: AppButtonSize.sm,
-                        variant: AppButtonVariant.outline,
+                  ),
+                  gapV(AppSpacing.sm),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: AppButton(
+                          text: 'تعديل',
+                          onPress: onEdit,
+                          size: AppButtonSize.sm,
+                          variant: AppButtonVariant.outline,
+                        ),
                       ),
-                    ),
-                    gapH(AppSpacing.sm),
-                    Expanded(
-                      child: AppButton(
-                        text: 'حذف',
-                        onPress: onDelete,
-                        size: AppButtonSize.sm,
-                        variant: AppButtonVariant.destructive,
+                      gapH(AppSpacing.sm),
+                      Expanded(
+                        child: AppButton(
+                          text: 'حذف',
+                          onPress: onDelete,
+                          size: AppButtonSize.sm,
+                          variant: AppButtonVariant.destructive,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                gapV(AppSpacing.sm),
-                Text(
-                  model.address,
-                  style:
-                      AppText.caption.copyWith(color: AppColor.textSecondary),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+                    ],
+                  ),
+                  gapV(AppSpacing.sm),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.place_outlined,
+                        size: 14.sp,
+                        color: AppColor.textSecondary,
+                      ),
+                      gapH(AppSpacing.xs),
+                      Expanded(
+                        child: Text(
+                          model.address,
+                          style: AppText.caption
+                              .copyWith(color: AppColor.textSecondary),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1758,6 +1814,41 @@ class _PlaceCard extends StatelessWidget {
       child: Center(
         child: Icon(Icons.image_not_supported_outlined,
             color: AppColor.textTertiary, size: 38.sp),
+      ),
+    );
+  }
+}
+
+class _MetaChip extends StatelessWidget {
+  const _MetaChip({
+    required this.icon,
+    required this.text,
+  });
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm.w,
+        vertical: AppSpacing.xs.h,
+      ),
+      decoration: BoxDecoration(
+        color: AppColor.surfaceMuted,
+        borderRadius: AppRadii.rPill,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14.sp, color: AppColor.textSecondary),
+          gapH(AppSpacing.xs),
+          Text(
+            text,
+            style: AppText.caption.copyWith(color: AppColor.textSecondary),
+          ),
+        ],
       ),
     );
   }
@@ -1838,59 +1929,62 @@ class _PlaceModerationBannerState extends State<_PlaceModerationBanner> {
     final String? trailing =
         awaitingReview ? _formatRemaining(widget.createdAt) : null;
 
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(
-        horizontal: AppSpacing.md.w,
-        vertical: AppSpacing.sm.h,
-      ),
-      decoration: BoxDecoration(
-        color: tone.withValues(alpha: 0.08),
-        borderRadius: AppRadii.rMd,
-        border: Border.all(
-          color: tone.withValues(alpha: 0.24),
+    return Semantics(
+      label: trailing == null ? label : '$label. الوقت المتبقي $trailing',
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(
+          horizontal: AppSpacing.md.w,
+          vertical: AppSpacing.sm.h,
         ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            size: 16.sp,
-            color: tone,
+        decoration: BoxDecoration(
+          color: tone.withValues(alpha: 0.08),
+          borderRadius: AppRadii.rMd,
+          border: Border.all(
+            color: tone.withValues(alpha: 0.24),
           ),
-          gapH(AppSpacing.xs),
-          Expanded(
-            child: Text(
-              label,
-              style: AppText.labelSm.copyWith(
-                color: tone,
-                fontWeight: FontWeight.w800,
-              ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 16.sp,
+              color: tone,
             ),
-          ),
-          if (trailing != null) ...[
-            gapH(AppSpacing.sm),
-            Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.sm.w,
-                vertical: 3.h,
-              ),
-              decoration: BoxDecoration(
-                color: AppColor.surfaceCard,
-                borderRadius: AppRadii.rPill,
-                border: Border.all(color: tone.withValues(alpha: 0.28)),
-              ),
+            gapH(AppSpacing.xs),
+            Expanded(
               child: Text(
-                trailing,
+                label,
                 style: AppText.labelSm.copyWith(
                   color: tone,
                   fontWeight: FontWeight.w800,
-                  fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
             ),
+            if (trailing != null) ...[
+              gapH(AppSpacing.sm),
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm.w,
+                  vertical: 3.h,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColor.surfaceCard,
+                  borderRadius: AppRadii.rPill,
+                  border: Border.all(color: tone.withValues(alpha: 0.28)),
+                ),
+                child: Text(
+                  trailing,
+                  style: AppText.labelSm.copyWith(
+                    color: tone,
+                    fontWeight: FontWeight.w800,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
