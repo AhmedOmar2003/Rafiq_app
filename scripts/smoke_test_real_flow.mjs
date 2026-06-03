@@ -399,21 +399,26 @@ try {
     publicActive: publicActiveRead.data,
   });
 
-  const imp1 = await http("POST", `${base}/rest/v1/rpc/record_campaign_metric`, {
-    headers: {
-      apikey: anonKey,
-      Authorization: `Bearer ${anonKey}`,
-      "Content-Type": "application/json",
-    },
-    body: { _campaign_id: campaignId, _metric: "impression" },
+  const campaignMetricSessionId = crypto.randomUUID();
+  const imp1 = await authRpc(regularSession.access_token, "record_campaign_metric", {
+    _campaign_id: campaignId,
+    _metric: "impression",
+    _session_id: campaignMetricSessionId,
   });
-  const clk1 = await http("POST", `${base}/rest/v1/rpc/record_campaign_metric`, {
-    headers: {
-      apikey: anonKey,
-      Authorization: `Bearer ${anonKey}`,
-      "Content-Type": "application/json",
-    },
-    body: { _campaign_id: campaignId, _metric: "click" },
+  const imp2 = await authRpc(regularSession.access_token, "record_campaign_metric", {
+    _campaign_id: campaignId,
+    _metric: "impression",
+    _session_id: campaignMetricSessionId,
+  });
+  const clk1 = await authRpc(regularSession.access_token, "record_campaign_metric", {
+    _campaign_id: campaignId,
+    _metric: "click",
+    _session_id: campaignMetricSessionId,
+  });
+  const clk2 = await authRpc(regularSession.access_token, "record_campaign_metric", {
+    _campaign_id: campaignId,
+    _metric: "click",
+    _session_id: campaignMetricSessionId,
   });
   const campaignAfter = await serviceTable(
     "GET",
@@ -421,15 +426,36 @@ try {
     undefined,
     "return=representation",
   );
+  const rawMetricRows = await serviceTable(
+    "GET",
+    `campaign_metric_events?campaign_id=eq.${campaignId}&select=metric,occurred_at`,
+    undefined,
+    "return=representation",
+  );
+  const metricCounts = Array.isArray(rawMetricRows.data)
+    ? rawMetricRows.data.reduce(
+        (acc, row) => {
+          if (row.metric === "impression") acc.impressions += 1;
+          if (row.metric === "click") acc.clicks += 1;
+          return acc;
+        },
+        { impressions: 0, clicks: 0 },
+      )
+    : { impressions: 0, clicks: 0 };
   result.steps.push({
     step: "campaign_metrics_recorded",
     ok:
       imp1.ok &&
+      imp2.ok &&
       clk1.ok &&
+      clk2.ok &&
       Array.isArray(campaignAfter.data) &&
-      campaignAfter.data[0]?.impressions >= 1 &&
-      campaignAfter.data[0]?.clicks >= 1,
+      campaignAfter.data[0]?.impressions === 1 &&
+      campaignAfter.data[0]?.clicks === 1 &&
+      metricCounts.impressions === 1 &&
+      metricCounts.clicks === 1,
     metrics: campaignAfter.data,
+    rawMetricCounts: metricCounts,
   });
 
   const publicPlace = await http(
@@ -445,6 +471,42 @@ try {
       Array.isArray(publicPlace.data) &&
       publicPlace.data[0]?.status === "approved",
     data: publicPlace.data,
+  });
+
+  const dashboardSignals = await Promise.all([
+    serviceTable(
+      "GET",
+      `analytics_events?place_id=eq.${placeUuid}&kind=eq.place_open&select=id`,
+      undefined,
+      "return=representation",
+    ),
+    serviceTable(
+      "GET",
+      `analytics_events?place_id=eq.${placeUuid}&kind=eq.place_favorite&select=id`,
+      undefined,
+      "return=representation",
+    ),
+    serviceTable(
+      "GET",
+      `analytics_events?place_id=eq.${placeUuid}&kind=eq.place_map_open&select=id`,
+      undefined,
+      "return=representation",
+    ),
+  ]);
+  result.steps.push({
+    step: "dashboard_data_sources_have_runtime_events",
+    ok:
+      Array.isArray(dashboardSignals[0].data) &&
+      dashboardSignals[0].data.length >= 1 &&
+      Array.isArray(dashboardSignals[1].data) &&
+      dashboardSignals[1].data.length >= 1 &&
+      Array.isArray(dashboardSignals[2].data) &&
+      dashboardSignals[2].data.length >= 1,
+    counts: {
+      placeOpen: Array.isArray(dashboardSignals[0].data) ? dashboardSignals[0].data.length : 0,
+      favorite: Array.isArray(dashboardSignals[1].data) ? dashboardSignals[1].data.length : 0,
+      mapOpen: Array.isArray(dashboardSignals[2].data) ? dashboardSignals[2].data.length : 0,
+    },
   });
 } finally {
   for (const userId of createdUsers) {
