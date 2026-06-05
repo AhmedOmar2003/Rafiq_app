@@ -191,7 +191,7 @@ class _HomeViewState extends State<HomeView> {
           // One AppPageHeader for every root surface keeps the title scale,
           // hairline border, and trailing slot identical across the app.
           appBar: const AppPageHeader(
-            title: AppCopy.suggestionsTitle,
+            title: AppCopy.homeTitle,
             actions: [ProfilePill()],
           ),
           body: SafeArea(

@@ -61,7 +61,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      AppFeedback.error('$e');
+      AppFeedback.error(AppCopy.errorGeneric);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

@@ -317,13 +317,12 @@ class _ProfilePageState extends State<ProfilePage> {
       barrierDismissible: false,
       builder: (context) {
         return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: AppRadii.rXl),
           elevation: 8,
-          backgroundColor: AppColor.surfaceCard,
+          backgroundColor: AppColor.surface,
           child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+            padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.xl.w, vertical: AppSpacing.lg.h),
             child: StatefulBuilder(
               builder: (context, setState) {
                 return Form(
@@ -332,7 +331,6 @@ class _ProfilePageState extends State<ProfilePage> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Title and close icon
                       Row(
                         children: [
                           Expanded(
@@ -347,132 +345,78 @@ class _ProfilePageState extends State<ProfilePage> {
                               ),
                             ),
                           ),
-                          GestureDetector(
-                            onTap: () => Navigator.of(context).pop(),
-                            child: const Icon(
-                              Icons.close,
-                              color: AppColor.primary,
-                              size: 24,
-                            ),
+                          IconButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            icon: const Icon(Icons.close,
+                                color: AppColor.primary, size: 24),
+                            tooltip: AppCopy.cancel,
                           ),
                         ],
                       ),
-                      SizedBox(height: 24.h),
-                      // Current password
-                      TextFormField(
+                      gapV(AppSpacing.lg),
+                      AppInput(
+                        label: AppCopy.changePwCurrent,
+                        hintText: AppCopy.authPasswordHint,
                         controller: currentPasswordController,
-                        obscureText: true,
-                        decoration: InputDecoration(
-                          labelText: AppCopy.changePwCurrent,
-                          prefixIcon: const Icon(Icons.lock_outline,
-                              color: AppColor.primary),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return "يرجى إدخال كلمة المرور الحالية";
-                          }
-                          return null;
-                        },
+                        isPassword: true,
+                        textInputAction: TextInputAction.next,
+                        prefixIcon: const Icon(Icons.lock_outline,
+                            color: AppColor.primary),
+                        validator: (v) => (v == null || v.isEmpty)
+                            ? AppCopy.passwordRequired
+                            : null,
                       ),
-                      SizedBox(height: 16.h),
-                      // New password
-                      TextFormField(
+                      AppInput(
+                        label: AppCopy.changePwNew,
+                        hintText: AppCopy.authPasswordHint,
                         controller: newPasswordController,
-                        obscureText: true,
-                        decoration: InputDecoration(
-                          labelText: AppCopy.changePwNew,
-                          prefixIcon: const Icon(Icons.lock_outline,
-                              color: AppColor.primary),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return "يرجى إدخال كلمة المرور الجديدة";
-                          }
-                          return null;
-                        },
+                        isPassword: true,
+                        textInputAction: TextInputAction.next,
+                        prefixIcon: const Icon(Icons.lock_outline,
+                            color: AppColor.primary),
+                        validator: (v) => (v == null || v.isEmpty)
+                            ? AppCopy.passwordRequired
+                            : null,
                       ),
-                      SizedBox(height: 16.h),
-                      // Confirm new password
-                      TextFormField(
+                      AppInput(
+                        label: AppCopy.changePwConfirm,
+                        hintText: AppCopy.resetConfirmHint,
                         controller: confirmPasswordController,
-                        obscureText: true,
-                        decoration: InputDecoration(
-                          labelText: AppCopy.changePwConfirm,
-                          prefixIcon: const Icon(Icons.lock_outline,
-                              color: AppColor.primary),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return "يرجى تأكيد كلمة المرور الجديدة";
-                          }
-                          if (value != newPasswordController.text) {
-                            return "كلمتا المرور غير متطابقتين";
-                          }
+                        isPassword: true,
+                        textInputAction: TextInputAction.done,
+                        onFieldSubmitted: (_) => changePassword(),
+                        prefixIcon: const Icon(Icons.lock_outline,
+                            color: AppColor.primary),
+                        paddingBottom: 8,
+                        validator: (v) {
+                          if (v == null || v.isEmpty) return AppCopy.passwordRequired;
+                          if (v != newPasswordController.text) return AppCopy.passwordsMismatch;
                           return null;
                         },
                       ),
-                      SizedBox(height: 24.h),
-                      // Update button
+                      gapV(AppSpacing.md),
                       ValueListenableBuilder<bool>(
                         valueListenable: isLoading,
-                        builder: (context, loading, _) {
-                          return SizedBox(
-                            width: double.infinity,
-                            height: 50.h,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColor.primary,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(15.r),
-                                ),
-                                elevation: 2,
-                              ),
-                              onPressed: loading
-                                  ? () {}
-                                  : () {
-                                      changePassword();
-                                    },
-                              child: loading
-                                  ? const SizedBox(
-                                      height: 24,
-                                      width: 24,
-                                      child: CircularProgressIndicator(
-                                        color: AppColor.white,
-                                        strokeWidth: 2.5,
-                                      ),
-                                    )
-                                  : Text(
-                                      "تحديث كلمة المرور",
-                                      style: AppText.titleMd.copyWith(
-                                        color: AppColor.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                            ),
-                          );
-                        },
+                        builder: (_, loading, __) => AppButton(
+                          text: AppCopy.changePwCta,
+                          onPress: () {
+                            if (!loading) changePassword();
+                          },
+                          isLoading: loading,
+                        ),
                       ),
-                      SizedBox(height: 12.h),
-                      // Error message with fade animation
+                      gapV(AppSpacing.sm),
                       ValueListenableBuilder<String?>(
                         valueListenable: errorMessage,
-                        builder: (context, error, _) {
+                        builder: (_, error, __) {
                           return AnimatedOpacity(
                             opacity: error == null ? 0.0 : 1.0,
-                            duration: const Duration(milliseconds: 300),
+                            duration: AppMotion.base,
                             child: error == null
                                 ? const SizedBox.shrink()
                                 : Padding(
-                                    padding: EdgeInsets.only(top: 4.h),
+                                    padding:
+                                        EdgeInsets.only(top: AppSpacing.xs.h),
                                     child: Text(
                                       error,
                                       style: AppText.bodyMd
@@ -483,8 +427,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           );
                         },
                       ),
-                      SizedBox(height: 8.h),
-                      // Cancel button
+                      gapV(AppSpacing.xs),
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(),
                         child: Text(
@@ -564,9 +507,12 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ],
       ),
-      child: GestureDetector(
-        onTap: _pickImage,
-        child: ValueListenableBuilder<ProfileImageState>(
+      child: Semantics(
+        button: true,
+        label: AppCopy.profileChangeAvatarHint,
+        child: GestureDetector(
+          onTap: _pickImage,
+          child: ValueListenableBuilder<ProfileImageState>(
           valueListenable: ProfileImageStore.instance,
           builder: (_, snap, __) {
             final ImageProvider provider = snap.bytes != null
@@ -597,6 +543,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             );
           },
+          ),
         ),
       ),
     );
@@ -996,8 +943,8 @@ class _SupportSection extends StatelessWidget {
 
   void _email() => _launch(
         'mailto:${AppCopy.supportEmail}'
-        '?subject=${Uri.encodeComponent("طلب مساعدة — رفيق")}'
-        '&body=${Uri.encodeComponent("مرحباً،\n\nأحتاج مساعدة في...")}',
+        '?subject=${Uri.encodeComponent(AppCopy.supportEmailSubject)}'
+        '&body=${Uri.encodeComponent(AppCopy.supportEmailBody)}',
       );
 
   @override
@@ -1030,11 +977,11 @@ class _SupportSection extends StatelessWidget {
             style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
           ),
           subtitle: Text(
-            'المساعدة والقوانين وطرق التواصل.',
+            AppCopy.profileSupportSubtitle,
             style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
           ),
           children: [
-            const _GroupLabel(text: 'معلومات'),
+            const _GroupLabel(text: AppCopy.supportInfoGroup),
             _SupportRow(
               icon: Icons.privacy_tip_outlined,
               label: AppCopy.profilePrivacyPolicy,
@@ -1065,24 +1012,24 @@ class _SupportSection extends StatelessWidget {
             const _GroupLabel(text: AppCopy.profileContactUs),
             _SupportRow(
               icon: Icons.phone_outlined,
-              label: 'اتصال مباشر',
+              label: AppCopy.supportCallLabel,
               trailing: AppCopy.supportPhone1,
               onTap: () => _call(AppCopy.supportPhone1),
             ),
             const _Hairline(),
             _SupportRow(
               icon: Icons.chat_bubble_outline_rounded,
-              label: 'واتساب',
+              label: AppCopy.supportWhatsappLabel,
               trailing: AppCopy.supportPhone2,
               onTap: () => _whatsapp(
                 AppCopy.supportPhone2,
-                'مرحباً، أحتاج مساعدة في تطبيق رفيق.',
+                AppCopy.supportWhatsappMessage,
               ),
             ),
             const _Hairline(),
             _SupportRow(
               icon: Icons.email_outlined,
-              label: 'البريد الإلكتروني',
+              label: AppCopy.supportEmailLabel,
               trailing: AppCopy.supportEmail,
               onTap: _email,
             ),
@@ -1164,7 +1111,9 @@ class _FavoritePlacesSection extends StatelessWidget {
           if (isLoading)
             SizedBox(
               height: 96.h,
-              child: const Center(child: CircularProgressIndicator()),
+              child: const Center(
+                child: CircularProgressIndicator(color: AppColor.primary),
+              ),
             )
           else if (places.isEmpty)
             Container(
@@ -1380,7 +1329,7 @@ class _SupportRow extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.symmetric(
           horizontal: AppSpacing.lg.w,
-          vertical: AppSpacing.md.h + 2,
+          vertical: AppSpacing.md.h,
         ),
         child: Row(
           children: [
@@ -1668,7 +1617,7 @@ class _RoleBanner extends StatelessWidget {
                     Container(
                       padding: EdgeInsets.symmetric(
                         horizontal: AppSpacing.md.w,
-                        vertical: 8.h,
+                        vertical: AppSpacing.sm.h,
                       ),
                       decoration: BoxDecoration(
                         color: isBrand ? AppColor.white : AppColor.primary,

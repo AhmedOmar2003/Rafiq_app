@@ -7,8 +7,9 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/design/app_image.dart';
 import '../../../core/design/cached_network_image.dart';
+import '../../../core/design/components/components.dart';
 import '../../../core/design/tokens/tokens.dart';
-import '../../../core/utils/spacing.dart';
+import '../../../core/utils/app_microcopy.dart';
 import '../../../models/suggestion_item_model/suggestion_item.dart';
 
 class DetailsItem extends StatefulWidget {
@@ -62,11 +63,9 @@ class _DetailsItemState extends State<DetailsItem> {
           googleMapsUri,
           mode: LaunchMode.externalApplication,
         );
-      } else {
-        debugPrint("Could not launch $googleMapsUri");
       }
-    } catch (e) {
-      debugPrint("Error launching map: $e");
+    } catch (_) {
+      // Map launch failed silently — user stays in-app.
     }
   }
 
@@ -141,7 +140,7 @@ class _DetailsItemState extends State<DetailsItem> {
           height: 220.h,
           width: double.infinity,
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(20.r),
+            borderRadius: AppRadii.rXl,
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -156,14 +155,14 @@ class _DetailsItemState extends State<DetailsItem> {
                       _buildGalleryImage(context, gallery[index]),
                 ),
                 Positioned(
-                  top: 16.h,
-                  right: 16.w,
+                  top: AppSpacing.md.h,
+                  right: AppSpacing.md.w,
                   child: Container(
-                    padding:
-                        EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                    padding: EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm.w, vertical: AppSpacing.xs.h),
                     decoration: BoxDecoration(
                       color: AppColor.surfaceCard,
-                      borderRadius: BorderRadius.circular(999),
+                      borderRadius: AppRadii.rPill,
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -173,11 +172,11 @@ class _DetailsItemState extends State<DetailsItem> {
                           color: AppColor.warning,
                           size: 16,
                         ),
-                        horizontalSpace(4),
+                        gapH(AppSpacing.xs),
                         Text(
                           widget.model.rate > 0
                               ? widget.model.rate.toString()
-                              : 'جديد',
+                              : AppCopy.ratingFallback,
                           style: AppText.labelSm.copyWith(
                             color: AppColor.textPrimary,
                           ),
@@ -188,16 +187,16 @@ class _DetailsItemState extends State<DetailsItem> {
                 ),
                 if (hasGallery)
                   Positioned(
-                    left: 16.w,
-                    top: 16.h,
+                    left: AppSpacing.md.w,
+                    top: AppSpacing.md.h,
                     child: Container(
                       padding: EdgeInsets.symmetric(
-                        horizontal: 10.w,
-                        vertical: 4.h,
+                        horizontal: AppSpacing.sm.w,
+                        vertical: AppSpacing.xs.h,
                       ),
                       decoration: BoxDecoration(
                         color: AppColor.surfaceCard.withValues(alpha: 0.92),
-                        borderRadius: BorderRadius.circular(999),
+                        borderRadius: AppRadii.rPill,
                       ),
                       child: Text(
                         '${_currentGalleryIndex + 1}/${gallery.length}',
@@ -240,7 +239,7 @@ class _DetailsItemState extends State<DetailsItem> {
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: gallery.length,
-                    separatorBuilder: (_, __) => horizontalSpace(8),
+                    separatorBuilder: (_, __) => gapH(AppSpacing.sm),
                     itemBuilder: (context, index) {
                       final thumb = gallery[index];
                       final isActive = index == _currentGalleryIndex;
@@ -252,15 +251,15 @@ class _DetailsItemState extends State<DetailsItem> {
                           onTap: () {
                             _galleryController.animateToPage(
                               index,
-                              duration: const Duration(milliseconds: 250),
-                              curve: Curves.easeOutCubic,
+                              duration: AppMotion.base,
+                              curve: AppMotion.standard,
                             );
                           },
                           child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
+                            duration: AppMotion.fast,
                             width: 64.w,
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(14.r),
+                              borderRadius: AppRadii.rMd,
                               border: Border.all(
                                 color: isActive
                                     ? AppColor.primary
@@ -269,7 +268,7 @@ class _DetailsItemState extends State<DetailsItem> {
                               ),
                             ),
                             child: ClipRRect(
-                              borderRadius: BorderRadius.circular(13.r),
+                              borderRadius: AppRadii.rMd,
                               child: _buildGalleryImage(context, thumb),
                             ),
                           ),
@@ -278,10 +277,10 @@ class _DetailsItemState extends State<DetailsItem> {
                     },
                   ),
                 ),
-                verticalSpace(20),
+                gapV(AppSpacing.xl),
               ],
               _TypeBadge(model: model),
-              verticalSpace(16),
+              gapV(AppSpacing.lg),
               Text(
                 model.text,
                 style: AppText.headingMd.copyWith(
@@ -289,10 +288,10 @@ class _DetailsItemState extends State<DetailsItem> {
                   height: 1.3,
                 ),
               ),
-              verticalSpace(12),
+              gapV(AppSpacing.md),
               Wrap(
-                spacing: 8.w,
-                runSpacing: 8.h,
+                spacing: AppSpacing.sm.w,
+                runSpacing: AppSpacing.sm.h,
                 children: [
                   _MetaChip(
                     icon: Icons.place_outlined,
@@ -304,15 +303,15 @@ class _DetailsItemState extends State<DetailsItem> {
                   ),
                 ],
               ),
-              verticalSpace(20),
+              gapV(AppSpacing.xl),
               _LocationCard(
                 address: model.address,
                 onOpenMap: openMap,
               ),
-              verticalSpace(20),
+              gapV(AppSpacing.xl),
               _PriceCard(
                 priceLabel: _formatPriceLabel(model.price),
-                rateLabel: model.rate > 0 ? "${model.rate}" : 'جديد',
+                rateLabel: model.rate > 0 ? "${model.rate}" : AppCopy.ratingFallback,
               ),
             ],
           ),
@@ -338,14 +337,14 @@ class _DetailsItemState extends State<DetailsItem> {
   String _formatPriceLabel(String value) {
     final normalized = value.trim();
     if (normalized.isEmpty) {
-      return "غير محدد";
+      return AppCopy.priceUnspecified;
     }
 
     if (normalized.contains("جنيه") || normalized.contains("جنية")) {
       return normalized;
     }
 
-    return "$normalized جنيه مصري";
+    return "$normalized ${AppCopy.currencyEgp}";
   }
 }
 
@@ -357,10 +356,11 @@ class _TypeBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+      padding: EdgeInsets.symmetric(
+          horizontal: AppSpacing.md.w, vertical: AppSpacing.sm.h),
       decoration: BoxDecoration(
         color: model.color.withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(12.r),
+        borderRadius: AppRadii.rMd,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -371,7 +371,7 @@ class _TypeBadge extends StatelessWidget {
             width: 20.w,
             height: 20.h,
           ),
-          horizontalSpace(8),
+          gapH(AppSpacing.sm),
           Text(
             model.suggestionText,
             style: AppText.labelMd.copyWith(
@@ -396,10 +396,10 @@ class _LocationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(16.w),
+      padding: EdgeInsets.all(AppSpacing.lg.w),
       decoration: BoxDecoration(
         color: AppColor.surfaceVariant,
-        borderRadius: BorderRadius.circular(12.r),
+        borderRadius: AppRadii.rMd,
         border: Border.all(color: AppColor.border),
       ),
       child: Column(
@@ -408,10 +408,10 @@ class _LocationCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: EdgeInsets.all(8.w),
+                padding: EdgeInsets.all(AppSpacing.sm.w),
                 decoration: BoxDecoration(
                   color: AppColor.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8.r),
+                  borderRadius: AppRadii.rSm,
                 ),
                 child: Icon(
                   Icons.location_on_outlined,
@@ -419,18 +419,18 @@ class _LocationCard extends StatelessWidget {
                   size: 20.sp,
                 ),
               ),
-              horizontalSpace(12),
+              gapH(AppSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "الموقع",
+                      AppCopy.detailsLocationLabel,
                       style: AppText.labelSm.copyWith(
                         color: AppColor.textSecondary,
                       ),
                     ),
-                    verticalSpace(4),
+                    gapV(AppSpacing.xs),
                     Text(
                       address,
                       style: AppText.bodyMd.copyWith(
@@ -444,39 +444,12 @@ class _LocationCard extends StatelessWidget {
               ),
             ],
           ),
-          verticalSpace(16),
-          Semantics(
-            button: true,
-            label: 'عرض المكان على الخريطة',
-            child: InkWell(
-              borderRadius: BorderRadius.circular(10.r),
-              onTap: onOpenMap,
-              child: Container(
-                padding: EdgeInsets.symmetric(vertical: 12.h),
-                decoration: BoxDecoration(
-                  color: AppColor.surfaceCard,
-                  borderRadius: BorderRadius.circular(10.r),
-                  border: Border.all(color: AppColor.primary),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.map_outlined,
-                      color: AppColor.primary,
-                      size: 18.sp,
-                    ),
-                    horizontalSpace(8),
-                    Text(
-                      "عرض على الخريطة",
-                      style: AppText.labelMd.copyWith(
-                        color: AppColor.primary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+          gapV(AppSpacing.lg),
+          AppButton(
+            text: AppCopy.detailsOpenMap,
+            onPress: onOpenMap,
+            variant: AppButtonVariant.outline,
+            icon: Icons.map_outlined,
           ),
         ],
       ),
@@ -496,28 +469,28 @@ class _PriceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(16.w),
+      padding: EdgeInsets.all(AppSpacing.lg.w),
       decoration: BoxDecoration(
         color: AppColor.primary.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(12.r),
+        borderRadius: AppRadii.rMd,
         border: Border.all(
           color: AppColor.primary.withValues(alpha: 0.08),
         ),
       ),
       child: Wrap(
         alignment: WrapAlignment.spaceBetween,
-        runSpacing: 12.h,
+        runSpacing: AppSpacing.md.h,
         children: [
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "السعر",
+                AppCopy.detailsPriceLabel,
                 style: AppText.labelSm.copyWith(
                   color: AppColor.textSecondary,
                 ),
               ),
-              verticalSpace(4),
+              gapV(AppSpacing.xs),
               Text(
                 priceLabel,
                 style: AppText.titleLg.copyWith(
@@ -528,10 +501,10 @@ class _PriceCard extends StatelessWidget {
             ],
           ),
           Container(
-            padding: EdgeInsets.all(8.w),
+            padding: EdgeInsets.all(AppSpacing.sm.w),
             decoration: BoxDecoration(
               color: AppColor.surfaceCard,
-              borderRadius: BorderRadius.circular(8.r),
+              borderRadius: AppRadii.rSm,
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -541,7 +514,7 @@ class _PriceCard extends StatelessWidget {
                   color: AppColor.warning,
                   size: 16.sp,
                 ),
-                horizontalSpace(4),
+                gapH(AppSpacing.xs),
                 Text(
                   rateLabel,
                   style: AppText.labelMd.copyWith(
@@ -569,17 +542,18 @@ class _MetaChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+      padding: EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm.w, vertical: AppSpacing.xs.h),
       decoration: BoxDecoration(
         color: AppColor.surfaceVariant,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: AppRadii.rPill,
         border: Border.all(color: AppColor.border),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 14.sp, color: AppColor.textSecondary),
-          horizontalSpace(6),
+          gapH(AppSpacing.sm),
           Text(
             label,
             style: AppText.labelSm.copyWith(

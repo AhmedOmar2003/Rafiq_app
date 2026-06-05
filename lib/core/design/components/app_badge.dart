@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:rafiq_app/core/design/app_image.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
 
 /// Status / semantic tone shared by badges and chips.
@@ -44,43 +45,105 @@ class AppBadge extends StatelessWidget {
   }
 }
 
-/// Selectable filter chip (used in filters / category pickers).
+/// Selectable pill chip — filter bars, range selectors, place selectors.
+///
+/// Touch target is always ≥ 48 logical pixels tall (WCAG 2.5.5).
+///
+/// ```dart
+/// // Text-only (analytics range/place chips)
+/// AppChip(label: 'آخر 7 أيام', selected: true, onTap: () {});
+///
+/// // With leading asset icon + trailing chevron (filter chips)
+/// AppChip(
+///   label: selectedFilter ?? 'النشاط',
+///   selected: selectedFilter != null,
+///   onTap: _openSheet,
+///   leadingAsset: AppImages.activitie,
+///   trailingIcon: Icons.keyboard_arrow_down_rounded,
+/// );
+/// ```
 class AppChip extends StatelessWidget {
   const AppChip({
     super.key,
     required this.label,
-    this.selected = false,
-    this.onTap,
-    this.icon,
+    required this.selected,
+    required this.onTap,
+    this.leadingAsset,
+    this.leadingAssetColor,
+    this.trailingIcon,
+    this.semanticLabel,
   });
 
   final String label;
   final bool selected;
-  final VoidCallback? onTap;
-  final IconData? icon;
+  final VoidCallback onTap;
+
+  /// Optional asset path for a leading icon (SVG or raster).
+  final String? leadingAsset;
+
+  /// Tint applied to [leadingAsset]. Defaults to white when selected,
+  /// primary when unselected.
+  final Color? leadingAssetColor;
+
+  /// Optional trailing icon (e.g. `Icons.keyboard_arrow_down_rounded`).
+  final IconData? trailingIcon;
+
+  /// Overrides the default Semantics label (label + selected state).
+  final String? semanticLabel;
 
   @override
   Widget build(BuildContext context) {
-    final Color bg = selected ? AppColor.primary : AppColor.sand200;
-    final Color fg = selected ? AppColor.textOnPrimary : AppColor.textSecondary;
-    return Material(
-      color: Colors.transparent,
+    final fg = selected ? AppColor.white : AppColor.textPrimary;
+    final iconFg = leadingAssetColor ??
+        (selected ? AppColor.white : AppColor.primary);
+
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: semanticLabel ?? label,
       child: InkWell(
         onTap: onTap,
         borderRadius: AppRadii.rPill,
         child: AnimatedContainer(
           duration: AppMotion.fast,
+          curve: AppMotion.standard,
+          constraints: BoxConstraints(minHeight: 48.h),
           padding: EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg.w, vertical: AppSpacing.sm.h),
-          decoration: BoxDecoration(color: bg, borderRadius: AppRadii.rPill),
+            horizontal: AppSpacing.lg.w,
+            vertical: AppSpacing.sm.h,
+          ),
+          decoration: BoxDecoration(
+            color: selected ? AppColor.primary : AppColor.surfaceCard,
+            borderRadius: AppRadii.rPill,
+            border: Border.all(
+              color: selected ? AppColor.primary : AppColor.border,
+            ),
+            boxShadow: selected ? AppShadows.primaryGlow : AppShadows.level0,
+          ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (icon != null) ...[
-                Icon(icon, size: 16.sp, color: fg),
-                gapH(AppSpacing.xs),
+              if (leadingAsset != null) ...[
+                AppImage(
+                  leadingAsset!,
+                  height: 20.h,
+                  width: 20.h,
+                  color: iconFg,
+                ),
+                SizedBox(width: AppSpacing.sm.w),
               ],
-              Text(label, style: AppText.labelMd.copyWith(color: fg)),
+              Text(
+                label,
+                style: AppText.labelMd.copyWith(
+                  color: fg,
+                  fontWeight:
+                      selected ? FontWeight.w700 : FontWeight.w500,
+                ),
+              ),
+              if (trailingIcon != null) ...[
+                SizedBox(width: AppSpacing.xs.w),
+                Icon(trailingIcon, color: fg, size: 22.sp),
+              ],
             ],
           ),
         ),

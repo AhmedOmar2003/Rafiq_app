@@ -479,7 +479,7 @@ class _ToggleChip extends StatelessWidget {
                   Container(
                     padding: EdgeInsets.symmetric(
                       horizontal: AppSpacing.sm.w,
-                      vertical: 2.h,
+                      vertical: AppSpacing.xs.h / 2,
                     ),
                     decoration: BoxDecoration(
                       color: selected ? AppColor.white : AppColor.successBg,
@@ -560,7 +560,7 @@ class _PlanCard extends StatelessWidget {
               if (isCurrent)
                 const _Chip(label: AppCopy.subCurrent, color: AppColor.success)
               else if (isRecommended)
-                _Chip(label: 'الأكثر اختياراً', color: plan.accentColor),
+                _Chip(label: AppCopy.subRecommended, color: plan.accentColor),
             ],
           ),
           gapV(AppSpacing.xs),
@@ -585,7 +585,7 @@ class _PlanCard extends StatelessWidget {
                 ),
                 gapH(AppSpacing.xs),
                 Padding(
-                  padding: EdgeInsets.only(bottom: 8.h),
+                  padding: EdgeInsets.only(bottom: AppSpacing.sm.h),
                   child: Text(
                     'ج.م ${per.trim()}',
                     style:
@@ -690,7 +690,7 @@ class _Chip extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: AppSpacing.sm.w,
-        vertical: 2.h,
+        vertical: AppSpacing.xs.h / 2,
       ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
@@ -889,7 +889,7 @@ class _ManageSection extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: AppButton(
-                text: 'إلغاء التجديد التلقائي',
+                text: AppCopy.subCancelRenewal,
                 onPress: onCancel,
                 variant: AppButtonVariant.outline,
               ),
@@ -974,7 +974,7 @@ class _ConfirmUpgradeSheet extends StatelessWidget {
                 height: 4.h,
                 decoration: BoxDecoration(
                   color: AppColor.border,
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: AppRadii.rSm,
                 ),
               ),
             ),

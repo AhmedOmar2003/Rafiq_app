@@ -46,7 +46,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       setState(() => _showSuccessOverlay = true);
     } catch (e) {
       if (!mounted) return;
-      AppFeedback.error('$e');
+      AppFeedback.error(AppCopy.errorGeneric);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -60,7 +60,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       setState(() => _showSuccessOverlay = true);
     } catch (e) {
       if (!mounted) return;
-      AppFeedback.error('$e');
+      AppFeedback.error(AppCopy.errorGeneric);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -153,7 +153,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 text: AppCopy.registerCta,
                 onPress: _handleRegister,
                 isLoading: _isLoading),
-            gapV(AppSpacing.lg),
+            _OrDivider(),
             AppButton(
               text: AppCopy.registerGoogle,
               onPress: _handleGoogleRegister,
@@ -207,7 +207,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       label: AppCopy.authPasswordLabel,
       hintText: AppCopy.authPasswordHint,
       controller: passwordController,
-      helperText: 'لازم 6 حروف أو أكتر.',
+      helperText: AppCopy.registerPasswordHelper,
       autofillHints: const [AutofillHints.newPassword],
       isPassword: true,
       textInputAction: TextInputAction.done,
@@ -224,7 +224,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Padding(
       padding: EdgeInsets.only(top: AppSpacing.xs.h, bottom: AppSpacing.sm.h),
       child: Text(
-        'يفضل تبقى قوية وسهلة تفتكرها.',
+        AppCopy.registerPasswordTip,
         style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
       ),
     );
@@ -261,6 +261,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OrDivider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: AppSpacing.md.h),
+      child: Row(
+        children: [
+          const Expanded(child: Divider(color: AppColor.border)),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppSpacing.md.w),
+            child: Text(
+              AppCopy.authSeparatorOr,
+              style: AppText.labelSm.copyWith(color: AppColor.textTertiary),
+            ),
+          ),
+          const Expanded(child: Divider(color: AppColor.border)),
         ],
       ),
     );

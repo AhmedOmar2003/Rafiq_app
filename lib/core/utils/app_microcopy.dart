@@ -56,6 +56,7 @@ class AppCopy {
   static const confirm = 'أكيد';
   static const next = 'اللي بعده';
   static const done = 'خلصنا';
+  static const refresh = 'تحديث';
 
   // --- Suggestion / place cards ------------------------------------------------
   static const priceStartsFrom = 'تبدأ من';
@@ -64,6 +65,7 @@ class AppCopy {
   static const ratingFallback = '(جديد)';
 
   // --- Home / step flow --------------------------------------------------------
+  static const homeTitle = 'ابدأ مشوارك';
   static const stepCity = 'المدينة';
   static const stepBudget = 'الميزانية';
   static const stepActivity = 'النشاط';
@@ -72,6 +74,14 @@ class AppCopy {
   static const homeCtaFinal = 'يلا نفسح!';
   static const homeStepCounter = 'خطوة %d من %t'; // %d=current, %t=total
   static const back = 'رجوع';
+
+  // Step screen headings & bodies
+  static const stepCityTitle = 'عايز تخرج فين؟';
+  static const stepCityBody = 'اختار المدينة اللي عايز تزورها';
+  static const stepBudgetTitle = 'ميزانيتك كام؟';
+  static const stepBudgetBody = 'اختار الميزانية المناسبة ليك';
+  static const stepActivityTitle = 'عايز تعمل إيه؟';
+  static const stepActivityBody = 'اختار نوع النشاط اللي بتحبه';
 
   // --- Chatbot -----------------------------------------------------------------
   static const chatTitle = 'رفيق الذكي 🤖';
@@ -106,6 +116,27 @@ class AppCopy {
   static const providerImagesUsed = '%u من %m صورة';
   static const providerImagesUnlimited = '%u صورة';
   static const providerRemoveImage = 'احذف الصورة';
+  static const addPlaceNameLabel = 'اسم المكان';
+  static const addPlaceNameRequired = 'الرجاء إدخال اسم المكان';
+  static const addPlaceCityLabel = 'المدينة';
+  static const addPlaceCityRequired = 'الرجاء اختيار المدينة';
+  static const addPlaceTypeLabel = 'نوع النشاط';
+  static const addPlaceTypeRequired = 'الرجاء اختيار نوع النشاط';
+  static const addPlaceBudgetLabel = 'الميزانية';
+  static const addPlaceBudgetRequired = 'الرجاء اختيار الميزانية';
+  static const addPlaceAddressLabel = 'العنوان التفصيلي';
+  static const addPlaceAddressRequired = 'الرجاء إدخال العنوان';
+  static const addPlaceDescLabel = 'وصف عن المكان ومميزاته';
+  static const addPlaceDescRequired = 'الرجاء إدخال وصف عن المكان';
+  static const addPlaceSaveEdit = 'حفظ التعديلات';
+  static const addPlaceSaveNew = 'حفظ البيانات';
+  static const providerEditedSuccess = 'تم تعديل المكان بنجاح';
+  static const addPlaceNameHint = 'اكتب اسم المكان';
+  static const addPlaceAddressHint = 'اكتب العنوان بالتفصيل';
+  static const addPlaceDescHint = 'وصف مختصر عن المكان وأهم مميزاته';
+  static const promoFieldTitleHint = 'مثلاً: خصم 20% على كل التورتات';
+  static const promoFieldBodyHint = 'تفاصيل العرض أو المناسبة...';
+  static const promoFieldCtaHint = 'مثلاً: اعرف التفاصيل';
 
   // --- Suggestions list --------------------------------------------------------
   static const suggestionsTitle = 'اقتراحاتنا ليك';
@@ -118,6 +149,7 @@ class AppCopy {
   static const filterBudget = 'الميزانية';
   static const filterClear = 'شيل الفلتر';
   static const filterApply = 'طبّق الفلتر';
+  static const filterApplied = 'تم التحديث';
 
   // --- Reviews / evaluations ---------------------------------------------------
   static const reviewsTitle = 'التقييمات';
@@ -148,6 +180,27 @@ class AppCopy {
   static const detailsOfferNoEndDate = 'العرض شغال حاليًا';
   static const detailsSimilarHeading = 'أماكن شبهه';
   static const detailsNoSimilar = 'مفيش أماكن مشابهة دلوقتي';
+  static const detailsLocationLabel = 'الموقع';
+  static const detailsPriceLabel = 'السعر';
+  static const detailsOpenMap = 'عرض على الخريطة';
+  static const detailsFavoriteAdd = 'إضافة إلى المفضلة';
+  static const detailsFavoriteRemove = 'إزالة من المفضلة';
+  static const detailsFavoriteSaved = 'اتحفظ في المفضلة ❤️';
+  static const detailsFavoriteRemoved = 'اتشال من المفضلة';
+  static const detailsReport = 'بلّغ عن هذا المكان';
+  static const detailsOffersSemanticPrefix = 'العروض الحالية';
+  static const detailsDescriptionSemanticLabel = 'وصف المكان';
+  static const detailsSimilarSemanticPrefix = 'أماكن مشابهة';
+  static const detailsFirstReviewSemantic = 'اكتب أول تقييم لهذا المكان';
+  static const reportPickReason = 'اختر سبب البلاغ';
+  static const reportDetailsHint = 'تفاصيل إضافية (اختياري)';
+  static const reportSendCta = 'إرسال البلاغ';
+  static const reportMissingReason = 'من فضلك اختر سبب البلاغ أولاً';
+  static const reportCannotSubmit = 'مش قادرين نرفع البلاغ على المكان ده دلوقتي';
+  static const reportSentSuccess = 'وصلنا بلاغك، هنراجعه قريباً ✅';
+  static const reportSentFail = 'معرفناش نبعت البلاغ، جرّب تاني';
+  static const placeCardOpen = 'افتح '; // append place name
+  static const profileOpenLabel = 'افتح البروفايل';
 
   // --- Profile page ------------------------------------------------------------
   static const profileTitle = 'الملف الشخصي';
@@ -206,10 +259,12 @@ class AppCopy {
 
   // --- Auth (shared) -----------------------------------------------------------
   static const authSeparatorOr = 'أو';
+  static const authOrDividerLabel = 'أو يمكنك';
   static const authEmailLabel = 'البريد الإلكتروني';
   static const authEmailHint = 'example@gmail.com';
   static const authPasswordLabel = 'كلمة السر';
   static const authPasswordHint = '6 حروف على الأقل';
+  static const authPasswordHelper = 'اكتب كلمة السر وكمل.';
   static const authForgotPasswordLink = 'نسيت كلمة السر؟';
 
   // --- Login -------------------------------------------------------------------
@@ -231,6 +286,8 @@ class AppCopy {
   static const registerHasAccountPrefix = 'عندك حساب بالفعل؟ ';
   static const registerGoToLogin = 'سجّل دخول';
   static const registerSubtitle = 'خطوة صغيرة ونبدأ.';
+  static const registerPasswordHelper = 'لازم 6 حروف أو أكتر.';
+  static const registerPasswordTip = 'يفضل تبقى قوية وسهلة تفتكرها.';
 
   // --- Forgot password ---------------------------------------------------------
   static const forgotTitle = 'نسيت كلمة السر؟';
@@ -277,6 +334,8 @@ class AppCopy {
   static const subBillingYearly = 'سنوي';
   static const subYearlyDiscount = 'وفّر %p%'; // %p replaced with discount pct
   static const subCurrent = 'خطتك الحالية';
+  static const subRecommended = 'الأكثر اختياراً';
+  static const subCancelRenewal = 'إلغاء التجديد التلقائي';
   static const subUpgrade = 'رقّي خطتك';
   static const subManage = 'إدارة الاشتراك';
   static const subFreeForever = 'مجاني للأبد';
@@ -359,6 +418,47 @@ class AppCopy {
       'بدّل أو رقّي خطتك في أي وقت.';
   static const hubLockedTag = 'يفتح مع برو';
   static const hubLockedMax = 'يفتح مع ماكس';
+  static const hubPlacesMultiTitle = 'تابع خدماتك';
+  static const hubPlacesSingleTitle = 'شوف مكانك';
+  static const hubPlacesEmptyBody = 'أضف مكانك الأول وابدأ شغلك.';
+  static const hubStepPlan = 'الخطة';
+  static const hubStepPreview = 'المعاينة';
+  static const hubPlaceApproved = 'تم اعتماد "%s" — ظاهر للجمهور دلوقتي';
+  static const hubPlaceRejected = 'تم رفض "%s" — راجع السبب وعدّل';
+  static const hubPlaceSuspended = 'تم تعليق "%s" مؤقتاً';
+  static const hubPlacePending = '"%s" رجع للمراجعة';
+  static const hubMyPlacesTitle = 'أماكني';
+  static const hubPlacesEmptyFirstBody = 'أضف مكانك الأول، وهتلاقيه هنا فورًا.';
+  static const hubPlacesManageBody = 'من هنا تقدر تعاين أو تعدّل أو تحذف.';
+  static const hubPlacePreview = 'المعاينة';
+  static const hubPlaceEdit = 'تعديل';
+  static const hubPlaceDelete = 'حذف';
+  static const hubBootstrapTitle = 'جارٍ تجهيز حسابك';
+  static const hubBootstrapError = 'تعذر تجهيز بيانات الحساب الآن';
+  static const hubBootstrapRetryHint = 'اضغط إعادة المحاولة أو اسحب لأسفل لتحديث البيانات';
+  static const hubRetryLabel = 'إعادة المحاولة';
+  static const hubTabPlatformTitle = 'تابع خدماتك';
+  static const hubPlacesBodyCount = 'عندك %p من %m أماكن. ولكل مكان حتى %i صورة.';
+  static const hubAddPlace = 'أضف مكان جديد';
+  static const hubAddPlaceLimitReached = 'وصلت الحد';
+  static const hubRejectedTitle = 'تم رفض الإضافة';
+  static const hubRejectedBody = 'راجع السبب وعدّل أو قدّم طعناً';
+  static const hubRejectedReasonPrefix = 'السبب:';
+  static const hubRejectedEditAllowed = 'سمحنالك تعدّل وترجّعه للمراجعة';
+  static const hubEditAndResubmit = 'عدّل وارجّعه';
+  static const hubEmptyPlacesTitle = 'لسه ما أضفتش أي مكان';
+  static const hubEmptyPlacesMsgBody = 'أضف مكانك الأول عشان تبدأ اللوحة وتظهر كل الإحصائيات';
+  static const hubAddPlaceNow = 'أضف مكانك الآن';
+  static const hubStatusApproved = 'تم الاعتماد';
+  static const hubStatusRejected = 'تم الرفض';
+  static const hubStatusSuspended = 'موقوف مؤقتًا';
+  static const hubStatusUnderReview = 'جاري مراجعته الآن';
+  static const hubStatusAwaitingReview = 'في انتظار المراجعة';
+  static const hubReviewQueueTitle = 'قيد المراجعة';
+  static const hubReviewQueueBody = 'المراجعة عادة خلال 24 ساعة من وقت الإضافة';
+  static const openProfileLabel = 'افتح ملفك الشخصي';
+  static const placeOpenPrefix = 'افتح';
+  static const anaFilterByLabel = 'تصفية حسب';
 
   // --- Analytics screen --------------------------------------------------------
   static const anaTitle = 'تحليلاتك';
@@ -378,6 +478,13 @@ class AppCopy {
   static const anaLockedBody =
       'متاحة في برو أو ماكس عشان تتابع تفاعل الناس مع مكانك.';
   static const anaUpgradeCta = 'رقّي لـ برو';
+  static const anaAllPlaces = 'كل الأماكن';
+  static const anaLastDays = 'آخر %d يوم'; // %d = number of days
+  static const anaTrendTitle = 'اتجاه فتح المكان';
+  static const anaTrendHint = 'كل نقطة بتوضح الحركة اليومية في الفترة اللي اخترتها.';
+  static const anaNoApprovedTitle = 'التحليلات هتظهر أول ما مكانك يتعتمد';
+  static const anaNoApprovedBody =
+      'لو مكانك لسه تحت المراجعة، هتلاقي الأرقام هنا بعد الاعتماد.';
 
   // --- Promotions screen -------------------------------------------------------
   static const promoTitle = 'إعلاناتك';
@@ -392,6 +499,62 @@ class AppCopy {
   static const promoLockedTitle = 'الإعلانات تبدأ من خطة برو';
   static const promoLockedBody =
       'فعّل الإعلانات عشان توصّل عرضك لناس أكتر.';
+  static const promoSectionTitle = 'إعلاناتك وعروضك';
+  static const promoAllPlaces = 'كل الأماكن';
+  static const promoNoApprovedPlaces = 'لا توجد أماكن معتمدة بعد';
+  static const promoSelectedPlaceFallback = 'مكان محدد';
+  static const promoQuotaAvailable = 'المتاح الآن: %n حملة';
+  static const promoQuotaUsed = 'المستخدم الآن: %n';
+  static const promoPlanNote =
+      'الحملات النشطة أو تحت المراجعة فقط هي اللي بتتحسب على الخطة.';
+  static const promoLimitReached = 'وصلت لحد الخطة الحالي';
+  static const promoRequestEditSuccess =
+      'تم إرسال طلب التعديل للإدارة. هنراجع الطلب ونبلغك أول ما يتفتح التعديل.';
+  static const promoEditRequestPendingNotice =
+      'طلب التعديل اتبعت للإدارة. بمجرد الموافقة هيتحول الزر إلى "عدّل الآن".';
+  static const promoEditRequestApprovedNotice =
+      'تمت الاستجابة للطلب. عدّل الإعلان وابعته من جديد، وهيعود للمراجعة خلال 6 ساعات أو أقل.';
+  static const promoAllCampaigns = 'كل الحملات';
+  static const promoCampaignsActive = 'نشطة';
+  static const promoCampaignsPending = 'قيد المراجعة';
+  static const promoActionEditNow = 'تمت الاستجابة للطلب — عدّل الآن';
+  static const promoActionEditPending = 'تم إرسال طلب التعديل';
+  static const promoActionRequestEdit = 'طلب تعديل الإعلان';
+  static const promoCreateTitle = 'حملة جديدة';
+  static const promoEditTitle = 'تعديل الإعلان';
+  static const promoEditReviewBody =
+      'التعديل بعد الموافقة يرجع الإعلان للمراجعة من جديد، وهدفنا نرد خلال 6 ساعات.';
+  static const promoValidationError =
+      'اختَر المكان واكتب عنوانًا واضحًا للحملة.';
+  static const promoSentSuccess = 'تم إرسال الحملة للمراجعة بنجاح ✅';
+  static const promoEditSentSuccess =
+      'تم حفظ التعديلات وإرجاع الإعلان للمراجعة. هنراجع خلال 6 ساعات أو أقل ✅';
+  static const promoFieldPlace = 'المكان';
+  static const promoFieldKind = 'نوع الحملة';
+  static const promoFieldTitle = 'عنوان الإعلان أو العرض';
+  static const promoFieldBody = 'تفاصيل العرض';
+  static const promoFieldCta = 'نص الزر (اختياري)';
+  static const promoFieldDuration = 'مدة العرض';
+  static const promoCtaDefault = 'اعرف العرض';
+  static const promoSendCta = 'إرسال للمراجعة';
+  static const promoEditSendCta = 'حفظ التعديل وإعادة الإرسال';
+  static const promoEditDialogTitle = 'طلب تعديل الإعلان';
+  static const promoEditDialogBody =
+      'هيوصل طلبك للإدارة أولًا. بعد الموافقة هتلاقي الزر اتحول إلى "عدّل الآن"، وبعد الحفظ الإعلان هيرجع للمراجعة لمدة 6 ساعات أو أقل.';
+  static const promoEditDialogConfirm = 'أكيد، ابعت الطلب';
+  static const promoNoApprovedPlacesTitle = 'العروض هتظهر بعد اعتماد أول مكان';
+  static const promoNoApprovedPlacesBody =
+      'أول ما مكانك يتعتمد هتقدر تعمل له حملة خاصة.';
+  static const promoEmptyPlaceBody =
+      '%n لسه ما عليهش حملات. أول حملة هتدخل مراجعة قبل ما تظهر للناس.';
+  static const promoDateNow = 'الآن';
+  static const promoDateOpen = 'غير محدد';
+  static const promoImageNone = 'صورة الإعلان اختيارية';
+  static const promoImageExisting =
+      'الصورة الحالية مرفوعة. تقدر تغيّرها لو حبيت.';
+  static const promoImageSelected = 'تم اختيار صورة للإعلان';
+  static const promoImagePick = 'اختَر صورة';
+  static const promoImageChange = 'غيّر الصورة';
 
   // --- Admin overview ----------------------------------------------------------
   static const adminTitle = 'لوحة الإدارة';
@@ -444,7 +607,8 @@ class AppCopy {
   static const changePwTitle = 'تغيير كلمة السر';
   static const changePwCurrent = 'كلمة السر الحالية';
   static const changePwNew = 'كلمة السر الجديدة';
-  static const changePwConfirm = 'تأكيد كلمة السر';
+  static const changePwConfirm = 'تأكيد كلمة السر الجديدة';
+  static const changePwCta = 'تحديث كلمة المرور';
   static const changePwSuccess = 'اتغيّرت كلمة السر بنجاح ✅';
   static const changePwGenericFail = 'معرفناش نغيّر كلمة السر، راجع بياناتك.';
   static const changePwMissingEmail =
@@ -452,14 +616,32 @@ class AppCopy {
 
   // --- Profile support section -------------------------------------------------
   static const profileSupportSection = 'الدعم والمساعدة';
+  static const profileSupportSubtitle = 'المساعدة والقوانين وطرق التواصل';
   static const profilePrivacyPolicy = 'سياسة الخصوصية';
   static const profileTerms = 'الشروط والأحكام';
   static const profileHelp = 'مركز المساعدة';
   static const profileContactUs = 'تواصل معنا';
+  static const supportInfoGroup = 'معلومات';
+  static const supportCallLabel = 'اتصال مباشر';
+  static const supportWhatsappLabel = 'واتساب';
+  static const supportEmailLabel = 'البريد الإلكتروني';
+  static const supportWhatsappMessage = 'مرحباً، أحتاج مساعدة في تطبيق رفيق.';
+  static const supportEmailSubject = 'طلب مساعدة — رفيق';
+  static const supportEmailBody = 'مرحباً،\n\nأحتاج مساعدة في...';
   static const supportPhone1 = '01036925982';
   static const supportPhone2 = '01050242285';
   static const supportEmail = 'ahmedessam.uiux@gmail.com';
   static const supportWhatsappHint = 'واتساب: ';
+
+  // --- Onboarding --------------------------------------------------------------
+  static const onboardingTitle1 = 'محتار؟\nهنساعدك في الاختيار';
+  static const onboardingTitle2 = 'هتلاقي مجموعة\nمتنوعة من الاختيارات';
+  static const onboardingBody2 =
+      'أي مكان بتدوّر عليه هتلاقي اللي يناسبك\nسواء جوّة أو بره المدينة';
+  static const onboardingTitle3 = 'اكتشف الأماكن اللي\nتناسب مزاجك وميزانيتك';
+  static const onboardingCta = 'يلا نبدأ';
+  static const onboardingNext = 'التالي';
+  static const onboardingSkip = 'تخطّي';
 
   // --- Place appeal flow -------------------------------------------------------
   static const appealTitle = 'طعن في قرار الرفض';
@@ -472,4 +654,43 @@ class AppCopy {
   static const appealSentSuccess = 'وصلنا طعنك، هنتواصل معاك قريباً ✅';
   static const appealSentFail = 'معرفناش نبعت الطعن، جرّب تاني.';
   static const appealPlaceholder = 'اكتب سبب الاعتراض...';
+
+  // --- Add Place form ----------------------------------------------------------
+  static const addPlaceCoverLabel = 'الغلاف';
+  static const addPlaceReviewNotice =
+      'بعد ما تضيف مكانك، هيعدي على مراجعتنا خلال 24 ساعة قبل ما يظهر للناس. هنبلّغك بنتيجة المراجعة فور ما تتاح.';
+
+  // --- Provider hub — delete dialog + appeal validation -----------------------
+  static const hubDeletePlaceTitle = 'حذف المكان';
+  static const hubDeletePlaceMessage = 'هل تريد حذف "%s"؟ الحذف نهائي ومفيش رجوع.';
+  static const hubDeletePlaceConfirm = 'حذف';
+  static const hubAppealFillAllFields = 'من فضلك اكمل جميع الحقول عشان نقدر نساعدك';
+  static const hubAppealInvalidPhone = 'رقم الموبايل غير صحيح، تأكد منه';
+
+  // --- Promotions — campaign status labels ------------------------------------
+  static const promoCampaignStatusActive = 'نشطة';
+  static const promoCampaignStatusPending = 'قيد المراجعة';
+  static const promoCampaignStatusPaused = 'موقوفة';
+  static const promoCampaignStatusRejected = 'مرفوضة';
+  static const promoCampaignStatusEnded = 'انتهت';
+  static const promoCampaignStatusDraft = 'مسودة';
+
+  // --- Promotions — campaign kind labels --------------------------------------
+  static const promoKindDiscount = 'خصم / عرض خاص';
+  static const promoKindFeatured = 'ظهور مميز';
+  static const promoKindSpotlight = 'سبوت لايت';
+  static const promoKindPush = 'إشعار ترويجي';
+  static const promoKindDefault = 'حملة';
+
+  // --- Promotions — duration options ------------------------------------------
+  static const promoDuration3Days = '3 أيام';
+  static const promoDuration7Days = '7 أيام';
+  static const promoDuration14Days = '14 يوم';
+  static const promoDuration30Days = '30 يوم';
+
+  // --- Promotions — metrics labels -------------------------------------------
+  static const promoMetricImpressions = 'مشاهدات';
+  static const promoMetricClicks = 'نقرات';
+  static const promoReviewNotice6h =
+      'الحملة هتعدي على مراجعة خلال 6 ساعات من الإرسال. هنبلّغك بالنتيجة.';
 }

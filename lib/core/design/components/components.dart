@@ -6,6 +6,7 @@ library;
 export 'app_avatar.dart';
 export 'app_badge.dart';
 export 'app_card.dart';
+export 'app_countdown_badge.dart';
 export 'app_confirm_dialog.dart';
 export 'app_feedback.dart';
 export 'app_offline_banner.dart';

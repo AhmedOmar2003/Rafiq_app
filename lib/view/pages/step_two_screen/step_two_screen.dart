@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
+import 'package:rafiq_app/core/utils/app_microcopy.dart';
 import '../../../models/step_two_model/step_two_model.dart';
 
 class StepTwo extends StatefulWidget {
@@ -21,38 +22,35 @@ class _StepTwoState extends State<StepTwo> with AutomaticKeepAliveClientMixin {
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: ListView(
-        padding: EdgeInsets.symmetric(horizontal: 24.w),
-        children: [
-          SizedBox(height: 16.h),
-          Text("ميزانيتك كام؟", style: AppText.displayMd),
-          gapV(AppSpacing.sm),
-          Text(
-            "اختار الميزانية المناسبة لك",
-            style: AppText.bodyLg.copyWith(color: AppColor.textSecondary),
+    return ListView(
+      padding: EdgeInsets.symmetric(horizontal: AppSpacing.xxl.w),
+      children: [
+        gapV(AppSpacing.lg),
+        Text(AppCopy.stepBudgetTitle, style: AppText.displayMd),
+        gapV(AppSpacing.sm),
+        Text(
+          AppCopy.stepBudgetBody,
+          style: AppText.bodyLg.copyWith(color: AppColor.textSecondary),
+        ),
+        gapV(AppSpacing.xxxl),
+        ...List.generate(
+          stepTwoList.length,
+          (index) => _BudgetOptionCard(
+            label: stepTwoList[index].text,
+            isSelected: currentIndex == index,
+            onTap: () {
+              setState(() {
+                currentIndex = index;
+                selectedBudget = stepTwoList[index].text;
+              });
+              if (selectedBudget.isNotEmpty) {
+                widget.onBudgetSelected(selectedBudget);
+              }
+            },
           ),
-          SizedBox(height: 28.h),
-          ...List.generate(
-            stepTwoList.length,
-            (index) => _BudgetOptionCard(
-              label: stepTwoList[index].text,
-              isSelected: currentIndex == index,
-              onTap: () {
-                setState(() {
-                  currentIndex = index;
-                  selectedBudget = stepTwoList[index].text;
-                });
-                if (selectedBudget.isNotEmpty) {
-                  widget.onBudgetSelected(selectedBudget);
-                }
-              },
-            ),
-          ),
-          SizedBox(height: 8.h),
-        ],
-      ),
+        ),
+        gapV(AppSpacing.sm),
+      ],
     );
   }
 }
@@ -70,60 +68,60 @@ class _BudgetOptionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 14.h),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14.r),
-        splashColor: AppColor.primary.withValues(alpha: 0.1),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeOutCubic,
-          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14.r),
-            color: isSelected ? AppColor.primary : AppColor.surfaceCard,
-            border: Border.all(
-              color: isSelected ? AppColor.primary : AppColor.border,
-              width: isSelected ? 1.5 : 1.0,
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      label: label,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: AppSpacing.md.h),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: AppRadii.rMd,
+          splashColor: AppColor.primary.withValues(alpha: 0.1),
+          child: AnimatedContainer(
+            duration: AppMotion.base,
+            curve: AppMotion.standard,
+            padding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.xl.w,
+              vertical: AppSpacing.lg.h,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: isSelected
-                    ? AppColor.primary.withValues(alpha: 0.15)
-                    : AppColor.black.withValues(alpha: 0.04),
-                blurRadius: isSelected ? 12 : 6,
-                offset: Offset(0, isSelected ? 4 : 2),
+            decoration: BoxDecoration(
+              borderRadius: AppRadii.rMd,
+              color: isSelected ? AppColor.primary : AppColor.surfaceCard,
+              border: Border.all(
+                color: isSelected ? AppColor.primary : AppColor.border,
+                width: isSelected ? 1.5 : 1.0,
               ),
-            ],
-          ),
-          child: Row(
-            children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
-                width: 8.w,
-                height: 8.w,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: isSelected
-                      ? AppColor.white
-                      : AppColor.primary.withValues(alpha: 0.3),
-                ),
-              ),
-              SizedBox(width: 14.w),
-              Expanded(
-                child: Text(
-                  label,
-                  style: AppText.headingSm.copyWith(
-                    color: isSelected ? AppColor.white : AppColor.textPrimary,
-                    fontWeight: FontWeight.w500,
+              boxShadow: isSelected ? AppShadows.primaryGlow : AppShadows.level1,
+            ),
+            child: Row(
+              children: [
+                AnimatedContainer(
+                  duration: AppMotion.base,
+                  width: 8.w,
+                  height: 8.w,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isSelected
+                        ? AppColor.white
+                        : AppColor.primary.withValues(alpha: 0.3),
                   ),
                 ),
-              ),
-              if (isSelected)
-                Icon(Icons.check_circle_rounded,
-                    color: AppColor.surfaceCard, size: 20.w),
-            ],
+                gapH(AppSpacing.md),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: AppText.headingSm.copyWith(
+                      color: isSelected ? AppColor.white : AppColor.textPrimary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                if (isSelected)
+                  Icon(Icons.check_circle_rounded,
+                      color: AppColor.surfaceCard, size: 20.sp),
+              ],
+            ),
           ),
         ),
       ),

@@ -120,16 +120,16 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
               'مكانك';
           switch (newStatus) {
             case 'approved':
-              AppFeedback.success('تم اعتماد "$name" — ظاهر للجمهور دلوقتي');
+              AppFeedback.success(AppCopy.hubPlaceApproved.replaceFirst('%s', name));
               break;
             case 'rejected':
-              AppFeedback.warning('تم رفض "$name" — راجع السبب وعدّل');
+              AppFeedback.warning(AppCopy.hubPlaceRejected.replaceFirst('%s', name));
               break;
             case 'suspended':
-              AppFeedback.warning('تم تعليق "$name" مؤقتاً');
+              AppFeedback.warning(AppCopy.hubPlaceSuspended.replaceFirst('%s', name));
               break;
             case 'pending':
-              AppFeedback.info('"$name" رجع للمراجعة');
+              AppFeedback.info(AppCopy.hubPlacePending.replaceFirst('%s', name));
               break;
           }
         }
@@ -300,10 +300,10 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
   Future<void> _deletePlace(Place place) async {
     final confirmed = await AppConfirmDialog.show(
       context,
-      title: 'حذف المكان',
-      message: 'هل تريد حذف "${place.name}"؟',
-      confirmLabel: 'حذف',
-      cancelLabel: 'إلغاء',
+      title: AppCopy.hubDeletePlaceTitle,
+      message: AppCopy.hubDeletePlaceMessage.replaceFirst('%s', place.name),
+      confirmLabel: AppCopy.hubDeletePlaceConfirm,
+      cancelLabel: AppCopy.cancel,
       tone: AppConfirmTone.danger,
       icon: Icons.delete_rounded,
     );
@@ -324,10 +324,10 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
     if (_isBootstrapping) {
       return const AppPageScaffold(
         header: AppPageHeader(
-          title: 'جارٍ تجهيز حسابك',
+          title: AppCopy.hubBootstrapTitle,
           actions: [ProfilePill()],
         ),
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(child: CircularProgressIndicator(color: AppColor.primary)),
       );
     }
 
@@ -350,13 +350,13 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
                 ),
                 gapV(AppSpacing.md),
                 Text(
-                  'تعذر تجهيز بيانات الحساب الآن',
+                  AppCopy.hubBootstrapError,
                   style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
                   textAlign: TextAlign.center,
                 ),
                 gapV(AppSpacing.xs),
                 Text(
-                  'اضغط إعادة المحاولة أو اسحب لأسفل لتحديث البيانات.',
+                  AppCopy.hubBootstrapRetryHint,
                   style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
                   textAlign: TextAlign.center,
                 ),
@@ -364,7 +364,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: AppButton(
-                    text: 'إعادة المحاولة',
+                    text: AppCopy.hubRetryLabel,
                     onPress: _bootstrapHub,
                   ),
                 ),
@@ -376,7 +376,7 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
     }
 
     final placeCount = _places.length;
-    final hubTitle = placeCount > 1 ? 'تابع خدماتك' : AppCopy.hubTitle;
+    final hubTitle = placeCount > 1 ? AppCopy.hubTabPlatformTitle : AppCopy.hubTitle;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -547,32 +547,6 @@ class _ReviewQueueCard extends StatefulWidget {
 
 class _ReviewQueueCardState extends State<_ReviewQueueCard> {
   static const Duration _slaWindow = Duration(hours: 24);
-  Timer? _ticker;
-
-  @override
-  void initState() {
-    super.initState();
-    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() {});
-    });
-  }
-
-  @override
-  void dispose() {
-    _ticker?.cancel();
-    super.dispose();
-  }
-
-  String _formatRemaining(DateTime? createdAt) {
-    if (createdAt == null) return 'جارٍ الاحتساب';
-    final deadline = createdAt.add(_slaWindow);
-    final remaining = deadline.difference(DateTime.now());
-    if (remaining.isNegative) return 'انتهت المهلة';
-    final hours = remaining.inHours.toString().padLeft(2, '0');
-    final minutes = (remaining.inMinutes % 60).toString().padLeft(2, '0');
-    final seconds = (remaining.inSeconds % 60).toString().padLeft(2, '0');
-    return '$hours:$minutes:$seconds';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -602,12 +576,12 @@ class _ReviewQueueCardState extends State<_ReviewQueueCard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'قيد المراجعة',
+                      AppCopy.hubReviewQueueTitle,
                       style: AppText.titleMd
                           .copyWith(fontWeight: FontWeight.w800),
                     ),
                     Text(
-                      'المراجعة عادة خلال 24 ساعة من وقت الإضافة',
+                      AppCopy.hubReviewQueueBody,
                       style: AppText.bodySm.copyWith(
                         color: AppColor.textSecondary,
                       ),
@@ -647,18 +621,18 @@ class _ReviewQueueCardState extends State<_ReviewQueueCard> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          gapV(2),
+                          gapV(AppSpacing.xs / 2),
                           Text(
                             '${p.cityName} — ${p.activityName}',
                             style: AppText.caption.copyWith(
                               color: AppColor.textSecondary,
                             ),
                           ),
-                          gapV(4),
+                          gapV(AppSpacing.xs),
                           Text(
                             p.status == 'under_review'
-                                ? 'جاري مراجعته الآن'
-                                : 'في انتظار المراجعة',
+                                ? AppCopy.hubStatusUnderReview
+                                : AppCopy.hubStatusAwaitingReview,
                             style: AppText.caption.copyWith(
                               color: AppColor.warning,
                               fontWeight: FontWeight.w700,
@@ -668,34 +642,10 @@ class _ReviewQueueCardState extends State<_ReviewQueueCard> {
                       ),
                     ),
                     gapH(AppSpacing.sm),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: AppSpacing.sm.w,
-                        vertical: 4.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColor.surfaceCard,
-                        borderRadius: AppRadii.rSm,
-                        border: Border.all(color: AppColor.warning),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.timer_outlined,
-                              size: 12.sp, color: AppColor.warning),
-                          gapH(AppSpacing.xs),
-                          Text(
-                            _formatRemaining(p.createdAt),
-                            style: AppText.labelSm.copyWith(
-                              color: AppColor.warning,
-                              fontWeight: FontWeight.w800,
-                              fontFeatures: const [
-                                FontFeature.tabularFigures(),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                    AppCountdownBadge(
+                      createdAt: p.createdAt,
+                      sla: _slaWindow,
+                      color: AppColor.warning,
                     ),
                   ],
                 ),
@@ -756,9 +706,9 @@ class _RejectedCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('تم رفض الإضافة',
+                    Text(AppCopy.hubRejectedTitle,
                         style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800)),
-                    Text('راجع السبب وعدّل أو قدّم طعناً',
+                    Text(AppCopy.hubRejectedBody,
                         style: AppText.bodySm.copyWith(color: AppColor.textSecondary)),
                   ],
                 ),
@@ -784,7 +734,7 @@ class _RejectedCard extends StatelessWidget {
                         style: AppText.bodyMd.copyWith(fontWeight: FontWeight.w700)),
                     if (reason.isNotEmpty) ...[
                       gapV(AppSpacing.xs),
-                      Text('السبب: $reason',
+                      Text('${AppCopy.hubRejectedReasonPrefix} $reason',
                           style: AppText.bodySm
                               .copyWith(color: AppColor.textSecondary)),
                     ],
@@ -811,7 +761,7 @@ class _RejectedCard extends StatelessWidget {
                                 size: 14.sp, color: AppColor.success),
                             gapH(AppSpacing.xs),
                             Text(
-                              'سمحنالك تعدّل وترجّعه للمراجعة',
+                              AppCopy.hubRejectedEditAllowed,
                               style: AppText.labelSm.copyWith(
                                 color: AppColor.success,
                                 fontWeight: FontWeight.w800,
@@ -825,7 +775,7 @@ class _RejectedCard extends StatelessWidget {
                         children: [
                           Expanded(
                             child: AppButton(
-                              text: 'عدّل وارجّعه',
+                              text: AppCopy.hubEditAndResubmit,
                               onPress: () => onEditPlace(p),
                             ),
                           ),
@@ -922,11 +872,11 @@ class _AppealSheetState extends State<_AppealSheet> {
     final message = _messageCtrl.text.trim();
 
     if (name.isEmpty || phone.isEmpty || message.isEmpty) {
-      AppFeedback.warning('من فضلك اكمل جميع الحقول');
+      AppFeedback.warning(AppCopy.hubAppealFillAllFields);
       return;
     }
     if (!RegExp(r'^\+?[0-9]{6,15}$').hasMatch(phone)) {
-      AppFeedback.warning('رقم الموبايل غير صحيح');
+      AppFeedback.warning(AppCopy.hubAppealInvalidPhone);
       return;
     }
 
@@ -978,7 +928,7 @@ class _AppealSheetState extends State<_AppealSheet> {
               height: 4.h,
               decoration: BoxDecoration(
                 color: AppColor.border,
-                borderRadius: BorderRadius.circular(2),
+                borderRadius: AppRadii.rSm,
               ),
             ),
           ),
@@ -1006,13 +956,28 @@ class _AppealSheetState extends State<_AppealSheet> {
             ),
           ),
           gapV(AppSpacing.md),
-          _Field(controller: _nameCtrl,    hint: AppCopy.appealNameHint,    icon: Icons.person_outline),
+          AppInput(
+            hintText: AppCopy.appealNameHint,
+            controller: _nameCtrl,
+            prefixIcon: const Icon(Icons.person_outline, color: AppColor.textSecondary),
+            textInputAction: TextInputAction.next,
+          ),
           gapV(AppSpacing.md),
-          _Field(controller: _phoneCtrl,   hint: AppCopy.appealPhoneHint,   icon: Icons.phone_outlined,
-              inputType: TextInputType.phone),
+          AppInput(
+            hintText: AppCopy.appealPhoneHint,
+            controller: _phoneCtrl,
+            prefixIcon: const Icon(Icons.phone_outlined, color: AppColor.textSecondary),
+            type: TextInputType.phone,
+            textInputAction: TextInputAction.next,
+          ),
           gapV(AppSpacing.md),
-          _Field(controller: _messageCtrl, hint: AppCopy.appealPlaceholder, icon: Icons.chat_outlined,
-              maxLines: 4),
+          AppInput(
+            hintText: AppCopy.appealPlaceholder,
+            controller: _messageCtrl,
+            prefixIcon: const Icon(Icons.chat_outlined, color: AppColor.textSecondary),
+            maxLines: 4,
+            textInputAction: TextInputAction.done,
+          ),
           gapV(AppSpacing.xl),
           AppButton(
             text: AppCopy.appealSend,
@@ -1025,55 +990,6 @@ class _AppealSheetState extends State<_AppealSheet> {
   }
 }
 
-class _Field extends StatelessWidget {
-  const _Field({
-    required this.controller,
-    required this.hint,
-    required this.icon,
-    this.maxLines = 1,
-    this.inputType,
-  });
-
-  final TextEditingController controller;
-  final String hint;
-  final IconData icon;
-  final int maxLines;
-  final TextInputType? inputType;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      maxLines: maxLines,
-      keyboardType: inputType,
-      textDirection: TextDirection.rtl,
-      style: AppText.bodyMd,
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: AppText.bodyMd.copyWith(color: AppColor.textMuted),
-        prefixIcon: Icon(icon, size: 20.sp, color: AppColor.textSecondary),
-        filled: true,
-        fillColor: AppColor.surface,
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: AppSpacing.md.w,
-          vertical: AppSpacing.md.h,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: AppRadii.rMd,
-          borderSide: const BorderSide(color: AppColor.border),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: AppRadii.rMd,
-          borderSide: const BorderSide(color: AppColor.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: AppRadii.rMd,
-          borderSide: const BorderSide(color: AppColor.primary, width: 1.5),
-        ),
-      ),
-    );
-  }
-}
 
 // ===========================================================================
 // Greeting
@@ -1338,7 +1254,7 @@ class _FeatureTile extends StatelessWidget {
                         Container(
                           padding: EdgeInsets.symmetric(
                             horizontal: AppSpacing.sm.w,
-                            vertical: 2.h,
+                            vertical: AppSpacing.xs.h / 2,
                           ),
                           decoration: BoxDecoration(
                             color: AppColor.warningBg,
@@ -1414,12 +1330,12 @@ class _ProviderFlowCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  placeCount > 1 ? 'تابع خدماتك' : 'شوف مكانك',
+                  placeCount > 1 ? AppCopy.hubPlacesMultiTitle : AppCopy.hubPlacesSingleTitle,
                   style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
                 ),
               ),
               AppButton(
-                text: 'تحديث',
+                text: AppCopy.refresh,
                 onPress: onRefresh,
                 variant: AppButtonVariant.ghost,
                 size: AppButtonSize.sm,
@@ -1430,8 +1346,11 @@ class _ProviderFlowCard extends StatelessWidget {
           gapV(AppSpacing.xs),
           Text(
             placeCount == 0
-                ? 'أضف مكانك الأول وابدأ شغلك.'
-                : 'عندك $placeCount من $maxPlaces أماكن. ولكل مكان حتى $imagesPerPlace صورة.',
+                ? AppCopy.hubPlacesEmptyBody
+                : AppCopy.hubPlacesBodyCount
+                    .replaceFirst('%p', '$placeCount')
+                    .replaceFirst('%m', '$maxPlaces')
+                    .replaceFirst('%i', '$imagesPerPlace'),
             style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
           ),
           gapV(AppSpacing.lg),
@@ -1445,21 +1364,21 @@ class _ProviderFlowCard extends StatelessWidget {
                   currentIndex: stepIndex,
                   onTap: onRefresh,
                   icon: AppImages.money,
-                  label: 'الخطة',
+                  label: AppCopy.hubStepPlan,
                 ),
                 StepperComponent(
                   index: 1,
                   currentIndex: stepIndex,
                   onTap: onAddPlace,
                   icon: AppImages.location,
-                  label: 'أماكنك',
+                  label: AppCopy.hubFeatTitlePlaces,
                 ),
                 StepperComponent(
                   index: 2,
                   currentIndex: stepIndex,
                   onTap: onRefresh,
                   icon: AppImages.search,
-                  label: 'المعاينة',
+                  label: AppCopy.hubStepPreview,
                   isLast: true,
                 ),
               ],
@@ -1470,14 +1389,14 @@ class _ProviderFlowCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _MiniStat(
-                  label: 'أماكنك',
+                  label: AppCopy.hubFeatTitlePlaces,
                   value: '$placeCount/$maxPlaces',
                 ),
               ),
               gapH(AppSpacing.sm),
               Expanded(
                 child: _MiniStat(
-                  label: 'صور لكل مكان',
+                  label: AppCopy.hubKpiImages,
                   value: imagesPerPlace >= 999 ? '∞' : '$imagesPerPlace',
                 ),
               ),
@@ -1487,7 +1406,7 @@ class _ProviderFlowCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: AppButton(
-              text: canAddPlace ? 'أضف مكان جديد' : 'وصلت الحد',
+              text: canAddPlace ? AppCopy.hubAddPlace : AppCopy.hubAddPlaceLimitReached,
               onPress: canAddPlace ? onAddPlace : onRefresh,
               variant: canAddPlace
                   ? AppButtonVariant.primary
@@ -1531,7 +1450,7 @@ class _PlacesSection extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'أماكني',
+                  AppCopy.hubMyPlacesTitle,
                   style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
                 ),
               ),
@@ -1544,13 +1463,13 @@ class _PlacesSection extends StatelessWidget {
           gapV(AppSpacing.sm),
           Text(
             places.isEmpty
-                ? 'أضف مكانك الأول، وهتلاقيه هنا فورًا.'
-                : 'من هنا تقدر تعاين أو تعدّل أو تحذف.',
+                ? AppCopy.hubPlacesEmptyFirstBody
+                : AppCopy.hubPlacesManageBody,
             style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
           ),
           gapV(AppSpacing.lg),
           if (loading)
-            const Center(child: CircularProgressIndicator())
+            const Center(child: CircularProgressIndicator(color: AppColor.primary))
           else if (places.isEmpty)
             _EmptyPlacesState(onAddPlace: onAddPlace)
           else
@@ -1628,12 +1547,12 @@ class _EmptyPlacesState extends StatelessWidget {
         ),
         gapV(AppSpacing.lg),
         Text(
-          'لسه ما أضفتش أي مكان',
+          AppCopy.hubEmptyPlacesTitle,
           style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
         ),
         gapV(AppSpacing.sm),
         Text(
-          'أضف مكانك الأول عشان تبدأ اللوحة وتظهر كل الإحصائيات.',
+          AppCopy.hubEmptyPlacesMsgBody,
           style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
           textAlign: TextAlign.center,
         ),
@@ -1641,7 +1560,7 @@ class _EmptyPlacesState extends StatelessWidget {
         SizedBox(
           width: double.infinity,
           child: AppButton(
-            text: 'أضف مكانك الآن',
+            text: AppCopy.hubAddPlaceNow,
             onPress: onAddPlace,
           ),
         ),
@@ -1681,7 +1600,7 @@ class _PlaceCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+              borderRadius: AppRadii.topOnly(AppRadii.lg),
               child: SizedBox(
                 height: 172.h,
                 width: double.infinity,
@@ -1699,25 +1618,13 @@ class _PlaceCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          place.name,
-                          style: AppText.titleMd.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      gapH(AppSpacing.sm),
-                      PlanBadge(
-                        tier:
-                            SubscriptionService.instance.entitlement.value.tier,
-                      ),
-                    ],
+                  Text(
+                    place.name,
+                    style: AppText.titleMd.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   gapV(AppSpacing.sm),
                   Wrap(
@@ -1752,7 +1659,7 @@ class _PlaceCard extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: AppButton(
-                      text: 'المعاينة',
+                      text: AppCopy.hubPlacePreview,
                       onPress: onPreview,
                       size: AppButtonSize.sm,
                     ),
@@ -1762,7 +1669,7 @@ class _PlaceCard extends StatelessWidget {
                     children: [
                       Expanded(
                         child: AppButton(
-                          text: 'تعديل',
+                          text: AppCopy.hubPlaceEdit,
                           onPress: onEdit,
                           size: AppButtonSize.sm,
                           variant: AppButtonVariant.outline,
@@ -1771,7 +1678,7 @@ class _PlaceCard extends StatelessWidget {
                       gapH(AppSpacing.sm),
                       Expanded(
                         child: AppButton(
-                          text: 'حذف',
+                          text: AppCopy.hubPlaceDelete,
                           onPress: onDelete,
                           size: AppButtonSize.sm,
                           variant: AppButtonVariant.destructive,
@@ -1869,31 +1776,6 @@ class _PlaceModerationBanner extends StatefulWidget {
 
 class _PlaceModerationBannerState extends State<_PlaceModerationBanner> {
   static const Duration _slaWindow = Duration(hours: 24);
-  Timer? _ticker;
-
-  @override
-  void initState() {
-    super.initState();
-    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() {});
-    });
-  }
-
-  @override
-  void dispose() {
-    _ticker?.cancel();
-    super.dispose();
-  }
-
-  String _formatRemaining(DateTime? createdAt) {
-    if (createdAt == null) return 'جارٍ الاحتساب';
-    final remaining = createdAt.add(_slaWindow).difference(DateTime.now());
-    if (remaining.isNegative) return 'انتهت المهلة';
-    final hours = remaining.inHours.toString().padLeft(2, '0');
-    final minutes = (remaining.inMinutes % 60).toString().padLeft(2, '0');
-    final seconds = (remaining.inSeconds % 60).toString().padLeft(2, '0');
-    return '$hours:$minutes:$seconds';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -1920,17 +1802,14 @@ class _PlaceModerationBannerState extends State<_PlaceModerationBanner> {
                     : Icons.hourglass_top_rounded)
                 : Icons.check_circle_outline_rounded;
     final String label = rejected
-        ? 'تم الرفض'
+        ? AppCopy.hubStatusRejected
         : suspended
-            ? 'موقوف مؤقتًا'
+            ? AppCopy.hubStatusSuspended
             : awaitingReview
-                ? (underReview ? 'قيد المراجعة الآن' : 'في انتظار المراجعة')
-                : 'تم الاعتماد';
-    final String? trailing =
-        awaitingReview ? _formatRemaining(widget.createdAt) : null;
-
+                ? (underReview ? AppCopy.hubStatusUnderReview : AppCopy.hubStatusAwaitingReview)
+                : AppCopy.hubStatusApproved;
     return Semantics(
-      label: trailing == null ? label : '$label. الوقت المتبقي $trailing',
+      label: awaitingReview ? '$label. يتم عرض العداد التنازلي' : label,
       child: Container(
         width: double.infinity,
         padding: EdgeInsets.symmetric(
@@ -1946,11 +1825,7 @@ class _PlaceModerationBannerState extends State<_PlaceModerationBanner> {
         ),
         child: Row(
           children: [
-            Icon(
-              icon,
-              size: 16.sp,
-              color: tone,
-            ),
+            Icon(icon, size: 16.sp, color: tone),
             gapH(AppSpacing.xs),
             Expanded(
               child: Text(
@@ -1961,26 +1836,12 @@ class _PlaceModerationBannerState extends State<_PlaceModerationBanner> {
                 ),
               ),
             ),
-            if (trailing != null) ...[
+            if (awaitingReview) ...[
               gapH(AppSpacing.sm),
-              Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: AppSpacing.sm.w,
-                  vertical: 3.h,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColor.surfaceCard,
-                  borderRadius: AppRadii.rPill,
-                  border: Border.all(color: tone.withValues(alpha: 0.28)),
-                ),
-                child: Text(
-                  trailing,
-                  style: AppText.labelSm.copyWith(
-                    color: tone,
-                    fontWeight: FontWeight.w800,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
-                ),
+              AppCountdownBadge(
+                createdAt: widget.createdAt,
+                sla: _slaWindow,
+                color: tone,
               ),
             ],
           ],

@@ -135,13 +135,11 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
     try {
       await ApiService().requestPromotionCampaignEdit(campaignId: campaign.id);
       if (!mounted) return;
-      AppFeedback.success(
-        'تم إرسال طلب التعديل للإدارة. هنراجع الطلب ونبلغك أول ما يتفتح التعديل.',
-      );
+      AppFeedback.success(AppCopy.promoRequestEditSuccess);
       await _refresh();
     } catch (e) {
       if (!mounted) return;
-      AppFeedback.error('$e');
+      AppFeedback.error(AppCopy.errorGeneric);
     } finally {
       if (mounted) setState(() => _busyCampaignId = null);
     }
@@ -163,7 +161,9 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
             future: _future,
             builder: (context, snapshot) {
               if (snapshot.connectionState != ConnectionState.done) {
-                return const Center(child: CircularProgressIndicator());
+                return const Center(
+                  child: CircularProgressIndicator(color: AppColor.primary),
+                );
               }
 
               final data = snapshot.data ??
@@ -193,7 +193,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'إعلاناتك وعروضك',
+                                AppCopy.promoSectionTitle,
                                 style: AppText.headingMd.copyWith(
                                   fontWeight: FontWeight.w800,
                                 ),
@@ -229,14 +229,14 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                             children: [
                               Expanded(
                                 child: Text(
-                                  'المتاح الآن: ${ent.maxCampaigns} حملة',
+                                  AppCopy.promoQuotaAvailable.replaceFirst('%n', ent.maxCampaigns.toString()),
                                   style: AppText.labelMd.copyWith(
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
                               ),
                               Text(
-                                'المستخدم الآن: $countedCampaigns',
+                                AppCopy.promoQuotaUsed.replaceFirst('%n', countedCampaigns.toString()),
                                 style: AppText.bodySm.copyWith(
                                   color: AppColor.textSecondary,
                                 ),
@@ -245,7 +245,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                           ),
                           gapV(AppSpacing.sm),
                           Text(
-                            'الحملات النشطة أو تحت المراجعة فقط هي اللي بتتحسب على الخطة.',
+                            AppCopy.promoPlanNote,
                             style: AppText.caption.copyWith(
                               color: AppColor.textSecondary,
                             ),
@@ -268,7 +268,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                       width: double.infinity,
                       child: AppButton(
                         text: reachedLimit
-                            ? 'وصلت لحد الخطة الحالي'
+                            ? AppCopy.promoLimitReached
                             : AppCopy.promoCreateCta,
                         onPress: data.places.isEmpty || reachedLimit
                             ? () {}
@@ -307,13 +307,13 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
   }
 
   String _selectedPlaceLabel(List<Place> places) {
-    if (places.isEmpty) return 'لا توجد أماكن معتمدة بعد';
-    if (_selectedPlaceId == null) return 'كل الأماكن';
+    if (places.isEmpty) return AppCopy.promoNoApprovedPlaces;
+    if (_selectedPlaceId == null) return AppCopy.promoAllPlaces;
     final place = places.cast<Place?>().firstWhere(
           (p) => p?.placeUuid == _selectedPlaceId,
           orElse: () => null,
         );
-    return place?.name ?? 'مكان محدد';
+    return place?.name ?? AppCopy.promoSelectedPlaceFallback;
   }
 }
 
@@ -361,7 +361,7 @@ class _PlaceSelector extends StatelessWidget {
       runSpacing: AppSpacing.xs.h,
       children: [
         _chip(
-          label: 'كل الأماكن',
+          label: AppCopy.promoAllPlaces,
           selected: selectedPlaceId == null,
           onTap: () => onChanged(null),
         ),
@@ -437,18 +437,18 @@ class _PromotionStats extends StatelessWidget {
             SizedBox(
               width: cardWidth,
               child: _StatCard(
-                label: 'كل الحملات',
+                label: AppCopy.promoAllCampaigns,
                 value: campaigns.length.toString(),
               ),
             ),
             SizedBox(
               width: cardWidth,
-              child: _StatCard(label: 'نشطة', value: active.toString()),
+              child: _StatCard(label: AppCopy.promoCampaignsActive, value: active.toString()),
             ),
             SizedBox(
               width: cardWidth,
               child: _StatCard(
-                label: 'قيد المراجعة',
+                label: AppCopy.promoCampaignsPending,
                 value: pending.toString(),
               ),
             ),
@@ -549,7 +549,7 @@ class _CampaignCard extends StatelessWidget {
             ),
             gapV(AppSpacing.xs),
             Text(
-              '${_kindLabel(campaign.kind)} • ${campaign.startsAt != null ? fmt.format(campaign.startsAt!) : 'الآن'} - ${campaign.endsAt != null ? fmt.format(campaign.endsAt!) : 'غير محدد'}',
+              '${_kindLabel(campaign.kind)} • ${campaign.startsAt != null ? fmt.format(campaign.startsAt!) : AppCopy.promoDateNow} - ${campaign.endsAt != null ? fmt.format(campaign.endsAt!) : AppCopy.promoDateOpen}',
               style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
             ),
             if (campaign.status == 'pending_review') ...[
@@ -583,8 +583,7 @@ class _CampaignCard extends StatelessWidget {
               gapV(AppSpacing.sm),
               const _InlineNotice(
                 tone: AppColor.warning,
-                text:
-                    'طلب التعديل اتبعت للإدارة. بمجرد الموافقة هيتحول الزر إلى "عدّل الآن".',
+                text: AppCopy.promoEditRequestPendingNotice,
               ),
             ],
             if (campaign.editRequestStatus == 'approved' &&
@@ -592,8 +591,7 @@ class _CampaignCard extends StatelessWidget {
               gapV(AppSpacing.sm),
               const _InlineNotice(
                 tone: AppColor.success,
-                text:
-                    'تمت الاستجابة للطلب. عدّل الإعلان وابعته من جديد، وهيعود للمراجعة خلال 6 ساعات أو أقل.',
+                text: AppCopy.promoEditRequestApprovedNotice,
               ),
             ],
             if (campaign.editRequestStatus == 'rejected' &&
@@ -608,9 +606,12 @@ class _CampaignCard extends StatelessWidget {
             Row(
               children: [
                 _MiniMetric(
-                    label: 'مشاهدات', value: campaign.impressions.toString()),
+                    label: AppCopy.promoMetricImpressions,
+                    value: campaign.impressions.toString()),
                 gapH(AppSpacing.lg),
-                _MiniMetric(label: 'نقرات', value: campaign.clicks.toString()),
+                _MiniMetric(
+                    label: AppCopy.promoMetricClicks,
+                    value: campaign.clicks.toString()),
               ],
             ),
             if (_canRenderAction) ...[
@@ -646,12 +647,12 @@ class _CampaignCard extends StatelessWidget {
       _canRequestEdit || campaign.editRequestStatus == 'pending' || _isEditNow;
 
   String get _actionLabel {
-    if (isBusy) return 'جارٍ التنفيذ...';
-    if (_isEditNow) return 'تمت الاستجابة للطلب — عدّل الآن';
+    if (isBusy) return AppCopy.loading;
+    if (_isEditNow) return AppCopy.promoActionEditNow;
     if (campaign.editRequestStatus == 'pending') {
-      return 'تم إرسال طلب التعديل';
+      return AppCopy.promoActionEditPending;
     }
-    return 'طلب تعديل الإعلان';
+    return AppCopy.promoActionRequestEdit;
   }
 
   VoidCallback? get _actionCallback {
@@ -662,18 +663,13 @@ class _CampaignCard extends StatelessWidget {
   }
 
   String _kindLabel(String kind) {
-    switch (kind) {
-      case 'featured':
-        return 'ظهور مميز';
-      case 'spotlight':
-        return 'سبوت لايت';
-      case 'push_notification':
-        return 'إشعار';
-      case 'discount':
-        return 'خصم';
-      default:
-        return 'حملة';
-    }
+    return switch (kind) {
+      'featured'          => AppCopy.promoKindFeatured,
+      'spotlight'         => AppCopy.promoKindSpotlight,
+      'push_notification' => AppCopy.promoKindPush,
+      'discount'          => AppCopy.promoKindDiscount,
+      _                   => AppCopy.promoKindDefault,
+    };
   }
 }
 
@@ -735,16 +731,17 @@ class _StatusPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final map = switch (status) {
-      'active' => ('نشطة', AppColor.success),
-      'pending_review' => ('قيد المراجعة', AppColor.warning),
-      'paused' => ('موقوفة', AppColor.textSecondary),
-      'rejected' => ('مرفوضة', AppColor.error),
-      'ended' => ('انتهت', AppColor.textSecondary),
-      _ => ('مسودة', AppColor.info),
+      'active'         => (AppCopy.promoCampaignStatusActive,   AppColor.success),
+      'pending_review' => (AppCopy.promoCampaignStatusPending,  AppColor.warning),
+      'paused'         => (AppCopy.promoCampaignStatusPaused,   AppColor.textSecondary),
+      'rejected'       => (AppCopy.promoCampaignStatusRejected, AppColor.error),
+      'ended'          => (AppCopy.promoCampaignStatusEnded,    AppColor.textSecondary),
+      _                => (AppCopy.promoCampaignStatusDraft,    AppColor.info),
     };
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm.w, vertical: 4.h),
+      padding: EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm.w, vertical: AppSpacing.xs.h),
       decoration: BoxDecoration(
         color: map.$2.withValues(alpha: 0.10),
         borderRadius: AppRadii.rPill,
@@ -796,7 +793,7 @@ class _PromotionsEmpty extends StatelessWidget {
           ),
           gapV(AppSpacing.md),
           Text(
-            '$selectedPlaceName لسه ما عليهش حملات. أول حملة هتدخل مراجعة قبل ما تظهر للناس.',
+            AppCopy.promoEmptyPlaceBody.replaceFirst('%n', selectedPlaceName),
             style: AppText.bodyMd.copyWith(color: AppColor.textSecondary),
             textAlign: TextAlign.center,
           ),
@@ -820,13 +817,13 @@ class _NoApprovedPlacesState extends StatelessWidget {
               color: AppColor.warning, size: 36.sp),
           gapV(AppSpacing.md),
           Text(
-            'العروض هتظهر بعد اعتماد أول مكان',
+            AppCopy.promoNoApprovedPlacesTitle,
             style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
             textAlign: TextAlign.center,
           ),
           gapV(AppSpacing.sm),
           Text(
-            'أول ما مكانك يتعتمد هتقدر تعمل له حملة خاصة.',
+            AppCopy.promoNoApprovedPlacesBody,
             style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
             textAlign: TextAlign.center,
           ),
@@ -912,7 +909,7 @@ class _CreateCampaignSheet extends StatefulWidget {
 class _CreateCampaignSheetState extends State<_CreateCampaignSheet> {
   final _titleCtrl = TextEditingController();
   final _bodyCtrl = TextEditingController();
-  final _ctaCtrl = TextEditingController(text: 'اعرف العرض');
+  final _ctaCtrl = TextEditingController(text: AppCopy.promoCtaDefault);
   final ImagePicker _picker = ImagePicker();
   String? _placeId;
   String _kind = 'discount';
@@ -929,7 +926,7 @@ class _CreateCampaignSheetState extends State<_CreateCampaignSheet> {
     if (campaign != null) {
       _titleCtrl.text = campaign.title;
       _bodyCtrl.text = campaign.body ?? '';
-      _ctaCtrl.text = campaign.ctaLabel ?? 'اعرف العرض';
+      _ctaCtrl.text = campaign.ctaLabel ?? AppCopy.promoCtaDefault;
       _kind = campaign.kind;
       final startsAt = campaign.startsAt;
       final endsAt = campaign.endsAt;
@@ -961,25 +958,20 @@ class _CreateCampaignSheetState extends State<_CreateCampaignSheet> {
 
   List<DropdownMenuItem<String>> _kindOptions() {
     final items = <DropdownMenuItem<String>>[
-      const DropdownMenuItem(value: 'discount', child: Text('خصم / عرض خاص')),
+      const DropdownMenuItem(
+          value: 'discount', child: Text(AppCopy.promoKindDiscount)),
     ];
     if (widget.entitlement.hasFeaturedSlot) {
-      items.add(
-        const DropdownMenuItem(value: 'featured', child: Text('ظهور مميز')),
-      );
+      items.add(const DropdownMenuItem(
+          value: 'featured', child: Text(AppCopy.promoKindFeatured)));
     }
     if (widget.entitlement.hasHomepageSpotlight) {
-      items.add(
-        const DropdownMenuItem(value: 'spotlight', child: Text('سبوت لايت')),
-      );
+      items.add(const DropdownMenuItem(
+          value: 'spotlight', child: Text(AppCopy.promoKindSpotlight)));
     }
     if (widget.entitlement.hasPushCampaigns) {
-      items.add(
-        const DropdownMenuItem(
-          value: 'push_notification',
-          child: Text('إشعار ترويجي'),
-        ),
-      );
+      items.add(const DropdownMenuItem(
+          value: 'push_notification', child: Text(AppCopy.promoKindPush)));
     }
     return items;
   }
@@ -987,7 +979,7 @@ class _CreateCampaignSheetState extends State<_CreateCampaignSheet> {
   Future<void> _submit() async {
     if (_busy) return;
     if ((_placeId ?? '').isEmpty || _titleCtrl.text.trim().length < 3) {
-      AppFeedback.warning('اختَر المكان واكتب عنوانًا واضحًا للحملة.');
+      AppFeedback.warning(AppCopy.promoValidationError);
       return;
     }
 
@@ -1033,14 +1025,12 @@ class _CreateCampaignSheetState extends State<_CreateCampaignSheet> {
       }
       if (!mounted) return;
       AppFeedback.success(
-        campaign == null
-            ? 'تم إرسال الحملة للمراجعة بنجاح ✅'
-            : 'تم حفظ التعديلات وإرجاع الإعلان للمراجعة. هنراجع خلال 6 ساعات أو أقل ✅',
+        campaign == null ? AppCopy.promoSentSuccess : AppCopy.promoEditSentSuccess,
       );
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
-      AppFeedback.error('$e');
+      AppFeedback.error(AppCopy.errorGeneric);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -1067,26 +1057,26 @@ class _CreateCampaignSheetState extends State<_CreateCampaignSheet> {
                 height: 4.h,
                 decoration: BoxDecoration(
                   color: AppColor.border,
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: AppRadii.rSm,
                 ),
               ),
             ),
             gapV(AppSpacing.xl),
             Text(
-              widget.initialCampaign == null ? 'حملة جديدة' : 'تعديل الإعلان',
+              widget.initialCampaign == null ? AppCopy.promoCreateTitle : AppCopy.promoEditTitle,
               style: AppText.headingSm,
             ),
             gapV(AppSpacing.sm),
             Text(
               widget.initialCampaign == null
                   ? AppCopy.promoCreatePendingBody
-                  : 'التعديل بعد الموافقة يرجع الإعلان للمراجعة من جديد، وهدفنا نرد خلال 6 ساعات.',
+                  : AppCopy.promoEditReviewBody,
               style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
             ),
             gapV(AppSpacing.lg),
             DropdownButtonFormField<String>(
               initialValue: _placeId,
-              decoration: const InputDecoration(labelText: 'المكان'),
+              decoration: const InputDecoration(labelText: AppCopy.promoFieldPlace),
               items: widget.places
                   .map(
                     (place) => DropdownMenuItem(
@@ -1100,32 +1090,30 @@ class _CreateCampaignSheetState extends State<_CreateCampaignSheet> {
             gapV(AppSpacing.md),
             DropdownButtonFormField<String>(
               initialValue: _kind,
-              decoration: const InputDecoration(labelText: 'نوع الحملة'),
+              decoration: const InputDecoration(labelText: AppCopy.promoFieldKind),
               items: _kindOptions(),
               onChanged: (value) => setState(() => _kind = value ?? 'discount'),
             ),
             gapV(AppSpacing.md),
-            TextField(
+            AppInput(
               controller: _titleCtrl,
-              decoration: const InputDecoration(
-                labelText: 'عنوان الإعلان أو العرض',
-              ),
+              hintText: AppCopy.promoFieldTitleHint,
+              label: AppCopy.promoFieldTitle,
+              textInputAction: TextInputAction.next,
             ),
             gapV(AppSpacing.md),
-            TextField(
+            AppInput(
               controller: _bodyCtrl,
-              minLines: 3,
+              hintText: AppCopy.promoFieldBodyHint,
+              label: AppCopy.promoFieldBody,
               maxLines: 4,
-              decoration: const InputDecoration(
-                labelText: 'تفاصيل العرض',
-              ),
             ),
             gapV(AppSpacing.md),
-            TextField(
+            AppInput(
               controller: _ctaCtrl,
-              decoration: const InputDecoration(
-                labelText: 'نص الزر (اختياري)',
-              ),
+              hintText: AppCopy.promoFieldCtaHint,
+              label: AppCopy.promoFieldCta,
+              textInputAction: TextInputAction.done,
             ),
             gapV(AppSpacing.md),
             Row(
@@ -1135,9 +1123,9 @@ class _CreateCampaignSheetState extends State<_CreateCampaignSheet> {
                     _selectedImage == null
                         ? (widget.initialCampaign?.imagePath?.trim().isNotEmpty ==
                                 true
-                            ? 'الصورة الحالية مرفوعة. تقدر تغيّرها لو حبيت.'
-                            : 'صورة الإعلان اختيارية')
-                        : 'تم اختيار صورة للإعلان',
+                            ? AppCopy.promoImageExisting
+                            : AppCopy.promoImageNone)
+                        : AppCopy.promoImageSelected,
                     style: AppText.bodySm.copyWith(
                       color: AppColor.textSecondary,
                     ),
@@ -1147,7 +1135,7 @@ class _CreateCampaignSheetState extends State<_CreateCampaignSheet> {
                   onPressed: _busy ? null : _pickImage,
                   icon: const Icon(Icons.image_outlined),
                   label: Text(
-                      _selectedImage == null ? 'اختَر صورة' : 'غيّر الصورة'),
+                      _selectedImage == null ? AppCopy.promoImagePick : AppCopy.promoImageChange),
                 ),
               ],
             ),
@@ -1179,27 +1167,64 @@ class _CreateCampaignSheetState extends State<_CreateCampaignSheet> {
             gapV(AppSpacing.md),
             DropdownButtonFormField<int>(
               initialValue: _durationDays,
-              decoration: const InputDecoration(labelText: 'مدة العرض'),
+              decoration: const InputDecoration(labelText: AppCopy.promoFieldDuration),
               items: const [
-                DropdownMenuItem(value: 3, child: Text('3 أيام')),
-                DropdownMenuItem(value: 7, child: Text('7 أيام')),
-                DropdownMenuItem(value: 14, child: Text('14 يوم')),
-                DropdownMenuItem(value: 30, child: Text('30 يوم')),
+                DropdownMenuItem(value: 3, child: Text(AppCopy.promoDuration3Days)),
+                DropdownMenuItem(value: 7, child: Text(AppCopy.promoDuration7Days)),
+                DropdownMenuItem(value: 14, child: Text(AppCopy.promoDuration14Days)),
+                DropdownMenuItem(value: 30, child: Text(AppCopy.promoDuration30Days)),
               ],
               onChanged: (value) => setState(() => _durationDays = value ?? 7),
             ),
-            gapV(AppSpacing.xl),
+            gapV(AppSpacing.lg),
+            const _CampaignReviewNotice(),
+            gapV(AppSpacing.md),
             AppButton(
-              text: _busy
-                  ? 'جارٍ الإرسال...'
-                  : (widget.initialCampaign == null
-                      ? 'إرسال للمراجعة'
-                      : 'حفظ التعديل وإعادة الإرسال'),
+              text: widget.initialCampaign == null
+                  ? AppCopy.promoSendCta
+                  : AppCopy.promoEditSendCta,
               onPress: _submit,
-              isEnabled: !_busy,
+              isLoading: _busy,
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Inline 6-hour review notice shown at the bottom of the create/edit sheet.
+class _CampaignReviewNotice extends StatelessWidget {
+  const _CampaignReviewNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.md.w,
+        vertical: AppSpacing.sm.h,
+      ),
+      decoration: BoxDecoration(
+        color: AppColor.primary.withValues(alpha: 0.06),
+        borderRadius: AppRadii.rMd,
+        border: Border.all(color: AppColor.primary.withValues(alpha: 0.14)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.info_outline_rounded,
+              color: AppColor.primary, size: 16.sp),
+          gapH(AppSpacing.sm),
+          Expanded(
+            child: Text(
+              AppCopy.promoReviewNotice6h,
+              style: AppText.bodySm.copyWith(
+                color: AppColor.textPrimary,
+                height: 1.45,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1222,12 +1247,12 @@ class _EditRequestDialog extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'طلب تعديل الإعلان',
+              AppCopy.promoEditDialogTitle,
               style: AppText.titleLg.copyWith(fontWeight: FontWeight.w800),
             ),
             gapV(AppSpacing.sm),
             Text(
-              'هيوصل طلبك للإدارة أولًا. بعد الموافقة هتلاقي الزر اتحول إلى "عدّل الآن"، وبعد الحفظ الإعلان هيرجع للمراجعة لمدة 6 ساعات أو أقل.',
+              AppCopy.promoEditDialogBody,
               style: AppText.bodyMd.copyWith(
                 color: AppColor.textSecondary,
                 height: 1.5,
@@ -1259,7 +1284,7 @@ class _EditRequestDialog extends StatelessWidget {
                 gapH(AppSpacing.sm),
                 Expanded(
                   child: AppButton(
-                    text: 'أكيد، ابعت الطلب',
+                    text: AppCopy.promoEditDialogConfirm,
                     onPress: () => Navigator.pop(context, true),
                   ),
                 ),

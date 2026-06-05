@@ -59,7 +59,7 @@ class DeleteAccountSheet {
                     height: 4.h,
                     decoration: BoxDecoration(
                       color: AppColor.border,
-                      borderRadius: BorderRadius.circular(2),
+                      borderRadius: AppRadii.rSm,
                     ),
                   ),
                 ),

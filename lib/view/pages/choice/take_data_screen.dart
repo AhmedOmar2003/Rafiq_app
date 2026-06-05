@@ -17,7 +17,6 @@ import 'package:rafiq_app/view/provider/subscription/subscription_screen.dart';
 
 import '../../../core/utils/app_error_formatter.dart';
 import '../../../core/utils/app_microcopy.dart';
-import '../../../core/utils/spacing.dart';
 
 class AddPlaceScreen extends StatefulWidget {
   const AddPlaceScreen({super.key, this.editingPlace, this.providerId});
@@ -241,7 +240,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
         _isEditing
             ? (widget.editingPlace?.status == 'rejected'
                 ? AppCopy.providerResubmittedSuccess
-                : 'تم تعديل المكان بنجاح')
+                : AppCopy.providerEditedSuccess)
             : AppCopy.providerAddedSuccess,
       );
       _returnToHub();
@@ -281,10 +280,10 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
       valueListenable: SubscriptionService.instance.entitlement,
       builder: (_, ent, __) {
         return Container(
-          margin: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 0),
+          margin: EdgeInsets.fromLTRB(AppSpacing.xl.w, AppSpacing.sm.h, AppSpacing.xl.w, 0),
           padding: EdgeInsets.symmetric(
-            horizontal: 16.w,
-            vertical: 12.h,
+            horizontal: AppSpacing.lg.w,
+            vertical: AppSpacing.md.h,
           ),
           decoration: BoxDecoration(
             color: AppColor.surfaceCard,
@@ -354,7 +353,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
       child: Directionality(
         textDirection: TextDirection.rtl,
         child: Scaffold(
-          backgroundColor: AppColor.ofWhite,
+          backgroundColor: AppColor.surface,
           body: SafeArea(
             child: Form(
               key: _formKey,
@@ -367,19 +366,29 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
                       physics: const BouncingScrollPhysics(),
                       child: Column(
                         children: [
-                          verticalSpace(16),
+                          gapV(AppSpacing.lg),
                           _buildTopImage(),
-                          verticalSpace(24),
+                          gapV(AppSpacing.xxl),
                           Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 24.w),
+                            padding: EdgeInsets.symmetric(horizontal: AppSpacing.xxl.w),
                             child: _buildFormFields(),
                           ),
-                          verticalSpace(36),
+                          gapV(AppSpacing.xxxl),
                           Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 24.w),
-                            child: _buildSubmitButton(),
+                            padding: EdgeInsets.symmetric(horizontal: AppSpacing.xxl.w),
+                            child: Column(
+                              children: [
+                                const _ReviewNoticeCard(),
+                                gapV(AppSpacing.lg),
+                                AppButton(
+                                  text: _isEditing ? AppCopy.addPlaceSaveEdit : AppCopy.addPlaceSaveNew,
+                                  onPress: _submitPlace,
+                                  isLoading: _isLoading,
+                                ),
+                              ],
+                            ),
                           ),
-                          verticalSpace(40),
+                          gapV(AppSpacing.huge),
                         ],
                       ),
                     ),
@@ -395,22 +404,16 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
 
   Widget _buildAppBar() {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-      color: AppColor.ofWhite,
+      padding: EdgeInsets.symmetric(horizontal: AppSpacing.xl.w, vertical: AppSpacing.lg.h),
+      color: AppColor.surface,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Container(
             decoration: BoxDecoration(
               color: AppColor.white,
-              borderRadius: BorderRadius.circular(12.r),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColor.black.withValues(alpha: 0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              borderRadius: AppRadii.rMd,
+              boxShadow: AppShadows.level1,
             ),
             child: IconButton(
               padding: EdgeInsets.only(right: 6.w),
@@ -426,7 +429,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
               color: AppColor.black,
             ),
           ),
-          SizedBox(width: 48.w), // Spacer to balance the row
+          SizedBox(width: 48.w),
         ],
       ),
     );
@@ -448,7 +451,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
       builder: (_, ent, __) {
         final canAdd = _images.length < ent.maxGalleryImages;
         return Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24.w),
+          padding: EdgeInsets.symmetric(horizontal: AppSpacing.xxl.w),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -470,18 +473,18 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
                   ),
                 ],
               ),
-              SizedBox(height: 4.h),
+              gapV(AppSpacing.xs),
               Text(
                 AppCopy.providerCoverHint,
                 style: AppText.bodySm.copyWith(color: AppColor.textTertiary),
               ),
-              SizedBox(height: 14.h),
+              gapV(AppSpacing.lg),
               SizedBox(
                 height: 130.h,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: _images.length + (canAdd ? 1 : 0),
-                  separatorBuilder: (_, __) => SizedBox(width: 10.w),
+                  separatorBuilder: (_, __) => gapH(AppSpacing.sm),
                   itemBuilder: (_, i) {
                     if (i == _images.length) return _AddTile(onTap: _pickImage);
                     return _GalleryTile(
@@ -512,152 +515,60 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
   Widget _buildFormFields() {
     return Column(
       children: [
-        _buildTextField(
+        AppInput(
           controller: _placeNameController,
-          label: "اسم المكان",
-          icon: Icons.storefront_outlined,
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'الرجاء إدخال اسم المكان';
-            }
-            return null;
-          },
+          hintText: AppCopy.addPlaceNameHint,
+          label: AppCopy.addPlaceNameLabel,
+          suffixIcon: const Icon(Icons.storefront_outlined, color: AppColor.textSecondary),
+          textInputAction: TextInputAction.next,
+          validator: (v) => (v == null || v.isEmpty) ? AppCopy.addPlaceNameRequired : null,
         ),
-        verticalSpace(16),
+        gapV(AppSpacing.lg),
         _buildDropdown(
-          label: "المدينة",
+          label: AppCopy.addPlaceCityLabel,
           value: _selectedCity,
           items: _cities,
           icon: Icons.location_city_outlined,
-          onChanged: (value) {
-            setState(() => _selectedCity = value);
-          },
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'الرجاء اختيار المدينة';
-            }
-            return null;
-          },
+          onChanged: (value) => setState(() => _selectedCity = value),
+          validator: (v) => (v == null || v.isEmpty) ? AppCopy.addPlaceCityRequired : null,
         ),
-        verticalSpace(16),
+        gapV(AppSpacing.lg),
         _buildDropdown(
-          label: "نوع النشاط",
+          label: AppCopy.addPlaceTypeLabel,
           value: _selectedPlaceType,
           items: _placeTypes,
           icon: Icons.category_outlined,
-          onChanged: (value) {
-            setState(() => _selectedPlaceType = value);
-          },
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'الرجاء اختيار نوع النشاط';
-            }
-            return null;
-          },
+          onChanged: (value) => setState(() => _selectedPlaceType = value),
+          validator: (v) => (v == null || v.isEmpty) ? AppCopy.addPlaceTypeRequired : null,
         ),
-        verticalSpace(16),
+        gapV(AppSpacing.lg),
         _buildDropdown(
-          label: "الميزانية",
+          label: AppCopy.addPlaceBudgetLabel,
           value: _selectedBudget,
           items: _budgets,
           icon: Icons.account_balance_wallet_outlined,
-          onChanged: (value) {
-            setState(() => _selectedBudget = value);
-          },
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'الرجاء اختيار الميزانية';
-            }
-            return null;
-          },
+          onChanged: (value) => setState(() => _selectedBudget = value),
+          validator: (v) => (v == null || v.isEmpty) ? AppCopy.addPlaceBudgetRequired : null,
         ),
-        verticalSpace(16),
-        _buildTextField(
+        gapV(AppSpacing.lg),
+        AppInput(
           controller: _addressController,
-          label: "العنوان التفصيلي",
-          icon: Icons.map_outlined,
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'الرجاء إدخال العنوان';
-            }
-            return null;
-          },
+          hintText: AppCopy.addPlaceAddressHint,
+          label: AppCopy.addPlaceAddressLabel,
+          suffixIcon: const Icon(Icons.map_outlined, color: AppColor.textSecondary),
+          textInputAction: TextInputAction.next,
+          validator: (v) => (v == null || v.isEmpty) ? AppCopy.addPlaceAddressRequired : null,
         ),
-        verticalSpace(16),
-        _buildTextField(
+        gapV(AppSpacing.lg),
+        AppInput(
           controller: _descriptionController,
-          label: "وصف عن المكان ومميزاته",
-          icon: Icons.description_outlined,
+          hintText: AppCopy.addPlaceDescHint,
+          label: AppCopy.addPlaceDescLabel,
+          suffixIcon: const Icon(Icons.description_outlined, color: AppColor.textSecondary),
           maxLines: 4,
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'الرجاء إدخال وصف عن المكان';
-            }
-            return null;
-          },
+          validator: (v) => (v == null || v.isEmpty) ? AppCopy.addPlaceDescRequired : null,
         ),
       ],
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    TextInputType keyboardType = TextInputType.text,
-    int maxLines = 1,
-    String? Function(String?)? validator,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColor.white,
-        borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color: AppColor.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: TextFormField(
-        controller: controller,
-        keyboardType: keyboardType,
-        maxLines: maxLines,
-        textAlign: TextAlign.right,
-        validator: validator,
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: AppText.bodyLg.copyWith(
-            color: AppColor.textTertiary,
-          ),
-          prefixIcon: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w),
-            child: Icon(icon, color: AppColor.primary, size: 24.sp),
-          ),
-          contentPadding: EdgeInsets.symmetric(
-              horizontal: 16.w, vertical: maxLines > 1 ? 20.h : 18.h),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16.r),
-            borderSide: const BorderSide(color: AppColor.border, width: 1),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16.r),
-            borderSide: const BorderSide(color: AppColor.border, width: 1),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16.r),
-            borderSide: const BorderSide(color: AppColor.primary, width: 1.5),
-          ),
-          errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16.r),
-            borderSide: const BorderSide(color: AppColor.error, width: 1),
-          ),
-          filled: true,
-          fillColor: AppColor.white,
-        ),
-        style: AppText.titleMd.copyWith(color: AppColor.black),
-      ),
     );
   }
 
@@ -672,7 +583,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
     return Container(
       decoration: BoxDecoration(
         color: AppColor.white,
-        borderRadius: BorderRadius.circular(16.r),
+        borderRadius: AppRadii.rLg,
         boxShadow: [
           BoxShadow(
             color: AppColor.black.withValues(alpha: 0.02),
@@ -693,25 +604,25 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
             color: AppColor.textTertiary,
           ),
           prefixIcon: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w),
+            padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
             child: Icon(icon, color: AppColor.primary, size: 24.sp),
           ),
-          contentPadding:
-              EdgeInsets.symmetric(horizontal: 16.w, vertical: 18.h),
+          contentPadding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg.w, vertical: AppSpacing.xl.h),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16.r),
+            borderRadius: AppRadii.rLg,
             borderSide: const BorderSide(color: AppColor.border, width: 1),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16.r),
+            borderRadius: AppRadii.rLg,
             borderSide: const BorderSide(color: AppColor.border, width: 1),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16.r),
+            borderRadius: AppRadii.rLg,
             borderSide: const BorderSide(color: AppColor.primary, width: 1.5),
           ),
           errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16.r),
+            borderRadius: AppRadii.rLg,
             borderSide: const BorderSide(color: AppColor.error, width: 1),
           ),
           filled: true,
@@ -729,31 +640,6 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
     );
   }
 
-  Widget _buildSubmitButton() {
-    return _isLoading
-        ? const Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(AppColor.primary),
-            ),
-          )
-        : AppButton(
-            text: _isEditing ? 'حفظ التعديلات' : "حفظ البيانات",
-            onPress: _submitPlace,
-            buttonStyle: ElevatedButton.styleFrom(
-              minimumSize: Size(double.infinity, 56.h),
-              backgroundColor: AppColor.primary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16.r),
-              ),
-              elevation: 4,
-              shadowColor: AppColor.primary.withValues(alpha: 0.4),
-            ),
-            textStyle: AppText.titleLg.copyWith(
-              color: AppColor.white,
-              fontWeight: FontWeight.w700,
-            ),
-          );
-  }
 }
 
 // ===========================================================================
@@ -783,7 +669,7 @@ class _GalleryTile extends StatelessWidget {
       child: Stack(
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(16.r),
+            borderRadius: AppRadii.rLg,
             child: Image.file(
               file,
               width: 130.w,
@@ -797,19 +683,19 @@ class _GalleryTile extends StatelessWidget {
           ),
           if (isCover)
             Positioned(
-              left: 6.w,
-              bottom: 6.h,
+              left: AppSpacing.sm.w,
+              bottom: AppSpacing.sm.h,
               child: Container(
                 padding: EdgeInsets.symmetric(
-                  horizontal: 8.w,
-                  vertical: 2.h,
+                  horizontal: AppSpacing.sm.w,
+                  vertical: AppSpacing.xs.h / 2,
                 ),
                 decoration: BoxDecoration(
                   color: AppColor.primary,
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: AppRadii.rSm,
                 ),
                 child: Text(
-                  'COVER',
+                  AppCopy.addPlaceCoverLabel,
                   style: AppText.caption.copyWith(
                     color: AppColor.white,
                     fontWeight: FontWeight.w800,
@@ -818,8 +704,8 @@ class _GalleryTile extends StatelessWidget {
               ),
             ),
           Positioned(
-            top: 4.h,
-            right: 4.w,
+            top: AppSpacing.xs.h,
+            right: AppSpacing.xs.w,
             child: Material(
               color: Colors.black.withValues(alpha: 0.55),
               shape: const CircleBorder(),
@@ -827,13 +713,54 @@ class _GalleryTile extends StatelessWidget {
                 onTap: onRemove,
                 radius: 18,
                 child: Padding(
-                  padding: EdgeInsets.all(4.w),
+                  padding: EdgeInsets.all(AppSpacing.xs.w),
                   child: Icon(
                     Icons.close_rounded,
                     color: AppColor.white,
                     size: 16.sp,
                   ),
                 ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Review-time notice shown just above the submit button.
+/// Tells the provider what happens after they submit so there are no surprises.
+class _ReviewNoticeCard extends StatelessWidget {
+  const _ReviewNoticeCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg.w,
+        vertical: AppSpacing.md.h,
+      ),
+      decoration: BoxDecoration(
+        color: AppColor.primary.withValues(alpha: 0.06),
+        borderRadius: AppRadii.rLg,
+        border: Border.all(color: AppColor.primary.withValues(alpha: 0.16)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.info_outline_rounded,
+            color: AppColor.primary,
+            size: 18.sp,
+          ),
+          gapH(AppSpacing.sm),
+          Expanded(
+            child: Text(
+              AppCopy.addPlaceReviewNotice,
+              style: AppText.bodySm.copyWith(
+                color: AppColor.textPrimary,
+                height: 1.5,
               ),
             ),
           ),
@@ -853,13 +780,13 @@ class _AddTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16.r),
+      borderRadius: AppRadii.rLg,
       child: Container(
         width: 130.w,
         height: 130.h,
         decoration: BoxDecoration(
           color: AppColor.primary50,
-          borderRadius: BorderRadius.circular(16.r),
+          borderRadius: AppRadii.rLg,
           border: Border.all(
             color: AppColor.primary.withValues(alpha: 0.35),
             width: 1.5,
@@ -873,7 +800,7 @@ class _AddTile extends StatelessWidget {
               color: AppColor.primary,
               size: 30.sp,
             ),
-            SizedBox(height: 6.h),
+            gapV(AppSpacing.sm),
             Text(
               AppCopy.providerAddImage,
               style: AppText.labelSm.copyWith(

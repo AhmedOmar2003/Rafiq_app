@@ -45,7 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _showSuccessOverlay = true);
     } catch (e) {
       if (!mounted) return;
-      AppFeedback.error('$e');
+      AppFeedback.error(AppCopy.errorGeneric);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -59,7 +59,7 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _showSuccessOverlay = true);
     } catch (e) {
       if (!mounted) return;
-      AppFeedback.error('$e');
+      AppFeedback.error(AppCopy.errorGeneric);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -151,7 +151,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 text: AppCopy.loginCta,
                 onPress: _handleLogin,
                 isLoading: _isLoading),
-            gapV(AppSpacing.lg),
+            _OrDivider(),
             AppButton(
               text: AppCopy.loginGoogle,
               onPress: _handleGoogleLogin,
@@ -190,7 +190,7 @@ class _LoginScreenState extends State<LoginScreen> {
       label: AppCopy.authPasswordLabel,
       hintText: AppCopy.authPasswordHint,
       controller: passwordController,
-      helperText: 'اكتب كلمة السر وكمل.',
+      helperText: AppCopy.authPasswordHelper,
       autofillHints: const [AutofillHints.password],
       isPassword: true,
       textInputAction: TextInputAction.done,
@@ -256,6 +256,28 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OrDivider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: AppSpacing.md.h),
+      child: Row(
+        children: [
+          const Expanded(child: Divider(color: AppColor.border)),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppSpacing.md.w),
+            child: Text(
+              AppCopy.authSeparatorOr,
+              style: AppText.labelSm.copyWith(color: AppColor.textTertiary),
+            ),
+          ),
+          const Expanded(child: Divider(color: AppColor.border)),
         ],
       ),
     );

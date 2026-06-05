@@ -5,6 +5,7 @@ import 'package:rafiq_app/core/design/app_image.dart';
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:rafiq_app/core/logic/helper_methods.dart';
+import 'package:rafiq_app/core/utils/app_microcopy.dart';
 import 'package:rafiq_app/on_boarding/cashe_helper.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'model.dart';
@@ -120,7 +121,11 @@ class _OnBoardingItem extends StatelessWidget {
   Widget _buildLastPageControls() {
     return Column(
       children: [
-        AppButton(text: "يلا نبدا", onPress: onLoginPressed),
+        Semantics(
+          button: true,
+          label: AppCopy.onboardingCta,
+          child: AppButton(text: AppCopy.onboardingCta, onPress: onLoginPressed),
+        ),
         gapV(AppSpacing.huge),
         _buildPageIndicator(),
       ],
@@ -131,17 +136,27 @@ class _OnBoardingItem extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        TextButton(
-          onPressed: _handleNextPage,
-          child: Text("التالي", style: AppText.headingLg),
+        Semantics(
+          button: true,
+          label: AppCopy.onboardingNext,
+          child: TextButton(
+            onPressed: _handleNextPage,
+            child: Text(AppCopy.onboardingNext, style: AppText.headingLg),
+          ),
         ),
         const Spacer(),
         _buildPageIndicator(),
         const Spacer(),
-        TextButton(
-          onPressed: onLoginPressed,
-          child: Text("تخطي",
-              style: AppText.headingLg.copyWith(color: AppColor.textSecondary)),
+        Semantics(
+          button: true,
+          label: AppCopy.onboardingSkip,
+          child: TextButton(
+            onPressed: onLoginPressed,
+            child: Text(
+              AppCopy.onboardingSkip,
+              style: AppText.headingLg.copyWith(color: AppColor.textSecondary),
+            ),
+          ),
         ),
       ],
     );

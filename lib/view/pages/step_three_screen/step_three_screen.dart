@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rafiq_app/core/design/app_image.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
+import 'package:rafiq_app/core/utils/app_microcopy.dart';
 import '../../../models/step_three_model/step_three_model.dart';
 
 class StepThree extends StatefulWidget {
@@ -24,16 +25,16 @@ class _StepThreeState extends State<StepThree>
   Widget build(BuildContext context) {
     super.build(context);
     return ListView(
-      padding: EdgeInsets.symmetric(horizontal: 24.w),
+      padding: EdgeInsets.symmetric(horizontal: AppSpacing.xxl.w),
       children: [
-        SizedBox(height: 16.h),
-        Text("عايز تعمل ايه؟", style: AppText.displayMd),
+        gapV(AppSpacing.lg),
+        Text(AppCopy.stepActivityTitle, style: AppText.displayMd),
         gapV(AppSpacing.sm),
         Text(
-          "اختار نوع النشاط اللي تفضله",
+          AppCopy.stepActivityBody,
           style: AppText.bodyLg.copyWith(color: AppColor.textSecondary),
         ),
-        SizedBox(height: 28.h),
+        gapV(AppSpacing.xxxl),
         ...List.generate(
           stepThreeList.length,
           (index) => _ActivityOptionCard(
@@ -49,7 +50,7 @@ class _StepThreeState extends State<StepThree>
             },
           ),
         ),
-        SizedBox(height: 8.h),
+        gapV(AppSpacing.sm),
       ],
     );
   }
@@ -70,77 +71,77 @@ class _ActivityOptionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 14.h),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14.r),
-        splashColor: AppColor.primary.withValues(alpha: 0.1),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeOutCubic,
-          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14.r),
-            color: isSelected ? AppColor.primary : AppColor.surfaceCard,
-            border: Border.all(
-              color: isSelected ? AppColor.primary : AppColor.border,
-              width: isSelected ? 1.5 : 1.0,
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      label: label,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: AppSpacing.md.h),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: AppRadii.rMd,
+          splashColor: AppColor.primary.withValues(alpha: 0.1),
+          child: AnimatedContainer(
+            duration: AppMotion.base,
+            curve: AppMotion.standard,
+            padding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.xl.w,
+              vertical: AppSpacing.lg.h,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: isSelected
-                    ? AppColor.primary.withValues(alpha: 0.15)
-                    : AppColor.black.withValues(alpha: 0.04),
-                blurRadius: isSelected ? 12 : 6,
-                offset: Offset(0, isSelected ? 4 : 2),
+            decoration: BoxDecoration(
+              borderRadius: AppRadii.rMd,
+              color: isSelected ? AppColor.primary : AppColor.surfaceCard,
+              border: Border.all(
+                color: isSelected ? AppColor.primary : AppColor.border,
+                width: isSelected ? 1.5 : 1.0,
               ),
-            ],
-          ),
-          child: Row(
-            children: [
-              if (icon != null && icon!.isNotEmpty)
-                Container(
-                  padding: EdgeInsets.all(6.w),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppColor.white.withValues(alpha: 0.2)
-                        : AppColor.primary.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(8.r),
+              boxShadow: isSelected ? AppShadows.primaryGlow : AppShadows.level1,
+            ),
+            child: Row(
+              children: [
+                if (icon != null && icon!.isNotEmpty)
+                  Container(
+                    padding: EdgeInsets.all(AppSpacing.sm.w),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppColor.white.withValues(alpha: 0.2)
+                          : AppColor.primary.withValues(alpha: 0.08),
+                      borderRadius: AppRadii.rSm,
+                    ),
+                    child: AppImage(
+                      icon!,
+                      width: 22.w,
+                      height: 22.w,
+                      color: isSelected ? AppColor.white : AppColor.primary,
+                    ),
+                  )
+                else
+                  AnimatedContainer(
+                    duration: AppMotion.base,
+                    width: 8.w,
+                    height: 8.w,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isSelected
+                          ? AppColor.white
+                          : AppColor.primary.withValues(alpha: 0.3),
+                    ),
                   ),
-                  child: AppImage(
-                    icon!,
-                    width: 22.w,
-                    height: 22.w,
-                    color: isSelected ? AppColor.white : AppColor.primary,
-                  ),
-                )
-              else
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 250),
-                  width: 8.w,
-                  height: 8.w,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isSelected
-                        ? AppColor.white
-                        : AppColor.primary.withValues(alpha: 0.3),
+                gapH(AppSpacing.md),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: AppText.headingSm.copyWith(
+                      color: isSelected ? AppColor.white : AppColor.textPrimary,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
-              SizedBox(width: 14.w),
-              Expanded(
-                child: Text(
-                  label,
-                  style: AppText.headingSm.copyWith(
-                    color: isSelected ? AppColor.white : AppColor.textPrimary,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              if (isSelected)
-                Icon(Icons.check_circle_rounded,
-                    color: AppColor.surfaceCard, size: 20.w),
-            ],
+                if (isSelected)
+                  Icon(Icons.check_circle_rounded,
+                      color: AppColor.surfaceCard, size: 20.sp),
+              ],
+            ),
           ),
         ),
       ),

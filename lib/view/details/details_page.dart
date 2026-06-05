@@ -13,7 +13,6 @@ import 'package:rafiq_app/service/profile_image_store.dart';
 import 'package:rafiq_app/view/evaluations/evaluations_page.dart';
 import '../../core/utils/app_microcopy.dart';
 import '../../models/suggestion_item_model/suggestion_item.dart';
-import 'widget/custom_divider.dart';
 import 'widget/custom_evaluations.dart';
 import 'widget/details_item.dart';
 import 'widget/similar_events.dart';
@@ -175,11 +174,11 @@ class _DetailsPageState extends State<DetailsPage> {
         placeId: placeUuid,
       );
       AppFeedback.success(
-        saved ? 'اتحفظ في المفضلة' : 'اتشال من المفضلة',
+        saved ? AppCopy.detailsFavoriteSaved : AppCopy.detailsFavoriteRemoved,
       );
-    } catch (e) {
+    } catch (_) {
       if (!_isMounted) return;
-      AppFeedback.error('$e');
+      AppFeedback.error(AppCopy.errorGeneric);
     } finally {
       if (_isMounted) {
         setState(() => _isFavoriteBusy = false);
@@ -248,13 +247,14 @@ class _DetailsPageState extends State<DetailsPage> {
                 ? Icons.favorite_rounded
                 : Icons.favorite_border_rounded,
             tone: _isFavorited ? AppColor.error : null,
-            semanticLabel:
-                _isFavorited ? 'إزالة من المفضلة' : 'إضافة إلى المفضلة',
+            semanticLabel: _isFavorited
+                ? AppCopy.detailsFavoriteRemove
+                : AppCopy.detailsFavoriteAdd,
             onTap: _toggleFavorite,
           ),
           AppHeaderAction(
             icon: Icons.flag_outlined,
-            semanticLabel: 'بلّغ عن هذا المكان',
+            semanticLabel: AppCopy.detailsReport,
             onTap: () => _openReportSheet(context, currentModel),
           ),
         ],
@@ -264,7 +264,7 @@ class _DetailsPageState extends State<DetailsPage> {
           AppSpacing.lg.w,
           AppSpacing.lg.h,
           AppSpacing.lg.w,
-          AppSpacing.huge.h * 2,
+          AppSpacing.huge.h,
         ),
         children: [
           _DetailsSection(
@@ -347,19 +347,11 @@ class _DetailsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppCard(
       padding: EdgeInsets.zero,
-      child: Column(
-        children: [
-          DetailsItem(
-            model: model,
-            galleryImages: galleryImages,
-            isLoading: isLoading,
-            onMapOpen: onMapOpen,
-          ),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
-            child: const CustomDivider(),
-          ),
-        ],
+      child: DetailsItem(
+        model: model,
+        galleryImages: galleryImages,
+        isLoading: isLoading,
+        onMapOpen: onMapOpen,
       ),
     );
   }
@@ -374,7 +366,7 @@ class _CampaignsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       container: true,
-      label: 'العروض الحالية. عدد العروض ${campaigns.length}',
+      label: '${AppCopy.detailsOffersSemanticPrefix}. ${campaigns.length}',
       child: AppCard(
         padding: EdgeInsets.all(AppSpacing.lg.w),
         child: Column(
@@ -428,7 +420,7 @@ class _DescriptionSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       container: true,
-      label: 'وصف المكان',
+      label: AppCopy.detailsDescriptionSemanticLabel,
       child: AppCard(
         padding: EdgeInsets.all(AppSpacing.lg.w),
         child: Column(
@@ -485,8 +477,7 @@ class _CampaignBannerCard extends StatelessWidget {
           children: [
           if (hasImage)
             ClipRRect(
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(AppRadii.lg)),
+              borderRadius: AppRadii.topOnly(AppRadii.lg),
               child: Image.network(
                 campaign.imagePath!,
                 width: double.infinity,
@@ -636,7 +627,7 @@ class _EmptyReviews extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: 'اكتب أول تقييم لهذا المكان',
+      label: AppCopy.detailsFirstReviewSemantic,
       child: InkWell(
         onTap: onTap,
         borderRadius: AppRadii.rLg,
@@ -698,7 +689,7 @@ class _SimilarSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       container: true,
-      label: 'أماكن شبهه. العدد ${items.length}',
+      label: '${AppCopy.detailsSimilarSemanticPrefix}. ${items.length}',
       child: AppCard(
         padding: EdgeInsets.zero,
         child: Column(
@@ -859,12 +850,12 @@ class _ReportSheetState extends State<_ReportSheet> {
 
   Future<void> _submit() async {
     if (_selected == null) {
-      AppFeedback.warning('من فضلك اختر سبب البلاغ');
+      AppFeedback.warning(AppCopy.reportMissingReason);
       return;
     }
     final uuid = widget.place.placeUuid;
     if (uuid == null || uuid.isEmpty) {
-      AppFeedback.error('لا يمكن تقديم البلاغ على هذا المكان');
+      AppFeedback.error(AppCopy.reportCannotSubmit);
       return;
     }
 
@@ -883,10 +874,10 @@ class _ReportSheetState extends State<_ReportSheet> {
         },
       );
       if (!mounted) return;
-      AppFeedback.success('وصلنا بلاغك، هنراجعه قريباً ✅');
+      AppFeedback.success(AppCopy.reportSentSuccess);
       Navigator.pop(context);
     } catch (_) {
-      if (mounted) AppFeedback.error('معرفناش نبعت البلاغ، جرّب تاني');
+      if (mounted) AppFeedback.error(AppCopy.reportSentFail);
     } finally {
       if (mounted) setState(() => _sending = false);
     }
@@ -911,7 +902,7 @@ class _ReportSheetState extends State<_ReportSheet> {
               height: 4.h,
               decoration: BoxDecoration(
                 color: AppColor.border,
-                borderRadius: BorderRadius.circular(2),
+                borderRadius: AppRadii.rSm,
               ),
             ),
           ),
@@ -935,7 +926,7 @@ class _ReportSheetState extends State<_ReportSheet> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'بلّغ عن هذا المكان',
+                      AppCopy.detailsReport,
                       style:
                           AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
                     ),
@@ -953,7 +944,7 @@ class _ReportSheetState extends State<_ReportSheet> {
           ),
           gapV(AppSpacing.lg),
           Text(
-            'اختر سبب البلاغ',
+            AppCopy.reportPickReason,
             style: AppText.labelMd.copyWith(
               color: AppColor.textSecondary,
               fontWeight: FontWeight.w700,
@@ -969,25 +960,31 @@ class _ReportSheetState extends State<_ReportSheet> {
                 button: true,
                 selected: selected,
                 label: 'سبب البلاغ ${r.label}',
-                child: GestureDetector(
-                  onTap: () => setState(() => _selected = r.code),
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md.w,
-                      vertical: AppSpacing.sm.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: selected ? AppColor.primary : AppColor.surface,
-                      borderRadius: AppRadii.rPill,
-                      border: Border.all(
-                        color: selected ? AppColor.primary : AppColor.border,
+                child: Material(
+                  color: selected ? AppColor.primary : AppColor.surface,
+                  borderRadius: AppRadii.rPill,
+                  child: InkWell(
+                    onTap: () => setState(() => _selected = r.code),
+                    borderRadius: AppRadii.rPill,
+                    splashColor: AppColor.primary.withValues(alpha: 0.12),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md.w,
+                        vertical: AppSpacing.sm.h,
                       ),
-                    ),
-                    child: Text(
-                      r.label,
-                      style: AppText.labelMd.copyWith(
-                        color: selected ? AppColor.white : AppColor.textPrimary,
-                        fontWeight: FontWeight.w700,
+                      decoration: BoxDecoration(
+                        borderRadius: AppRadii.rPill,
+                        border: Border.all(
+                          color: selected ? AppColor.primary : AppColor.border,
+                        ),
+                      ),
+                      child: Text(
+                        r.label,
+                        style: AppText.labelMd.copyWith(
+                          color:
+                              selected ? AppColor.white : AppColor.textPrimary,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ),
@@ -996,35 +993,16 @@ class _ReportSheetState extends State<_ReportSheet> {
             }).toList(),
           ),
           gapV(AppSpacing.lg),
-          TextField(
+          AppInput(
             controller: _detailsCtrl,
+            hintText: AppCopy.reportDetailsHint,
             maxLines: 4,
-            textDirection: TextDirection.rtl,
-            style: AppText.bodyMd,
-            decoration: InputDecoration(
-              hintText: 'تفاصيل إضافية (اختياري)',
-              hintStyle: AppText.bodyMd.copyWith(color: AppColor.textMuted),
-              filled: true,
-              fillColor: AppColor.surface,
-              contentPadding: EdgeInsets.all(AppSpacing.md.w),
-              border: OutlineInputBorder(
-                borderRadius: AppRadii.rMd,
-                borderSide: const BorderSide(color: AppColor.border),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: AppRadii.rMd,
-                borderSide: const BorderSide(color: AppColor.border),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: AppRadii.rMd,
-                borderSide:
-                    const BorderSide(color: AppColor.primary, width: 1.5),
-              ),
-            ),
+            paddingBottom: 0,
+            fillColor: AppColor.surface,
           ),
           gapV(AppSpacing.xl),
           AppButton(
-            text: 'إرسال البلاغ',
+            text: AppCopy.reportSendCta,
             onPress: _submit,
             isEnabled: !_sending,
           ),

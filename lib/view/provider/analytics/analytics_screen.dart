@@ -91,7 +91,32 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             future: _future,
             builder: (context, snapshot) {
               if (snapshot.connectionState != ConnectionState.done) {
-                return const Center(child: CircularProgressIndicator());
+                return const Center(
+                    child: CircularProgressIndicator(color: AppColor.primary));
+              }
+
+              if (snapshot.hasError) {
+                return Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(AppSpacing.xxl.w),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.cloud_off_rounded,
+                            size: 48.sp, color: AppColor.textTertiary),
+                        gapV(AppSpacing.lg),
+                        Text(
+                          AppCopy.errorGeneric,
+                          style: AppText.titleMd
+                              .copyWith(fontWeight: FontWeight.w700),
+                          textAlign: TextAlign.center,
+                        ),
+                        gapV(AppSpacing.lg),
+                        AppButton(text: AppCopy.refresh, onPress: _refresh),
+                      ],
+                    ),
+                  ),
+                );
               }
 
               final data = snapshot.data ??
@@ -114,17 +139,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       tier: ent.tier,
                       selectedPlaceName: _selectedPlaceLabel(data.places),
                       selectedRangeDays: _selectedRangeDays,
-                    ),
-                    gapV(AppSpacing.sm),
-                    AppCard(
-                      padding: EdgeInsets.all(AppSpacing.lg.w),
-                      child: Text(
-                        _rangeHint(_selectedRangeDays),
-                        style: AppText.bodySm.copyWith(
-                          color: AppColor.textSecondary,
-                          height: 1.45,
-                        ),
-                      ),
                     ),
                     gapV(AppSpacing.lg),
                     _RangeSelector(
@@ -154,6 +168,29 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     if (data.places.isEmpty)
                       const _NoApprovedPlacesState()
                     else ...[
+                      AppCard(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppSpacing.lg.w,
+                          vertical: AppSpacing.md.h,
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.info_outline_rounded,
+                                color: AppColor.textSecondary, size: 16.sp),
+                            gapH(AppSpacing.sm),
+                            Expanded(
+                              child: Text(
+                                AppCopy.anaRealDataHint,
+                                style: AppText.bodySm.copyWith(
+                                  color: AppColor.textSecondary,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      gapV(AppSpacing.lg),
                       LayoutBuilder(
                         builder: (context, constraints) {
                           final cardWidth =
@@ -222,7 +259,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                         },
                       ),
                       gapV(AppSpacing.xxl),
-                      _TrendCard(points: data.snapshot.trendPoints),
+                      _TrendCard(
+                        points: data.snapshot.trendPoints,
+                        rangeDays: _selectedRangeDays,
+                      ),
                     ],
                   ],
                 ),
@@ -235,18 +275,15 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   }
 
   String _selectedPlaceLabel(List<Place> places) {
-    if (places.isEmpty) return 'لا توجد أماكن معتمدة بعد';
-    if (_selectedPlaceId == null) return 'كل الأماكن';
+    if (places.isEmpty) return AppCopy.anaNoApprovedTitle;
+    if (_selectedPlaceId == null) return AppCopy.anaAllPlaces;
     final place = places.cast<Place?>().firstWhere(
           (p) => p?.placeUuid == _selectedPlaceId,
           orElse: () => null,
         );
-    return place?.name ?? 'مكان محدد';
+    return place?.name ?? AppCopy.anaAllPlaces;
   }
 
-  String _rangeHint(int days) {
-    return 'الأرقام دي من تفاعل حقيقي خلال آخر $days يوم.';
-  }
 }
 
 class _AnalyticsScreenData {
@@ -273,26 +310,26 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                AppCopy.anaTitle,
-                style: AppText.headingMd.copyWith(fontWeight: FontWeight.w800),
-              ),
-              gapV(AppSpacing.xs / 2),
-              Text(
-                'آخر $selectedRangeDays يوم',
+                AppCopy.anaLastDays.replaceFirst('%d', '$selectedRangeDays'),
                 style: AppText.bodyMd.copyWith(color: AppColor.textSecondary),
               ),
-              gapV(AppSpacing.xs / 2),
-              Text(
-                selectedPlaceName,
-                style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
-              ),
+              if (selectedPlaceName.isNotEmpty) ...[
+                gapV(AppSpacing.xs / 2),
+                Text(
+                  selectedPlaceName,
+                  style: AppText.labelMd.copyWith(
+                    color: AppColor.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -318,38 +355,12 @@ class _RangeSelector extends StatelessWidget {
       spacing: AppSpacing.xs.w,
       runSpacing: AppSpacing.xs.h,
       children: values.map((days) {
-        final selected = days == selectedDays;
-        return Semantics(
-          button: true,
-          selected: selected,
-          label: 'فلتر آخر $days يوم',
-          child: InkWell(
-            onTap: () => onChanged(days),
-            borderRadius: AppRadii.rPill,
-            child: Container(
-              constraints: BoxConstraints(minHeight: 48.h),
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.md.w,
-                vertical: AppSpacing.sm.h,
-              ),
-              decoration: BoxDecoration(
-                color: selected ? AppColor.primary : AppColor.surfaceCard,
-                borderRadius: AppRadii.rPill,
-                border: Border.all(
-                  color: selected ? AppColor.primary : AppColor.border,
-                ),
-              ),
-              child: Center(
-                child: Text(
-                  'آخر $days يوم',
-                  style: AppText.labelSm.copyWith(
-                    color: selected ? AppColor.white : AppColor.textPrimary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ),
-          ),
+        final label = AppCopy.anaLastDays.replaceFirst('%d', '$days');
+        return AppChip(
+          label: label,
+          selected: days == selectedDays,
+          onTap: () => onChanged(days),
+          semanticLabel: label,
         );
       }).toList(growable: false),
     );
@@ -373,59 +384,19 @@ class _PlaceSelector extends StatelessWidget {
       spacing: AppSpacing.xs.w,
       runSpacing: AppSpacing.xs.h,
       children: [
-        _selectorChip(
-          label: 'كل الأماكن',
+        AppChip(
+          label: AppCopy.anaAllPlaces,
           selected: selectedPlaceId == null,
           onTap: () => onChanged(null),
+          semanticLabel: AppCopy.anaAllPlaces,
         ),
-        ...places.map((place) {
-          final selected = place.placeUuid == selectedPlaceId;
-          return _selectorChip(
-            label: place.name,
-            selected: selected,
-            onTap: () => onChanged(place.placeUuid),
-          );
-        }),
+        ...places.map((place) => AppChip(
+              label: place.name,
+              selected: place.placeUuid == selectedPlaceId,
+              onTap: () => onChanged(place.placeUuid),
+              semanticLabel: '${AppCopy.anaFilterByLabel} ${place.name}',
+            )),
       ],
-    );
-  }
-
-  Widget _selectorChip({
-    required String label,
-    required bool selected,
-    required VoidCallback onTap,
-  }) {
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: 'تصفية حسب $label',
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: AppRadii.rPill,
-        child: Container(
-          constraints: BoxConstraints(minHeight: 48.h),
-          padding: EdgeInsets.symmetric(
-            horizontal: AppSpacing.md.w,
-            vertical: AppSpacing.sm.h,
-          ),
-          decoration: BoxDecoration(
-            color: selected ? AppColor.primary : AppColor.surfaceCard,
-            borderRadius: AppRadii.rPill,
-            border: Border.all(
-              color: selected ? AppColor.primary : AppColor.border,
-            ),
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: AppText.labelSm.copyWith(
-                color: selected ? AppColor.white : AppColor.textPrimary,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
@@ -480,9 +451,10 @@ class _KpiCard extends StatelessWidget {
 }
 
 class _TrendCard extends StatelessWidget {
-  const _TrendCard({required this.points});
+  const _TrendCard({required this.points, required this.rangeDays});
 
   final List<int> points;
+  final int rangeDays;
 
   @override
   Widget build(BuildContext context) {
@@ -491,13 +463,49 @@ class _TrendCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('اتجاه فتح المكان', style: AppText.titleMd),
-          gapV(AppSpacing.sm),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  AppCopy.anaTrendTitle,
+                  style: AppText.titleMd.copyWith(fontWeight: FontWeight.w700),
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm.w,
+                  vertical: AppSpacing.xs.h,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColor.primary.withValues(alpha: 0.08),
+                  borderRadius: AppRadii.rPill,
+                ),
+                child: Text(
+                  AppCopy.anaLastDays.replaceFirst('%d', '$rangeDays'),
+                  style: AppText.caption.copyWith(
+                    color: AppColor.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          gapV(AppSpacing.xs),
           Text(
-            'كل نقطة بتوضح الحركة اليومية في الفترة اللي اخترتها.',
+            AppCopy.anaTrendHint,
             style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
           ),
-          gapV(AppSpacing.md),
+          if (points.isNotEmpty) ...[
+            gapV(AppSpacing.xs),
+            Align(
+              alignment: AlignmentDirectional.topEnd,
+              child: Text(
+                '${points.reduce(math.max)}',
+                style: AppText.caption.copyWith(color: AppColor.textTertiary),
+              ),
+            ),
+          ],
+          gapV(AppSpacing.sm),
           SizedBox(
             height: 140.h,
             child: CustomPaint(
@@ -579,20 +587,28 @@ class _NoApprovedPlacesState extends StatelessWidget {
       padding: EdgeInsets.all(AppSpacing.xl.w),
       child: Column(
         children: [
-          Icon(
-            Icons.hourglass_empty_rounded,
-            color: AppColor.warning,
-            size: 36.sp,
+          Container(
+            width: 72.w,
+            height: 72.w,
+            decoration: const BoxDecoration(
+              color: AppColor.warningBg,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.hourglass_empty_rounded,
+              color: AppColor.warning,
+              size: 32.sp,
+            ),
           ),
           gapV(AppSpacing.md),
           Text(
-            'التحليلات هتظهر أول ما مكانك يتعتمد',
+            AppCopy.anaNoApprovedTitle,
             style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
             textAlign: TextAlign.center,
           ),
           gapV(AppSpacing.sm),
           Text(
-            'لو مكانك لسه تحت المراجعة، هتلاقي الأرقام هنا بعد الاعتماد.',
+            AppCopy.anaNoApprovedBody,
             style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
             textAlign: TextAlign.center,
           ),

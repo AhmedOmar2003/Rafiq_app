@@ -68,7 +68,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       if (!mounted) {
         return;
       }
-      AppFeedback.error('$e');
+      AppFeedback.error(AppCopy.errorGeneric);
     } finally {
       if (mounted) {
         setState(() => _isProcessing = false);
@@ -148,7 +148,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                       ),
                     AppInput(
                       label: AppCopy.changePwNew,
-                      hintText: "6 حروف على الأقل",
+                      hintText: AppCopy.authPasswordHint,
                       controller: _passwordController,
                       textInputAction: TextInputAction.next,
                       isPassword: true,
@@ -182,33 +182,11 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                     ),
                     gapV(AppSpacing.xl),
                     AppButton(
-                      text: _isProcessing
-                          ? "..."
-                          : (widget.requiresOtpVerification
-                              ? AppCopy.resetCta
-                              : AppCopy.done),
-                      textStyle: AppText.titleLg.copyWith(
-                        color: Colors.white,
-                        letterSpacing: 0.5,
-                      ),
-                      buttonStyle: ElevatedButton.styleFrom(
-                        backgroundColor: AppColor.primary,
-                        padding: EdgeInsets.symmetric(vertical: 12.h),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15.r),
-                        ),
-                      ),
-                      onPress: _isProcessing ? () {} : _updatePassword,
-                      child: _isProcessing
-                          ? SizedBox(
-                              height: 24.h,
-                              width: 24.w,
-                              child: const CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2.5,
-                              ),
-                            )
-                          : null,
+                      text: widget.requiresOtpVerification
+                          ? AppCopy.resetCta
+                          : AppCopy.done,
+                      onPress: _updatePassword,
+                      isLoading: _isProcessing,
                     ),
                   ],
                 ),

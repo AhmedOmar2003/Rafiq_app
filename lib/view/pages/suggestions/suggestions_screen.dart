@@ -92,7 +92,7 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
       padding: EdgeInsets.only(right: AppSpacing.sm.w),
       child: Semantics(
         button: true,
-        label: 'افتح البروفايل',
+        label: AppCopy.openProfileLabel,
         child: InkResponse(
           radius: 24.w,
           onTap: () => Navigator.push(
@@ -136,8 +136,9 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
         ),
         boxShadow: AppShadows.level1,
       ),
+      // Height must exceed chip minHeight (48.h) so chips aren't clipped.
       child: SizedBox(
-        height: 44.h,
+        height: 52.h,
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
           itemCount: suggestionList.length,

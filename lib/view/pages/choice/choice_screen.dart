@@ -139,37 +139,28 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
       child: Directionality(
         textDirection: TextDirection.rtl,
         child: Scaffold(
-          backgroundColor: AppColor.ofWhite,
+          backgroundColor: AppColor.surface,
           body: SafeArea(
             child: Container(
-              decoration: const BoxDecoration(
-                color: AppColor.ofWhite,
-              ),
+              color: AppColor.surface,
               child: Column(
                 children: [
                   Expanded(
                     child: SingleChildScrollView(
                       child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 24.w),
+                        padding: EdgeInsets.symmetric(horizontal: AppSpacing.xxl.w),
                         child: Column(
                           children: [
-                            SizedBox(height: 80.h),
+                            gapV(AppSpacing.huge * 2),
                             Container(
                               height: 220.h,
                               width: double.infinity,
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(20.r),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color:
-                                        AppColor.black.withValues(alpha: 0.04),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
+                                borderRadius: AppRadii.rXl,
+                                boxShadow: AppShadows.level1,
                               ),
                               child: ClipRRect(
-                                borderRadius: BorderRadius.circular(20.r),
+                                borderRadius: AppRadii.rXl,
                                 child: Builder(
                                   builder: (context) {
                                     final dpr =
@@ -186,7 +177,7 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
                                 ),
                               ),
                             ),
-                            SizedBox(height: 40.h),
+                            gapV(AppSpacing.huge),
                             TweenAnimationBuilder<double>(
                               duration: const Duration(milliseconds: 600),
                               tween: Tween(begin: 0, end: 1),
@@ -204,7 +195,7 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
                                 );
                               },
                             ),
-                            SizedBox(height: 30.h),
+                            gapV(AppSpacing.xxxl),
                             _buildOptionButton(
                               label: AppCopy.choiceRoleUser,
                               index: 0,
@@ -243,17 +234,13 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
                     ),
                   ),
                   Container(
-                    padding:
-                        EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppSpacing.xxl.w,
+                      vertical: AppSpacing.lg.h,
+                    ),
                     decoration: BoxDecoration(
-                      color: AppColor.ofWhite,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColor.black.withValues(alpha: 0.04),
-                          blurRadius: 6,
-                          offset: const Offset(0, -2),
-                        ),
-                      ],
+                      color: AppColor.surface,
+                      boxShadow: AppShadows.level2,
                     ),
                     child: AppButton(
                       text: AppCopy.next,
@@ -280,19 +267,26 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
       duration: const Duration(milliseconds: 300),
       tween: Tween(begin: 0, end: isSelected ? 1 : 0),
       builder: (context, value, child) {
-        return Padding(
-          padding: EdgeInsets.only(bottom: 16.h),
+        return Semantics(
+          button: true,
+          selected: isSelected,
+          label: label,
+          child: Padding(
+          padding: EdgeInsets.only(bottom: AppSpacing.lg.h),
           child: InkWell(
             onTap: onTap,
-            borderRadius: BorderRadius.circular(16.r),
+            borderRadius: AppRadii.rLg,
             splashColor: AppColor.primary.withValues(alpha: 0.1),
             highlightColor: AppColor.primary.withValues(alpha: 0.05),
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOutCubic,
-              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+              duration: AppMotion.base,
+              curve: AppMotion.standard,
+              padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.xl.w,
+                vertical: AppSpacing.lg.h,
+              ),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16.r),
+                borderRadius: AppRadii.rLg,
                 color: Color.lerp(AppColor.white, AppColor.primary, value),
                 border: Border.all(
                   color: Color.lerp(
@@ -316,7 +310,7 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
               child: Row(
                 children: [
                   Container(
-                    padding: EdgeInsets.all(8.w),
+                    padding: EdgeInsets.all(AppSpacing.sm.w),
                     decoration: BoxDecoration(
                       color: Color.lerp(
                         AppColor.primary.withValues(alpha: 0.1),
@@ -329,10 +323,10 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
                       icon,
                       color:
                           Color.lerp(AppColor.primary, AppColor.white, value),
-                      size: 22.w,
+                      size: 22.sp,
                     ),
                   ),
-                  SizedBox(width: 12.w),
+                  gapH(AppSpacing.md),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -366,11 +360,12 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
                     Icons.arrow_forward_ios_rounded,
                     color: Color.lerp(AppColor.primary.withValues(alpha: 0.3),
                         AppColor.white, value),
-                    size: 16.w,
+                    size: 16.sp,
                   ),
                 ],
               ),
             ),
+          ),
           ),
         );
       },

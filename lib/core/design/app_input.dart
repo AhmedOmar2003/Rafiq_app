@@ -165,14 +165,19 @@ class _AppInputState extends State<AppInput> {
     if (widget.isPassword) {
       return Padding(
         padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm.w),
-        child: IconButton(
-          icon: Icon(
-            _obscure
-                ? Icons.visibility_off_outlined
-                : Icons.visibility_outlined,
-            color: AppColor.textTertiary,
+        child: Semantics(
+          label: _obscure ? 'إظهار كلمة السر' : 'إخفاء كلمة السر',
+          button: true,
+          child: IconButton(
+            icon: Icon(
+              _obscure
+                  ? Icons.visibility_off_outlined
+                  : Icons.visibility_outlined,
+              color: AppColor.textTertiary,
+            ),
+            tooltip: _obscure ? 'إظهار كلمة السر' : 'إخفاء كلمة السر',
+            onPressed: () => setState(() => _obscure = !_obscure),
           ),
-          onPressed: () => setState(() => _obscure = !_obscure),
         ),
       );
     }

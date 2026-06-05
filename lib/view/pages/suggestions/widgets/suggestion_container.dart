@@ -33,7 +33,7 @@ class CustomSuggestionContainer extends StatelessWidget {
       ),
       child: Semantics(
         button: true,
-        label: 'افتح ${model.text}',
+        label: '${AppCopy.placeOpenPrefix} ${model.text}',
         hint: '${model.suggestionText} - ${model.address}',
         child: AppCard(
           onTap: onTap,
@@ -63,7 +63,7 @@ class CustomSuggestionContainer extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      gapV(AppSpacing.sm),
+                      gapV(AppSpacing.xs),
                       Text(
                         model.body,
                         style: AppText.bodySm.copyWith(
@@ -75,7 +75,9 @@ class CustomSuggestionContainer extends StatelessWidget {
                       ),
                       gapV(AppSpacing.sm),
                       _AddressRow(address: model.address),
-                      gapV(AppSpacing.md),
+                      gapV(AppSpacing.sm),
+                      const Divider(height: 1, thickness: 1),
+                      gapV(AppSpacing.sm),
                       _PriceRow(price: model.price),
                     ],
                   ),
@@ -106,6 +108,23 @@ class _Hero extends StatelessWidget {
           width: double.infinity,
           height: CustomSuggestionContainer._heroHeight.h,
           child: _SmartImage(path: image),
+        ),
+        // Subtle gradient so the rating chip is readable on any image
+        Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                stops: const [0.0, 0.45, 1.0],
+                colors: [
+                  Colors.black.withValues(alpha: 0.28),
+                  Colors.transparent,
+                  Colors.black.withValues(alpha: 0.08),
+                ],
+              ),
+            ),
+          ),
         ),
         Positioned(
           top: AppSpacing.md.h,
@@ -202,13 +221,13 @@ class _AddressRow extends StatelessWidget {
         Icon(
           Icons.location_on_outlined,
           color: AppColor.primary,
-          size: 20.sp,
+          size: 16.sp,
         ),
-        gapH(AppSpacing.sm),
+        gapH(AppSpacing.xs),
         Expanded(
           child: Text(
             address,
-            style: AppText.bodyMd,
+            style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -236,37 +255,31 @@ class _PriceRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(AppCopy.priceStartsFrom, style: AppText.bodySm),
-              gapV(AppSpacing.xs),
+              Text(
+                AppCopy.priceStartsFrom,
+                style: AppText.caption.copyWith(color: AppColor.textSecondary),
+              ),
+              gapV(AppSpacing.xs / 2),
               Text(
                 _formatPrice(price),
                 style: AppText.titleMd.copyWith(
                   color: AppColor.primary,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ],
           ),
         ),
-        Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: AppSpacing.md.w,
-            vertical: AppSpacing.sm.h,
-          ),
-          decoration: BoxDecoration(
-            color: AppColor.primary50,
-            borderRadius: AppRadii.rPill,
-          ),
-          child: Icon(
-            Icons.arrow_forward_rounded,
-            color: AppColor.primary,
-            size: 18.sp,
-          ),
+        Icon(
+          Icons.chevron_left_rounded,
+          color: AppColor.primary,
+          size: 22.sp,
         ),
       ],
     );

@@ -1,3 +1,4 @@
+import '../core/utils/app_microcopy.dart';
 import '../core/utils/assets.dart';
 
 class OnBoardingModel {
@@ -14,16 +15,16 @@ class OnBoardingModel {
 
 List<OnBoardingModel> onBoardingList = [
   OnBoardingModel(
-    text: "محتار ؟\nهنساعدك في الاختيار",
+    text: AppCopy.onboardingTitle1,
     image: AppImages.onboarding1,
   ),
   OnBoardingModel(
-    text: "هتلاقي مجموعة\nمتنوعة من الاختيارات",
-    body: "اي مكان بتدور عليه هتلاقي المناسب\n ليك سواء داخل او خارج المدينة",
+    text: AppCopy.onboardingTitle2,
+    body: AppCopy.onboardingBody2,
     image: AppImages.onboarding2,
   ),
   OnBoardingModel(
-    text: "اكتشف الان الاماكن التي\n تناسب حالتك المزاجية و\n المادية",
+    text: AppCopy.onboardingTitle3,
     image: AppImages.onboarding3,
   ),
 ];

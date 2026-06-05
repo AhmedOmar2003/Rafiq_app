@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rafiq_app/core/design/app_image.dart';
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
+import 'package:rafiq_app/core/utils/app_microcopy.dart';
 import 'package:rafiq_app/core/utils/assets.dart';
 import 'package:rafiq_app/view/pages/cubit.dart';
 
@@ -61,80 +61,27 @@ class SuggestionItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: 'فلتر ${model.text}',
-      child: GestureDetector(
-        onTap: () async {
-          await _openFilterSheet(context);
-        },
-        // PERFORMANCE: only rebuild this chip when *its own* slot in FilterState
-        // changes. Without buildWhen, every state emit (loading toggle, places
-        // update, error update) would rebuild all 3 chips needlessly.
-        child: BlocBuilder<FilterCubit, FilterState>(
-        buildWhen: (prev, curr) =>
-            _getSelectedFilterFromState(model.text, prev) !=
-            _getSelectedFilterFromState(model.text, curr),
-        builder: (context, state) {
-          final selectedFilter = _getSelectedFilterFromState(model.text, state);
-          final isSelected = selectedFilter != null;
-          return Container(
-            margin: EdgeInsets.only(left: 12.w),
-            height: 48.h,
-            decoration: BoxDecoration(
-              color: isSelected ? AppColor.primary : AppColor.white,
-              borderRadius: BorderRadius.circular(24.r),
-              border: Border.all(
-                  color: isSelected ? AppColor.primary : AppColor.border,
-                  width: 1),
-              boxShadow: [
-                if (isSelected)
-                  BoxShadow(
-                    color: AppColor.primary.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  )
-                else
-                  BoxShadow(
-                    color: AppColor.black.withValues(alpha: 0.04),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-              ],
-            ),
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.w),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  AppImage(
-                    model.icon,
-                    height: 20.h,
-                    width: 20.h,
-                    color: isSelected ? AppColor.white : AppColor.primary,
-                  ),
-                  SizedBox(width: 8.w),
-                  Text(
-                    selectedFilter ?? model.text,
-                    style: AppText.labelMd.copyWith(
-                      color: isSelected ? AppColor.white : AppColor.textPrimary,
-                      fontWeight:
-                          isSelected ? FontWeight.w700 : FontWeight.w500,
-                    ),
-                  ),
-                  SizedBox(width: 4.w),
-                  Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    color: isSelected ? AppColor.white : AppColor.primary,
-                    size: 22.sp,
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-      ),
+    // PERFORMANCE: only rebuild this chip when *its own* slot in FilterState
+    // changes. Without buildWhen, every state emit (loading toggle, places
+    // update, error update) would rebuild all 3 chips needlessly.
+    return BlocBuilder<FilterCubit, FilterState>(
+      buildWhen: (prev, curr) =>
+          _getSelectedFilterFromState(model.text, prev) !=
+          _getSelectedFilterFromState(model.text, curr),
+      builder: (context, state) {
+        final selectedFilter = _getSelectedFilterFromState(model.text, state);
+        return Padding(
+          padding: EdgeInsets.only(left: AppSpacing.md.w),
+          child: AppChip(
+            label: selectedFilter ?? model.text,
+            selected: selectedFilter != null,
+            onTap: () => _openFilterSheet(context),
+            leadingAsset: model.icon,
+            trailingIcon: Icons.keyboard_arrow_down_rounded,
+            semanticLabel: 'فلتر ${model.text}',
+          ),
+        );
+      },
     );
   }
 
@@ -205,7 +152,7 @@ class SuggestionItem extends StatelessWidget {
                             Navigator.pop(sheetContext);
                           },
                           child: Text(
-                            "شيل الفلتر",
+                            AppCopy.filterClear,
                             style: AppText.labelMd.copyWith(
                               color: AppColor.statusDanger,
                               fontWeight: FontWeight.w600,
@@ -266,11 +213,11 @@ class SuggestionItem extends StatelessWidget {
                         AppSpacing.md.h,
                       ),
                       child: AppButton(
-                        text: "تطبيق الفلتر",
+                        text: AppCopy.filterApply,
                         onPress: () async {
                           await cubit.applyFilters();
                           if (sheetContext.mounted) Navigator.pop(sheetContext);
-                          AppFeedback.success("تم التحديث");
+                          AppFeedback.success(AppCopy.filterApplied);
                         },
                       ),
                     ),
@@ -330,39 +277,44 @@ class _FilterOptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: isSelected ? AppColor.actionPrimary : AppColor.surfaceElevated,
-      borderRadius: AppRadii.rMd,
-      child: InkWell(
-        onTap: onTap,
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      label: label,
+      child: Material(
+        color: isSelected ? AppColor.actionPrimary : AppColor.surfaceElevated,
         borderRadius: AppRadii.rMd,
-        splashColor: AppColor.actionPrimary.withValues(alpha: 0.08),
-        child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg.w,
-            vertical: AppSpacing.md.h,
-          ),
-          decoration: BoxDecoration(
-            borderRadius: AppRadii.rMd,
-            border: Border.all(
-              color: isSelected ? AppColor.actionPrimary : AppColor.border,
-              width: 1,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: AppRadii.rMd,
+          splashColor: AppColor.actionPrimary.withValues(alpha: 0.08),
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg.w,
+              vertical: AppSpacing.md.h,
             ),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  label,
-                  style: AppText.titleMd.copyWith(
-                    color: isSelected ? AppColor.white : AppColor.textPrimary,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            decoration: BoxDecoration(
+              borderRadius: AppRadii.rMd,
+              border: Border.all(
+                color: isSelected ? AppColor.actionPrimary : AppColor.border,
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    label,
+                    style: AppText.titleMd.copyWith(
+                      color: isSelected ? AppColor.white : AppColor.textPrimary,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    ),
                   ),
                 ),
-              ),
-              if (isSelected)
-                Icon(Icons.check_rounded, color: AppColor.white, size: 20.sp),
-            ],
+                if (isSelected)
+                  Icon(Icons.check_rounded, color: AppColor.white, size: 20.sp),
+              ],
+            ),
           ),
         ),
       ),
