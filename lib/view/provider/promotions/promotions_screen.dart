@@ -80,7 +80,10 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
     final created = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
       backgroundColor: AppColor.surfaceCard,
+      barrierColor: AppColor.overlay,
       shape: RoundedRectangleBorder(
         borderRadius: AppRadii.topOnly(AppRadii.xxl),
       ),
@@ -105,7 +108,10 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
     final edited = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
       backgroundColor: AppColor.surfaceCard,
+      barrierColor: AppColor.overlay,
       shape: RoundedRectangleBorder(
         borderRadius: AppRadii.topOnly(AppRadii.xxl),
       ),
@@ -461,7 +467,9 @@ class _PromotionStats extends StatelessWidget {
             ),
             SizedBox(
               width: cardWidth,
-              child: _StatCard(label: AppCopy.promoCampaignsActive, value: active.toString()),
+              child: _StatCard(
+                  label: AppCopy.promoCampaignsActive,
+                  value: active.toString()),
             ),
             SizedBox(
               width: cardWidth,
@@ -541,119 +549,119 @@ class _CampaignCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-            if (hasImage)
-              ClipRRect(
-                borderRadius: AppRadii.rLg,
-                child: Image.network(
-                  campaign.imagePath!,
-                  height: 150.h,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              if (hasImage)
+                ClipRRect(
+                  borderRadius: AppRadii.rLg,
+                  child: CachedNetworkImage(
+                    url: campaign.imagePath!,
+                    height: 150.h,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorWidget: (_) => const SizedBox.shrink(),
+                  ),
                 ),
+              if (hasImage) gapV(AppSpacing.md),
+              Wrap(
+                spacing: AppSpacing.sm.w,
+                runSpacing: AppSpacing.xs.h,
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.sizeOf(context).width - 92.w,
+                    ),
+                    child: Text(
+                      campaign.title,
+                      style:
+                          AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                  _StatusPill(status: campaign.status),
+                ],
               ),
-            if (hasImage) gapV(AppSpacing.md),
-            Wrap(
-              spacing: AppSpacing.sm.w,
-              runSpacing: AppSpacing.xs.h,
-              alignment: WrapAlignment.spaceBetween,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth: MediaQuery.sizeOf(context).width - 92.w,
-                  ),
-                  child: Text(
-                    campaign.title,
-                    style:
-                        AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
-                  ),
-                ),
-                _StatusPill(status: campaign.status),
-              ],
-            ),
-            gapV(AppSpacing.xs),
-            Text(
-              '${_kindLabel(campaign.kind)} • ${campaign.startsAt != null ? fmt.format(campaign.startsAt!) : AppCopy.promoDateNow} - ${campaign.endsAt != null ? fmt.format(campaign.endsAt!) : AppCopy.promoDateOpen}',
-              style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
-            ),
-            if (campaign.status == 'pending_review') ...[
               gapV(AppSpacing.xs),
-              _InlineNotice(
-                tone: AppColor.warning,
-                text:
-                    '${AppCopy.promoPendingReview} حتى ${reviewDeadline.hour.toString().padLeft(2, '0')}:${reviewDeadline.minute.toString().padLeft(2, '0')}',
-              ),
-            ],
-            if (campaign.status == 'rejected' &&
-                (campaign.rejectionReason ?? '').trim().isNotEmpty) ...[
-              gapV(AppSpacing.sm),
-              _InlineNotice(
-                tone: AppColor.error,
-                text:
-                    '${AppCopy.promoRejectedReason}: ${campaign.rejectionReason}',
-              ),
-            ],
-            if ((campaign.body ?? '').trim().isNotEmpty) ...[
-              gapV(AppSpacing.sm),
               Text(
-                campaign.body!,
-                style: AppText.bodySm.copyWith(
-                  color: AppColor.textSecondary,
-                  height: 1.5,
+                '${_kindLabel(campaign.kind)} • ${campaign.startsAt != null ? fmt.format(campaign.startsAt!) : AppCopy.promoDateNow} - ${campaign.endsAt != null ? fmt.format(campaign.endsAt!) : AppCopy.promoDateOpen}',
+                style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
+              ),
+              if (campaign.status == 'pending_review') ...[
+                gapV(AppSpacing.xs),
+                _InlineNotice(
+                  tone: AppColor.warning,
+                  text:
+                      '${AppCopy.promoPendingReview} حتى ${reviewDeadline.hour.toString().padLeft(2, '0')}:${reviewDeadline.minute.toString().padLeft(2, '0')}',
                 ),
-              ),
-            ],
-            if (campaign.editRequestStatus == 'pending') ...[
-              gapV(AppSpacing.sm),
-              const _InlineNotice(
-                tone: AppColor.warning,
-                text: AppCopy.promoEditRequestPendingNotice,
-              ),
-            ],
-            if (campaign.editRequestStatus == 'approved' &&
-                campaign.editAllowed) ...[
-              gapV(AppSpacing.sm),
-              const _InlineNotice(
-                tone: AppColor.success,
-                text: AppCopy.promoEditRequestApprovedNotice,
-              ),
-            ],
-            if (campaign.editRequestStatus == 'rejected' &&
-                (campaign.editRequestResponse ?? '').trim().isNotEmpty) ...[
-              gapV(AppSpacing.sm),
-              _InlineNotice(
-                tone: AppColor.error,
-                text: campaign.editRequestResponse!,
-              ),
-            ],
-            gapV(AppSpacing.md),
-            Wrap(
-              spacing: AppSpacing.lg.w,
-              runSpacing: AppSpacing.sm.h,
-              children: [
-                _MiniMetric(
-                    label: AppCopy.promoMetricImpressions,
-                    value: campaign.impressions.toString()),
-                _MiniMetric(
-                    label: AppCopy.promoMetricClicks,
-                    value: campaign.clicks.toString()),
               ],
-            ),
-            if (_canRenderAction) ...[
-              gapV(AppSpacing.md),
-              SizedBox(
-                width: double.infinity,
-                child: AppButton(
-                  text: _actionLabel,
-                  onPress: _actionCallback ?? () {},
-                  isEnabled: !isBusy && _actionCallback != null,
-                  variant: _isEditNow
-                      ? AppButtonVariant.primary
-                      : AppButtonVariant.secondary,
+              if (campaign.status == 'rejected' &&
+                  (campaign.rejectionReason ?? '').trim().isNotEmpty) ...[
+                gapV(AppSpacing.sm),
+                _InlineNotice(
+                  tone: AppColor.error,
+                  text:
+                      '${AppCopy.promoRejectedReason}: ${campaign.rejectionReason}',
                 ),
+              ],
+              if ((campaign.body ?? '').trim().isNotEmpty) ...[
+                gapV(AppSpacing.sm),
+                Text(
+                  campaign.body!,
+                  style: AppText.bodySm.copyWith(
+                    color: AppColor.textSecondary,
+                    height: 1.5,
+                  ),
+                ),
+              ],
+              if (campaign.editRequestStatus == 'pending') ...[
+                gapV(AppSpacing.sm),
+                const _InlineNotice(
+                  tone: AppColor.warning,
+                  text: AppCopy.promoEditRequestPendingNotice,
+                ),
+              ],
+              if (campaign.editRequestStatus == 'approved' &&
+                  campaign.editAllowed) ...[
+                gapV(AppSpacing.sm),
+                const _InlineNotice(
+                  tone: AppColor.success,
+                  text: AppCopy.promoEditRequestApprovedNotice,
+                ),
+              ],
+              if (campaign.editRequestStatus == 'rejected' &&
+                  (campaign.editRequestResponse ?? '').trim().isNotEmpty) ...[
+                gapV(AppSpacing.sm),
+                _InlineNotice(
+                  tone: AppColor.error,
+                  text: campaign.editRequestResponse!,
+                ),
+              ],
+              gapV(AppSpacing.md),
+              Wrap(
+                spacing: AppSpacing.lg.w,
+                runSpacing: AppSpacing.sm.h,
+                children: [
+                  _MiniMetric(
+                      label: AppCopy.promoMetricImpressions,
+                      value: campaign.impressions.toString()),
+                  _MiniMetric(
+                      label: AppCopy.promoMetricClicks,
+                      value: campaign.clicks.toString()),
+                ],
               ),
-            ],
+              if (_canRenderAction) ...[
+                gapV(AppSpacing.md),
+                SizedBox(
+                  width: double.infinity,
+                  child: AppButton(
+                    text: _actionLabel,
+                    onPress: _actionCallback ?? () {},
+                    isEnabled: !isBusy && _actionCallback != null,
+                    variant: _isEditNow
+                        ? AppButtonVariant.primary
+                        : AppButtonVariant.secondary,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -690,11 +698,11 @@ class _CampaignCard extends StatelessWidget {
 
   String _kindLabel(String kind) {
     return switch (kind) {
-      'featured'          => AppCopy.promoKindFeatured,
-      'spotlight'         => AppCopy.promoKindSpotlight,
+      'featured' => AppCopy.promoKindFeatured,
+      'spotlight' => AppCopy.promoKindSpotlight,
       'push_notification' => AppCopy.promoKindPush,
-      'discount'          => AppCopy.promoKindDiscount,
-      _                   => AppCopy.promoKindDefault,
+      'discount' => AppCopy.promoKindDiscount,
+      _ => AppCopy.promoKindDefault,
     };
   }
 }
@@ -757,26 +765,64 @@ class _StatusPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final map = switch (status) {
-      'active'         => (AppCopy.promoCampaignStatusActive,   AppColor.success),
-      'pending_review' => (AppCopy.promoCampaignStatusPending,  AppColor.warning),
-      'paused'         => (AppCopy.promoCampaignStatusPaused,   AppColor.textSecondary),
-      'rejected'       => (AppCopy.promoCampaignStatusRejected, AppColor.error),
-      'ended'          => (AppCopy.promoCampaignStatusEnded,    AppColor.textSecondary),
-      _                => (AppCopy.promoCampaignStatusDraft,    AppColor.info),
+      'active' => (
+          AppCopy.promoCampaignStatusActive,
+          AppColor.success,
+          Icons.check_circle_outline_rounded
+        ),
+      'pending_review' => (
+          AppCopy.promoCampaignStatusPending,
+          AppColor.warning,
+          Icons.hourglass_top_rounded
+        ),
+      'paused' => (
+          AppCopy.promoCampaignStatusPaused,
+          AppColor.textSecondary,
+          Icons.pause_circle_outline_rounded
+        ),
+      'rejected' => (
+          AppCopy.promoCampaignStatusRejected,
+          AppColor.error,
+          Icons.cancel_outlined
+        ),
+      'ended' => (
+          AppCopy.promoCampaignStatusEnded,
+          AppColor.textSecondary,
+          Icons.event_busy_outlined
+        ),
+      _ => (
+          AppCopy.promoCampaignStatusDraft,
+          AppColor.info,
+          Icons.edit_note_rounded
+        ),
     };
 
-    return Container(
-      padding: EdgeInsets.symmetric(
-          horizontal: AppSpacing.sm.w, vertical: AppSpacing.xs.h),
-      decoration: BoxDecoration(
-        color: map.$2.withValues(alpha: 0.10),
-        borderRadius: AppRadii.rPill,
-        border: Border.all(color: map.$2.withValues(alpha: 0.22)),
-      ),
-      child: Text(
-        map.$1,
-        style: AppText.labelSm
-            .copyWith(color: map.$2, fontWeight: FontWeight.w800),
+    return Semantics(
+      label: 'حالة الحملة: ${map.$1}',
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm.w,
+          vertical: AppSpacing.xs.h,
+        ),
+        decoration: BoxDecoration(
+          color: map.$2.withValues(alpha: 0.10),
+          borderRadius: AppRadii.rPill,
+          border: Border.all(color: map.$2.withValues(alpha: 0.28)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(map.$3, color: map.$2, size: 16.sp),
+            gapH(AppSpacing.xs),
+            Text(
+              map.$1,
+              style: AppText.labelSm.copyWith(
+                color: map.$2,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -812,17 +858,17 @@ class _PromotionsEmpty extends StatelessWidget {
                   color: AppColor.primary, size: 44.sp),
             ),
             gapV(AppSpacing.xl),
-          Text(
-            AppCopy.promoEmptyTitle,
-            style: AppText.headingSm,
-            textAlign: TextAlign.center,
-          ),
-          gapV(AppSpacing.md),
-          Text(
-            AppCopy.promoEmptyPlaceBody.replaceFirst('%n', selectedPlaceName),
-            style: AppText.bodyMd.copyWith(color: AppColor.textSecondary),
-            textAlign: TextAlign.center,
-          ),
+            Text(
+              AppCopy.promoEmptyTitle,
+              style: AppText.headingSm,
+              textAlign: TextAlign.center,
+            ),
+            gapV(AppSpacing.md),
+            Text(
+              AppCopy.promoEmptyPlaceBody.replaceFirst('%n', selectedPlaceName),
+              style: AppText.bodyMd.copyWith(color: AppColor.textSecondary),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),
@@ -1051,7 +1097,9 @@ class _CreateCampaignSheetState extends State<_CreateCampaignSheet> {
       }
       if (!mounted) return;
       AppFeedback.success(
-        campaign == null ? AppCopy.promoSentSuccess : AppCopy.promoEditSentSuccess,
+        campaign == null
+            ? AppCopy.promoSentSuccess
+            : AppCopy.promoEditSentSuccess,
       );
       Navigator.pop(context, true);
     } catch (e) {
@@ -1064,156 +1112,189 @@ class _CreateCampaignSheetState extends State<_CreateCampaignSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      top: false,
-      child: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(
-          AppSpacing.xxl.w,
-          AppSpacing.lg.h,
-          AppSpacing.xxl.w,
-          MediaQuery.viewInsetsOf(context).bottom + AppSpacing.xxl.h,
+    final editing = widget.initialCampaign != null;
+    return AppModalSheetFrame(
+      title: editing ? AppCopy.promoEditTitle : AppCopy.promoCreateTitle,
+      subtitle: editing
+          ? AppCopy.promoEditReviewBody
+          : AppCopy.promoCreatePendingBody,
+      leading: Container(
+        width: 44.w,
+        height: 44.w,
+        decoration: BoxDecoration(
+          color: AppColor.primary50,
+          borderRadius: AppRadii.rMd,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
-                width: 40.w,
-                height: 4.h,
-                decoration: BoxDecoration(
-                  color: AppColor.border,
-                  borderRadius: AppRadii.rSm,
-                ),
-              ),
-            ),
-            gapV(AppSpacing.xl),
-            Text(
-              widget.initialCampaign == null ? AppCopy.promoCreateTitle : AppCopy.promoEditTitle,
-              style: AppText.headingSm,
-            ),
-            gapV(AppSpacing.sm),
-            Text(
-              widget.initialCampaign == null
-                  ? AppCopy.promoCreatePendingBody
-                  : AppCopy.promoEditReviewBody,
-              style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
-            ),
-            gapV(AppSpacing.lg),
-            DropdownButtonFormField<String>(
-              initialValue: _placeId,
-              decoration: const InputDecoration(labelText: AppCopy.promoFieldPlace),
-              items: widget.places
-                  .map(
-                    (place) => DropdownMenuItem(
-                      value: place.placeUuid,
-                      child: Text(place.name),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (value) => setState(() => _placeId = value),
-            ),
-            gapV(AppSpacing.md),
-            DropdownButtonFormField<String>(
-              initialValue: _kind,
-              decoration: const InputDecoration(labelText: AppCopy.promoFieldKind),
-              items: _kindOptions(),
-              onChanged: (value) => setState(() => _kind = value ?? 'discount'),
-            ),
-            gapV(AppSpacing.md),
-            AppInput(
-              controller: _titleCtrl,
-              hintText: AppCopy.promoFieldTitleHint,
-              label: AppCopy.promoFieldTitle,
-              textInputAction: TextInputAction.next,
-            ),
-            gapV(AppSpacing.md),
-            AppInput(
-              controller: _bodyCtrl,
-              hintText: AppCopy.promoFieldBodyHint,
-              label: AppCopy.promoFieldBody,
-              maxLines: 4,
-            ),
-            gapV(AppSpacing.md),
-            AppInput(
-              controller: _ctaCtrl,
-              hintText: AppCopy.promoFieldCtaHint,
-              label: AppCopy.promoFieldCta,
-              textInputAction: TextInputAction.done,
-            ),
-            gapV(AppSpacing.md),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    _selectedImage == null
-                        ? (widget.initialCampaign?.imagePath?.trim().isNotEmpty ==
-                                true
-                            ? AppCopy.promoImageExisting
-                            : AppCopy.promoImageNone)
-                        : AppCopy.promoImageSelected,
-                    style: AppText.bodySm.copyWith(
-                      color: AppColor.textSecondary,
+        alignment: Alignment.center,
+        child: Icon(
+          editing ? Icons.edit_note_rounded : Icons.campaign_rounded,
+          color: AppColor.primary,
+          size: 24.sp,
+        ),
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          DropdownButtonFormField<String>(
+            initialValue: _placeId,
+            isExpanded: true,
+            decoration:
+                const InputDecoration(labelText: AppCopy.promoFieldPlace),
+            items: widget.places
+                .map(
+                  (place) => DropdownMenuItem(
+                    value: place.placeUuid,
+                    child: Text(
+                      place.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                )
+                .toList(),
+            onChanged:
+                _busy ? null : (value) => setState(() => _placeId = value),
+          ),
+          gapV(AppSpacing.md),
+          DropdownButtonFormField<String>(
+            initialValue: _kind,
+            isExpanded: true,
+            decoration:
+                const InputDecoration(labelText: AppCopy.promoFieldKind),
+            items: _kindOptions(),
+            onChanged: _busy
+                ? null
+                : (value) => setState(() => _kind = value ?? 'discount'),
+          ),
+          gapV(AppSpacing.md),
+          AppInput(
+            controller: _titleCtrl,
+            hintText: AppCopy.promoFieldTitleHint,
+            label: AppCopy.promoFieldTitle,
+            textInputAction: TextInputAction.next,
+          ),
+          gapV(AppSpacing.md),
+          AppInput(
+            controller: _bodyCtrl,
+            hintText: AppCopy.promoFieldBodyHint,
+            label: AppCopy.promoFieldBody,
+            maxLines: 3,
+          ),
+          gapV(AppSpacing.md),
+          AppInput(
+            controller: _ctaCtrl,
+            hintText: AppCopy.promoFieldCtaHint,
+            label: AppCopy.promoFieldCta,
+            textInputAction: TextInputAction.done,
+          ),
+          gapV(AppSpacing.md),
+          Semantics(
+            button: true,
+            label: _selectedImage == null
+                ? AppCopy.promoImagePick
+                : AppCopy.promoImageChange,
+            child: InkWell(
+              onTap: _busy ? null : _pickImage,
+              borderRadius: AppRadii.rLg,
+              child: Container(
+                constraints: BoxConstraints(minHeight: 56.h),
+                padding: EdgeInsets.all(AppSpacing.md.w),
+                decoration: BoxDecoration(
+                  color: AppColor.surfaceMuted,
+                  borderRadius: AppRadii.rLg,
+                  border: Border.all(color: AppColor.border),
                 ),
-                TextButton.icon(
-                  onPressed: _busy ? null : _pickImage,
-                  icon: const Icon(Icons.image_outlined),
-                  label: Text(
-                      _selectedImage == null ? AppCopy.promoImagePick : AppCopy.promoImageChange),
-                ),
-              ],
-            ),
-            if (_selectedImage != null) ...[
-              gapV(AppSpacing.sm),
-              ClipRRect(
-                borderRadius: AppRadii.rLg,
-                child: Image.file(
-                  _selectedImage!,
-                  height: 140.h,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.add_photo_alternate_outlined,
+                      color: AppColor.primary,
+                      size: 24.sp,
+                    ),
+                    gapH(AppSpacing.md),
+                    Expanded(
+                      child: Text(
+                        _selectedImage == null
+                            ? (widget.initialCampaign?.imagePath
+                                        ?.trim()
+                                        .isNotEmpty ==
+                                    true
+                                ? AppCopy.promoImageExisting
+                                : AppCopy.promoImageNone)
+                            : AppCopy.promoImageSelected,
+                        style: AppText.bodySm.copyWith(
+                          color: AppColor.textSecondary,
+                        ),
+                      ),
+                    ),
+                    gapH(AppSpacing.sm),
+                    Text(
+                      _selectedImage == null
+                          ? AppCopy.promoImagePick
+                          : AppCopy.promoImageChange,
+                      style: AppText.labelSm.copyWith(
+                        color: AppColor.primary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ] else if (widget.initialCampaign?.imagePath?.trim().isNotEmpty ==
-                true) ...[
-              gapV(AppSpacing.sm),
-              ClipRRect(
-                borderRadius: AppRadii.rLg,
-                child: Image.network(
-                  widget.initialCampaign!.imagePath!,
-                  height: 140.h,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                ),
-              ),
-            ],
-            gapV(AppSpacing.md),
-            DropdownButtonFormField<int>(
-              initialValue: _durationDays,
-              decoration: const InputDecoration(labelText: AppCopy.promoFieldDuration),
-              items: const [
-                DropdownMenuItem(value: 3, child: Text(AppCopy.promoDuration3Days)),
-                DropdownMenuItem(value: 7, child: Text(AppCopy.promoDuration7Days)),
-                DropdownMenuItem(value: 14, child: Text(AppCopy.promoDuration14Days)),
-                DropdownMenuItem(value: 30, child: Text(AppCopy.promoDuration30Days)),
-              ],
-              onChanged: (value) => setState(() => _durationDays = value ?? 7),
             ),
+          ),
+          if (_selectedImage != null) ...[
             gapV(AppSpacing.lg),
-            const _CampaignReviewNotice(),
-            gapV(AppSpacing.md),
-            AppButton(
-              text: widget.initialCampaign == null
-                  ? AppCopy.promoSendCta
-                  : AppCopy.promoEditSendCta,
-              onPress: _submit,
-              isLoading: _busy,
+            ClipRRect(
+              borderRadius: AppRadii.rLg,
+              child: Image.file(
+                _selectedImage!,
+                height: 132.h,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ] else if (widget.initialCampaign?.imagePath?.trim().isNotEmpty ==
+              true) ...[
+            gapV(AppSpacing.lg),
+            ClipRRect(
+              borderRadius: AppRadii.rLg,
+              child: CachedNetworkImage(
+                url: widget.initialCampaign!.imagePath!,
+                height: 132.h,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorWidget: (_) => const SizedBox.shrink(),
+              ),
             ),
           ],
-        ),
+          gapV(AppSpacing.md),
+          DropdownButtonFormField<int>(
+            initialValue: _durationDays,
+            isExpanded: true,
+            decoration:
+                const InputDecoration(labelText: AppCopy.promoFieldDuration),
+            items: const [
+              DropdownMenuItem(
+                  value: 3, child: Text(AppCopy.promoDuration3Days)),
+              DropdownMenuItem(
+                  value: 7, child: Text(AppCopy.promoDuration7Days)),
+              DropdownMenuItem(
+                  value: 14, child: Text(AppCopy.promoDuration14Days)),
+              DropdownMenuItem(
+                  value: 30, child: Text(AppCopy.promoDuration30Days)),
+            ],
+            onChanged: _busy
+                ? null
+                : (value) => setState(() => _durationDays = value ?? 7),
+          ),
+          gapV(AppSpacing.lg),
+          const _CampaignReviewNotice(),
+        ],
+      ),
+      footer: AppButton(
+        text: editing ? AppCopy.promoEditSendCta : AppCopy.promoSendCta,
+        onPress: _submit,
+        isLoading: _busy,
       ),
     );
   }
@@ -1266,57 +1347,67 @@ class _EditRequestDialog extends StatelessWidget {
     return Dialog(
       backgroundColor: AppColor.surfaceCard,
       shape: RoundedRectangleBorder(borderRadius: AppRadii.rXl),
-      child: Padding(
-        padding: EdgeInsets.all(AppSpacing.xl.w),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              AppCopy.promoEditDialogTitle,
-              style: AppText.titleLg.copyWith(fontWeight: FontWeight.w800),
-            ),
-            gapV(AppSpacing.sm),
-            Text(
-              AppCopy.promoEditDialogBody,
-              style: AppText.bodyMd.copyWith(
-                color: AppColor.textSecondary,
-                height: 1.5,
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg.w,
+        vertical: AppSpacing.xxl.h,
+      ),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 480.w,
+          maxHeight: MediaQuery.sizeOf(context).height * 0.82,
+        ),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(AppSpacing.xl.w),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                AppCopy.promoEditDialogTitle,
+                style: AppText.titleLg.copyWith(fontWeight: FontWeight.w800),
               ),
-            ),
-            gapV(AppSpacing.md),
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(AppSpacing.md.w),
-              decoration: BoxDecoration(
-                color: AppColor.primary50,
-                borderRadius: AppRadii.rLg,
-              ),
-              child: Text(
-                campaign.title,
-                style: AppText.labelLg.copyWith(fontWeight: FontWeight.w700),
-              ),
-            ),
-            gapV(AppSpacing.xl),
-            Row(
-              children: [
-                Expanded(
-                  child: AppButton(
-                    text: AppCopy.cancel,
-                    variant: AppButtonVariant.secondary,
-                    onPress: () => Navigator.pop(context, false),
-                  ),
+              gapV(AppSpacing.sm),
+              Text(
+                AppCopy.promoEditDialogBody,
+                style: AppText.bodyMd.copyWith(
+                  color: AppColor.textSecondary,
+                  height: 1.5,
                 ),
-                gapH(AppSpacing.sm),
-                Expanded(
-                  child: AppButton(
-                    text: AppCopy.promoEditDialogConfirm,
-                    onPress: () => Navigator.pop(context, true),
-                  ),
+              ),
+              gapV(AppSpacing.md),
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(AppSpacing.md.w),
+                decoration: BoxDecoration(
+                  color: AppColor.primary50,
+                  borderRadius: AppRadii.rLg,
                 ),
-              ],
-            ),
-          ],
+                child: Text(
+                  campaign.title,
+                  style: AppText.labelLg.copyWith(fontWeight: FontWeight.w700),
+                ),
+              ),
+              gapV(AppSpacing.xl),
+              Row(
+                children: [
+                  Expanded(
+                    child: AppButton(
+                      text: AppCopy.cancel,
+                      variant: AppButtonVariant.secondary,
+                      onPress: () => Navigator.pop(context, false),
+                    ),
+                  ),
+                  gapH(AppSpacing.sm),
+                  Expanded(
+                    child: AppButton(
+                      text: AppCopy.promoEditDialogConfirm,
+                      onPress: () => Navigator.pop(context, true),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -4,6 +4,9 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'package:rafiq_app/service/api_service.dart';
 
 /// Snapshot of the profile picture loaded into memory.
 ///
@@ -12,23 +15,28 @@ import 'package:shared_preferences/shared_preferences.dart';
 ///   * web            → [bytes] holds the decoded image bytes
 @immutable
 class ProfileImageState {
-  const ProfileImageState({this.file, this.bytes});
-  const ProfileImageState.empty() : this(file: null, bytes: null);
+  const ProfileImageState({this.file, this.bytes, this.remoteUrl});
+  const ProfileImageState.empty()
+      : this(file: null, bytes: null, remoteUrl: null);
 
   final File? file;
   final Uint8List? bytes;
+  final String? remoteUrl;
 
-  bool get hasImage => file != null || bytes != null;
+  bool get hasImage =>
+      file != null || bytes != null || (remoteUrl?.isNotEmpty ?? false);
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is ProfileImageState &&
           other.file?.path == file?.path &&
-          identical(other.bytes, bytes));
+          identical(other.bytes, bytes) &&
+          other.remoteUrl == remoteUrl);
 
   @override
-  int get hashCode => Object.hash(file?.path, identityHashCode(bytes));
+  int get hashCode =>
+      Object.hash(file?.path, identityHashCode(bytes), remoteUrl);
 }
 
 /// Single source of truth for the user's profile picture.
@@ -53,6 +61,7 @@ class ProfileImageStore extends ValueNotifier<ProfileImageState> {
 
   static const String _prefsKeyMobile = 'profile_image';
   static const String _prefsKeyWeb = 'profile_image_base64';
+  static const String _prefsKeyRemote = 'profile_image_remote_url';
 
   Future<void>? _loadInFlight;
   bool _loaded = false;
@@ -79,7 +88,7 @@ class ProfileImageStore extends ValueNotifier<ProfileImageState> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_prefsKeyMobile, file.path);
     await prefs.remove(_prefsKeyWeb);
-    _publish(ProfileImageState(file: file));
+    _publish(ProfileImageState(file: file, remoteUrl: value.remoteUrl));
   }
 
   /// Web variant — stores raw bytes and a base64 mirror in prefs.
@@ -89,7 +98,51 @@ class ProfileImageStore extends ValueNotifier<ProfileImageState> {
     // decode path is offloaded.
     await prefs.setString(_prefsKeyWeb, base64Encode(bytes));
     await prefs.remove(_prefsKeyMobile);
-    _publish(ProfileImageState(bytes: bytes));
+    _publish(ProfileImageState(bytes: bytes, remoteUrl: value.remoteUrl));
+  }
+
+  /// Upload the avatar to Supabase Storage and persist its public URL on the
+  /// profile. The same URL is then available after logout, reinstall, or sign
+  /// in from another device.
+  Future<void> uploadRemoteImage(
+    Uint8List bytes, {
+    required String contentType,
+  }) async {
+    await ApiService.ensureSupabaseInitialized();
+    final client = Supabase.instance.client;
+    final user = client.auth.currentUser;
+    if (user == null) {
+      throw Exception('سجّل دخولك الأول عشان نحفظ الصورة.');
+    }
+    if (bytes.isEmpty) {
+      throw Exception('الصورة فاضية. اختار صورة تانية.');
+    }
+
+    final storagePath = '${user.id}/avatar';
+    await client.storage.from('avatars').uploadBinary(
+          storagePath,
+          bytes,
+          fileOptions: FileOptions(
+            upsert: true,
+            contentType: contentType,
+            cacheControl: '3600',
+          ),
+        );
+
+    final baseUrl = client.storage.from('avatars').getPublicUrl(storagePath);
+    final remoteUrl =
+        '$baseUrl?v=${DateTime.now().millisecondsSinceEpoch.toString()}';
+    await client
+        .from('profiles')
+        .update({'avatar_url': remoteUrl}).eq('id', user.id);
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefsKeyRemote, remoteUrl);
+    if (kIsWeb) {
+      await prefs.setString(_prefsKeyWeb, base64Encode(bytes));
+      await prefs.remove(_prefsKeyMobile);
+    }
+    _publish(ProfileImageState(bytes: bytes, remoteUrl: remoteUrl));
   }
 
   /// Clear the cached image and the persisted prefs entries.
@@ -97,6 +150,8 @@ class ProfileImageStore extends ValueNotifier<ProfileImageState> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_prefsKeyMobile);
     await prefs.remove(_prefsKeyWeb);
+    await prefs.remove(_prefsKeyRemote);
+    _loaded = false;
     _publish(const ProfileImageState.empty());
   }
 
@@ -107,11 +162,16 @@ class ProfileImageStore extends ValueNotifier<ProfileImageState> {
   Future<void> _loadFromDisk() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      final remoteUrl = await _loadRemoteUrl();
 
       if (kIsWeb) {
         final base64Str = prefs.getString(_prefsKeyWeb);
         if (base64Str == null || base64Str.isEmpty) {
-          _publish(const ProfileImageState.empty());
+          _publish(
+            remoteUrl == null
+                ? const ProfileImageState.empty()
+                : ProfileImageState(remoteUrl: remoteUrl),
+          );
           return;
         }
         try {
@@ -121,30 +181,66 @@ class ProfileImageStore extends ValueNotifier<ProfileImageState> {
             _decodeBase64,
             base64Str,
           );
-          _publish(ProfileImageState(bytes: bytes));
+          _publish(ProfileImageState(bytes: bytes, remoteUrl: remoteUrl));
         } catch (_) {
           await prefs.remove(_prefsKeyWeb);
-          _publish(const ProfileImageState.empty());
+          _publish(
+            remoteUrl == null
+                ? const ProfileImageState.empty()
+                : ProfileImageState(remoteUrl: remoteUrl),
+          );
         }
         return;
       }
 
       final path = prefs.getString(_prefsKeyMobile);
       if (path == null || path.isEmpty) {
-        _publish(const ProfileImageState.empty());
+        _publish(
+          remoteUrl == null
+              ? const ProfileImageState.empty()
+              : ProfileImageState(remoteUrl: remoteUrl),
+        );
         return;
       }
       final file = File(path);
       if (await file.exists()) {
-        _publish(ProfileImageState(file: file));
+        _publish(ProfileImageState(file: file, remoteUrl: remoteUrl));
       } else {
         await prefs.remove(_prefsKeyMobile);
-        _publish(const ProfileImageState.empty());
+        _publish(
+          remoteUrl == null
+              ? const ProfileImageState.empty()
+              : ProfileImageState(remoteUrl: remoteUrl),
+        );
       }
     } finally {
       _loaded = true;
       _loadInFlight = null;
     }
+  }
+
+  Future<String?> _loadRemoteUrl() async {
+    final prefs = await SharedPreferences.getInstance();
+    try {
+      final client = Supabase.instance.client;
+      final user = client.auth.currentUser;
+      if (user != null) {
+        final profile = await client
+            .from('profiles')
+            .select('avatar_url')
+            .eq('id', user.id)
+            .maybeSingle();
+        final url = profile?['avatar_url']?.toString().trim();
+        if (url != null && url.isNotEmpty) {
+          await prefs.setString(_prefsKeyRemote, url);
+          return url;
+        }
+      }
+    } catch (_) {
+      // A cached URL still gives the user a stable avatar while offline.
+    }
+    final cached = prefs.getString(_prefsKeyRemote)?.trim();
+    return cached == null || cached.isEmpty ? null : cached;
   }
 
   void _publish(ProfileImageState next) {

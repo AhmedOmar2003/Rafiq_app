@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart'
-    show defaultTargetPlatform, kIsWeb, TargetPlatform;
+    show defaultTargetPlatform, kIsWeb, TargetPlatform, visibleForTesting;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -8,12 +8,15 @@ import 'package:rafiq_app/core/config/supabase_config.dart';
 import 'package:rafiq_app/model/user_model.dart';
 import 'package:rafiq_app/service/api_service.dart';
 
+enum GoogleAuthIntent { login, register }
+
 class AuthService {
   static const String _loggedInKey = 'isLoggedIn';
   static const String _authUserIdKey = 'authUserId';
   static const String _userNameKey = 'userName';
   static const String _userEmailKey = 'userEmail';
-  static const String _profileImageKey = 'profile_image';
+  static const String _pendingGoogleIntentKey = 'pendingGoogleAuthIntent';
+  static const String _pendingAuthMessageKey = 'pendingAuthMessage';
   static Future<void>? _googleSignInInitFuture;
   static const String _debugApkSha1 =
       '18:F5:9B:36:DB:62:46:91:1C:7E:AF:84:A7:FE:ED:0F:4C:68:D0:94';
@@ -224,19 +227,28 @@ class AuthService {
     return _googleSignInInitFuture!;
   }
 
-  /// Google sign-in.
+  Future<bool> signInWithGoogle() =>
+      _authenticateWithGoogle(GoogleAuthIntent.login);
+
+  Future<bool> signUpWithGoogle() =>
+      _authenticateWithGoogle(GoogleAuthIntent.register);
+
+  /// Google authentication with an explicit user intent.
   ///
-  /// Web uses Supabase OAuth in the browser.
-  /// Mobile uses the official Google Sign-In SDK and exchanges the resulting
-  /// ID token with Supabase.
-  Future<bool> signInWithGoogle() async {
+  /// Selecting a Google identity does not automatically mean "create a RAFIQ
+  /// account". Login accepts only completed accounts; registration accepts
+  /// only new or previously incomplete OAuth accounts.
+  Future<bool> _authenticateWithGoogle(GoogleAuthIntent intent) async {
     await ensureSupabaseInitialized();
     try {
       if (kIsWeb) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(_pendingGoogleIntentKey, intent.name);
         await _client.auth.signInWithOAuth(
           OAuthProvider.google,
           redirectTo: SupabaseConfig.googleWebRedirectUrl,
           authScreenLaunchMode: LaunchMode.platformDefault,
+          queryParams: const {'prompt': 'select_account'},
         );
         return false;
       }
@@ -251,6 +263,9 @@ class AuthService {
         throw Exception('تعذر الحصول على رموز Google الآمنة.');
       }
 
+      final emailState = await _lookupLoginEmailState(googleUser.email);
+      _validateGoogleIntent(intent: intent, emailState: emailState);
+
       final response = await _client.auth.signInWithIdToken(
         provider: OAuthProvider.google,
         idToken: idToken,
@@ -262,6 +277,15 @@ class AuthService {
       }
 
       final profile = await _loadProfile(user.id);
+      final signupCompleted = profile?['signup_completed'] == true;
+      if (intent == GoogleAuthIntent.login && !signupCompleted) {
+        await _client.auth.signOut();
+        throw Exception(_googleAccountMissingMessage);
+      }
+      if (intent == GoogleAuthIntent.register && !signupCompleted) {
+        await _client.rpc('complete_google_signup');
+      }
+
       final fallbackName = profile?['full_name']?.toString() ??
           user.userMetadata?['full_name']?.toString() ??
           user.userMetadata?['name']?.toString() ??
@@ -279,6 +303,94 @@ class AuthService {
     } catch (e) {
       throw Exception(_friendlyAuthError(e));
     }
+  }
+
+  static const String _googleAccountMissingMessage =
+      'الحساب ده لسه مش متسجل عندنا. اعمل حساب جديد الأول وبعدين تقدر تسجل دخول بسهولة.';
+  static const String _googleAccountExistsMessage =
+      'الحساب ده متسجل بالفعل. ارجع لصفحة تسجيل الدخول وكمل بحساب Google.';
+
+  void _validateGoogleIntent({
+    required GoogleAuthIntent intent,
+    required Map<String, dynamic> emailState,
+  }) {
+    final error = googleIntentError(intent: intent, emailState: emailState);
+    if (error != null) {
+      throw Exception(error);
+    }
+  }
+
+  @visibleForTesting
+  static String? googleIntentError({
+    required GoogleAuthIntent intent,
+    required Map<String, dynamic> emailState,
+  }) {
+    if (!emailState.containsKey('signup_completed')) {
+      return 'معرفناش نتحقق من الحساب دلوقتي. اتأكد من الإنترنت وجرّب تاني.';
+    }
+
+    final exists = emailState['exists'] == true;
+    final signupCompleted = emailState['signup_completed'] == true;
+
+    if (intent == GoogleAuthIntent.login && (!exists || !signupCompleted)) {
+      return _googleAccountMissingMessage;
+    }
+    if (intent == GoogleAuthIntent.register && exists && signupCompleted) {
+      return _googleAccountExistsMessage;
+    }
+    return null;
+  }
+
+  /// Completes or rejects a browser OAuth callback using the intent saved
+  /// before leaving the app for Google.
+  Future<void> finalizePendingGoogleOAuth() async {
+    if (!kIsWeb) return;
+    await ensureSupabaseInitialized();
+
+    final prefs = await SharedPreferences.getInstance();
+    final rawIntent = prefs.getString(_pendingGoogleIntentKey);
+    if (rawIntent == null) return;
+    await prefs.remove(_pendingGoogleIntentKey);
+
+    final user = _client.auth.currentUser;
+    if (user == null) return;
+
+    final intent = rawIntent == GoogleAuthIntent.register.name
+        ? GoogleAuthIntent.register
+        : GoogleAuthIntent.login;
+    final profile = await _loadProfile(user.id);
+    final signupCompleted = profile?['signup_completed'] == true;
+
+    if (intent == GoogleAuthIntent.login && !signupCompleted) {
+      await _client.auth.signOut();
+      await prefs.setString(
+        _pendingAuthMessageKey,
+        _googleAccountMissingMessage,
+      );
+      return;
+    }
+
+    if (intent == GoogleAuthIntent.register && signupCompleted) {
+      await _client.auth.signOut();
+      await prefs.setString(
+        _pendingAuthMessageKey,
+        _googleAccountExistsMessage,
+      );
+      return;
+    }
+
+    if (intent == GoogleAuthIntent.register) {
+      await _client.rpc('complete_google_signup');
+    }
+  }
+
+  Future<String?> takePendingAuthMessage() async {
+    final prefs = await SharedPreferences.getInstance();
+    final message = prefs.getString(_pendingAuthMessageKey);
+    if (message != null) {
+      await prefs.remove(_pendingAuthMessageKey);
+    }
+    return message;
   }
 
   /// Direct sign-up — creates the account and immediately logs the user in.
@@ -481,11 +593,7 @@ class AuthService {
     await _client.auth.signOut();
 
     final prefs = await SharedPreferences.getInstance();
-    final preservedProfileImage = prefs.getString(_profileImageKey);
     await prefs.clear();
-    if (preservedProfileImage != null && preservedProfileImage.isNotEmpty) {
-      await prefs.setString(_profileImageKey, preservedProfileImage);
-    }
     await prefs.setBool(_loggedInKey, false);
   }
 

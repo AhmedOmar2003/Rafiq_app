@@ -102,12 +102,44 @@ class _HomeViewState extends State<HomeView> {
 
   bool get _isLastStep => _currentIndex == _totalSteps - 1;
 
+  bool _hasSelectionForStep(int index) {
+    return switch (index) {
+      0 => _cityName.isNotEmpty,
+      1 => _budget.isNotEmpty,
+      2 => _activity.isNotEmpty,
+      _ => false,
+    };
+  }
+
+  String _missingSelectionMessage(int index) {
+    return switch (index) {
+      0 => AppCopy.stepCityRequired,
+      1 => AppCopy.stepBudgetRequired,
+      2 => AppCopy.stepActivityRequired,
+      _ => AppCopy.homeIncomplete,
+    };
+  }
+
+  bool _canOpenStep(int index) {
+    if (index <= _currentIndex) return true;
+    if (index == 1) return _cityName.isNotEmpty;
+    if (index == 2) {
+      return _cityName.isNotEmpty && _budget.isNotEmpty;
+    }
+    return false;
+  }
+
   // ---------------------------------------------------------------------------
   // Navigation
   // ---------------------------------------------------------------------------
   void _goToStep(int index) {
     if (_isLoading) return;
     if (index < 0 || index >= _totalSteps) return;
+    if (!_canOpenStep(index)) {
+      final firstMissing = _cityName.isEmpty ? 0 : 1;
+      AppFeedback.warning(_missingSelectionMessage(firstMissing));
+      return;
+    }
     setState(() => _currentIndex = index);
     _pageController.animateToPage(
       index,
@@ -117,6 +149,10 @@ class _HomeViewState extends State<HomeView> {
   }
 
   void _handlePrimaryCta() {
+    if (!_hasSelectionForStep(_currentIndex)) {
+      AppFeedback.warning(_missingSelectionMessage(_currentIndex));
+      return;
+    }
     if (!_isLastStep) {
       _goToStep(_currentIndex + 1);
       return;
@@ -208,6 +244,7 @@ class _HomeViewState extends State<HomeView> {
                 Expanded(
                   child: PageView.builder(
                     controller: _pageController,
+                    physics: const NeverScrollableScrollPhysics(),
                     onPageChanged: (i) => setState(() => _currentIndex = i),
                     itemCount: _steps.length,
                     itemBuilder: (_, i) => _steps[i].builder(),
@@ -286,6 +323,7 @@ class _StepHeader extends StatelessWidget {
                 currentIndex: currentIndex,
                 icon: steps[i].icon,
                 label: steps[i].label,
+                stepSize: 48,
                 isLast: i == steps.length - 1,
                 onTap: () => onTap(i),
               ),
@@ -321,9 +359,9 @@ class _BottomBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.fromLTRB(
-        AppSpacing.xxl.w,
+        AppSpacing.lg.w,
         AppSpacing.md.h,
-        AppSpacing.xxl.w,
+        AppSpacing.lg.w,
         AppSpacing.lg.h,
       ),
       decoration: BoxDecoration(
@@ -344,7 +382,10 @@ class _BottomBar extends StatelessWidget {
             ),
           ),
           gapH(AppSpacing.md),
-          _ChatFab(onTap: onChatTap),
+          Tooltip(
+            message: AppCopy.chatOpenLabel,
+            child: _ChatFab(onTap: onChatTap),
+          ),
         ],
       ),
     );

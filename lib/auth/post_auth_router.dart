@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:rafiq_app/service/api_service.dart';
+import 'package:rafiq_app/service/profile_image_store.dart';
 import 'package:rafiq_app/service/user_role_store.dart';
 import 'package:rafiq_app/view/home/home_view.dart';
 import 'package:rafiq_app/view/pages/choice/choice_screen.dart';
@@ -24,6 +25,7 @@ class PostAuthRouter {
   /// have already restored it via `ensureLoaded()` (handled at app start).
   static Future<void> replaceWithHome(BuildContext context) async {
     final store = UserRoleStore.instance;
+    await ProfileImageStore.instance.refresh();
     await store.ensureLoaded();
     await store.refreshFromBackend();
     if (!context.mounted) return;

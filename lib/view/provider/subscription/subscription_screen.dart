@@ -915,7 +915,10 @@ class _ConfirmUpgradeSheet extends StatelessWidget {
     return showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
       backgroundColor: AppColor.surfaceCard,
+      barrierColor: AppColor.overlay,
       shape: RoundedRectangleBorder(
         borderRadius: AppRadii.topOnly(AppRadii.xxl),
       ),
@@ -927,135 +930,96 @@ class _ConfirmUpgradeSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final price = yearly ? plan.priceYearlyEgp : plan.priceMonthlyEgp;
     final per = yearly ? AppCopy.subPerYear : AppCopy.subPerMonth;
-    return SafeArea(
-      top: false,
-      child: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(
-          AppSpacing.xxl.w,
-          AppSpacing.lg.h,
-          AppSpacing.xxl.w,
-          AppSpacing.xxl.h,
+    return AppModalSheetFrame(
+      title: AppCopy.subConfirmTitle,
+      subtitle: '${AppCopy.subConfirmSubtitlePrefix} ${plan.displayName}',
+      leading: Container(
+        width: 48.w,
+        height: 48.w,
+        decoration: BoxDecoration(
+          color: plan.accentColor.withValues(alpha: 0.12),
+          shape: BoxShape.circle,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
-                width: 40.w,
-                height: 4.h,
-                decoration: BoxDecoration(
-                  color: AppColor.border,
-                  borderRadius: AppRadii.rSm,
-                ),
-              ),
+        child: Icon(
+          Icons.workspace_premium_rounded,
+          color: plan.accentColor,
+          size: 27.sp,
+        ),
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: EdgeInsets.all(AppSpacing.lg.w),
+            decoration: BoxDecoration(
+              color: AppColor.surface,
+              borderRadius: AppRadii.rLg,
+              border: Border.all(color: AppColor.border),
             ),
-            gapV(AppSpacing.xl),
-            Row(
+            child: Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: AppSpacing.md.w,
+              runSpacing: AppSpacing.xs.h,
               children: [
-                Container(
-                  width: 56.w,
-                  height: 56.w,
-                  decoration: BoxDecoration(
-                    color: plan.accentColor.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.workspace_premium_rounded,
-                    color: plan.accentColor,
-                    size: 30.sp,
-                  ),
+                Text(
+                  AppCopy.subConfirmPriceLabel,
+                  style: AppText.bodyMd.copyWith(color: AppColor.textSecondary),
                 ),
-                gapH(AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(AppCopy.subConfirmTitle, style: AppText.headingSm),
-                      gapV(AppSpacing.xs / 2),
-                      Text(
-                        '${AppCopy.subConfirmSubtitlePrefix} ${plan.displayName}',
-                        style: AppText.bodyMd
-                            .copyWith(color: AppColor.textSecondary),
-                      ),
-                    ],
+                Text(
+                  '$price ج.م ${per.trim()}',
+                  style: AppText.titleLg.copyWith(
+                    color: plan.accentColor,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ],
             ),
-            gapV(AppSpacing.xl),
-            // Price row -----------------------------------------------------
-            Container(
-              padding: EdgeInsets.all(AppSpacing.lg.w),
-              decoration: BoxDecoration(
-                color: AppColor.surface,
-                borderRadius: AppRadii.rLg,
-                border: Border.all(color: AppColor.border),
-              ),
-              child: Row(
-                children: [
-                  Text(AppCopy.subConfirmPriceLabel,
-                      style: AppText.bodyMd
-                          .copyWith(color: AppColor.textSecondary)),
-                  const Spacer(),
-                  Text(
-                    '$price ج.م ${per.trim()}',
-                    style: AppText.titleLg.copyWith(
-                      color: plan.accentColor,
-                      fontWeight: FontWeight.w800,
-                    ),
+          ),
+          gapV(AppSpacing.lg),
+          Text(AppCopy.subConfirmBenefitsHeading, style: AppText.titleMd),
+          gapV(AppSpacing.md),
+          ..._benefitBullets(),
+          gapV(AppSpacing.lg),
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.md.w,
+              vertical: AppSpacing.sm.h,
+            ),
+            decoration: BoxDecoration(
+              color: AppColor.warningBg,
+              borderRadius: AppRadii.rMd,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.info_outline_rounded,
+                    color: AppColor.warning, size: 18.sp),
+                gapH(AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    AppCopy.subDemoExplainer,
+                    style: AppText.bodySm.copyWith(color: AppColor.warning),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            gapV(AppSpacing.xl),
-            Text(AppCopy.subConfirmBenefitsHeading, style: AppText.titleMd),
-            gapV(AppSpacing.md),
-            ..._benefitBullets(),
-            gapV(AppSpacing.xl),
-            // Demo notice ---------------------------------------------------
-            Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.md.w,
-                vertical: AppSpacing.sm.h,
-              ),
-              decoration: BoxDecoration(
-                color: AppColor.warningBg,
-                borderRadius: AppRadii.rMd,
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.science_outlined,
-                      color: AppColor.warning, size: 18.sp),
-                  gapH(AppSpacing.sm),
-                  Expanded(
-                    child: Text(
-                      AppCopy.subDemoExplainer,
-                      style: AppText.bodySm.copyWith(color: AppColor.warning),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            gapV(AppSpacing.xl),
-            SizedBox(
-              width: double.infinity,
-              child: AppButton(
-                text: AppCopy.subConfirmCta,
-                onPress: () => Navigator.pop(context, true),
-              ),
-            ),
-            gapV(AppSpacing.sm),
-            SizedBox(
-              width: double.infinity,
-              child: AppButton(
-                text: AppCopy.cancel,
-                onPress: () => Navigator.pop(context, false),
-                variant: AppButtonVariant.outline,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
+      ),
+      footer: Column(
+        children: [
+          AppButton(
+            text: AppCopy.subConfirmCta,
+            onPress: () => Navigator.pop(context, true),
+          ),
+          gapV(AppSpacing.sm),
+          AppButton(
+            text: AppCopy.cancel,
+            onPress: () => Navigator.pop(context, false),
+            variant: AppButtonVariant.outline,
+          ),
+        ],
       ),
     );
   }

@@ -30,7 +30,10 @@ class DeleteAccountSheet {
     final result = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
       backgroundColor: AppColor.surfaceCard,
+      barrierColor: AppColor.overlay,
       shape: RoundedRectangleBorder(
         borderRadius: AppRadii.topOnly(AppRadii.xxl),
       ),
@@ -40,115 +43,77 @@ class DeleteAccountSheet {
           tier: tier,
           planDisplayName: planDisplayName,
         );
-        return SafeArea(
-          top: false,
-          child: SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(
-              AppSpacing.xxl.w,
-              AppSpacing.lg.h,
-              AppSpacing.xxl.w,
-              MediaQuery.of(sheetCtx).viewInsets.bottom + AppSpacing.xxl.h,
+        return AppModalSheetFrame(
+          title: AppCopy.deleteAccountTitle,
+          leading: Container(
+            width: 48.w,
+            height: 48.w,
+            decoration: const BoxDecoration(
+              color: AppColor.errorBg,
+              shape: BoxShape.circle,
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40.w,
-                    height: 4.h,
-                    decoration: BoxDecoration(
-                      color: AppColor.border,
-                      borderRadius: AppRadii.rSm,
-                    ),
+            child: Icon(
+              Icons.delete_forever_rounded,
+              color: AppColor.error,
+              size: 27.sp,
+            ),
+          ),
+          body: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                padding: EdgeInsets.all(AppSpacing.lg.w),
+                decoration: BoxDecoration(
+                  color: AppColor.errorBg,
+                  borderRadius: AppRadii.rMd,
+                  border: Border.all(
+                    color: AppColor.error.withValues(alpha: 0.3),
                   ),
                 ),
-                gapV(AppSpacing.xl),
-                Row(
-                  children: [
-                    Container(
-                      width: 56.w,
-                      height: 56.w,
-                      decoration: const BoxDecoration(
-                        color: AppColor.errorBg,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.delete_forever_rounded,
-                        color: AppColor.error,
-                        size: 30.sp,
-                      ),
-                    ),
-                    gapH(AppSpacing.md),
-                    Expanded(
-                      child: Text(
-                        AppCopy.deleteAccountTitle,
-                        style: AppText.headingSm,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  body,
+                  style: AppText.bodyMd.copyWith(
+                    color: AppColor.error,
+                    height: 1.55,
+                  ),
                 ),
-                gapV(AppSpacing.lg),
-                Container(
-                  padding: EdgeInsets.all(AppSpacing.lg.w),
-                  decoration: BoxDecoration(
-                    color: AppColor.errorBg,
+              ),
+              gapV(AppSpacing.lg),
+              AppInput(
+                controller: reasonCtl,
+                label: AppCopy.deleteAccountReasonHint,
+                hintText: '',
+                textInputAction: TextInputAction.done,
+                paddingBottom: 0,
+              ),
+            ],
+          ),
+          footer: Column(
+            children: [
+              AppButton(
+                text: AppCopy.deleteAccountConfirm,
+                onPress: () => Navigator.pop(sheetCtx, true),
+                buttonStyle: ElevatedButton.styleFrom(
+                  backgroundColor: AppColor.error,
+                  foregroundColor: AppColor.white,
+                  minimumSize: Size.fromHeight(52.h),
+                  shape: RoundedRectangleBorder(
                     borderRadius: AppRadii.rMd,
-                    border: Border.all(
-                      color: AppColor.error.withValues(alpha: 0.3),
-                    ),
                   ),
-                  child: Text(
-                    body,
-                    style: AppText.bodyMd.copyWith(
-                      color: AppColor.error,
-                      height: 1.6,
-                    ),
-                  ),
+                  elevation: 0,
                 ),
-                gapV(AppSpacing.xl),
-                AppInput(
-                  controller: reasonCtl,
-                  label: AppCopy.deleteAccountReasonHint,
-                  hintText: '',
-                  textInputAction: TextInputAction.done,
-                  paddingBottom: 0,
+                textStyle: AppText.labelLg.copyWith(
+                  color: AppColor.white,
+                  fontWeight: FontWeight.w700,
                 ),
-                gapV(AppSpacing.xl),
-                SizedBox(
-                  width: double.infinity,
-                  child: AppButton(
-                    text: AppCopy.deleteAccountConfirm,
-                    onPress: () => Navigator.pop(sheetCtx, true),
-                    // Danger override: keep AppButton's height/typography
-                    // but swap the fill to error so the action reads as
-                    // destructive at a glance.
-                    buttonStyle: ElevatedButton.styleFrom(
-                      backgroundColor: AppColor.error,
-                      foregroundColor: AppColor.white,
-                      minimumSize: Size.fromHeight(52.h),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: AppRadii.rMd,
-                      ),
-                      elevation: 0,
-                    ),
-                    textStyle: AppText.labelLg.copyWith(
-                      color: AppColor.white,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                gapV(AppSpacing.sm),
-                SizedBox(
-                  width: double.infinity,
-                  child: AppButton(
-                    text: AppCopy.cancel,
-                    onPress: () => Navigator.pop(sheetCtx, false),
-                    variant: AppButtonVariant.outline,
-                  ),
-                ),
-              ],
-            ),
+              ),
+              gapV(AppSpacing.sm),
+              AppButton(
+                text: AppCopy.cancel,
+                onPress: () => Navigator.pop(sheetCtx, false),
+                variant: AppButtonVariant.outline,
+              ),
+            ],
           ),
         );
       },

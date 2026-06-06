@@ -25,20 +25,20 @@ class PlanBadge extends StatelessWidget {
     PlanTier.free: _PlanStyle(
       label: 'مجاني',
       icon: Icons.bookmark_outline_rounded,
-      color: Color(0xff979797),
-      bg: Color(0xffF0EEE9),
+      color: AppColor.neutral700,
+      bg: AppColor.neutral100,
     ),
     PlanTier.pro: _PlanStyle(
       label: 'برو · موثَّق',
       icon: Icons.verified_rounded,
-      color: Color(0xff681F00),
-      bg: Color(0xffFBEEE9),
+      color: AppColor.primary,
+      bg: AppColor.primary50,
     ),
     PlanTier.max: _PlanStyle(
       label: 'ماكس · بريميوم',
       icon: Icons.workspace_premium_rounded,
-      color: Color(0xff4A1600),
-      bg: Color(0xffF3D4C7),
+      color: AppColor.primary700,
+      bg: AppColor.primary100,
     ),
   };
 
@@ -54,20 +54,23 @@ class PlanBadge extends StatelessWidget {
       fontWeight: FontWeight.w800,
     );
 
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: padH, vertical: padV),
-      decoration: BoxDecoration(
-        color: s.bg,
-        borderRadius: AppRadii.rPill,
-        border: Border.all(color: s.color.withValues(alpha: 0.18)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(s.icon, color: s.color, size: iconSize),
-          SizedBox(width: 4.w),
-          Text(s.label, style: textStyle),
-        ],
+    return Semantics(
+      label: 'الخطة ${s.label}',
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: padH, vertical: padV),
+        decoration: BoxDecoration(
+          color: s.bg,
+          borderRadius: AppRadii.rPill,
+          border: Border.all(color: s.color.withValues(alpha: 0.24)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(s.icon, color: s.color, size: iconSize),
+            SizedBox(width: 4.w),
+            Text(s.label, style: textStyle),
+          ],
+        ),
       ),
     );
   }

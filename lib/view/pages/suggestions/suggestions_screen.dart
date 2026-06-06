@@ -107,10 +107,13 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
               ImageProvider provider;
               if (snap.bytes != null) {
                 provider = MemoryImage(snap.bytes!);
+              } else if (snap.remoteUrl?.isNotEmpty ?? false) {
+                provider = NetworkImage(snap.remoteUrl!);
               } else if (snap.file != null) {
                 provider = FileImage(snap.file!);
               } else {
-                provider = const AssetImage('assets/images/default_profile.webp');
+                provider =
+                    const AssetImage('assets/images/default_profile.webp');
               }
               return CircleAvatar(
                 radius: 18.w,

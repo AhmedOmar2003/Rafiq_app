@@ -6,7 +6,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/design/app_image.dart';
-import '../../../core/design/cached_network_image.dart';
 import '../../../core/design/components/components.dart';
 import '../../../core/design/tokens/tokens.dart';
 import '../../../core/utils/app_microcopy.dart';
@@ -134,189 +133,191 @@ class _DetailsItemState extends State<DetailsItem> {
       label:
           '${model.text}. ${model.city.isNotEmpty ? model.city : model.address}. السعر ${_formatPriceLabel(model.price)}.',
       child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          height: 220.h,
-          width: double.infinity,
-          child: ClipRRect(
-            borderRadius: AppRadii.rXl,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                PageView.builder(
-                  controller: _galleryController,
-                  itemCount: gallery.length,
-                  onPageChanged: (index) {
-                    if (!mounted) return;
-                    setState(() => _currentGalleryIndex = index);
-                  },
-                  itemBuilder: (_, index) =>
-                      _buildGalleryImage(context, gallery[index]),
-                ),
-                Positioned(
-                  top: AppSpacing.md.h,
-                  right: AppSpacing.md.w,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                        horizontal: AppSpacing.sm.w, vertical: AppSpacing.xs.h),
-                    decoration: BoxDecoration(
-                      color: AppColor.surfaceCard,
-                      borderRadius: AppRadii.rPill,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            height: 220.h,
+            width: double.infinity,
+            child: ClipRRect(
+              borderRadius: AppRadii.rXl,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  PageView.builder(
+                    controller: _galleryController,
+                    itemCount: gallery.length,
+                    onPageChanged: (index) {
+                      if (!mounted) return;
+                      setState(() => _currentGalleryIndex = index);
+                    },
+                    itemBuilder: (_, index) =>
+                        _buildGalleryImage(context, gallery[index]),
+                  ),
+                  Positioned(
+                    top: AppSpacing.md.h,
+                    right: AppSpacing.md.w,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm.w,
+                          vertical: AppSpacing.xs.h),
+                      decoration: BoxDecoration(
+                        color: AppColor.surfaceCard,
+                        borderRadius: AppRadii.rPill,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.star_rounded,
+                            color: AppColor.warning,
+                            size: 16,
+                          ),
+                          gapH(AppSpacing.xs),
+                          Text(
+                            widget.model.rate > 0
+                                ? widget.model.rate.toString()
+                                : AppCopy.ratingFallback,
+                            style: AppText.labelSm.copyWith(
+                              color: AppColor.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.star_rounded,
-                          color: AppColor.warning,
-                          size: 16,
+                  ),
+                  if (hasGallery)
+                    Positioned(
+                      left: AppSpacing.md.w,
+                      top: AppSpacing.md.h,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm.w,
+                          vertical: AppSpacing.xs.h,
                         ),
-                        gapH(AppSpacing.xs),
-                        Text(
-                          widget.model.rate > 0
-                              ? widget.model.rate.toString()
-                              : AppCopy.ratingFallback,
+                        decoration: BoxDecoration(
+                          color: AppColor.surfaceCard.withValues(alpha: 0.92),
+                          borderRadius: AppRadii.rPill,
+                        ),
+                        child: Text(
+                          '${_currentGalleryIndex + 1}/${gallery.length}',
                           style: AppText.labelSm.copyWith(
                             color: AppColor.textPrimary,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-                if (hasGallery)
-                  Positioned(
-                    left: AppSpacing.md.w,
-                    top: AppSpacing.md.h,
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: AppSpacing.sm.w,
-                        vertical: AppSpacing.xs.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColor.surfaceCard.withValues(alpha: 0.92),
-                        borderRadius: AppRadii.rPill,
-                      ),
-                      child: Text(
-                        '${_currentGalleryIndex + 1}/${gallery.length}',
-                        style: AppText.labelSm.copyWith(
-                          color: AppColor.textPrimary,
-                        ),
                       ),
                     ),
-                  ),
-                if (widget.isLoading)
-                  Positioned.fill(
-                    child: Container(
-                      color: AppColor.black.withValues(alpha: 0.10),
-                      child: const Center(
-                        child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            AppColor.white,
+                  if (widget.isLoading)
+                    Positioned.fill(
+                      child: Container(
+                        color: AppColor.black.withValues(alpha: 0.10),
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              AppColor.white,
+                            ),
                           ),
                         ),
                       ),
                     ),
+                ],
+              ),
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.lg.w,
+              AppSpacing.lg.h,
+              AppSpacing.lg.w,
+              AppSpacing.lg.h,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (hasGallery) ...[
+                  SizedBox(
+                    height: 64.h,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: gallery.length,
+                      separatorBuilder: (_, __) => gapH(AppSpacing.sm),
+                      itemBuilder: (context, index) {
+                        final thumb = gallery[index];
+                        final isActive = index == _currentGalleryIndex;
+                        return Semantics(
+                          button: true,
+                          selected: isActive,
+                          label: 'صورة ${index + 1} من ${gallery.length}',
+                          child: GestureDetector(
+                            onTap: () {
+                              _galleryController.animateToPage(
+                                index,
+                                duration: AppMotion.base,
+                                curve: AppMotion.standard,
+                              );
+                            },
+                            child: AnimatedContainer(
+                              duration: AppMotion.fast,
+                              width: 64.w,
+                              decoration: BoxDecoration(
+                                borderRadius: AppRadii.rMd,
+                                border: Border.all(
+                                  color: isActive
+                                      ? AppColor.primary
+                                      : AppColor.border,
+                                  width: isActive ? 2 : 1,
+                                ),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: AppRadii.rMd,
+                                child: _buildGalleryImage(context, thumb),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ),
+                  gapV(AppSpacing.xl),
+                ],
+                _TypeBadge(model: model),
+                gapV(AppSpacing.lg),
+                Text(
+                  model.text,
+                  style: AppText.headingMd.copyWith(
+                    color: AppColor.textPrimary,
+                    height: 1.3,
+                  ),
+                ),
+                gapV(AppSpacing.md),
+                Wrap(
+                  spacing: AppSpacing.sm.w,
+                  runSpacing: AppSpacing.sm.h,
+                  children: [
+                    _MetaChip(
+                      icon: Icons.place_outlined,
+                      label: model.city.isNotEmpty ? model.city : model.address,
+                    ),
+                    _MetaChip(
+                      icon: Icons.category_outlined,
+                      label: model.suggestionText,
+                    ),
+                  ],
+                ),
+                gapV(AppSpacing.xl),
+                _LocationCard(
+                  address: model.address,
+                  onOpenMap: openMap,
+                ),
+                gapV(AppSpacing.xl),
+                _PriceCard(
+                  priceLabel: _formatPriceLabel(model.price),
+                  rateLabel:
+                      model.rate > 0 ? "${model.rate}" : AppCopy.ratingFallback,
+                ),
               ],
             ),
           ),
-        ),
-        Padding(
-          padding: EdgeInsets.fromLTRB(
-            AppSpacing.lg.w,
-            AppSpacing.lg.h,
-            AppSpacing.lg.w,
-            AppSpacing.lg.h,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (hasGallery) ...[
-                SizedBox(
-                  height: 64.h,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: gallery.length,
-                    separatorBuilder: (_, __) => gapH(AppSpacing.sm),
-                    itemBuilder: (context, index) {
-                      final thumb = gallery[index];
-                      final isActive = index == _currentGalleryIndex;
-                      return Semantics(
-                        button: true,
-                        selected: isActive,
-                        label: 'صورة ${index + 1} من ${gallery.length}',
-                        child: GestureDetector(
-                          onTap: () {
-                            _galleryController.animateToPage(
-                              index,
-                              duration: AppMotion.base,
-                              curve: AppMotion.standard,
-                            );
-                          },
-                          child: AnimatedContainer(
-                            duration: AppMotion.fast,
-                            width: 64.w,
-                            decoration: BoxDecoration(
-                              borderRadius: AppRadii.rMd,
-                              border: Border.all(
-                                color: isActive
-                                    ? AppColor.primary
-                                    : AppColor.border,
-                                width: isActive ? 2 : 1,
-                              ),
-                            ),
-                            child: ClipRRect(
-                              borderRadius: AppRadii.rMd,
-                              child: _buildGalleryImage(context, thumb),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                gapV(AppSpacing.xl),
-              ],
-              _TypeBadge(model: model),
-              gapV(AppSpacing.lg),
-              Text(
-                model.text,
-                style: AppText.headingMd.copyWith(
-                  color: AppColor.textPrimary,
-                  height: 1.3,
-                ),
-              ),
-              gapV(AppSpacing.md),
-              Wrap(
-                spacing: AppSpacing.sm.w,
-                runSpacing: AppSpacing.sm.h,
-                children: [
-                  _MetaChip(
-                    icon: Icons.place_outlined,
-                    label: model.city.isNotEmpty ? model.city : model.address,
-                  ),
-                  _MetaChip(
-                    icon: Icons.category_outlined,
-                    label: model.suggestionText,
-                  ),
-                ],
-              ),
-              gapV(AppSpacing.xl),
-              _LocationCard(
-                address: model.address,
-                onOpenMap: openMap,
-              ),
-              gapV(AppSpacing.xl),
-              _PriceCard(
-                priceLabel: _formatPriceLabel(model.price),
-                rateLabel: model.rate > 0 ? "${model.rate}" : AppCopy.ratingFallback,
-              ),
-            ],
-          ),
-        ),
-      ],
+        ],
       ),
     );
   }

@@ -29,26 +29,43 @@ class AppBottomSheet {
       shape:
           RoundedRectangleBorder(borderRadius: AppRadii.topOnly(AppRadii.xl)),
       builder: (context) {
+        final media = MediaQuery.of(context);
+        final availableHeight =
+            (media.size.height - media.viewInsets.bottom).clamp(
+          240.0,
+          double.infinity,
+        );
         return SafeArea(
           top: false,
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              AppSpacing.xxl.w,
-              AppSpacing.md.h,
-              AppSpacing.xxl.w,
-              AppSpacing.xxl.h + MediaQuery.viewInsetsOf(context).bottom,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (title != null) ...[
-                  Text(title,
-                      style: AppText.headingSm, textAlign: TextAlign.center),
-                  gapV(AppSpacing.lg),
-                ],
-                Flexible(child: widget),
-              ],
+          child: AnimatedPadding(
+            duration: AppMotion.fast,
+            curve: Curves.easeOut,
+            padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: availableHeight * 0.88),
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  AppSpacing.xxl.w,
+                  AppSpacing.md.h,
+                  AppSpacing.xxl.w,
+                  AppSpacing.xxl.h,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (title != null) ...[
+                      Text(
+                        title,
+                        style: AppText.headingSm,
+                        textAlign: TextAlign.center,
+                      ),
+                      gapV(AppSpacing.lg),
+                    ],
+                    Flexible(child: widget),
+                  ],
+                ),
+              ),
             ),
           ),
         );

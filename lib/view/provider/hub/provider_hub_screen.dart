@@ -42,12 +42,15 @@ class ProviderHubScreen extends StatefulWidget {
   State<ProviderHubScreen> createState() => _ProviderHubScreenState();
 }
 
+enum _PlaceFilter { all, pending, approved, rejected, suspended }
+
 class _ProviderHubScreenState extends State<ProviderHubScreen> {
   String? _providerId;
   String? _providerName;
   List<Place> _places = const [];
   bool _loadingPlaces = false;
   bool _isBootstrapping = true;
+  _PlaceFilter _placeFilter = _PlaceFilter.all;
 
   /// Supabase realtime channel listening for INSERT/UPDATE/DELETE on places
   /// owned by the current provider. The admin's approve/reject action in the
@@ -120,16 +123,20 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
               'مكانك';
           switch (newStatus) {
             case 'approved':
-              AppFeedback.success(AppCopy.hubPlaceApproved.replaceFirst('%s', name));
+              AppFeedback.success(
+                  AppCopy.hubPlaceApproved.replaceFirst('%s', name));
               break;
             case 'rejected':
-              AppFeedback.warning(AppCopy.hubPlaceRejected.replaceFirst('%s', name));
+              AppFeedback.warning(
+                  AppCopy.hubPlaceRejected.replaceFirst('%s', name));
               break;
             case 'suspended':
-              AppFeedback.warning(AppCopy.hubPlaceSuspended.replaceFirst('%s', name));
+              AppFeedback.warning(
+                  AppCopy.hubPlaceSuspended.replaceFirst('%s', name));
               break;
             case 'pending':
-              AppFeedback.info(AppCopy.hubPlacePending.replaceFirst('%s', name));
+              AppFeedback.info(
+                  AppCopy.hubPlacePending.replaceFirst('%s', name));
               break;
           }
         }
@@ -376,7 +383,8 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
     }
 
     final placeCount = _places.length;
-    final hubTitle = placeCount > 1 ? AppCopy.hubTabPlatformTitle : AppCopy.hubTitle;
+    final hubTitle =
+        placeCount > 1 ? AppCopy.hubTabPlatformTitle : AppCopy.hubTitle;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -432,32 +440,14 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
                   gapV(AppSpacing.lg),
                   _KpiStrip(entitlement: ent),
                   gapV(AppSpacing.xxl),
-                  // Surface anything that's still pending admin review at the
-                  // top so the user always knows what the admin is sitting on.
-                  if (_places.any((p) => _isAwaitingModeration(p.status)))
-                    Padding(
-                      padding: EdgeInsets.only(bottom: AppSpacing.lg.h),
-                      child: _ReviewQueueCard(
-                        pendingPlaces: _places
-                            .where((p) => _isAwaitingModeration(p.status))
-                            .toList(),
-                      ),
-                    ),
-                  // Rejected places also get a glance card so the user can
-                  // act on the rejection reason and resubmit.
-                  if (_places.any((p) => p.status == 'rejected'))
-                    Padding(
-                      padding: EdgeInsets.only(bottom: AppSpacing.lg.h),
-                      child: _RejectedCard(
-                        rejectedPlaces:
-                            _places.where((p) => p.status == 'rejected').toList(),
-                        onEditPlace: _editPlace,
-                      ),
-                    ),
                   _PlacesSection(
                     places: _places,
                     loading: _loadingPlaces,
                     maxPlaces: ent.maxPlaces,
+                    selectedFilter: _placeFilter,
+                    onFilterChanged: (filter) {
+                      setState(() => _placeFilter = filter);
+                    },
                     onPreviewPlace: _previewPlace,
                     onEditPlace: _editPlace,
                     onDeletePlace: _deletePlace,
@@ -524,323 +514,6 @@ bool _isAwaitingModeration(String? status) {
   return normalized == 'pending' || normalized == 'under_review';
 }
 
-// ===========================================================================
-// Review queue card — 24-hour countdown for pending places
-// ===========================================================================
-//
-// While a place sits in `pending` state, this card keeps the provider in the
-// loop: it lists every awaiting submission with a live HH:MM:SS countdown
-// from the 24-hour SLA window. The admin can flip a place to `approved` /
-// `rejected` at any moment from the web dashboard; the provider sees the
-// state change on the next pull-to-refresh of the hub.
-//
-// Intentionally simple: no animations beyond the per-second tick, no
-// network calls of its own — it just reflects whatever the parent fetched.
-
-class _ReviewQueueCard extends StatefulWidget {
-  const _ReviewQueueCard({required this.pendingPlaces});
-  final List<Place> pendingPlaces;
-
-  @override
-  State<_ReviewQueueCard> createState() => _ReviewQueueCardState();
-}
-
-class _ReviewQueueCardState extends State<_ReviewQueueCard> {
-  static const Duration _slaWindow = Duration(hours: 24);
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      padding: EdgeInsets.all(AppSpacing.lg.w),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 40.w,
-                height: 40.w,
-                decoration: BoxDecoration(
-                  color: AppColor.warning.withValues(alpha: 0.12),
-                  borderRadius: AppRadii.rMd,
-                ),
-                child: Icon(
-                  Icons.hourglass_top_rounded,
-                  color: AppColor.warning,
-                  size: 22.sp,
-                ),
-              ),
-              gapH(AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      AppCopy.hubReviewQueueTitle,
-                      style: AppText.titleMd
-                          .copyWith(fontWeight: FontWeight.w800),
-                    ),
-                    Text(
-                      AppCopy.hubReviewQueueBody,
-                      style: AppText.bodySm.copyWith(
-                        color: AppColor.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          gapV(AppSpacing.md),
-          ...widget.pendingPlaces.map((p) {
-            return Padding(
-              padding: EdgeInsets.only(bottom: AppSpacing.sm.h),
-              child: Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md.w,
-                  vertical: AppSpacing.sm.h,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColor.warning.withValues(alpha: 0.08),
-                  borderRadius: AppRadii.rMd,
-                  border: Border.all(
-                    color: AppColor.warning.withValues(alpha: 0.20),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            p.name,
-                            style: AppText.bodyMd.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          gapV(AppSpacing.xs / 2),
-                          Text(
-                            '${p.cityName} — ${p.activityName}',
-                            style: AppText.caption.copyWith(
-                              color: AppColor.textSecondary,
-                            ),
-                          ),
-                          gapV(AppSpacing.xs),
-                          Text(
-                            p.status == 'under_review'
-                                ? AppCopy.hubStatusUnderReview
-                                : AppCopy.hubStatusAwaitingReview,
-                            style: AppText.caption.copyWith(
-                              color: AppColor.warning,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    gapH(AppSpacing.sm),
-                    AppCountdownBadge(
-                      createdAt: p.createdAt,
-                      sla: _slaWindow,
-                      color: AppColor.warning,
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }),
-        ],
-      ),
-    );
-  }
-}
-
-// ===========================================================================
-// Rejected places card — surface admin feedback so the provider can fix +
-// resubmit. Same visual rhythm as the review queue card so the user reads
-// both as part of the same "moderation" section.
-// ===========================================================================
-// Rejected places card + Appeal flow
-// ===========================================================================
-class _RejectedCard extends StatelessWidget {
-  const _RejectedCard({
-    required this.rejectedPlaces,
-    required this.onEditPlace,
-  });
-  final List<Place> rejectedPlaces;
-  final ValueChanged<Place> onEditPlace;
-
-  void _openAppealSheet(BuildContext context, Place place) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColor.surfaceCard,
-      shape: RoundedRectangleBorder(borderRadius: AppRadii.topOnly(AppRadii.xxl)),
-      builder: (_) => _AppealSheet(place: place),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      padding: EdgeInsets.all(AppSpacing.lg.w),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 40.w,
-                height: 40.w,
-                decoration: BoxDecoration(
-                  color: AppColor.error.withValues(alpha: 0.12),
-                  borderRadius: AppRadii.rMd,
-                ),
-                child: Icon(Icons.cancel_outlined, color: AppColor.error, size: 22.sp),
-              ),
-              gapH(AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(AppCopy.hubRejectedTitle,
-                        style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800)),
-                    Text(AppCopy.hubRejectedBody,
-                        style: AppText.bodySm.copyWith(color: AppColor.textSecondary)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          gapV(AppSpacing.md),
-          ...rejectedPlaces.map((p) {
-            final reason = (p.rejectionReason ?? '').trim();
-            return Padding(
-              padding: EdgeInsets.only(bottom: AppSpacing.sm.h),
-              child: Container(
-                padding: EdgeInsets.all(AppSpacing.md.w),
-                decoration: BoxDecoration(
-                  color: AppColor.error.withValues(alpha: 0.06),
-                  borderRadius: AppRadii.rMd,
-                  border: Border.all(color: AppColor.error.withValues(alpha: 0.20)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(p.name,
-                        style: AppText.bodyMd.copyWith(fontWeight: FontWeight.w700)),
-                    if (reason.isNotEmpty) ...[
-                      gapV(AppSpacing.xs),
-                      Text('${AppCopy.hubRejectedReasonPrefix} $reason',
-                          style: AppText.bodySm
-                              .copyWith(color: AppColor.textSecondary)),
-                    ],
-                    gapV(AppSpacing.sm),
-                    // When the admin opened the edit-and-resubmit door we
-                    // surface a prominent primary CTA — the appeal path is
-                    // secondary in that case. Otherwise only the appeal CTA
-                    // shows, since editing isn't allowed.
-                    if (p.editAllowed) ...[
-                      // Hint chip — let the provider know they have a fix path
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm.w,
-                          vertical: 6.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColor.success.withValues(alpha: 0.12),
-                          borderRadius: AppRadii.rSm,
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.lock_open_rounded,
-                                size: 14.sp, color: AppColor.success),
-                            gapH(AppSpacing.xs),
-                            Text(
-                              AppCopy.hubRejectedEditAllowed,
-                              style: AppText.labelSm.copyWith(
-                                color: AppColor.success,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      gapV(AppSpacing.sm),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: AppButton(
-                              text: AppCopy.hubEditAndResubmit,
-                              onPress: () => onEditPlace(p),
-                            ),
-                          ),
-                          gapH(AppSpacing.sm),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () => _openAppealSheet(context, p),
-                              icon: Icon(Icons.gavel_rounded,
-                                  size: 14.sp, color: AppColor.primary),
-                              label: Text(
-                                'طعن',
-                                style: AppText.labelMd.copyWith(
-                                  color: AppColor.primary,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              style: OutlinedButton.styleFrom(
-                                side:
-                                    const BorderSide(color: AppColor.primary),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: AppRadii.rMd,
-                                ),
-                                padding: EdgeInsets.symmetric(
-                                    vertical: AppSpacing.sm.h),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ] else
-                      // Edit locked → appeal is the only path forward
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: () => _openAppealSheet(context, p),
-                          icon: Icon(Icons.gavel_rounded,
-                              size: 16.sp, color: AppColor.primary),
-                          label: Text(
-                            AppCopy.appealTitle,
-                            style: AppText.labelMd.copyWith(
-                              color: AppColor.primary,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: AppColor.primary),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: AppRadii.rMd,
-                            ),
-                            padding:
-                                EdgeInsets.symmetric(vertical: AppSpacing.sm.h),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            );
-          }),
-        ],
-      ),
-    );
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Appeal bottom sheet
 // ---------------------------------------------------------------------------
@@ -853,8 +526,8 @@ class _AppealSheet extends StatefulWidget {
 }
 
 class _AppealSheetState extends State<_AppealSheet> {
-  final _nameCtrl    = TextEditingController();
-  final _phoneCtrl   = TextEditingController();
+  final _nameCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
   final _messageCtrl = TextEditingController();
   bool _sending = false;
 
@@ -867,8 +540,8 @@ class _AppealSheetState extends State<_AppealSheet> {
   }
 
   Future<void> _send() async {
-    final name    = _nameCtrl.text.trim();
-    final phone   = _phoneCtrl.text.trim();
+    final name = _nameCtrl.text.trim();
+    final phone = _phoneCtrl.text.trim();
     final message = _messageCtrl.text.trim();
 
     if (name.isEmpty || phone.isEmpty || message.isEmpty) {
@@ -890,10 +563,10 @@ class _AppealSheetState extends State<_AppealSheet> {
       await Supabase.instance.client.rpc<dynamic>(
         'submit_place_appeal',
         params: {
-          '_place_id':      widget.place.placeId,
-          '_contact_name':  name,
+          '_place_id': widget.place.placeId,
+          '_contact_name': name,
           '_contact_phone': phone,
-          '_message':       message,
+          '_message': message,
         },
       );
       if (!mounted) return;
@@ -910,36 +583,26 @@ class _AppealSheetState extends State<_AppealSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        AppSpacing.xxl.w,
-        AppSpacing.lg.h,
-        AppSpacing.xxl.w,
-        MediaQuery.viewInsetsOf(context).bottom + AppSpacing.xxl.h,
+    return AppModalSheetFrame(
+      title: AppCopy.appealTitle,
+      subtitle: AppCopy.appealSubtitle,
+      leading: Container(
+        width: 44.w,
+        height: 44.w,
+        decoration: BoxDecoration(
+          color: AppColor.warning.withValues(alpha: 0.12),
+          borderRadius: AppRadii.rMd,
+        ),
+        alignment: Alignment.center,
+        child: Icon(
+          Icons.gavel_rounded,
+          color: AppColor.warning,
+          size: 23.sp,
+        ),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Handle
-          Center(
-            child: Container(
-              width: 40.w,
-              height: 4.h,
-              decoration: BoxDecoration(
-                color: AppColor.border,
-                borderRadius: AppRadii.rSm,
-              ),
-            ),
-          ),
-          gapV(AppSpacing.xl),
-          Text(AppCopy.appealTitle,
-              style: AppText.headingSm.copyWith(fontWeight: FontWeight.w800)),
-          gapV(AppSpacing.xs),
-          Text(AppCopy.appealSubtitle,
-              style: AppText.bodySm.copyWith(color: AppColor.textSecondary)),
-          gapV(AppSpacing.lg),
-          // Place name (read-only)
           Container(
             padding: EdgeInsets.symmetric(
               horizontal: AppSpacing.md.w,
@@ -950,46 +613,64 @@ class _AppealSheetState extends State<_AppealSheet> {
               borderRadius: AppRadii.rMd,
               border: Border.all(color: AppColor.border),
             ),
-            child: Text(
-              '📍 ${widget.place.name}',
-              style: AppText.bodyMd.copyWith(fontWeight: FontWeight.w600),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.place_outlined,
+                  size: 20.sp,
+                  color: AppColor.primary,
+                ),
+                gapH(AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    widget.place.name,
+                    style: AppText.bodyMd.copyWith(fontWeight: FontWeight.w700),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
           ),
           gapV(AppSpacing.md),
           AppInput(
+            label: AppCopy.appealNameHint,
             hintText: AppCopy.appealNameHint,
             controller: _nameCtrl,
-            prefixIcon: const Icon(Icons.person_outline, color: AppColor.textSecondary),
+            prefixIcon:
+                const Icon(Icons.person_outline, color: AppColor.textSecondary),
             textInputAction: TextInputAction.next,
           ),
           gapV(AppSpacing.md),
           AppInput(
+            label: AppCopy.appealPhoneHint,
             hintText: AppCopy.appealPhoneHint,
             controller: _phoneCtrl,
-            prefixIcon: const Icon(Icons.phone_outlined, color: AppColor.textSecondary),
+            prefixIcon:
+                const Icon(Icons.phone_outlined, color: AppColor.textSecondary),
             type: TextInputType.phone,
             textInputAction: TextInputAction.next,
           ),
           gapV(AppSpacing.md),
           AppInput(
+            label: AppCopy.appealMessageHint,
             hintText: AppCopy.appealPlaceholder,
             controller: _messageCtrl,
-            prefixIcon: const Icon(Icons.chat_outlined, color: AppColor.textSecondary),
+            prefixIcon:
+                const Icon(Icons.chat_outlined, color: AppColor.textSecondary),
             maxLines: 4,
             textInputAction: TextInputAction.done,
           ),
-          gapV(AppSpacing.xl),
-          AppButton(
-            text: AppCopy.appealSend,
-            onPress: _send,
-            isEnabled: !_sending,
-          ),
         ],
+      ),
+      footer: AppButton(
+        text: AppCopy.appealSend,
+        onPress: _send,
+        isLoading: _sending,
       ),
     );
   }
 }
-
 
 // ===========================================================================
 // Greeting
@@ -1421,7 +1102,9 @@ class _ProviderFlowCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: AppButton(
-              text: canAddPlace ? AppCopy.hubAddPlace : AppCopy.hubAddPlaceLimitReached,
+              text: canAddPlace
+                  ? AppCopy.hubAddPlace
+                  : AppCopy.hubAddPlaceLimitReached,
               onPress: canAddPlace ? onAddPlace : onRefresh,
               variant: canAddPlace
                   ? AppButtonVariant.primary
@@ -1440,6 +1123,8 @@ class _PlacesSection extends StatelessWidget {
     required this.places,
     required this.loading,
     required this.maxPlaces,
+    required this.selectedFilter,
+    required this.onFilterChanged,
     required this.onPreviewPlace,
     required this.onEditPlace,
     required this.onDeletePlace,
@@ -1449,13 +1134,36 @@ class _PlacesSection extends StatelessWidget {
   final List<Place> places;
   final bool loading;
   final int maxPlaces;
+  final _PlaceFilter selectedFilter;
+  final ValueChanged<_PlaceFilter> onFilterChanged;
   final ValueChanged<Place> onPreviewPlace;
   final ValueChanged<Place> onEditPlace;
   final ValueChanged<Place> onDeletePlace;
   final VoidCallback onAddPlace;
 
+  bool _matchesFilter(Place place, _PlaceFilter filter) {
+    final status = place.status.trim().toLowerCase();
+    return switch (filter) {
+      _PlaceFilter.all => true,
+      _PlaceFilter.pending => _isAwaitingModeration(status),
+      _PlaceFilter.approved => status == 'approved',
+      _PlaceFilter.rejected => status == 'rejected',
+      _PlaceFilter.suspended => status == 'suspended',
+    };
+  }
+
+  int _countFor(_PlaceFilter filter) {
+    return places.where((place) => _matchesFilter(place, filter)).length;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final filteredPlaces = places
+        .where((place) => _matchesFilter(place, selectedFilter))
+        .toList(growable: false);
+    final viewportHeight = MediaQuery.sizeOf(context).height;
+    final listHeight = (viewportHeight * 0.62).clamp(420.0, 680.0);
+
     return AppCard(
       padding: EdgeInsets.all(AppSpacing.lg.w),
       child: Column(
@@ -1482,27 +1190,212 @@ class _PlacesSection extends StatelessWidget {
                 : AppCopy.hubPlacesManageBody,
             style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
           ),
+          if (places.isNotEmpty) ...[
+            gapV(AppSpacing.md),
+            Semantics(
+              container: true,
+              label: AppCopy.hubPlacesFilterSemantics,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: _PlaceFilter.values.map((filter) {
+                    return Padding(
+                      padding: EdgeInsetsDirectional.only(
+                        end: filter == _PlaceFilter.values.last
+                            ? 0
+                            : AppSpacing.sm.w,
+                      ),
+                      child: _PlaceFilterChip(
+                        filter: filter,
+                        count: _countFor(filter),
+                        selected: selectedFilter == filter,
+                        onTap: () => onFilterChanged(filter),
+                      ),
+                    );
+                  }).toList(growable: false),
+                ),
+              ),
+            ),
+          ],
           gapV(AppSpacing.lg),
           if (loading)
-            const Center(child: CircularProgressIndicator(color: AppColor.primary))
+            const Center(
+                child: CircularProgressIndicator(color: AppColor.primary))
           else if (places.isEmpty)
             _EmptyPlacesState(onAddPlace: onAddPlace)
+          else if (filteredPlaces.isEmpty)
+            _FilteredPlacesEmptyState(filter: selectedFilter)
+          else if (filteredPlaces.length == 1)
+            _PlaceCard(
+              place: filteredPlaces.first,
+              onPreview: () => onPreviewPlace(filteredPlaces.first),
+              onEdit: () => onEditPlace(filteredPlaces.first),
+              onDelete: () => onDeletePlace(filteredPlaces.first),
+            )
           else
-            ListView.separated(
-              itemCount: places.length,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              separatorBuilder: (_, __) => gapV(AppSpacing.md),
-              itemBuilder: (_, index) {
-                final place = places[index];
-                return _PlaceCard(
-                  place: place,
-                  onPreview: () => onPreviewPlace(place),
-                  onEdit: () => onEditPlace(place),
-                  onDelete: () => onDeletePlace(place),
-                );
-              },
+            SizedBox(
+              height: listHeight,
+              child: Scrollbar(
+                interactive: false,
+                child: ListView.separated(
+                  primary: false,
+                  padding: EdgeInsetsDirectional.only(end: AppSpacing.sm.w),
+                  itemCount: filteredPlaces.length,
+                  separatorBuilder: (_, __) => gapV(AppSpacing.md),
+                  itemBuilder: (_, index) {
+                    final place = filteredPlaces[index];
+                    return _PlaceCard(
+                      place: place,
+                      onPreview: () => onPreviewPlace(place),
+                      onEdit: () => onEditPlace(place),
+                      onDelete: () => onDeletePlace(place),
+                    );
+                  },
+                ),
+              ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlaceFilterChip extends StatelessWidget {
+  const _PlaceFilterChip({
+    required this.filter,
+    required this.count,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final _PlaceFilter filter;
+  final int count;
+  final bool selected;
+  final VoidCallback onTap;
+
+  String get _label => switch (filter) {
+        _PlaceFilter.all => AppCopy.hubFilterAll,
+        _PlaceFilter.pending => AppCopy.hubFilterPending,
+        _PlaceFilter.approved => AppCopy.hubFilterApproved,
+        _PlaceFilter.rejected => AppCopy.hubFilterRejected,
+        _PlaceFilter.suspended => AppCopy.hubFilterSuspended,
+      };
+
+  IconData get _icon => switch (filter) {
+        _PlaceFilter.all => Icons.apps_rounded,
+        _PlaceFilter.pending => Icons.hourglass_top_rounded,
+        _PlaceFilter.approved => Icons.check_circle_outline_rounded,
+        _PlaceFilter.rejected => Icons.cancel_outlined,
+        _PlaceFilter.suspended => Icons.pause_circle_outline_rounded,
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final foreground = selected ? AppColor.primary : AppColor.textSecondary;
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: '$_label، $count',
+      child: Material(
+        color: selected ? AppColor.primary50 : AppColor.surfaceMuted,
+        borderRadius: AppRadii.rPill,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: AppRadii.rPill,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: 48.h),
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.md.w,
+                vertical: AppSpacing.sm.h,
+              ),
+              decoration: BoxDecoration(
+                borderRadius: AppRadii.rPill,
+                border: Border.all(
+                  color: selected ? AppColor.primary : AppColor.border,
+                  width: selected ? 1.5 : 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(_icon, size: 18.sp, color: foreground),
+                  gapH(AppSpacing.xs),
+                  Text(
+                    _label,
+                    style: AppText.labelSm.copyWith(
+                      color: foreground,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  gapH(AppSpacing.xs),
+                  Container(
+                    constraints:
+                        BoxConstraints(minWidth: 24.w, minHeight: 24.h),
+                    alignment: Alignment.center,
+                    padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs.w),
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? AppColor.primary.withValues(alpha: 0.12)
+                          : AppColor.surfaceCard,
+                      borderRadius: AppRadii.rPill,
+                    ),
+                    child: Text(
+                      '$count',
+                      style: AppText.caption.copyWith(
+                        color: foreground,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FilteredPlacesEmptyState extends StatelessWidget {
+  const _FilteredPlacesEmptyState({required this.filter});
+
+  final _PlaceFilter filter;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = switch (filter) {
+      _PlaceFilter.pending => AppCopy.hubFilterPending,
+      _PlaceFilter.approved => AppCopy.hubFilterApproved,
+      _PlaceFilter.rejected => AppCopy.hubFilterRejected,
+      _PlaceFilter.suspended => AppCopy.hubFilterSuspended,
+      _PlaceFilter.all => AppCopy.hubFilterAll,
+    };
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg.w,
+        vertical: AppSpacing.xxl.h,
+      ),
+      decoration: BoxDecoration(
+        color: AppColor.surfaceMuted,
+        borderRadius: AppRadii.rLg,
+        border: Border.all(color: AppColor.border),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.filter_alt_off_outlined,
+            size: 34.sp,
+            color: AppColor.textTertiary,
+          ),
+          gapV(AppSpacing.sm),
+          Text(
+            AppCopy.hubFilterEmpty.replaceFirst('%s', label),
+            style: AppText.bodyMd.copyWith(fontWeight: FontWeight.w700),
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
     );
@@ -1597,10 +1490,27 @@ class _PlaceCard extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
+  void _openAppealSheet(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      backgroundColor: AppColor.surfaceCard,
+      barrierColor: AppColor.overlay,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppRadii.topOnly(AppRadii.xxl),
+      ),
+      builder: (_) => _AppealSheet(place: place),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final cover = place.imageUrl?.trim() ?? '';
     final model = SuggestionItemModel.fromPlace(place);
+    final isRejected = place.status.trim().toLowerCase() == 'rejected';
+    final rejectionReason = (place.rejectionReason ?? '').trim();
     return Semantics(
       container: true,
       label:
@@ -1620,10 +1530,12 @@ class _PlaceCard extends StatelessWidget {
                 height: 172.h,
                 width: double.infinity,
                 child: cover.isNotEmpty
-                    ? Image.network(
-                        cover,
+                    ? CachedNetworkImage(
+                        url: cover,
+                        width: double.infinity,
+                        height: 172.h,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _placePlaceholder(),
+                        errorWidget: (_) => _placePlaceholder(),
                       )
                     : _placePlaceholder(),
               ),
@@ -1661,6 +1573,27 @@ class _PlaceCard extends StatelessWidget {
                     status: place.status,
                     createdAt: place.createdAt,
                   ),
+                  if (isRejected && rejectionReason.isNotEmpty) ...[
+                    gapV(AppSpacing.sm),
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(AppSpacing.md.w),
+                      decoration: BoxDecoration(
+                        color: AppColor.error.withValues(alpha: 0.06),
+                        borderRadius: AppRadii.rMd,
+                        border: Border.all(
+                          color: AppColor.error.withValues(alpha: 0.20),
+                        ),
+                      ),
+                      child: Text(
+                        '${AppCopy.hubRejectedReasonPrefix} $rejectionReason',
+                        style: AppText.bodySm.copyWith(
+                          color: AppColor.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                   if (place.description.trim().isNotEmpty) ...[
                     gapV(AppSpacing.sm),
                     Text(
@@ -1680,51 +1613,18 @@ class _PlaceCard extends StatelessWidget {
                     ),
                   ),
                   gapV(AppSpacing.sm),
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final stack = constraints.maxWidth < 280.w;
-                      if (stack) {
-                        return Column(
-                          children: [
-                            AppButton(
-                              text: AppCopy.hubPlaceEdit,
-                              onPress: onEdit,
-                              size: AppButtonSize.sm,
-                              variant: AppButtonVariant.outline,
-                            ),
-                            gapV(AppSpacing.sm),
-                            AppButton(
-                              text: AppCopy.hubPlaceDelete,
-                              onPress: onDelete,
-                              size: AppButtonSize.sm,
-                              variant: AppButtonVariant.destructive,
-                            ),
-                          ],
-                        );
-                      }
-                      return Row(
-                        children: [
-                          Expanded(
-                            child: AppButton(
-                              text: AppCopy.hubPlaceEdit,
-                              onPress: onEdit,
-                              size: AppButtonSize.sm,
-                              variant: AppButtonVariant.outline,
-                            ),
-                          ),
-                          gapH(AppSpacing.sm),
-                          Expanded(
-                            child: AppButton(
-                              text: AppCopy.hubPlaceDelete,
-                              onPress: onDelete,
-                              size: AppButtonSize.sm,
-                              variant: AppButtonVariant.destructive,
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
+                  if (isRejected)
+                    _RejectedPlaceActions(
+                      canEdit: place.editAllowed,
+                      onEdit: onEdit,
+                      onAppeal: () => _openAppealSheet(context),
+                      onDelete: onDelete,
+                    )
+                  else
+                    _StandardPlaceActions(
+                      onEdit: onEdit,
+                      onDelete: onDelete,
+                    ),
                   gapV(AppSpacing.sm),
                   Row(
                     children: [
@@ -1761,6 +1661,160 @@ class _PlaceCard extends StatelessWidget {
         child: Icon(Icons.image_not_supported_outlined,
             color: AppColor.textTertiary, size: 38.sp),
       ),
+    );
+  }
+}
+
+class _StandardPlaceActions extends StatelessWidget {
+  const _StandardPlaceActions({
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final stack = constraints.maxWidth < 280.w;
+        if (stack) {
+          return Column(
+            children: [
+              AppButton(
+                text: AppCopy.hubPlaceEdit,
+                onPress: onEdit,
+                size: AppButtonSize.sm,
+                variant: AppButtonVariant.outline,
+              ),
+              gapV(AppSpacing.sm),
+              AppButton(
+                text: AppCopy.hubPlaceDelete,
+                onPress: onDelete,
+                size: AppButtonSize.sm,
+                variant: AppButtonVariant.destructive,
+              ),
+            ],
+          );
+        }
+        return Row(
+          children: [
+            Expanded(
+              child: AppButton(
+                text: AppCopy.hubPlaceEdit,
+                onPress: onEdit,
+                size: AppButtonSize.sm,
+                variant: AppButtonVariant.outline,
+              ),
+            ),
+            gapH(AppSpacing.sm),
+            Expanded(
+              child: AppButton(
+                text: AppCopy.hubPlaceDelete,
+                onPress: onDelete,
+                size: AppButtonSize.sm,
+                variant: AppButtonVariant.destructive,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _RejectedPlaceActions extends StatelessWidget {
+  const _RejectedPlaceActions({
+    required this.canEdit,
+    required this.onEdit,
+    required this.onAppeal,
+    required this.onDelete,
+  });
+
+  final bool canEdit;
+  final VoidCallback onEdit;
+  final VoidCallback onAppeal;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        if (canEdit) ...[
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.md.w,
+              vertical: AppSpacing.sm.h,
+            ),
+            decoration: BoxDecoration(
+              color: AppColor.success.withValues(alpha: 0.10),
+              borderRadius: AppRadii.rMd,
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.lock_open_rounded,
+                  size: 18.sp,
+                  color: AppColor.success,
+                ),
+                gapH(AppSpacing.xs),
+                Expanded(
+                  child: Text(
+                    AppCopy.hubRejectedEditAllowed,
+                    style: AppText.labelSm.copyWith(
+                      color: AppColor.success,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          gapV(AppSpacing.sm),
+        ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final stack = constraints.maxWidth < 300.w;
+            final appealButton = AppButton(
+              text: AppCopy.appealTitle,
+              onPress: onAppeal,
+              size: AppButtonSize.sm,
+              variant: AppButtonVariant.outline,
+            );
+            if (!canEdit) return appealButton;
+            final editButton = AppButton(
+              text: AppCopy.hubEditAndResubmit,
+              onPress: onEdit,
+              size: AppButtonSize.sm,
+            );
+            if (stack) {
+              return Column(
+                children: [
+                  editButton,
+                  gapV(AppSpacing.sm),
+                  appealButton,
+                ],
+              );
+            }
+            return Row(
+              children: [
+                Expanded(child: editButton),
+                gapH(AppSpacing.sm),
+                Expanded(child: appealButton),
+              ],
+            );
+          },
+        ),
+        gapV(AppSpacing.sm),
+        AppButton(
+          text: AppCopy.hubPlaceDelete,
+          onPress: onDelete,
+          size: AppButtonSize.sm,
+          variant: AppButtonVariant.destructive,
+        ),
+      ],
     );
   }
 }
@@ -1845,7 +1899,9 @@ class _PlaceModerationBannerState extends State<_PlaceModerationBanner> {
         : suspended
             ? AppCopy.hubStatusSuspended
             : awaitingReview
-                ? (underReview ? AppCopy.hubStatusUnderReview : AppCopy.hubStatusAwaitingReview)
+                ? (underReview
+                    ? AppCopy.hubStatusUnderReview
+                    : AppCopy.hubStatusAwaitingReview)
                 : AppCopy.hubStatusApproved;
     return Semantics(
       label: awaitingReview ? '$label. يتم عرض العداد التنازلي' : label,

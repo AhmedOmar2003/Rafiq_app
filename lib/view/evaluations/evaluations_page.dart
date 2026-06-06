@@ -98,7 +98,8 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
     }
 
     try {
-      final imagePath = ProfileImageStore.instance.value.file?.path ?? '';
+      final profileImage = ProfileImageStore.instance.value;
+      final imagePath = profileImage.remoteUrl ?? profileImage.file?.path ?? '';
       final insertedReview = await _apiService.submitReview(
         placeId: widget.placeId,
         userId: userId,
@@ -172,56 +173,56 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          Text(
-            AppCopy.reviewPickStars,
-            style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
-          ),
-          gapV(AppSpacing.xs),
-          Text(
-            AppCopy.reviewStarsHelper,
-            style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
-          ),
-          gapV(AppSpacing.md),
-          _RatingSelector(
-            value: _selectedRating,
-            onChanged: (value) => setState(() => _selectedRating = value),
-          ),
-          gapV(AppSpacing.md),
-          Container(
-            decoration: BoxDecoration(
-              color: AppColor.surface,
-              borderRadius: AppRadii.rLg,
-              border: Border.all(color: AppColor.border),
+            Text(
+              AppCopy.reviewPickStars,
+              style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
             ),
-            padding: EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg.w,
-              vertical: AppSpacing.md.h,
+            gapV(AppSpacing.xs),
+            Text(
+              AppCopy.reviewStarsHelper,
+              style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
             ),
-            child: TextField(
-              controller: textController,
-              textAlign: TextAlign.right,
-              style: AppText.bodyMd.copyWith(color: AppColor.textPrimary),
-              minLines: 3,
-              maxLines: 5,
-              textInputAction: TextInputAction.newline,
-              decoration: InputDecoration(
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                hintText: AppCopy.reviewWriteOptional,
-                hintStyle:
-                    AppText.bodyMd.copyWith(color: AppColor.textTertiary),
+            gapV(AppSpacing.md),
+            _RatingSelector(
+              value: _selectedRating,
+              onChanged: (value) => setState(() => _selectedRating = value),
+            ),
+            gapV(AppSpacing.md),
+            Container(
+              decoration: BoxDecoration(
+                color: AppColor.surface,
+                borderRadius: AppRadii.rLg,
+                border: Border.all(color: AppColor.border),
+              ),
+              padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg.w,
+                vertical: AppSpacing.md.h,
+              ),
+              child: TextField(
+                controller: textController,
+                textAlign: TextAlign.right,
+                style: AppText.bodyMd.copyWith(color: AppColor.textPrimary),
+                minLines: 3,
+                maxLines: 5,
+                textInputAction: TextInputAction.newline,
+                decoration: InputDecoration(
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  hintText: AppCopy.reviewWriteOptional,
+                  hintStyle:
+                      AppText.bodyMd.copyWith(color: AppColor.textTertiary),
+                ),
               ),
             ),
-          ),
-          gapV(AppSpacing.md),
-          AppButton(
-            text: isLoading ? 'جارٍ الإرسال...' : AppCopy.reviewSendCta,
-            onPress: submitReview,
-            isEnabled: !isLoading,
-            isLoading: isLoading,
-          ),
-        ],
+            gapV(AppSpacing.md),
+            AppButton(
+              text: isLoading ? 'جارٍ الإرسال...' : AppCopy.reviewSendCta,
+              onPress: submitReview,
+              isEnabled: !isLoading,
+              isLoading: isLoading,
+            ),
+          ],
         ),
       ),
     );
@@ -314,44 +315,44 @@ class _EvaluationsPageState extends State<EvaluationsPage> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          _ReviewerAvatar(name: evaluation.name, imagePath: evaluation.image),
-          gapH(AppSpacing.lg),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(evaluation.name, style: AppText.titleLg),
-                gapV(AppSpacing.xs),
-                Row(
-                  children: [
-                    ...List.generate(
-                        5,
-                        (i) => Padding(
-                              padding: EdgeInsets.only(left: 2.w),
-                              child: Icon(Icons.star_rounded,
-                                  color: i < evaluation.rating
-                                      ? AppColor.warning
-                                      : AppColor.textMuted,
-                                  size: 18.w),
-                            )),
-                    gapH(AppSpacing.sm),
-                    Text(formattedDate, style: AppText.bodySm),
-                  ],
-                ),
-                gapV(AppSpacing.sm),
-                Text(evaluation.body.isNotEmpty
-                        ? evaluation.body
-                        : AppCopy.reviewNoCommentFallback,
-                    style: AppText.bodyMd.copyWith(height: 1.6)),
-              ],
+            _ReviewerAvatar(name: evaluation.name, imagePath: evaluation.image),
+            gapH(AppSpacing.lg),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(evaluation.name, style: AppText.titleLg),
+                  gapV(AppSpacing.xs),
+                  Row(
+                    children: [
+                      ...List.generate(
+                          5,
+                          (i) => Padding(
+                                padding: EdgeInsets.only(left: 2.w),
+                                child: Icon(Icons.star_rounded,
+                                    color: i < evaluation.rating
+                                        ? AppColor.warning
+                                        : AppColor.textMuted,
+                                    size: 18.w),
+                              )),
+                      gapH(AppSpacing.sm),
+                      Text(formattedDate, style: AppText.bodySm),
+                    ],
+                  ),
+                  gapV(AppSpacing.sm),
+                  Text(
+                      evaluation.body.isNotEmpty
+                          ? evaluation.body
+                          : AppCopy.reviewNoCommentFallback,
+                      style: AppText.bodyMd.copyWith(height: 1.6)),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
         ),
       ),
     );
   }
-
 }
 
 class _RatingSelector extends StatelessWidget {

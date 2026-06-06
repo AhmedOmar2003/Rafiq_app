@@ -10,6 +10,7 @@ import 'package:rafiq_app/core/utils/app_microcopy.dart';
 import 'package:rafiq_app/on_boarding/cashe_helper.dart';
 import 'package:rafiq_app/on_boarding/on_boarding_screen.dart';
 import 'package:rafiq_app/service/auth_service.dart';
+import 'package:rafiq_app/service/profile_image_store.dart';
 import 'package:rafiq_app/service/user_role_store.dart';
 import 'package:rafiq_app/view/pages/choice/choice_screen.dart';
 import 'package:rafiq_app/view/home/home_view.dart';
@@ -52,9 +53,12 @@ class _AuthGateState extends State<AuthGate> {
     });
   }
 
-  Future<List<Object>> _bootstrap() {
+  Future<List<Object>> _bootstrap() async {
+    await AuthService.ensureSupabaseInitialized();
+    await AuthService().finalizePendingGoogleOAuth();
+    await ProfileImageStore.instance.refresh();
     return Future.wait<Object>([
-      AuthService.ensureSupabaseInitialized().then((_) => true),
+      Future<Object>.value(true),
       CacheHelper.getOnBoardingSeen(),
       UserRoleStore.instance.ensureLoaded().then((_) => true),
     ]);

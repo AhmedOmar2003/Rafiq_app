@@ -317,14 +317,14 @@ class _DetailsPageState extends State<DetailsPage> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
       backgroundColor: AppColor.surfaceCard,
+      barrierColor: AppColor.overlay,
       shape: RoundedRectangleBorder(
         borderRadius: AppRadii.topOnly(AppRadii.xxl),
       ),
-      builder: (_) => SafeArea(
-        top: false,
-        child: _ReportSheet(place: place),
-      ),
+      builder: (_) => _ReportSheet(place: place),
     );
   }
 }
@@ -375,39 +375,40 @@ class _CampaignsSection extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          Row(
-            children: [
-              Container(
-                width: 38.w,
-                height: 38.w,
-                decoration: BoxDecoration(
-                  color: AppColor.primary50,
-                  borderRadius: AppRadii.rMd,
+            Row(
+              children: [
+                Container(
+                  width: 38.w,
+                  height: 38.w,
+                  decoration: BoxDecoration(
+                    color: AppColor.primary50,
+                    borderRadius: AppRadii.rMd,
+                  ),
+                  child: Icon(
+                    Icons.local_offer_rounded,
+                    color: AppColor.primary,
+                    size: 20.sp,
+                  ),
                 ),
-                child: Icon(
-                  Icons.local_offer_rounded,
-                  color: AppColor.primary,
-                  size: 20.sp,
+                gapH(AppSpacing.md),
+                Expanded(
+                  child: Text(
+                    AppCopy.detailsOffersTitle,
+                    style:
+                        AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
+                  ),
                 ),
-              ),
-              gapH(AppSpacing.md),
-              Expanded(
-                child: Text(
-                  AppCopy.detailsOffersTitle,
-                  style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
-                ),
-              ),
-              _CountChip(count: campaigns.length),
-            ],
-          ),
-          gapV(AppSpacing.md),
-          ...campaigns.map(
-            (campaign) => Padding(
-              padding: EdgeInsets.only(bottom: AppSpacing.md.h),
-              child: _CampaignBannerCard(campaign: campaign),
+                _CountChip(count: campaigns.length),
+              ],
             ),
-          ),
-        ],
+            gapV(AppSpacing.md),
+            ...campaigns.map(
+              (campaign) => Padding(
+                padding: EdgeInsets.only(bottom: AppSpacing.md.h),
+                child: _CampaignBannerCard(campaign: campaign),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -429,19 +430,19 @@ class _DescriptionSection extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          Text(
-            AppCopy.detailsDescriptionTitle,
-            style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
-          ),
-          gapV(AppSpacing.md),
-          Text(
-            description,
-            style: AppText.bodyMd.copyWith(
-              color: AppColor.textSecondary,
-              height: 1.6,
+            Text(
+              AppCopy.detailsDescriptionTitle,
+              style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
             ),
-          ),
-        ],
+            gapV(AppSpacing.md),
+            Text(
+              description,
+              style: AppText.bodyMd.copyWith(
+                color: AppColor.textSecondary,
+                height: 1.6,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -478,89 +479,89 @@ class _CampaignBannerCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          if (hasImage)
-            ClipRRect(
-              borderRadius: AppRadii.topOnly(AppRadii.lg),
-              child: Image.network(
-                campaign.imagePath!,
-                width: double.infinity,
-                height: 156.h,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-              ),
-            ),
-          Padding(
-            padding: EdgeInsets.all(AppSpacing.md.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  spacing: AppSpacing.sm.w,
-                  runSpacing: AppSpacing.sm.h,
-                  children: [
-                    _OfferPill(
-                      label: AppCopy.detailsOfferActiveNow,
-                      color: AppColor.success,
-                      background: AppColor.success.withValues(alpha: 0.10),
-                    ),
-                    _OfferPill(
-                      label: _campaignKindLabel(campaign.kind),
-                      color: AppColor.primary,
-                      background: AppColor.primary50,
-                    ),
-                  ],
-                ),
-                gapV(AppSpacing.sm),
-                Text(
-                  campaign.title,
-                  style: AppText.titleMd.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                if ((campaign.body ?? '').trim().isNotEmpty) ...[
-                  gapV(AppSpacing.sm),
-                  Text(
-                    campaign.body!,
-                    style: AppText.bodyMd.copyWith(
-                      color: AppColor.textSecondary,
-                      height: 1.6,
-                    ),
-                  ),
-                ],
-                gapV(AppSpacing.md),
-                Container(
+            if (hasImage)
+              ClipRRect(
+                borderRadius: AppRadii.topOnly(AppRadii.lg),
+                child: CachedNetworkImage(
+                  url: campaign.imagePath!,
                   width: double.infinity,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md.w,
-                    vertical: AppSpacing.sm.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColor.surfaceVariant,
-                    borderRadius: AppRadii.rMd,
-                  ),
-                  child: Row(
+                  height: 156.h,
+                  fit: BoxFit.cover,
+                  errorWidget: (_) => const SizedBox.shrink(),
+                ),
+              ),
+            Padding(
+              padding: EdgeInsets.all(AppSpacing.md.w),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Wrap(
+                    spacing: AppSpacing.sm.w,
+                    runSpacing: AppSpacing.sm.h,
                     children: [
-                      Icon(
-                        Icons.schedule_rounded,
-                        size: 16.sp,
-                        color: AppColor.textSecondary,
+                      _OfferPill(
+                        label: AppCopy.detailsOfferActiveNow,
+                        color: AppColor.success,
+                        background: AppColor.success.withValues(alpha: 0.10),
                       ),
-                      gapH(AppSpacing.sm),
-                      Expanded(
-                        child: Text(
-                          endLabel,
-                          style: AppText.bodySm.copyWith(
-                            color: AppColor.textSecondary,
-                          ),
-                        ),
+                      _OfferPill(
+                        label: _campaignKindLabel(campaign.kind),
+                        color: AppColor.primary,
+                        background: AppColor.primary50,
                       ),
                     ],
                   ),
-                ),
-              ],
+                  gapV(AppSpacing.sm),
+                  Text(
+                    campaign.title,
+                    style: AppText.titleMd.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  if ((campaign.body ?? '').trim().isNotEmpty) ...[
+                    gapV(AppSpacing.sm),
+                    Text(
+                      campaign.body!,
+                      style: AppText.bodyMd.copyWith(
+                        color: AppColor.textSecondary,
+                        height: 1.6,
+                      ),
+                    ),
+                  ],
+                  gapV(AppSpacing.md),
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md.w,
+                      vertical: AppSpacing.sm.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColor.surfaceVariant,
+                      borderRadius: AppRadii.rMd,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.schedule_rounded,
+                          size: 16.sp,
+                          color: AppColor.textSecondary,
+                        ),
+                        gapH(AppSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            endLabel,
+                            style: AppText.bodySm.copyWith(
+                              color: AppColor.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
         ),
       ),
     );
@@ -638,43 +639,43 @@ class _EmptyReviews extends StatelessWidget {
           padding: EdgeInsets.all(AppSpacing.md.w),
           child: Column(
             children: [
-            Icon(
-              Icons.rate_review_outlined,
-              size: 48.sp,
-              color: AppColor.textTertiary,
-            ),
-            gapV(AppSpacing.md),
-            Text(
-              AppCopy.detailsBeFirstReview,
-              style: AppText.bodyLg.copyWith(color: AppColor.textSecondary),
-            ),
-            gapV(AppSpacing.md),
-            Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.lg.w,
-                vertical: AppSpacing.sm.h,
+              Icon(
+                Icons.rate_review_outlined,
+                size: 48.sp,
+                color: AppColor.textTertiary,
               ),
-              decoration: BoxDecoration(
-                color: AppColor.primary50,
-                borderRadius: AppRadii.rPill,
+              gapV(AppSpacing.md),
+              Text(
+                AppCopy.detailsBeFirstReview,
+                style: AppText.bodyLg.copyWith(color: AppColor.textSecondary),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.add_comment_outlined,
-                    size: 16.sp,
-                    color: AppColor.primary,
-                  ),
-                  gapH(AppSpacing.sm),
-                  Text(
-                    AppCopy.detailsAddYourComment,
-                    style: AppText.labelMd.copyWith(color: AppColor.primary),
-                  ),
-                ],
+              gapV(AppSpacing.md),
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg.w,
+                  vertical: AppSpacing.sm.h,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColor.primary50,
+                  borderRadius: AppRadii.rPill,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.add_comment_outlined,
+                      size: 16.sp,
+                      color: AppColor.primary,
+                    ),
+                    gapH(AppSpacing.sm),
+                    Text(
+                      AppCopy.detailsAddYourComment,
+                      style: AppText.labelMd.copyWith(color: AppColor.primary),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
           ),
         ),
       ),
@@ -698,24 +699,24 @@ class _SimilarSection extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          Padding(
-            padding: EdgeInsets.all(AppSpacing.lg.w),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  AppCopy.detailsSimilarHeading,
-                  style: AppText.headingSm,
-                ),
-                _CountChip(count: items.length),
-              ],
+            Padding(
+              padding: EdgeInsets.all(AppSpacing.lg.w),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    AppCopy.detailsSimilarHeading,
+                    style: AppText.headingSm,
+                  ),
+                  _CountChip(count: items.length),
+                ],
+              ),
             ),
-          ),
-          SimilarEvents(
-            suggestionItemList: items,
-            onItemSelected: onItemSelected,
-          ),
-        ],
+            SimilarEvents(
+              suggestionItemList: items,
+              onItemSelected: onItemSelected,
+            ),
+          ],
         ),
       ),
     );
@@ -888,139 +889,90 @@ class _ReportSheetState extends State<_ReportSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final sheetMaxHeight = MediaQuery.sizeOf(context).height * 0.88;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        AppSpacing.lg.w,
-        AppSpacing.lg.h,
-        AppSpacing.lg.w,
-        MediaQuery.viewInsetsOf(context).bottom + AppSpacing.lg.h,
+    return AppModalSheetFrame(
+      title: AppCopy.detailsReport,
+      subtitle: widget.place.text,
+      leading: Container(
+        width: 44.w,
+        height: 44.w,
+        decoration: BoxDecoration(
+          color: AppColor.error.withValues(alpha: 0.12),
+          borderRadius: AppRadii.rMd,
+        ),
+        alignment: Alignment.center,
+        child: Icon(Icons.flag_outlined, color: AppColor.error, size: 22.sp),
       ),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: sheetMaxHeight),
-        child: SingleChildScrollView(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(
-                  width: 40.w,
-                  height: 4.h,
-                  decoration: BoxDecoration(
-                    color: AppColor.border,
-                    borderRadius: AppRadii.rSm,
-                  ),
-                ),
-              ),
-              gapV(AppSpacing.xl),
-              Row(
-                children: [
-                  Container(
-                    width: 44.w,
-                    height: 44.w,
-                    decoration: BoxDecoration(
-                      color: AppColor.error.withValues(alpha: 0.12),
-                      borderRadius: AppRadii.rMd,
-                    ),
-                    alignment: Alignment.center,
-                    child: Icon(Icons.flag_outlined,
-                        color: AppColor.error, size: 22.sp),
-                  ),
-                  gapH(AppSpacing.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          AppCopy.detailsReport,
-                          style: AppText.titleMd
-                              .copyWith(fontWeight: FontWeight.w800),
-                        ),
-                        Text(
-                          widget.place.text,
-                          style: AppText.bodySm
-                              .copyWith(color: AppColor.textSecondary),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              gapV(AppSpacing.lg),
-              Text(
-                AppCopy.reportPickReason,
-                style: AppText.labelMd.copyWith(
-                  color: AppColor.textSecondary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              gapV(AppSpacing.sm),
-              Wrap(
-                spacing: AppSpacing.sm.w,
-                runSpacing: AppSpacing.sm.h,
-                children: _reasons.map((r) {
-                  final selected = _selected == r.code;
-                  return Semantics(
-                    button: true,
-                    selected: selected,
-                    label: 'سبب البلاغ ${r.label}',
-                    child: Material(
-                      color: selected ? AppColor.primary : AppColor.surface,
-                      borderRadius: AppRadii.rPill,
-                      child: InkWell(
-                        onTap: () => setState(() => _selected = r.code),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            AppCopy.reportPickReason,
+            style: AppText.labelMd.copyWith(
+              color: AppColor.textSecondary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          gapV(AppSpacing.sm),
+          Wrap(
+            spacing: AppSpacing.sm.w,
+            runSpacing: AppSpacing.sm.h,
+            children: _reasons.map((r) {
+              final selected = _selected == r.code;
+              return Semantics(
+                button: true,
+                selected: selected,
+                label: 'سبب البلاغ ${r.label}',
+                child: Material(
+                  color: selected ? AppColor.primary : AppColor.surface,
+                  borderRadius: AppRadii.rPill,
+                  child: InkWell(
+                    onTap: _sending
+                        ? null
+                        : () => setState(() => _selected = r.code),
+                    borderRadius: AppRadii.rPill,
+                    splashColor: AppColor.primary.withValues(alpha: 0.12),
+                    child: Container(
+                      constraints: BoxConstraints(minHeight: 48.h),
+                      alignment: Alignment.center,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md.w,
+                        vertical: AppSpacing.sm.h,
+                      ),
+                      decoration: BoxDecoration(
                         borderRadius: AppRadii.rPill,
-                        splashColor:
-                            AppColor.primary.withValues(alpha: 0.12),
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: AppSpacing.md.w,
-                            vertical: AppSpacing.sm.h,
-                          ),
-                          decoration: BoxDecoration(
-                            borderRadius: AppRadii.rPill,
-                            border: Border.all(
-                              color: selected
-                                  ? AppColor.primary
-                                  : AppColor.border,
-                            ),
-                          ),
-                          child: Text(
-                            r.label,
-                            style: AppText.labelMd.copyWith(
-                              color: selected
-                                  ? AppColor.white
-                                  : AppColor.textPrimary,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
+                        border: Border.all(
+                          color: selected ? AppColor.primary : AppColor.border,
+                        ),
+                      ),
+                      child: Text(
+                        r.label,
+                        style: AppText.labelMd.copyWith(
+                          color:
+                              selected ? AppColor.white : AppColor.textPrimary,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
-                  );
-                }).toList(),
-              ),
-              gapV(AppSpacing.lg),
-              AppInput(
-                controller: _detailsCtrl,
-                hintText: AppCopy.reportDetailsHint,
-                maxLines: 4,
-                paddingBottom: 0,
-                fillColor: AppColor.surface,
-              ),
-              gapV(AppSpacing.xl),
-              AppButton(
-                text: AppCopy.reportSendCta,
-                onPress: _submit,
-                isEnabled: !_sending,
-              ),
-            ],
+                  ),
+                ),
+              );
+            }).toList(),
           ),
-        ),
+          gapV(AppSpacing.lg),
+          AppInput(
+            controller: _detailsCtrl,
+            label: AppCopy.reportDetailsHint,
+            hintText: AppCopy.reportDetailsHint,
+            maxLines: 3,
+            paddingBottom: 0,
+            fillColor: AppColor.surface,
+          ),
+        ],
+      ),
+      footer: AppButton(
+        text: AppCopy.reportSendCta,
+        onPress: _submit,
+        isLoading: _sending,
       ),
     );
   }

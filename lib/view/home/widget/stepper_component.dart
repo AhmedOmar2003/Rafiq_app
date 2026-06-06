@@ -99,6 +99,7 @@ class StepperComponent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final node = Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         _buildCircle(),
         if (label != null) ...[
@@ -109,20 +110,34 @@ class StepperComponent extends StatelessWidget {
               color: _isActive ? AppColor.textPrimary : AppColor.textTertiary,
               fontWeight: _isCurrent ? FontWeight.w700 : FontWeight.w500,
             ),
-            child: Text(label!, maxLines: 1, overflow: TextOverflow.ellipsis),
+            child: Text(
+              label!,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
           ),
         ],
       ],
     );
 
-    if (isLast) return node;
+    if (isLast) {
+      return SizedBox(
+        width: (stepSize + AppSpacing.xl).w,
+        child: node,
+      );
+    }
 
     return Expanded(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          node,
           Expanded(
+            flex: 2,
+            child: node,
+          ),
+          Expanded(
+            flex: 1,
             child: Padding(
               padding: EdgeInsets.only(top: (stepSize / 2).h - 1),
               child: _buildConnector(),

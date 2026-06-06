@@ -96,7 +96,11 @@ class _CachedNetworkImageState extends State<CachedNetworkImage> {
     }
 
     final dpr = MediaQuery.devicePixelRatioOf(context);
-    final cacheW = _cacheDimension(widget.width, dpr);
+    final displayWidth = widget.width;
+    final decodeWidth = displayWidth != null && displayWidth.isFinite
+        ? displayWidth
+        : MediaQuery.sizeOf(context).width;
+    final cacheW = _cacheDimension(decodeWidth, dpr);
     final cacheH = _cacheDimension(widget.height, dpr);
 
     if (kIsWeb) {
@@ -154,7 +158,7 @@ class _DefaultError extends StatelessWidget {
         child: Center(
           child: Icon(
             Icons.image_not_supported_outlined,
-            color: Color(0xFF979797), // neutral500
+            color: Color(0xFF6F6F6F), // neutral600
           ),
         ),
       );

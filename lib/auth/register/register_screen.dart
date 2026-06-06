@@ -4,6 +4,7 @@ import 'package:rafiq_app/auth/login/login_screen.dart';
 import 'package:rafiq_app/core/design/app_image.dart';
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
+import 'package:rafiq_app/core/utils/app_error_formatter.dart';
 import 'package:rafiq_app/core/utils/app_microcopy.dart';
 import 'package:rafiq_app/core/utils/assets.dart';
 import 'package:rafiq_app/service/auth_service.dart';
@@ -46,7 +47,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       setState(() => _showSuccessOverlay = true);
     } catch (e) {
       if (!mounted) return;
-      AppFeedback.error(AppCopy.errorGeneric);
+      AppFeedback.error(AppErrorFormatter.userMessage(e));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -55,12 +56,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _handleGoogleRegister() async {
     setState(() => _isLoading = true);
     try {
-      final completed = await AuthService().signInWithGoogle();
+      final completed = await AuthService().signUpWithGoogle();
       if (!mounted || !completed) return;
       setState(() => _showSuccessOverlay = true);
     } catch (e) {
       if (!mounted) return;
-      AppFeedback.error(AppCopy.errorGeneric);
+      AppFeedback.error(AppErrorFormatter.userMessage(e));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

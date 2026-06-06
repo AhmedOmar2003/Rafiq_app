@@ -1,17 +1,13 @@
 import 'dart:async';
-import 'dart:io';
-
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:rafiq_app/view/pages/legal/help_screen.dart';
 import 'package:rafiq_app/view/pages/legal/privacy_policy_screen.dart';
 import 'package:rafiq_app/view/pages/legal/terms_screen.dart';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
@@ -25,6 +21,7 @@ import '../../models/subscription/plan.dart';
 import '../../models/suggestion_item_model/suggestion_item.dart';
 import '../../service/api_service.dart';
 import '../../service/accessibility_preferences.dart';
+import '../../service/analytics_tracker.dart';
 import '../../service/auth_service.dart';
 import '../../service/profile_image_store.dart';
 import '../../service/subscription_service.dart';
@@ -51,6 +48,9 @@ class _ProfilePageState extends State<ProfilePage> {
   String? userName;
   String? userEmail;
   bool _isLoading = false;
+  bool _isAvatarSaving = false;
+  bool _favoritesExpanded = false;
+  bool _favoritesLoadFailed = false;
 
   /// Number of places this provider owns. Decides the singular vs plural
   /// copy on the "return" banner.
@@ -68,7 +68,9 @@ class _ProfilePageState extends State<ProfilePage> {
     // ProfileImageStore is the single source of truth — just make sure it's
     // loaded. The hero image listens to its ValueNotifier so we never need
     // local setState plumbing for the picture.
-    unawaited(ProfileImageStore.instance.ensureLoaded());
+    if (widget.enableRemoteBootstrap) {
+      unawaited(ProfileImageStore.instance.ensureLoaded());
+    }
     // Make sure the role flag + subscription catalog are warm before the
     // user expects to see plan-specific copy in the row.
     if (widget.enableRemoteBootstrap) {
@@ -81,8 +83,7 @@ class _ProfilePageState extends State<ProfilePage> {
         }
       }());
       _resolveProviderContext();
-      _favoritePlacesFuture =
-          ApiService().fetchFavoritePlaces().catchError((_) => <Place>[]);
+      _favoritePlacesFuture = _loadFavoritePlaces();
     } else {
       _favoritePlacesFuture = Future<List<Place>>.value(const <Place>[]);
     }
@@ -143,15 +144,62 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _refreshFavoritePlaces() async {
-    final next = ApiService()
-        .fetchFavoritePlaces(forceRefresh: true)
-        .catchError((_) => <Place>[]);
+    final next = _loadFavoritePlaces(forceRefresh: true);
     if (!mounted) return;
     setState(() => _favoritePlacesFuture = next);
     await next;
   }
 
+  Future<List<Place>> _loadFavoritePlaces({bool forceRefresh = false}) async {
+    try {
+      final places = await ApiService().fetchFavoritePlaces(
+        forceRefresh: forceRefresh,
+      );
+      _favoritesLoadFailed = false;
+      return places;
+    } catch (_) {
+      _favoritesLoadFailed = true;
+      return const <Place>[];
+    }
+  }
+
+  Future<void> _removeFavorite(Place place) async {
+    final placeId = place.placeUuid;
+    if (placeId == null || placeId.isEmpty) {
+      AppFeedback.error('معرفناش نحدد المكان. جرّب تحديث المفضلة.');
+      return;
+    }
+
+    final confirmed = await AppConfirmDialog.show(
+      context,
+      title: 'تشيل المكان من المفضلة؟',
+      message: 'تقدر تضيفه تاني في أي وقت.',
+      confirmLabel: 'شيل المكان',
+      cancelLabel: AppCopy.cancel,
+      icon: Icons.heart_broken_outlined,
+    );
+    if (!confirmed || !mounted) return;
+
+    try {
+      await ApiService().setPlaceFavorite(
+        placeId: placeId,
+        shouldFavorite: false,
+      );
+      AnalyticsTracker.instance.track(
+        AnalyticsKind.placeUnfavorite,
+        placeId: placeId,
+      );
+      await _refreshFavoritePlaces();
+      if (!mounted) return;
+      AppFeedback.success('اتشال من المفضلة.');
+    } catch (error) {
+      if (!mounted) return;
+      AppFeedback.error(AppErrorFormatter.userMessage(error));
+    }
+  }
+
   Future<void> _pickImage() async {
+    if (_isAvatarSaving) return;
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(
       source: ImageSource.gallery,
@@ -160,39 +208,30 @@ class _ProfilePageState extends State<ProfilePage> {
     );
     if (pickedFile == null) return;
 
-    if (kIsWeb) {
+    setState(() => _isAvatarSaving = true);
+    try {
       final bytes = await pickedFile.readAsBytes();
       if (bytes.isEmpty) return;
-      await ProfileImageStore.instance.setWebBytes(bytes);
-      return;
-    }
-
-    final persistedPath = await _persistProfileImage(File(pickedFile.path));
-    if (persistedPath == null) return;
-    await ProfileImageStore.instance.setMobileImage(File(persistedPath));
-  }
-
-  Future<String?> _persistProfileImage(File sourceImage) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final authUserId =
-          prefs.getString('authUserId') ?? (userEmail ?? 'default_user');
-      final safeId = authUserId.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '_');
-      final appDir = await getApplicationDocumentsDirectory();
-      final profileDir = Directory('${appDir.path}/profile_images');
-      if (!await profileDir.exists()) {
-        await profileDir.create(recursive: true);
+      if (bytes.length > 2 * 1024 * 1024) {
+        throw Exception('اختار صورة حجمها أقل من 2 ميجا.');
       }
-
-      final extension =
-          sourceImage.path.toLowerCase().endsWith('.png') ? 'png' : 'jpg';
-      final targetPath = '${profileDir.path}/profile_$safeId.$extension';
-      final persistedFile = await sourceImage.copy(targetPath);
-      return persistedFile.path;
-    } catch (e) {
-      if (!mounted) return null;
+      final lowerPath = pickedFile.path.toLowerCase();
+      final contentType = lowerPath.endsWith('.png')
+          ? 'image/png'
+          : lowerPath.endsWith('.webp')
+              ? 'image/webp'
+              : 'image/jpeg';
+      await ProfileImageStore.instance.uploadRemoteImage(
+        bytes,
+        contentType: contentType,
+      );
+      if (!mounted) return;
+      AppFeedback.success('صورتك اتحفظت.');
+    } catch (_) {
+      if (!mounted) return;
       AppFeedback.error(AppCopy.profileImageSaveError);
-      return null;
+    } finally {
+      if (mounted) setState(() => _isAvatarSaving = false);
     }
   }
 
@@ -253,6 +292,7 @@ class _ProfilePageState extends State<ProfilePage> {
       // same role and the same active plan. Clearing those belongs to the
       // delete-account flow, not to sign-out.
       await AuthService().signOut();
+      await ProfileImageStore.instance.clear();
       if (!mounted) return;
 
       Navigator.of(context).pushAndRemoveUntil(
@@ -319,132 +359,145 @@ class _ProfilePageState extends State<ProfilePage> {
           shape: RoundedRectangleBorder(borderRadius: AppRadii.rXl),
           elevation: 8,
           backgroundColor: AppColor.surface,
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.xl.w, vertical: AppSpacing.lg.h),
-            child: StatefulBuilder(
-              builder: (context, setState) {
-                return Form(
-                  key: formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Center(
-                              child: Text(
-                                AppCopy.changePwTitle,
-                                style: AppText.titleLg.copyWith(
-                                  color: AppColor.primary,
-                                  fontWeight: FontWeight.bold,
+          insetPadding: EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg.w,
+            vertical: AppSpacing.xxl.h,
+          ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: 480.w,
+              maxHeight: MediaQuery.sizeOf(context).height * 0.85,
+            ),
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.xl.w,
+                vertical: AppSpacing.lg.h,
+              ),
+              child: StatefulBuilder(
+                builder: (context, setState) {
+                  return Form(
+                    key: formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Center(
+                                child: Text(
+                                  AppCopy.changePwTitle,
+                                  style: AppText.titleLg.copyWith(
+                                    color: AppColor.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
                                 ),
-                                textAlign: TextAlign.center,
                               ),
                             ),
-                          ),
-                          IconButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            icon: const Icon(Icons.close,
-                                color: AppColor.primary, size: 24),
-                            tooltip: AppCopy.cancel,
-                          ),
-                        ],
-                      ),
-                      gapV(AppSpacing.lg),
-                      AppInput(
-                        label: AppCopy.changePwCurrent,
-                        hintText: AppCopy.authPasswordHint,
-                        controller: currentPasswordController,
-                        isPassword: true,
-                        textInputAction: TextInputAction.next,
-                        prefixIcon: const Icon(Icons.lock_outline,
-                            color: AppColor.primary),
-                        validator: (v) => (v == null || v.isEmpty)
-                            ? AppCopy.passwordRequired
-                            : null,
-                      ),
-                      AppInput(
-                        label: AppCopy.changePwNew,
-                        hintText: AppCopy.authPasswordHint,
-                        controller: newPasswordController,
-                        isPassword: true,
-                        textInputAction: TextInputAction.next,
-                        prefixIcon: const Icon(Icons.lock_outline,
-                            color: AppColor.primary),
-                        validator: (v) => (v == null || v.isEmpty)
-                            ? AppCopy.passwordRequired
-                            : null,
-                      ),
-                      AppInput(
-                        label: AppCopy.changePwConfirm,
-                        hintText: AppCopy.resetConfirmHint,
-                        controller: confirmPasswordController,
-                        isPassword: true,
-                        textInputAction: TextInputAction.done,
-                        onFieldSubmitted: (_) => changePassword(),
-                        prefixIcon: const Icon(Icons.lock_outline,
-                            color: AppColor.primary),
-                        paddingBottom: 8,
-                        validator: (v) {
-                          if (v == null || v.isEmpty) {
-                            return AppCopy.passwordRequired;
-                          }
-                          if (v != newPasswordController.text) {
-                            return AppCopy.passwordsMismatch;
-                          }
-                          return null;
-                        },
-                      ),
-                      gapV(AppSpacing.md),
-                      ValueListenableBuilder<bool>(
-                        valueListenable: isLoading,
-                        builder: (_, loading, __) => AppButton(
-                          text: AppCopy.changePwCta,
-                          onPress: () {
-                            if (!loading) changePassword();
+                            IconButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              icon: const Icon(Icons.close,
+                                  color: AppColor.primary, size: 24),
+                              tooltip: AppCopy.cancel,
+                            ),
+                          ],
+                        ),
+                        gapV(AppSpacing.lg),
+                        AppInput(
+                          label: AppCopy.changePwCurrent,
+                          hintText: AppCopy.authPasswordHint,
+                          controller: currentPasswordController,
+                          isPassword: true,
+                          textInputAction: TextInputAction.next,
+                          prefixIcon: const Icon(Icons.lock_outline,
+                              color: AppColor.primary),
+                          validator: (v) => (v == null || v.isEmpty)
+                              ? AppCopy.passwordRequired
+                              : null,
+                        ),
+                        AppInput(
+                          label: AppCopy.changePwNew,
+                          hintText: AppCopy.authPasswordHint,
+                          controller: newPasswordController,
+                          isPassword: true,
+                          textInputAction: TextInputAction.next,
+                          prefixIcon: const Icon(Icons.lock_outline,
+                              color: AppColor.primary),
+                          validator: (v) => (v == null || v.isEmpty)
+                              ? AppCopy.passwordRequired
+                              : null,
+                        ),
+                        AppInput(
+                          label: AppCopy.changePwConfirm,
+                          hintText: AppCopy.resetConfirmHint,
+                          controller: confirmPasswordController,
+                          isPassword: true,
+                          textInputAction: TextInputAction.done,
+                          onFieldSubmitted: (_) => changePassword(),
+                          prefixIcon: const Icon(Icons.lock_outline,
+                              color: AppColor.primary),
+                          paddingBottom: 8,
+                          validator: (v) {
+                            if (v == null || v.isEmpty) {
+                              return AppCopy.passwordRequired;
+                            }
+                            if (v != newPasswordController.text) {
+                              return AppCopy.passwordsMismatch;
+                            }
+                            return null;
                           },
-                          isLoading: loading,
                         ),
-                      ),
-                      gapV(AppSpacing.sm),
-                      ValueListenableBuilder<String?>(
-                        valueListenable: errorMessage,
-                        builder: (_, error, __) {
-                          return AnimatedOpacity(
-                            opacity: error == null ? 0.0 : 1.0,
-                            duration: AppMotion.base,
-                            child: error == null
-                                ? const SizedBox.shrink()
-                                : Padding(
-                                    padding:
-                                        EdgeInsets.only(top: AppSpacing.xs.h),
-                                    child: Text(
-                                      error,
-                                      style: AppText.bodyMd
-                                          .copyWith(color: AppColor.error),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ),
-                          );
-                        },
-                      ),
-                      gapV(AppSpacing.xs),
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: Text(
-                          AppCopy.cancel,
-                          style: AppText.bodyLg.copyWith(
-                            color: AppColor.primary,
-                            fontWeight: FontWeight.bold,
+                        gapV(AppSpacing.md),
+                        ValueListenableBuilder<bool>(
+                          valueListenable: isLoading,
+                          builder: (_, loading, __) => AppButton(
+                            text: AppCopy.changePwCta,
+                            onPress: () {
+                              if (!loading) changePassword();
+                            },
+                            isLoading: loading,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                );
-              },
+                        gapV(AppSpacing.sm),
+                        ValueListenableBuilder<String?>(
+                          valueListenable: errorMessage,
+                          builder: (_, error, __) {
+                            return AnimatedOpacity(
+                              opacity: error == null ? 0.0 : 1.0,
+                              duration: AppMotion.base,
+                              child: error == null
+                                  ? const SizedBox.shrink()
+                                  : Padding(
+                                      padding:
+                                          EdgeInsets.only(top: AppSpacing.xs.h),
+                                      child: Text(
+                                        error,
+                                        style: AppText.bodyMd
+                                            .copyWith(color: AppColor.error),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                            );
+                          },
+                        ),
+                        gapV(AppSpacing.xs),
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: Text(
+                            AppCopy.cancel,
+                            style: AppText.bodyLg.copyWith(
+                              color: AppColor.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
           ),
         );
@@ -519,29 +572,45 @@ class _ProfilePageState extends State<ProfilePage> {
             builder: (_, snap, __) {
               final ImageProvider provider = snap.bytes != null
                   ? MemoryImage(snap.bytes!)
-                  : snap.file != null
-                      ? FileImage(snap.file!)
-                      : const AssetImage('assets/images/default_profile.webp')
-                          as ImageProvider;
+                  : (snap.remoteUrl?.isNotEmpty ?? false)
+                      ? NetworkImage(snap.remoteUrl!)
+                      : snap.file != null
+                          ? FileImage(snap.file!)
+                          : const AssetImage(
+                              'assets/images/default_profile.webp',
+                            ) as ImageProvider;
               return CircleAvatar(
                 radius: 54.w,
                 backgroundColor: AppColor.surfaceCard,
                 child: CircleAvatar(
                   radius: 51.w,
                   backgroundImage: provider,
-                  child: snap.hasImage
-                      ? null
-                      : Container(
+                  child: _isAvatarSaving
+                      ? Container(
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: AppColor.black.withValues(alpha: 0.4),
+                            color: AppColor.black.withValues(alpha: 0.42),
                           ),
-                          child: Icon(
-                            Icons.camera_alt_rounded,
-                            color: AppColor.white,
-                            size: 28.w,
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              color: AppColor.white,
+                              strokeWidth: 2.5,
+                            ),
                           ),
-                        ),
+                        )
+                      : snap.hasImage
+                          ? null
+                          : Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: AppColor.black.withValues(alpha: 0.4),
+                              ),
+                              child: Icon(
+                                Icons.camera_alt_rounded,
+                                color: AppColor.white,
+                                size: 28.w,
+                              ),
+                            ),
                 ),
               );
             },
@@ -686,8 +755,14 @@ class _ProfilePageState extends State<ProfilePage> {
         final isLoading = snapshot.connectionState != ConnectionState.done;
         return _FavoritePlacesSection(
           isLoading: isLoading,
+          hasError: _favoritesLoadFailed,
           places: places,
+          expanded: _favoritesExpanded,
+          onToggle: () => setState(
+            () => _favoritesExpanded = !_favoritesExpanded,
+          ),
           onRefresh: _refreshFavoritePlaces,
+          onRemovePlace: _removeFavorite,
           onOpenPlace: (place) async {
             final items = places.map(SuggestionItemModel.fromPlace).toList();
             final current = SuggestionItemModel.fromPlace(place);
@@ -950,6 +1025,8 @@ class _SupportSection extends StatelessWidget {
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
+          maintainState: true,
+          controlAffinity: ListTileControlAffinity.trailing,
           tilePadding: EdgeInsets.symmetric(
             horizontal: AppSpacing.lg.w,
             vertical: AppSpacing.sm.h,
@@ -971,10 +1048,6 @@ class _SupportSection extends StatelessWidget {
           title: Text(
             AppCopy.profileSupportSection,
             style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
-          ),
-          subtitle: Text(
-            AppCopy.profileSupportSubtitle,
-            style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
           ),
           children: [
             const _GroupLabel(text: AppCopy.supportInfoGroup),
@@ -1039,137 +1112,201 @@ class _SupportSection extends StatelessWidget {
 class _FavoritePlacesSection extends StatelessWidget {
   const _FavoritePlacesSection({
     required this.isLoading,
+    required this.hasError,
     required this.places,
+    required this.expanded,
+    required this.onToggle,
     required this.onRefresh,
+    required this.onRemovePlace,
     required this.onOpenPlace,
   });
 
   final bool isLoading;
+  final bool hasError;
   final List<Place> places;
+  final bool expanded;
+  final VoidCallback onToggle;
   final Future<void> Function() onRefresh;
+  final ValueChanged<Place> onRemovePlace;
   final ValueChanged<Place> onOpenPlace;
 
   @override
   Widget build(BuildContext context) {
     return AppCard(
-      padding: EdgeInsets.all(AppSpacing.lg.w),
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 42.w,
-                height: 42.w,
-                decoration: BoxDecoration(
-                  color: AppColor.error.withValues(alpha: 0.10),
-                  borderRadius: AppRadii.rMd,
-                ),
-                child: Icon(
-                  Icons.favorite_rounded,
-                  color: AppColor.error,
-                  size: 22.sp,
-                ),
-              ),
-              gapH(AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          Semantics(
+            button: true,
+            expanded: expanded,
+            label:
+                '${AppCopy.profileFavoritesTitle}، ${places.length} مكان. ${expanded ? 'إخفاء' : 'عرض'} المفضلة',
+            child: InkWell(
+              onTap: onToggle,
+              borderRadius: AppRadii.rLg,
+              child: Padding(
+                padding: EdgeInsets.all(AppSpacing.lg.w),
+                child: Row(
                   children: [
-                    Text(
-                      AppCopy.profileFavoritesTitle,
-                      style: AppText.titleMd.copyWith(
-                        fontWeight: FontWeight.w800,
+                    Container(
+                      width: 42.w,
+                      height: 42.w,
+                      decoration: BoxDecoration(
+                        color: AppColor.error.withValues(alpha: 0.10),
+                        borderRadius: AppRadii.rMd,
+                      ),
+                      child: Icon(
+                        Icons.favorite_rounded,
+                        color: AppColor.error,
+                        size: 22.sp,
                       ),
                     ),
-                    gapV(AppSpacing.xs / 2),
-                    Text(
-                      AppCopy.profileFavoritesBody,
-                      style: AppText.bodySm.copyWith(
+                    gapH(AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            AppCopy.profileFavoritesTitle,
+                            style: AppText.titleMd.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          gapV(AppSpacing.xs / 2),
+                          Text(
+                            isLoading
+                                ? 'بنحدّث الأماكن...'
+                                : hasError
+                                    ? 'تعذر تحميل المفضلة'
+                                    : places.isEmpty
+                                        ? 'لسه مفيش أماكن محفوظة'
+                                        : '${places.length} مكان محفوظ',
+                            style: AppText.bodySm.copyWith(
+                              color: AppColor.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    AnimatedRotation(
+                      turns: expanded ? 0.5 : 0,
+                      duration: AppMotion.fast,
+                      child: Icon(
+                        Icons.keyboard_arrow_down_rounded,
                         color: AppColor.textSecondary,
+                        size: 26.sp,
                       ),
                     ),
                   ],
                 ),
               ),
-              IconButton(
-                onPressed: isLoading ? null : onRefresh,
-                icon: Icon(
-                  Icons.refresh_rounded,
-                  color: AppColor.primary,
-                  size: 22.sp,
-                ),
-                tooltip: AppCopy.profileFavoritesRefresh,
-              ),
-            ],
+            ),
           ),
-          gapV(AppSpacing.lg),
-          if (isLoading)
-            SizedBox(
-              height: 96.h,
-              child: const Center(
-                child: CircularProgressIndicator(color: AppColor.primary),
-              ),
-            )
-          else if (places.isEmpty)
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(AppSpacing.lg.w),
-              decoration: BoxDecoration(
-                color: AppColor.surfaceVariant,
-                borderRadius: AppRadii.rLg,
-                border: Border.all(color: AppColor.border),
+          AnimatedCrossFade(
+            duration: AppMotion.fast,
+            crossFadeState:
+                expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+            firstChild: const SizedBox(width: double.infinity),
+            secondChild: Padding(
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.lg.w,
+                0,
+                AppSpacing.lg.w,
+                AppSpacing.lg.h,
               ),
               child: Column(
                 children: [
-                  Icon(
-                    Icons.favorite_border_rounded,
-                    color: AppColor.textTertiary,
-                    size: 28.sp,
-                  ),
+                  const Divider(height: 1, color: AppColor.border),
                   gapV(AppSpacing.sm),
-                  Text(
-                    AppCopy.emptyFavoritesTitle,
-                    style: AppText.labelLg.copyWith(
-                      fontWeight: FontWeight.w700,
+                  if (isLoading)
+                    SizedBox(
+                      height: 88.h,
+                      child: const Center(
+                        child: CircularProgressIndicator(
+                          color: AppColor.primary,
+                        ),
+                      ),
+                    )
+                  else if (hasError)
+                    AppStateView(
+                      icon: Icons.cloud_off_rounded,
+                      iconColor: AppColor.error,
+                      iconBg: AppColor.errorBg,
+                      title: 'المفضلة مش ظاهرة دلوقتي',
+                      message: 'اتأكد من الإنترنت وجرّب تاني.',
+                      actionLabel: AppCopy.retry,
+                      onAction: onRefresh,
+                      compact: true,
+                    )
+                  else if (places.isEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(AppSpacing.lg.w),
+                      decoration: BoxDecoration(
+                        color: AppColor.surfaceVariant,
+                        borderRadius: AppRadii.rLg,
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.favorite_border_rounded,
+                            color: AppColor.textTertiary,
+                            size: 28.sp,
+                          ),
+                          gapV(AppSpacing.sm),
+                          Text(
+                            AppCopy.emptyFavoritesTitle,
+                            style: AppText.labelLg.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          gapV(AppSpacing.xs),
+                          Text(
+                            AppCopy.emptyFavoritesBody,
+                            style: AppText.bodySm.copyWith(
+                              color: AppColor.textSecondary,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    )
+                  else ...[
+                    Align(
+                      alignment: AlignmentDirectional.centerEnd,
+                      child: IconButton(
+                        onPressed: onRefresh,
+                        icon: Icon(
+                          Icons.refresh_rounded,
+                          color: AppColor.primary,
+                          size: 22.sp,
+                        ),
+                        tooltip: AppCopy.profileFavoritesRefresh,
+                      ),
                     ),
-                  ),
-                  gapV(AppSpacing.xs),
-                  Text(
-                    AppCopy.emptyFavoritesBody,
-                    style: AppText.bodySm.copyWith(
-                      color: AppColor.textSecondary,
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight:
+                            (places.length > 4 ? 360 : places.length * 86).h,
+                      ),
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: places.length,
+                        itemBuilder: (_, index) => _FavoritePlaceRow(
+                          place: places[index],
+                          onTap: () => onOpenPlace(places[index]),
+                          onRemove: () => onRemovePlace(places[index]),
+                        ),
+                        separatorBuilder: (_, __) =>
+                            const Divider(height: 1, color: AppColor.border),
+                      ),
                     ),
-                    textAlign: TextAlign.center,
-                  ),
+                  ],
                 ],
               ),
-            )
-          else
-            Column(
-              children: [
-                for (var index = 0;
-                    index < places.length && index < 4;
-                    index++) ...[
-                  _FavoritePlaceRow(
-                    place: places[index],
-                    onTap: () => onOpenPlace(places[index]),
-                  ),
-                  if (index < places.length - 1 && index < 3)
-                    const Divider(height: 1, color: AppColor.border),
-                ],
-                if (places.length > 4) ...[
-                  gapV(AppSpacing.md),
-                  Text(
-                    AppCopy.profileFavoritesMore
-                        .replaceFirst('%n', '${places.length - 4}'),
-                    style: AppText.bodySm.copyWith(
-                      color: AppColor.textSecondary,
-                    ),
-                  ),
-                ],
-              ],
             ),
+          ),
         ],
       ),
     );
@@ -1180,10 +1317,12 @@ class _FavoritePlaceRow extends StatelessWidget {
   const _FavoritePlaceRow({
     required this.place,
     required this.onTap,
+    required this.onRemove,
   });
 
   final Place place;
   final VoidCallback onTap;
+  final VoidCallback onRemove;
 
   @override
   Widget build(BuildContext context) {
@@ -1241,16 +1380,13 @@ class _FavoritePlaceRow extends StatelessWidget {
                 ],
               ),
             ),
-            Container(
-              padding: EdgeInsets.all(AppSpacing.sm.w),
-              decoration: const BoxDecoration(
-                color: AppColor.primary50,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.arrow_back_ios_new_rounded,
-                size: 14.sp,
-                color: AppColor.primary,
+            IconButton(
+              onPressed: onRemove,
+              tooltip: 'إزالة ${place.name} من المفضلة',
+              icon: Icon(
+                Icons.delete_outline_rounded,
+                size: 22.sp,
+                color: AppColor.error,
               ),
             ),
           ],
@@ -1319,52 +1455,56 @@ class _SupportRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg.w,
-          vertical: AppSpacing.md.h,
-        ),
-        child: Row(
-          children: [
-            // Muted icon chip — 8% primary, never solid orange.
-            Container(
-              width: 36.w,
-              height: 36.w,
-              decoration: BoxDecoration(
-                color: AppColor.primary.withValues(alpha: 0.08),
-                borderRadius: AppRadii.rSm,
-              ),
-              child: Icon(icon, size: 18.sp, color: AppColor.primary),
-            ),
-            gapH(AppSpacing.md),
-            Expanded(
-              child: Text(
-                label,
-                style: AppText.bodyMd.copyWith(fontWeight: FontWeight.w600),
-              ),
-            ),
-            if (trailing != null) ...[
-              gapH(AppSpacing.sm),
-              Flexible(
-                child: Text(
-                  trailing!,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppText.caption.copyWith(
+    return Semantics(
+      button: true,
+      label: trailing == null ? label : '$label، $trailing',
+      child: InkWell(
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: 56.h),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
+            child: Row(
+              children: [
+                Container(
+                  width: 36.w,
+                  height: 36.w,
+                  decoration: BoxDecoration(
+                    color: AppColor.primary.withValues(alpha: 0.08),
+                    borderRadius: AppRadii.rSm,
+                  ),
+                  child: Icon(icon, size: 18.sp, color: AppColor.primary),
+                ),
+                gapH(AppSpacing.md),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: AppText.bodyMd.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                ),
+                if (trailing != null)
+                  Flexible(
+                    child: Text(
+                      trailing!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.caption.copyWith(
+                        color: AppColor.textTertiary,
+                      ),
+                    ),
+                  ),
+                gapH(AppSpacing.sm),
+                SizedBox(
+                  width: 24.w,
+                  child: Icon(
+                    Icons.chevron_left_rounded,
+                    size: 20.sp,
                     color: AppColor.textTertiary,
                   ),
                 ),
-              ),
-              gapH(AppSpacing.xs),
-            ],
-            Icon(
-              Icons.chevron_left_rounded,
-              size: 18.sp,
-              color: AppColor.textTertiary,
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

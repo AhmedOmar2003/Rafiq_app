@@ -6,6 +6,7 @@ import 'package:rafiq_app/core/design/app_image.dart';
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:rafiq_app/core/logic/helper_methods.dart';
+import 'package:rafiq_app/core/utils/app_error_formatter.dart';
 import 'package:rafiq_app/core/utils/app_microcopy.dart';
 import 'package:rafiq_app/core/utils/assets.dart';
 import 'package:rafiq_app/service/auth_service.dart';
@@ -24,6 +25,16 @@ class _LoginScreenState extends State<LoginScreen> {
   final passwordController = TextEditingController();
   bool _isLoading = false;
   bool _showSuccessOverlay = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final message = await AuthService().takePendingAuthMessage();
+      if (!mounted || message == null || message.isEmpty) return;
+      AppFeedback.error(message);
+    });
+  }
 
   @override
   void dispose() {
@@ -45,7 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _showSuccessOverlay = true);
     } catch (e) {
       if (!mounted) return;
-      AppFeedback.error(AppCopy.errorGeneric);
+      AppFeedback.error(AppErrorFormatter.userMessage(e));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -59,7 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _showSuccessOverlay = true);
     } catch (e) {
       if (!mounted) return;
-      AppFeedback.error(AppCopy.errorGeneric);
+      AppFeedback.error(AppErrorFormatter.userMessage(e));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

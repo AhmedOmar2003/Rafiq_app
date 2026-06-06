@@ -128,71 +128,49 @@ class UpgradeSheet {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
       backgroundColor: AppColor.surfaceCard,
+      barrierColor: AppColor.overlay,
       shape:
           RoundedRectangleBorder(borderRadius: AppRadii.topOnly(AppRadii.xxl)),
       builder: (sheetCtx) {
-        return SafeArea(
-          top: false,
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              AppSpacing.xxl.w,
-              AppSpacing.xxl.h,
-              AppSpacing.xxl.w,
-              AppSpacing.xxl.h,
+        return AppModalSheetFrame(
+          title: AppCopy.subLimitReached,
+          subtitle: reason,
+          leading: Container(
+            width: 48.w,
+            height: 48.w,
+            decoration: const BoxDecoration(
+              color: AppColor.primary50,
+              shape: BoxShape.circle,
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 80.w,
-                  height: 80.w,
-                  decoration: const BoxDecoration(
-                    color: AppColor.primary50,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.workspace_premium_rounded,
-                    size: 40.sp,
-                    color: AppColor.primary,
-                  ),
-                ),
-                gapV(AppSpacing.lg),
-                Text(
-                  AppCopy.subLimitReached,
-                  style: AppText.headingSm,
-                  textAlign: TextAlign.center,
-                ),
-                gapV(AppSpacing.sm),
-                Text(
-                  reason,
-                  style: AppText.bodyMd.copyWith(
-                    color: AppColor.textSecondary,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                gapV(AppSpacing.xxl),
-                SizedBox(
-                  width: double.infinity,
-                  child: AppButton(
-                    text: AppCopy.subUpgradeCta,
-                    onPress: () {
-                      Navigator.pop(sheetCtx);
-                      onUpgrade?.call();
-                    },
-                  ),
-                ),
-                gapV(AppSpacing.sm),
-                SizedBox(
-                  width: double.infinity,
-                  child: AppButton(
-                    text: AppCopy.cancel,
-                    onPress: () => Navigator.pop(sheetCtx),
-                    variant: AppButtonVariant.outline,
-                  ),
-                ),
-              ],
+            child: Icon(
+              Icons.workspace_premium_rounded,
+              size: 26.sp,
+              color: AppColor.primary,
             ),
+          ),
+          body: Text(
+            AppCopy.subUpgradeSheetHint,
+            style: AppText.bodyMd.copyWith(color: AppColor.textSecondary),
+          ),
+          footer: Column(
+            children: [
+              AppButton(
+                text: AppCopy.subUpgradeCta,
+                onPress: () {
+                  Navigator.pop(sheetCtx);
+                  onUpgrade?.call();
+                },
+              ),
+              gapV(AppSpacing.sm),
+              AppButton(
+                text: AppCopy.cancel,
+                onPress: () => Navigator.pop(sheetCtx),
+                variant: AppButtonVariant.outline,
+              ),
+            ],
           ),
         );
       },

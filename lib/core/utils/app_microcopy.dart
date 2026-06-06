@@ -70,20 +70,24 @@ class AppCopy {
   static const stepActivity = 'النشاط';
   static const homeIncomplete =
       'كمّل الاختيارات الأول، عشان نلاقيلك أحلى أماكن.';
-  static const homeCtaFinal = 'يلا نفسح!';
+  static const homeCtaFinal = 'شوف اقتراحاتي';
   static const homeStepCounter = 'خطوة %d من %t'; // %d=current, %t=total
   static const back = 'رجوع';
+  static const stepCityRequired = 'اختار المدينة الأول.';
+  static const stepBudgetRequired = 'اختار ميزانيتك الأول.';
+  static const stepActivityRequired = 'اختار النشاط اللي يناسبك.';
 
   // Step screen headings & bodies
   static const stepCityTitle = 'عايز تخرج فين؟';
-  static const stepCityBody = 'اختار المدينة اللي عايز تزورها';
+  static const stepCityBody = 'اختار مدينة واحدة.';
   static const stepBudgetTitle = 'ميزانيتك كام؟';
-  static const stepBudgetBody = 'اختار الميزانية المناسبة ليك';
+  static const stepBudgetBody = 'اختار أقرب ميزانية ليك.';
   static const stepActivityTitle = 'عايز تعمل إيه؟';
-  static const stepActivityBody = 'اختار نوع النشاط اللي بتحبه';
+  static const stepActivityBody = 'اختار نشاط واحد.';
 
   // --- Chatbot -----------------------------------------------------------------
   static const chatTitle = 'رفيق الذكي 🤖';
+  static const chatOpenLabel = 'افتح رفيق الذكي';
 
   // --- Choice / role picker ----------------------------------------------------
   static const choiceQuestion = 'إنت مين معانا اليوم؟';
@@ -342,6 +346,8 @@ class AppCopy {
   static const subCompareTitle = 'أهم الفروق';
   static const subLimitReached = 'وصلت الحد الأقصى للخطة الحالية';
   static const subUpgradeCta = 'رقّي الخطة عشان تكمّل';
+  static const subUpgradeSheetHint =
+      'شوف الخطط المتاحة واختار اللي يناسب شغلك.';
   static const subFeatPlaces = 'عدد الأماكن';
   static const subFeatGallery = 'صور المعرض';
   static const subFeatVideos = 'الفيديوهات';
@@ -419,7 +425,14 @@ class AppCopy {
   static const hubPlacePending = '"%s" رجع للمراجعة';
   static const hubMyPlacesTitle = 'أماكني';
   static const hubPlacesEmptyFirstBody = 'أضف مكانك الأول، وهتلاقيه هنا فورًا.';
-  static const hubPlacesManageBody = 'من هنا تقدر تعاين أو تعدّل أو تحذف.';
+  static const hubPlacesManageBody = 'اختار الحالة وتابع كل مكان بسهولة.';
+  static const hubPlacesFilterSemantics = 'تصفية الأماكن حسب حالة المراجعة';
+  static const hubFilterAll = 'الكل';
+  static const hubFilterPending = 'قيد المراجعة';
+  static const hubFilterApproved = 'معتمد';
+  static const hubFilterRejected = 'مرفوض';
+  static const hubFilterSuspended = 'موقوف';
+  static const hubFilterEmpty = 'مفيش أماكن بحالة "%s" دلوقتي';
   static const hubPlacePreview = 'المعاينة';
   static const hubPlaceEdit = 'تعديل';
   static const hubPlaceDelete = 'حذف';

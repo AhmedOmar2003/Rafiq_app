@@ -117,6 +117,12 @@ Deno.serve(async (req) => {
     if (rpcError) return jsonError(500, rpcError.message, cors);
 
     await removeInChunks(
+      (paths) => ctx.serviceClient.storage.from('avatars').remove(paths),
+      [`${ctx.userId}/avatar`],
+      warnings,
+      'avatars',
+    );
+    await removeInChunks(
       (paths) => ctx.serviceClient.storage.from('place-images').remove(paths),
       placeImagePaths,
       warnings,
@@ -139,6 +145,7 @@ Deno.serve(async (req) => {
       {
         ...(rpcData && typeof rpcData === 'object' ? rpcData as Record<string, unknown> : {}),
         cleanup: {
+          avatars_removed: 1,
           place_images_removed: placeImagePaths.length,
           provider_documents_removed: providerDocumentPaths.length,
           campaign_assets_removed: campaignAssetPaths.length,

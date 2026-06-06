@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/auth/auth_gate.dart';
-import 'package:rafiq_app/core/design/components/app_offline_banner.dart';
 import 'package:rafiq_app/core/logic/helper_methods.dart';
+import 'package:rafiq_app/core/utils/app_color.dart';
+import 'package:rafiq_app/core/utils/app_microcopy.dart';
 import 'package:rafiq_app/service/accessibility_preferences.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'core/themes/theme_services.dart';
@@ -33,15 +36,23 @@ class RafiqApp extends StatelessWidget {
       splitScreenMode: true,
       builder: (context, child) {
         ErrorWidget.builder = (FlutterErrorDetails details) {
-          final message = details.exception.toString();
-          return Material(
-            child: Container(
-              color: Colors.red,
-              child: Center(
-                child: Text(
-                  'حدث خطأ غير متوقع${const bool.fromEnvironment('dart.vm.product') ? '' : ': $message'}',
-                  style: const TextStyle(color: Colors.white),
-                  textAlign: TextAlign.center,
+          if (kDebugMode) {
+            debugPrint(
+              'Rafiq render error: ${details.exception}\n${details.stack}',
+            );
+          }
+          return const Material(
+            color: AppColor.surface,
+            child: Directionality(
+              textDirection: TextDirection.rtl,
+              child: SafeArea(
+                child: AppStateView(
+                  title: AppCopy.errorTitle,
+                  message: AppCopy.errorBody,
+                  icon: Icons.sentiment_dissatisfied_rounded,
+                  iconColor: AppColor.error,
+                  iconBg: AppColor.errorBg,
+                  compact: true,
                 ),
               ),
             ),

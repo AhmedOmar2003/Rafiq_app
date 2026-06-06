@@ -70,7 +70,8 @@ class AppColor {
   // ---------------------------------------------------------------------------
   static const success = Color(0xff2E7D5B);
   static const successBg = Color(0xffE6F4EE);
-  static const warning = Color(0xffC9821E);
+  // Dark enough for small Arabic labels on white and warning surfaces.
+  static const warning = Color(0xff8A570F);
   static const warningBg = Color(0xffFBF0DD);
   static const error = Color(0xffC5362F);
   static const errorBg = Color(0xffFBE9E7);
@@ -91,7 +92,9 @@ class AppColor {
 
   static const textPrimary = neutral900;
   static const textSecondary = neutral600;
-  static const textTertiary = neutral500;
+  // Captions are commonly 12–13px, so tertiary text must still meet 4.5:1
+  // contrast on white. Hierarchy comes from size/weight, not illegibility.
+  static const textTertiary = neutral600;
   static const textInverse = white;
   static const textOnPrimary = white;
   static const textDisabled = neutral400;
@@ -122,5 +125,4 @@ class AppColor {
   static const surfaceMuted = sand200; // subtle alt panel
 
   static const textMuted = textTertiary;
-
 }
