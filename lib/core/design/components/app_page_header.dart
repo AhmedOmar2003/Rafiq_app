@@ -184,17 +184,32 @@ class AppPageHeader extends StatelessWidget implements PreferredSizeWidget {
                         ),
                     ],
                   )
-                : Row(
+                : Stack(
                     children: [
-                      if (leadingSlot != null) ...[
-                        leadingSlot,
-                        SizedBox(width: AppSpacing.xs.w),
-                      ],
-                      Expanded(child: titleBlock),
-                      if (actionsSlot != null) ...[
-                        SizedBox(width: AppSpacing.xs.w),
-                        actionsSlot,
-                      ],
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: Padding(
+                          padding: EdgeInsetsDirectional.only(
+                            start: leadingSlot == null
+                                ? 0
+                                : (48 + AppSpacing.xs).w,
+                            end: actionsSlot == null
+                                ? 0
+                                : (48 * actions!.length + AppSpacing.xs).w,
+                          ),
+                          child: titleBlock,
+                        ),
+                      ),
+                      if (leadingSlot != null)
+                        Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: leadingSlot,
+                        ),
+                      if (actionsSlot != null)
+                        Align(
+                          alignment: AlignmentDirectional.centerEnd,
+                          child: actionsSlot,
+                        ),
                     ],
                   ),
           ),

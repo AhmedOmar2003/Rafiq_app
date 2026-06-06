@@ -17,8 +17,7 @@ class AppCopy {
 
   // --- Generic errors (friendly, no jargon) ------------------------------------
   static const errorTitle = 'حصلت مشكلة بسيطة';
-  static const errorBody =
-      'مقدرناش نكمّل دلوقتي. جرّب تاني بعد شوية.';
+  static const errorBody = 'مقدرناش نكمّل دلوقتي. جرّب تاني بعد شوية.';
   static const errorRetry = 'حاول تاني';
   static const errorGeneric = 'في حاجة مش ظابطة. جرّب تاني بعد شوية.';
 
@@ -196,7 +195,8 @@ class AppCopy {
   static const reportDetailsHint = 'تفاصيل إضافية (اختياري)';
   static const reportSendCta = 'إرسال البلاغ';
   static const reportMissingReason = 'من فضلك اختر سبب البلاغ أولاً';
-  static const reportCannotSubmit = 'مش قادرين نرفع البلاغ على المكان ده دلوقتي';
+  static const reportCannotSubmit =
+      'مش قادرين نرفع البلاغ على المكان ده دلوقتي';
   static const reportSentSuccess = 'وصلنا بلاغك، هنراجعه قريباً ✅';
   static const reportSentFail = 'معرفناش نبعت البلاغ، جرّب تاني';
   static const placeCardOpen = 'افتح '; // append place name
@@ -220,16 +220,14 @@ class AppCopy {
   static const profileSwitchToProvider = 'حوّل لمقدم خدمة';
   static const profileSwitchToProviderValue = 'افتح خطط الاشتراك وأضف مكانك';
   static const profileSwitchToUser = 'تصفح كمستخدم عادي';
-  static const profileSwitchToUserValue =
-      'استكشف الأماكن كزائر (خطتك وأماكنك محفوظة بأمان)';
+  static const profileSwitchToUserValue = 'خطتك وأماكنك محفوظة';
   static const profileSwitchConfirmTitle = 'تأكيد تغيير الدور';
   static const profileSwitchConfirmProvider =
       'هتروح للخطط وتختار اللي يناسبك. تقدر ترجع مستخدم عادي في أي وقت.';
   static const profileSwitchConfirmUser =
       'هترجع تتصفح كمستخدم عادي. اشتراكك وأماكنك هيفضلوا محفوظين.';
   static const profileFavoritesTitle = 'أماكنك المفضلة';
-  static const profileFavoritesBody =
-      'ارجعلها بسرعة من غير تدوير من الأول.';
+  static const profileFavoritesBody = 'الأماكن اللي حفظتها.';
   static const profileFavoritesRefresh = 'تحديث المفضلة';
   static const profileFavoritesMore = 'فيه %n أماكن مفضلة كمان محفوظين عندك.';
 
@@ -238,19 +236,17 @@ class AppCopy {
   /// Title is composed at render time as "{name}، ..." so each user feels
   /// the prompt is for them, not a generic ad. The body explains the value
   /// in human terms; the CTA is short and warm ("يلا أبدأ").
-  static const profileBannerInviteTitle = 'ابدأ رحلتك كمقدم خدمة';
-  static const profileBannerInviteBody =
-      'ضيف خدمتك واختار الخطة اللي تناسبك براحتك.';
-  static const profileBannerInviteCta = 'يلا نبدأ';
+  static const profileBannerInviteTitle = 'حوّل لمقدم خدمة';
+  static const profileBannerInviteBody = 'ضيف مكانك واختار خطتك.';
+  static const profileBannerInviteCta = 'ابدأ';
 
   /// Provider who switched to user mode — invite them back to their hub.
   /// Singular/plural copy auto-picked from the place count.
-  static const profileBannerReturnTitleSingle = 'خدمتك مستنياك';
-  static const profileBannerReturnTitleMulti = 'خدماتك مستنياك';
-  static const profileBannerReturnBody =
-      'ارجع كمل شغلك. خطتك ومكانك محفوظين زي ما هم.';
-  static const profileBannerReturnCtaSingle = 'ارجع تابع خدمتك';
-  static const profileBannerReturnCtaMulti = 'ارجع تابع خدماتك';
+  static const profileBannerReturnTitleSingle = 'خدمتك جاهزة';
+  static const profileBannerReturnTitleMulti = 'خدماتك جاهزة';
+  static const profileBannerReturnBody = 'كل بياناتك محفوظة.';
+  static const profileBannerReturnCtaSingle = 'تابع خدمتك';
+  static const profileBannerReturnCtaMulti = 'تابع خدماتك';
   static const logoutTitle = 'هتسجل خروج؟';
   static const logoutMessage = 'متأكد إنك عايز تخرج من التطبيق؟';
   static const logoutConfirm = 'أكيد، خروج';
@@ -291,8 +287,7 @@ class AppCopy {
 
   // --- Forgot password ---------------------------------------------------------
   static const forgotTitle = 'نسيت كلمة السر؟';
-  static const forgotBody =
-      'اكتب بريدك وهنبعتلك كود ترجع تدخل بيه.';
+  static const forgotBody = 'اكتب بريدك وهنبعتلك كود ترجع تدخل بيه.';
   static const forgotSendCode = 'ابعت الكود';
   static const forgotCodeSent = 'بعتنالك كود التأكيد على بريدك ✉️';
   static const forgotHint = 'لما الكود يوصلك اكتبه وكمل.';
@@ -329,7 +324,7 @@ class AppCopy {
 
   // --- Subscription page -------------------------------------------------------
   static const subTitle = 'خطط الاشتراك';
-  static const subSubtitle = 'اختار الأنسب لعدد أماكنك وعروضك';
+  static const subSubtitle = 'اختار اللي يناسبك.';
   static const subBillingMonthly = 'شهري';
   static const subBillingYearly = 'سنوي';
   static const subYearlyDiscount = 'وفّر %p%'; // %p replaced with discount pct
@@ -344,7 +339,7 @@ class AppCopy {
   static const subRenewsOn = 'يتجدد في';
   static const subCancelsOn = 'ينتهي في';
   static const subFeatureUnlimited = 'بلا حدود';
-  static const subCompareTitle = 'مقارنة الخطط';
+  static const subCompareTitle = 'أهم الفروق';
   static const subLimitReached = 'وصلت الحد الأقصى للخطة الحالية';
   static const subUpgradeCta = 'رقّي الخطة عشان تكمّل';
   static const subFeatPlaces = 'عدد الأماكن';
@@ -371,10 +366,8 @@ class AppCopy {
 
   // --- Onboarding (provider plan picker) --------------------------------------
   static const subOnboardingTitle = 'اختار خطتك';
-  static const subOnboardingSubtitle =
-      'اختار اللي يناسبك. مفيش خطة بتتحدد من غير موافقتك.';
-  static const subReviewWindowNotice =
-      'مكانك بيروح للمراجعة بعد الإضافة، وغالبًا بنرد خلال 24 ساعة.';
+  static const subOnboardingSubtitle = 'اختار بنفسك. مفيش اختيار تلقائي.';
+  static const subReviewWindowNotice = 'مراجعة المكان خلال 24 ساعة.';
   static const subOnboardingFreeCta = 'كمّل بالخطة المجانية';
   static const subOnboardingContinueCta = 'يلا نضيف مكانك';
   static const subSaveFailed =
@@ -392,8 +385,7 @@ class AppCopy {
       'دلوقتي تقدر تستمتع بكل المميزات، وفترة اشتراكك سارية لمدة شهر.';
   static const subSuccessCta = 'يلا نبدأ';
   static const subDemoBadge = 'تجربة عرض';
-  static const subDemoExplainer =
-      'الدفع الحقيقي لسه ما اتفعلش.';
+  static const subDemoExplainer = 'الدفع الحقيقي لسه ما اتفعلش.';
 
   // --- Provider hub ------------------------------------------------------------
   static const hubTitle = 'تابع خدمتك';
@@ -406,16 +398,14 @@ class AppCopy {
   static const hubKpiImages = 'صور لكل مكان';
   static const hubKpiAnalytics = 'تحليلات';
   static const hubFeatTitleAnalytics = 'تحليلات الأداء';
-  static const hubFeatBodyAnalytics =
-      'شوف الحركة الحقيقية على مكانك.';
+  static const hubFeatBodyAnalytics = 'شوف الحركة الحقيقية على مكانك.';
   static const hubFeatTitlePromotions = 'إعلانات وعروض';
   static const hubFeatBodyPromotions =
       'اعمل عرض بسيط وخلّيه يوصل للناس بعد المراجعة.';
   static const hubFeatTitlePlaces = 'أماكنك';
   static const hubFeatBodyPlaces = 'إدارة الأماكن، التعديل، وإضافة جديد.';
   static const hubFeatTitleSubscription = 'الاشتراك';
-  static const hubFeatBodySubscription =
-      'بدّل أو رقّي خطتك في أي وقت.';
+  static const hubFeatBodySubscription = 'بدّل أو رقّي خطتك في أي وقت.';
   static const hubLockedTag = 'يفتح مع برو';
   static const hubLockedMax = 'يفتح مع ماكس';
   static const hubPlacesMultiTitle = 'تابع خدماتك';
@@ -435,10 +425,12 @@ class AppCopy {
   static const hubPlaceDelete = 'حذف';
   static const hubBootstrapTitle = 'جارٍ تجهيز حسابك';
   static const hubBootstrapError = 'تعذر تجهيز بيانات الحساب الآن';
-  static const hubBootstrapRetryHint = 'اضغط إعادة المحاولة أو اسحب لأسفل لتحديث البيانات';
+  static const hubBootstrapRetryHint =
+      'اضغط إعادة المحاولة أو اسحب لأسفل لتحديث البيانات';
   static const hubRetryLabel = 'إعادة المحاولة';
   static const hubTabPlatformTitle = 'تابع خدماتك';
-  static const hubPlacesBodyCount = 'عندك %p من %m أماكن. ولكل مكان حتى %i صورة.';
+  static const hubPlacesBodyCount =
+      'عندك %p من %m أماكن. ولكل مكان حتى %i صورة.';
   static const hubAddPlace = 'أضف مكان جديد';
   static const hubAddPlaceLimitReached = 'وصلت الحد';
   static const hubRejectedTitle = 'تم رفض الإضافة';
@@ -447,7 +439,8 @@ class AppCopy {
   static const hubRejectedEditAllowed = 'سمحنالك تعدّل وترجّعه للمراجعة';
   static const hubEditAndResubmit = 'عدّل وارجّعه';
   static const hubEmptyPlacesTitle = 'لسه ما أضفتش أي مكان';
-  static const hubEmptyPlacesMsgBody = 'أضف مكانك الأول عشان تبدأ اللوحة وتظهر كل الإحصائيات';
+  static const hubEmptyPlacesMsgBody =
+      'أضف مكانك الأول عشان تبدأ اللوحة وتظهر كل الإحصائيات';
   static const hubAddPlaceNow = 'أضف مكانك الآن';
   static const hubStatusApproved = 'تم الاعتماد';
   static const hubStatusRejected = 'تم الرفض';
@@ -463,8 +456,7 @@ class AppCopy {
   // --- Analytics screen --------------------------------------------------------
   static const anaTitle = 'تحليلاتك';
   static const anaLast30Days = 'آخر 30 يوم';
-  static const anaRealDataHint =
-      'الأرقام دي من فتح المكان، المفضلة، والخريطة.';
+  static const anaRealDataHint = 'الأرقام دي من فتح المكان، المفضلة، والخريطة.';
   static const anaViewsReal = 'فتح صفحة المكان';
   static const anaTotalActions = 'إجمالي التفاعلات';
   static const anaFavoriteAdds = 'إضافات للمفضلة';
@@ -481,7 +473,8 @@ class AppCopy {
   static const anaAllPlaces = 'كل الأماكن';
   static const anaLastDays = 'آخر %d يوم'; // %d = number of days
   static const anaTrendTitle = 'اتجاه فتح المكان';
-  static const anaTrendHint = 'كل نقطة بتوضح الحركة اليومية في الفترة اللي اخترتها.';
+  static const anaTrendHint =
+      'كل نقطة بتوضح الحركة اليومية في الفترة اللي اخترتها.';
   static const anaNoApprovedTitle = 'التحليلات هتظهر أول ما مكانك يتعتمد';
   static const anaNoApprovedBody =
       'لو مكانك لسه تحت المراجعة، هتلاقي الأرقام هنا بعد الاعتماد.';
@@ -497,8 +490,7 @@ class AppCopy {
   static const promoRejectedReason = 'سبب الرفض';
   static const promoPendingReview = 'بانتظار مراجعة الأدمن';
   static const promoLockedTitle = 'الإعلانات تبدأ من خطة برو';
-  static const promoLockedBody =
-      'فعّل الإعلانات عشان توصّل عرضك لناس أكتر.';
+  static const promoLockedBody = 'فعّل الإعلانات عشان توصّل عرضك لناس أكتر.';
   static const promoSectionTitle = 'إعلاناتك وعروضك';
   static const promoAllPlaces = 'كل الأماكن';
   static const promoNoApprovedPlaces = 'لا توجد أماكن معتمدة بعد';
@@ -662,9 +654,11 @@ class AppCopy {
 
   // --- Provider hub — delete dialog + appeal validation -----------------------
   static const hubDeletePlaceTitle = 'حذف المكان';
-  static const hubDeletePlaceMessage = 'هل تريد حذف "%s"؟ الحذف نهائي ومفيش رجوع.';
+  static const hubDeletePlaceMessage =
+      'هل تريد حذف "%s"؟ الحذف نهائي ومفيش رجوع.';
   static const hubDeletePlaceConfirm = 'حذف';
-  static const hubAppealFillAllFields = 'من فضلك اكمل جميع الحقول عشان نقدر نساعدك';
+  static const hubAppealFillAllFields =
+      'من فضلك اكمل جميع الحقول عشان نقدر نساعدك';
   static const hubAppealInvalidPhone = 'رقم الموبايل غير صحيح، تأكد منه';
 
   // --- Promotions — campaign status labels ------------------------------------

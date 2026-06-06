@@ -81,9 +81,8 @@ class _ProfilePageState extends State<ProfilePage> {
         }
       }());
       _resolveProviderContext();
-      _favoritePlacesFuture = ApiService()
-          .fetchFavoritePlaces()
-          .catchError((_) => <Place>[]);
+      _favoritePlacesFuture =
+          ApiService().fetchFavoritePlaces().catchError((_) => <Place>[]);
     } else {
       _favoritePlacesFuture = Future<List<Place>>.value(const <Place>[]);
     }
@@ -389,8 +388,12 @@ class _ProfilePageState extends State<ProfilePage> {
                             color: AppColor.primary),
                         paddingBottom: 8,
                         validator: (v) {
-                          if (v == null || v.isEmpty) return AppCopy.passwordRequired;
-                          if (v != newPasswordController.text) return AppCopy.passwordsMismatch;
+                          if (v == null || v.isEmpty) {
+                            return AppCopy.passwordRequired;
+                          }
+                          if (v != newPasswordController.text) {
+                            return AppCopy.passwordsMismatch;
+                          }
                           return null;
                         },
                       ),
@@ -455,7 +458,6 @@ class _ProfilePageState extends State<ProfilePage> {
       backgroundColor: AppColor.surface,
       appBar: const AppPageHeader(
         title: AppCopy.profileTitle,
-        tone: AppHeaderTone.brand,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -467,24 +469,24 @@ class _ProfilePageState extends State<ProfilePage> {
                 email: userEmail,
                 child: _buildProfileImage(),
               ),
-              gapV(AppSpacing.xxl),
+              gapV(AppSpacing.lg),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
                 child: Column(
                   children: [
                     _buildRoleBanner(),
                     _buildInfoSection(),
-                    gapV(AppSpacing.xl),
-                    _buildFavoritesSection(),
-                    gapV(AppSpacing.xl),
-                    _buildAppearanceSection(),
-                    gapV(AppSpacing.xl),
-                    const _SupportSection(),
-                    gapV(AppSpacing.xxl),
-                    _buildLogoutButton(),
                     gapV(AppSpacing.lg),
+                    _buildFavoritesSection(),
+                    gapV(AppSpacing.lg),
+                    _buildAppearanceSection(),
+                    gapV(AppSpacing.lg),
+                    const _SupportSection(),
+                    gapV(AppSpacing.lg),
+                    _buildLogoutButton(),
+                    gapV(AppSpacing.md),
                     _buildDeleteAccountButton(),
-                    gapV(AppSpacing.huge),
+                    gapV(AppSpacing.xxl),
                   ],
                 ),
               ),
@@ -512,7 +514,7 @@ class _ProfilePageState extends State<ProfilePage> {
         label: AppCopy.profileChangeAvatarHint,
         child: GestureDetector(
           onTap: _pickImage,
-              child: ValueListenableBuilder<ProfileImageState>(
+          child: ValueListenableBuilder<ProfileImageState>(
             valueListenable: ProfileImageStore.instance,
             builder: (_, snap, __) {
               final ImageProvider provider = snap.bytes != null
@@ -522,10 +524,10 @@ class _ProfilePageState extends State<ProfilePage> {
                       : const AssetImage('assets/images/default_profile.webp')
                           as ImageProvider;
               return CircleAvatar(
-                radius: 64.w,
+                radius: 54.w,
                 backgroundColor: AppColor.surfaceCard,
                 child: CircleAvatar(
-                  radius: 61.w,
+                  radius: 51.w,
                   backgroundImage: provider,
                   child: snap.hasImage
                       ? null
@@ -537,7 +539,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           child: Icon(
                             Icons.camera_alt_rounded,
                             color: AppColor.white,
-                            size: 32.w,
+                            size: 28.w,
                           ),
                         ),
                 ),
@@ -707,18 +709,13 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _buildAppearanceSection() {
     return AppCard(
-      padding: EdgeInsets.all(AppSpacing.lg.w),
+      padding: EdgeInsets.all(AppSpacing.md.w),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             AppCopy.profileAppearanceSection,
             style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
-          ),
-          gapV(AppSpacing.xs),
-          Text(
-            AppCopy.profileTextSizeHint,
-            style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
           ),
           gapV(AppSpacing.md),
           ValueListenableBuilder<double>(
@@ -752,9 +749,8 @@ class _ProfilePageState extends State<ProfilePage> {
                               isSelected ? AppColor.primary : AppColor.surface,
                           borderRadius: AppRadii.rPill,
                           border: Border.all(
-                            color: isSelected
-                                ? AppColor.primary
-                                : AppColor.border,
+                            color:
+                                isSelected ? AppColor.primary : AppColor.border,
                           ),
                         ),
                         child: Text(
@@ -1396,15 +1392,12 @@ class _ProfileHero extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(
-        horizontal: AppSpacing.xxl.w,
-        vertical: AppSpacing.xxxl.h,
+        horizontal: AppSpacing.lg.w,
+        vertical: AppSpacing.xl.h,
       ),
       decoration: BoxDecoration(
         color: AppColor.primary,
-        borderRadius: BorderRadius.vertical(
-          bottom: Radius.circular(AppRadii.xxl.r),
-        ),
-        boxShadow: AppShadows.primaryGlow,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(24.r)),
       ),
       child: Column(
         children: [
@@ -1418,7 +1411,7 @@ class _ProfileHero extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-          gapV(AppSpacing.xs),
+          gapV(AppSpacing.xs / 2),
           Text(
             email ?? AppCopy.profileEmailFallback,
             textAlign: TextAlign.center,
@@ -1472,8 +1465,8 @@ class _ProfileInfoRow extends StatelessWidget {
       onTap: onTap,
       child: Padding(
         padding: EdgeInsets.symmetric(
-          horizontal: AppSpacing.xl.w,
-          vertical: AppSpacing.lg.h,
+          horizontal: AppSpacing.lg.w,
+          vertical: AppSpacing.md.h,
         ),
         child: Row(
           children: [
@@ -1573,13 +1566,13 @@ class _RoleBanner extends StatelessWidget {
                     ),
               boxShadow: isBrand ? AppShadows.primaryGlow : null,
             ),
-            padding: EdgeInsets.all(AppSpacing.xl.w),
+            padding: EdgeInsets.all(AppSpacing.lg.w),
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final compact = constraints.maxWidth < 330.w;
                 final iconBox = Container(
-                  width: 56.w,
-                  height: 56.w,
+                  width: 48.w,
+                  height: 48.w,
                   decoration: BoxDecoration(
                     color: isBrand
                         ? AppColor.white.withValues(alpha: 0.20)
@@ -1588,7 +1581,7 @@ class _RoleBanner extends StatelessWidget {
                   ),
                   child: Icon(
                     icon,
-                    size: 28.sp,
+                    size: 24.sp,
                     color: isBrand ? AppColor.white : AppColor.primary,
                   ),
                 );
@@ -1602,7 +1595,7 @@ class _RoleBanner extends StatelessWidget {
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    gapV(AppSpacing.xs),
+                    gapV(AppSpacing.xs / 2),
                     Text(
                       body,
                       style: AppText.bodySm.copyWith(
@@ -1612,7 +1605,7 @@ class _RoleBanner extends StatelessWidget {
                         height: 1.5,
                       ),
                     ),
-                    gapV(AppSpacing.md),
+                    gapV(AppSpacing.sm),
                     Container(
                       padding: EdgeInsets.symmetric(
                         horizontal: AppSpacing.md.w,

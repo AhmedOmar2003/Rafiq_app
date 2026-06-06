@@ -212,24 +212,25 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   AppSpacing.huge.h,
                 ),
                 children: [
-                  _Hero(currentTier: ent.tier, onboarding: widget.onboarding),
+                  _Hero(onboarding: widget.onboarding),
                   gapV(AppSpacing.lg),
                   _ReviewExpectationCard(onboarding: widget.onboarding),
-                  gapV(AppSpacing.xl),
+                  gapV(AppSpacing.lg),
                   _BillingToggle(
                     yearly: _yearly,
                     discountPct: _maxYearlyDiscount(plans),
                     onChanged: (v) => setState(() => _yearly = v),
                   ),
-                  gapV(AppSpacing.xxxl),
+                  gapV(AppSpacing.xl),
                   ..._planCards(plans, ent),
-                  gapV(AppSpacing.huge),
+                  gapV(AppSpacing.xl),
                   Text(
                     AppCopy.subCompareTitle,
-                    style: AppText.headingSm,
+                    style:
+                        AppText.titleLg.copyWith(fontWeight: FontWeight.w800),
                     textAlign: TextAlign.start,
                   ),
-                  gapV(AppSpacing.lg),
+                  gapV(AppSpacing.md),
                   _ComparisonTable(plans: plans),
                   if (ent.tier != PlanTier.free) ...[
                     gapV(AppSpacing.huge),
@@ -302,9 +303,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 // ===========================================================================
 
 class _Hero extends StatelessWidget {
-  const _Hero({required this.currentTier, this.onboarding = false});
+  const _Hero({this.onboarding = false});
 
-  final PlanTier currentTier;
   final bool onboarding;
 
   @override
@@ -320,12 +320,12 @@ class _Hero extends StatelessWidget {
         children: [
           Text(
             title,
-            style: AppText.headingLg.copyWith(fontWeight: FontWeight.w800),
+            style: AppText.headingMd.copyWith(fontWeight: FontWeight.w800),
           ),
           gapV(AppSpacing.xs),
           Text(
             subtitle,
-            style: AppText.bodyMd.copyWith(color: AppColor.textSecondary),
+            style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
           ),
         ],
       ),
@@ -344,7 +344,7 @@ class _ReviewExpectationCard extends StatelessWidget {
       label: AppCopy.subReviewWindowNotice,
       child: Container(
         padding: EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg.w,
+          horizontal: AppSpacing.md.w,
           vertical: AppSpacing.md.h,
         ),
         decoration: BoxDecoration(
@@ -364,7 +364,7 @@ class _ReviewExpectationCard extends StatelessWidget {
               color: AppColor.warning,
               size: 20.sp,
             ),
-            gapH(AppSpacing.sm),
+            gapH(AppSpacing.xs),
             Expanded(
               child: Text(
                 AppCopy.subReviewWindowNotice,
@@ -461,7 +461,7 @@ class _ToggleChip extends StatelessWidget {
           onTap: onTap,
           child: Padding(
             padding: EdgeInsets.symmetric(
-              horizontal: AppSpacing.xl.w,
+              horizontal: AppSpacing.lg.w,
               vertical: AppSpacing.sm.h,
             ),
             child: Row(
@@ -546,86 +546,87 @@ class _PlanCard extends StatelessWidget {
           ),
           boxShadow: isRecommended ? AppShadows.primaryGlow : AppShadows.level1,
         ),
-        padding: EdgeInsets.all(AppSpacing.xxl.w),
+        padding: EdgeInsets.all(AppSpacing.lg.w),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          Wrap(
-            spacing: AppSpacing.sm.w,
-            runSpacing: AppSpacing.sm.h,
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              Text(
-                plan.displayName,
-                style: AppText.headingMd.copyWith(color: accent),
-              ),
-              if (isCurrent)
-                const _Chip(label: AppCopy.subCurrent, color: AppColor.success)
-              else if (isRecommended)
-                _Chip(label: AppCopy.subRecommended, color: plan.accentColor),
-            ],
-          ),
-          gapV(AppSpacing.xs),
-          Text(
-            plan.tagline,
-            style: AppText.bodyMd.copyWith(color: AppColor.textSecondary),
-          ),
-          gapV(AppSpacing.lg),
-          if (plan.isFree)
-            Text(
-              AppCopy.subFreeForever,
-              style: AppText.displayMd.copyWith(color: AppColor.textPrimary),
-            )
-          else
-            Wrap(
-              spacing: AppSpacing.xs.w,
-              runSpacing: AppSpacing.xs.h,
-              crossAxisAlignment: WrapCrossAlignment.end,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  price.toString(),
-                  style:
-                      AppText.displayMd.copyWith(color: AppColor.textPrimary),
-                ),
-                Padding(
-                  padding: EdgeInsets.only(bottom: AppSpacing.sm.h),
+                Expanded(
                   child: Text(
-                    'ج.م ${per.trim()}',
-                    style:
-                        AppText.bodyLg.copyWith(color: AppColor.textSecondary),
+                    plan.displayName,
+                    style: AppText.headingSm.copyWith(color: accent),
                   ),
                 ),
+                if (isCurrent)
+                  const _Chip(
+                      label: AppCopy.subCurrent, color: AppColor.success)
+                else if (isRecommended)
+                  _Chip(label: AppCopy.subRecommended, color: plan.accentColor),
               ],
             ),
-          gapV(AppSpacing.lg),
-          Wrap(
-            runSpacing: AppSpacing.xs.h,
-            children: _featureBullets(),
-          ),
-          gapV(AppSpacing.xl),
-          SizedBox(
-            width: double.infinity,
-            child: AppButton(
-              // During onboarding the free card needs a real CTA so the user
-              // can confirm their choice and move on. Outside onboarding it
-              // stays as "إدارة الاشتراك" when current.
-              text: () {
-                if (onboarding && plan.isFree) {
-                  return AppCopy.subOnboardingFreeCta;
-                }
-                if (isCurrent && !onboarding) return AppCopy.subManage;
-                return plan.ctaLabel;
-              }(),
-              onPress:
-                  disabled ? () {} : (isCurrent && !onboarding ? () {} : onCta),
-              isEnabled: !disabled && (onboarding || !isCurrent),
-              variant: isRecommended
-                  ? AppButtonVariant.primary
-                  : AppButtonVariant.outline,
+            gapV(AppSpacing.xs),
+            Text(
+              plan.tagline,
+              style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
             ),
-          ),
-        ],
+            gapV(AppSpacing.md),
+            if (plan.isFree)
+              Text(
+                AppCopy.subFreeForever,
+                style: AppText.displayMd.copyWith(color: AppColor.textPrimary),
+              )
+            else
+              Wrap(
+                spacing: AppSpacing.xs.w,
+                runSpacing: AppSpacing.xs.h,
+                crossAxisAlignment: WrapCrossAlignment.end,
+                children: [
+                  Text(
+                    price.toString(),
+                    style:
+                        AppText.displayMd.copyWith(color: AppColor.textPrimary),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.only(bottom: AppSpacing.sm.h),
+                    child: Text(
+                      'ج.م ${per.trim()}',
+                      style: AppText.bodyLg
+                          .copyWith(color: AppColor.textSecondary),
+                    ),
+                  ),
+                ],
+              ),
+            gapV(AppSpacing.md),
+            Wrap(
+              runSpacing: AppSpacing.xs.h,
+              children: _featureBullets(),
+            ),
+            gapV(AppSpacing.lg),
+            SizedBox(
+              width: double.infinity,
+              child: AppButton(
+                // During onboarding the free card needs a real CTA so the user
+                // can confirm their choice and move on. Outside onboarding it
+                // stays as "إدارة الاشتراك" when current.
+                text: () {
+                  if (onboarding && plan.isFree) {
+                    return AppCopy.subOnboardingFreeCta;
+                  }
+                  if (isCurrent && !onboarding) return AppCopy.subManage;
+                  return plan.ctaLabel;
+                }(),
+                onPress: disabled
+                    ? () {}
+                    : (isCurrent && !onboarding ? () {} : onCta),
+                isEnabled: !disabled && (onboarding || !isCurrent),
+                variant: isRecommended
+                    ? AppButtonVariant.primary
+                    : AppButtonVariant.outline,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -645,7 +646,6 @@ class _PlanCard extends StatelessWidget {
           label:
               '${AppCopy.subFeatGallery}: ${unlimited(plan.maxGalleryImages)}'),
       const _Feature(label: AppCopy.subFeatPlaceReview),
-      const _Feature(label: AppCopy.subFeatCampaignReview),
       if (plan.maxVideos > 0)
         _Feature(
             label: '${AppCopy.subFeatVideos}: ${unlimited(plan.maxVideos)}'),
@@ -722,155 +722,112 @@ class _ComparisonTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final rows = <_CompareRow>[
-      _CompareRow(AppCopy.subFeatPlaces,
-          plans.map((p) => p.maxPlaces.toString()).toList()),
-      _CompareRow(
-        AppCopy.subFeatPromoSlots,
-        plans
-            .map((p) => p.maxCampaigns == 0 ? '—' : p.maxCampaigns.toString())
-            .toList(),
-      ),
-      _CompareRow(
-        AppCopy.subFeatGallery,
-        plans.map((p) {
-          if (p.maxGalleryImages >= 999) return AppCopy.subFeatureUnlimited;
-          return p.maxGalleryImages.toString();
-        }).toList(),
-      ),
-      _CompareRow(
-        AppCopy.subFeatVideos,
-        plans
-            .map((p) => p.maxVideos == 0 ? '—' : p.maxVideos.toString())
-            .toList(),
-      ),
-      _CompareRow(
-        AppCopy.subFeatRanking,
-        plans.map((p) => '×${p.rankingBoost.toStringAsFixed(2)}').toList(),
-      ),
-      _CompareRow(AppCopy.subFeatVerified,
-          plans.map((p) => p.isVerified ? '✓' : '—').toList()),
-      _CompareRow(AppCopy.subFeatAnalytics,
-          plans.map((p) => p.hasAnalyticsBasic ? '✓' : '—').toList()),
-      _CompareRow(AppCopy.subFeatPromotions,
-          plans.map((p) => p.hasPromotions ? '✓' : '—').toList()),
-      _CompareRow(AppCopy.subFeatFeatured,
-          plans.map((p) => p.hasFeaturedSlot ? '✓' : '—').toList()),
-      _CompareRow(AppCopy.subFeatPush,
-          plans.map((p) => p.hasPushCampaigns ? '✓' : '—').toList()),
-      _CompareRow(AppCopy.subFeatSpotlight,
-          plans.map((p) => p.hasHomepageSpotlight ? '✓' : '—').toList()),
-      _CompareRow(AppCopy.subFeatSupport,
-          plans.map((p) => p.hasPrioritySupport ? '✓' : '—').toList()),
-      _CompareRow(
-        AppCopy.subFeatPlaceReview,
-        plans.map((_) => '24h').toList(),
-      ),
-      _CompareRow(
-        AppCopy.subFeatCampaignReview,
-        plans.map((p) => p.hasPromotions ? '6h' : '—').toList(),
-      ),
-    ];
-
-    return AppCard(
-      padding: EdgeInsets.zero,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minWidth: 560.w),
-          child: Column(
-            children: [
-              _CompareHeader(plans: plans),
-              for (var i = 0; i < rows.length; i++)
-                _CompareRowView(
-                  row: rows[i],
-                  isEven: i.isEven,
-                ),
-            ],
+    return Column(
+      children: List.generate(
+        plans.length,
+        (index) => Padding(
+          padding: EdgeInsets.only(
+            bottom: index == plans.length - 1 ? 0 : AppSpacing.md.h,
           ),
+          child: _ComparePlanCard(plan: plans[index]),
         ),
       ),
     );
   }
 }
 
-class _CompareRow {
-  _CompareRow(this.label, this.values);
-  final String label;
-  final List<String> values;
-}
-
-class _CompareHeader extends StatelessWidget {
-  const _CompareHeader({required this.plans});
-  final List<SubscriptionPlan> plans;
+class _ComparePlanCard extends StatelessWidget {
+  const _ComparePlanCard({required this.plan});
+  final SubscriptionPlan plan;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg.w,
-        vertical: AppSpacing.lg.h,
+    final gallery = plan.maxGalleryImages >= 999
+        ? AppCopy.subFeatureUnlimited
+        : plan.maxGalleryImages.toString();
+    final campaignReview = plan.hasPromotions ? '6 ساعات' : '—';
+    final rows = <(String, String)>[
+      (AppCopy.subFeatPlaces, plan.maxPlaces.toString()),
+      (
+        AppCopy.subFeatPromoSlots,
+        plan.maxCampaigns == 0 ? '—' : plan.maxCampaigns.toString()
       ),
-      child: Row(
+      (AppCopy.subFeatGallery, gallery),
+      (AppCopy.subFeatAnalytics, plan.hasAnalyticsBasic ? 'متاحة' : '—'),
+      (AppCopy.subFeatCampaignReview, campaignReview),
+      (AppCopy.subFeatPlaceReview, '24 ساعة'),
+    ];
+
+    return AppCard(
+      padding: EdgeInsets.all(AppSpacing.lg.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Expanded(flex: 3, child: SizedBox.shrink()),
-          for (final p in plans)
-            Expanded(
-              flex: 2,
-              child: Text(
-                p.displayName,
-                textAlign: TextAlign.center,
-                style: AppText.labelMd.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: p.accentColor,
-                ),
-              ),
+          Text(
+            plan.displayName,
+            style: AppText.titleMd.copyWith(
+              color: plan.accentColor,
+              fontWeight: FontWeight.w800,
             ),
+          ),
+          gapV(AppSpacing.sm),
+          for (var i = 0; i < rows.length; i++) ...[
+            _SimpleCompareRow(label: rows[i].$1, value: rows[i].$2),
+            if (i != rows.length - 1)
+              const Divider(height: 1, color: AppColor.border),
+          ],
         ],
       ),
     );
   }
 }
 
-class _CompareRowView extends StatelessWidget {
-  const _CompareRowView({required this.row, required this.isEven});
-  final _CompareRow row;
-  final bool isEven;
+class _SimpleCompareRow extends StatelessWidget {
+  const _SimpleCompareRow({required this.label, required this.value});
+  final String label;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: isEven ? AppColor.surfaceVariant : Colors.transparent,
+    final isAvailable = value != '—';
+    return Padding(
       padding: EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg.w,
-        vertical: AppSpacing.md.h,
+        vertical: AppSpacing.sm.h,
       ),
       child: Row(
         children: [
           Expanded(
-            flex: 3,
             child: Text(
-              row.label,
-              style: AppText.bodyMd,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+              label,
+              style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
             ),
           ),
-          for (final v in row.values)
-            Expanded(
-              flex: 2,
-              child: Text(
-                v,
-                textAlign: TextAlign.center,
-                style: AppText.labelMd.copyWith(fontWeight: FontWeight.w700),
+          gapH(AppSpacing.sm),
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm.w,
+              vertical: AppSpacing.xs.h,
+            ),
+            decoration: BoxDecoration(
+              color: isAvailable
+                  ? AppColor.primary.withValues(alpha: 0.08)
+                  : AppColor.surfaceVariant,
+              borderRadius: AppRadii.rPill,
+            ),
+            child: Text(
+              value,
+              textAlign: TextAlign.center,
+              style: AppText.labelSm.copyWith(
+                color: isAvailable ? AppColor.primary : AppColor.textSecondary,
+                fontWeight: FontWeight.w800,
               ),
             ),
+          ),
         ],
       ),
     );
   }
 }
-
 // ===========================================================================
 // Manage section
 // ===========================================================================
