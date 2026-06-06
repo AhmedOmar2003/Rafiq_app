@@ -280,7 +280,12 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
       valueListenable: SubscriptionService.instance.entitlement,
       builder: (_, ent, __) {
         return Container(
-          margin: EdgeInsets.fromLTRB(AppSpacing.xl.w, AppSpacing.sm.h, AppSpacing.xl.w, 0),
+          margin: EdgeInsets.fromLTRB(
+            AppSpacing.lg.w,
+            AppSpacing.sm.h,
+            AppSpacing.lg.w,
+            0,
+          ),
           padding: EdgeInsets.symmetric(
             horizontal: AppSpacing.lg.w,
             vertical: AppSpacing.md.h,
@@ -290,10 +295,13 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
             borderRadius: AppRadii.rMd,
             border: Border.all(color: AppColor.border),
           ),
-          child: Row(
+          child: Wrap(
+            spacing: AppSpacing.sm.w,
+            runSpacing: AppSpacing.sm.h,
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               PlanBadge(tier: ent.tier),
-              const Spacer(),
               EntitlementChip(
                 label: AppCopy.subFeatGallery,
                 used: _images.length,
@@ -370,12 +378,16 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
                           _buildTopImage(),
                           gapV(AppSpacing.xxl),
                           Padding(
-                            padding: EdgeInsets.symmetric(horizontal: AppSpacing.xxl.w),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: AppSpacing.lg.w,
+                            ),
                             child: _buildFormFields(),
                           ),
                           gapV(AppSpacing.xxxl),
                           Padding(
-                            padding: EdgeInsets.symmetric(horizontal: AppSpacing.xxl.w),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: AppSpacing.lg.w,
+                            ),
                             child: Column(
                               children: [
                                 const _ReviewNoticeCard(),
@@ -404,7 +416,10 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
 
   Widget _buildAppBar() {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: AppSpacing.xl.w, vertical: AppSpacing.lg.h),
+          padding: EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg.w,
+            vertical: AppSpacing.md.h,
+          ),
       color: AppColor.surface,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -451,7 +466,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
       builder: (_, ent, __) {
         final canAdd = _images.length < ent.maxGalleryImages;
         return Padding(
-          padding: EdgeInsets.symmetric(horizontal: AppSpacing.xxl.w),
+          padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -593,6 +608,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
         ],
       ),
       child: DropdownButtonFormField<String>(
+        isExpanded: true,
         initialValue: value,
         onChanged: onChanged,
         validator: validator,
@@ -633,7 +649,11 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
         items: items.map((String item) {
           return DropdownMenuItem<String>(
             value: item,
-            child: Text(item),
+            child: Text(
+              item,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           );
         }).toList(),
       ),
@@ -711,9 +731,10 @@ class _GalleryTile extends StatelessWidget {
               shape: const CircleBorder(),
               child: InkResponse(
                 onTap: onRemove,
-                radius: 18,
-                child: Padding(
-                  padding: EdgeInsets.all(AppSpacing.xs.w),
+                radius: 24,
+                child: SizedBox(
+                  width: 44.w,
+                  height: 44.w,
                   child: Icon(
                     Icons.close_rounded,
                     color: AppColor.white,

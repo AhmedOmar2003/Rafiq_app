@@ -4,7 +4,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/design/app_image.dart';
 import '../../../core/design/cached_network_image.dart';
 import '../../../core/design/tokens/tokens.dart';
-import '../../../core/utils/spacing.dart';
 import '../../../models/suggestion_item_model/suggestion_item.dart';
 
 class SimilarEvents extends StatelessWidget {
@@ -19,22 +18,32 @@ class SimilarEvents extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          height: 260.h,
-          child: ListView.builder(
-            padding: EdgeInsets.symmetric(horizontal: 16.w),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final viewportWidth = constraints.maxWidth;
+        final cardWidth = viewportWidth < 360.w ? 196.w : 220.w;
+        final listHeight = viewportWidth < 360.w ? 248.h : 264.h;
+
+        return SizedBox(
+          height: listHeight,
+          child: ListView.separated(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.lg.w,
+              0,
+              AppSpacing.lg.w,
+              AppSpacing.lg.h,
+            ),
             scrollDirection: Axis.horizontal,
             itemCount: suggestionItemList.length,
+            separatorBuilder: (_, __) => gapH(AppSpacing.md),
             itemBuilder: (context, index) => SimilarEventsItem(
+              width: cardWidth,
               model: suggestionItemList[index],
               onItemSelected: onItemSelected,
             ),
           ),
-        ),
-      ],
+        );
+      },
     );
   }
 }
@@ -42,51 +51,50 @@ class SimilarEvents extends StatelessWidget {
 class SimilarEventsItem extends StatelessWidget {
   final SuggestionItemModel model;
   final Function(SuggestionItemModel) onItemSelected;
+  final double width;
 
   const SimilarEventsItem({
     super.key,
+    required this.width,
     required this.model,
     required this.onItemSelected,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => onItemSelected(model),
-      child: Container(
-        width: 220.w,
-        height: 280.h,
-        margin: EdgeInsetsDirectional.only(end: 12.w),
+    return Semantics(
+      button: true,
+      label: '${model.text}. ${model.city}. ${model.price} جنيه',
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: AppRadii.rLg,
+        child: InkWell(
+          onTap: () => onItemSelected(model),
+          borderRadius: AppRadii.rLg,
+          child: Container(
+        width: width,
         decoration: BoxDecoration(
           color: AppColor.surfaceCard,
-          borderRadius: BorderRadius.circular(16.r),
-          boxShadow: [
-            BoxShadow(
-              color: AppColor.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          borderRadius: AppRadii.rLg,
+          boxShadow: AppShadows.level1,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image Container
             Container(
-              height: 130.h,
+              height: 122.h,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+                borderRadius: AppRadii.topOnly(AppRadii.lg),
               ),
               child: Stack(
                 fit: StackFit.expand,
                 children: [
                   ClipRRect(
-                    borderRadius:
-                        BorderRadius.vertical(top: Radius.circular(16.r)),
+                    borderRadius: AppRadii.topOnly(AppRadii.lg),
                     child: model.image.isNotEmpty
                         ? CachedNetworkImage(
                             url: model.image,
-                            height: 130.h,
+                            height: 122.h,
                             fit: BoxFit.cover,
                             placeholder: (_) => const Center(
                               child: CircularProgressIndicator(
@@ -100,21 +108,17 @@ class SimilarEventsItem extends StatelessWidget {
                   ),
                   // Rating Badge
                   Positioned(
-                    top: 8.h,
-                    right: 8.w,
+                    top: AppSpacing.sm.h,
+                    right: AppSpacing.sm.w,
                     child: Container(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm.w,
+                        vertical: AppSpacing.xs.h,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColor.surfaceCard,
-                        borderRadius: BorderRadius.circular(20.r),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColor.black.withValues(alpha: 0.1),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
+                        borderRadius: AppRadii.rPill,
+                        boxShadow: AppShadows.level1,
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -124,7 +128,7 @@ class SimilarEventsItem extends StatelessWidget {
                             color: AppColor.warning,
                             size: 12.sp,
                           ),
-                          horizontalSpace(2),
+                          gapH(AppSpacing.xs),
                           Text(
                             model.rate.toString(),
                             style: AppText.caption.copyWith(
@@ -141,44 +145,49 @@ class SimilarEventsItem extends StatelessWidget {
             // Content Container
             Expanded(
               child: Padding(
-                padding: EdgeInsets.all(10.w),
+                padding: EdgeInsets.all(AppSpacing.md.w),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Category Badge
-                    Container(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
-                      decoration: BoxDecoration(
-                        color: model.color.withValues(alpha: 0.9),
-                        borderRadius: BorderRadius.circular(8.r),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          AppImage(
-                            model.icon,
-                            color: AppColor.white,
-                            height: 13.h,
-                            width: 13.w,
-                          ),
-                          horizontalSpace(3),
-                          Flexible(
-                            child: Text(
-                              model.suggestionText,
-                              style: AppText.caption.copyWith(
-                                color: AppColor.surfaceCard,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Container(
+                        constraints: BoxConstraints(maxWidth: width - 32.w),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm.w,
+                          vertical: AppSpacing.xs.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: model.color.withValues(alpha: 0.9),
+                          borderRadius: AppRadii.rSm,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            AppImage(
+                              model.icon,
+                              color: AppColor.white,
+                              height: 13.h,
+                              width: 13.w,
                             ),
-                          ),
-                        ],
+                            gapH(AppSpacing.xs),
+                            Flexible(
+                              child: Text(
+                                model.suggestionText,
+                                style: AppText.caption.copyWith(
+                                  color: AppColor.surfaceCard,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    verticalSpace(6),
-                    // Title
+                    gapV(AppSpacing.sm),
                     Flexible(
                       child: Text(
                         model.text,
@@ -190,8 +199,7 @@ class SimilarEventsItem extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    verticalSpace(6),
-                    // Price
+                    const Spacer(),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -207,7 +215,7 @@ class SimilarEventsItem extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                "${model.price} جنية",
+                                "${model.price} جنيه",
                                 style: AppText.labelMd.copyWith(
                                   color: AppColor.primary,
                                   fontWeight: FontWeight.w600,
@@ -219,7 +227,9 @@ class SimilarEventsItem extends StatelessWidget {
                           ),
                         ),
                         Container(
-                          padding: EdgeInsets.all(5.w),
+                          width: 36.w,
+                          height: 36.w,
+                          alignment: Alignment.center,
                           decoration: BoxDecoration(
                             color: AppColor.primary.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
@@ -227,7 +237,7 @@ class SimilarEventsItem extends StatelessWidget {
                           child: Icon(
                             Icons.arrow_forward,
                             color: AppColor.primary,
-                            size: 17.sp,
+                            size: 18.sp,
                           ),
                         ),
                       ],
@@ -237,6 +247,8 @@ class SimilarEventsItem extends StatelessWidget {
               ),
             ),
           ],
+        ),
+          ),
         ),
       ),
     );

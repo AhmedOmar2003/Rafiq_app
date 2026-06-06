@@ -76,7 +76,7 @@ class _AppButtonState extends State<AppButton> {
   bool _pressed = false;
 
   double get _height => switch (widget.size) {
-        AppButtonSize.sm => 40.h,
+        AppButtonSize.sm => 44.h,
         AppButtonSize.md => 52.h,
         AppButtonSize.lg => 58.h,
       };
@@ -146,29 +146,34 @@ class _AppButtonState extends State<AppButton> {
     final bool disabled = !widget.isEnabled || widget.isLoading;
     final double opacity = disabled ? 0.5 : 1.0;
 
-    return Opacity(
-      opacity: opacity,
-      child: _ScaleOnPress(
-        enabled: !disabled,
-        onPressedDown: (v) => setState(() => _pressed = v),
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: disabled ? null : widget.onPress,
-          child: AnimatedContainer(
-            duration: AppMotion.fast,
-            height: _height,
-            width: widget.isFullWidth ? double.infinity : null,
-            padding: EdgeInsets.symmetric(horizontal: AppSpacing.xl.w),
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: c.bg,
-              borderRadius: AppRadii.rMd,
-              border: c.border != null
-                  ? Border.all(color: c.border!, width: 1.5)
-                  : null,
-              boxShadow: _pressed ? AppShadows.level0 : c.shadow,
+    return Semantics(
+      button: true,
+      enabled: !disabled,
+      label: widget.text,
+      child: Opacity(
+        opacity: opacity,
+        child: _ScaleOnPress(
+          enabled: !disabled,
+          onPressedDown: (v) => setState(() => _pressed = v),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: disabled ? null : widget.onPress,
+            child: AnimatedContainer(
+              duration: AppMotion.fast,
+              constraints: BoxConstraints(minHeight: _height),
+              width: widget.isFullWidth ? double.infinity : null,
+              padding: EdgeInsets.symmetric(horizontal: AppSpacing.xl.w),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: c.bg,
+                borderRadius: AppRadii.rMd,
+                border: c.border != null
+                    ? Border.all(color: c.border!, width: 1.5)
+                    : null,
+                boxShadow: _pressed ? AppShadows.level0 : c.shadow,
+              ),
+              child: _content(c.fg),
             ),
-            child: _content(c.fg),
           ),
         ),
       ),

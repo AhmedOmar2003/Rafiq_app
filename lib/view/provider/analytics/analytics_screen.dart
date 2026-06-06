@@ -193,8 +193,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       gapV(AppSpacing.lg),
                       LayoutBuilder(
                         builder: (context, constraints) {
-                          final cardWidth =
-                              (constraints.maxWidth - AppSpacing.sm.w) / 2;
+                          final isNarrow = constraints.maxWidth < 340.w;
+                          final cardWidth = isNarrow
+                              ? constraints.maxWidth
+                              : (constraints.maxWidth - AppSpacing.sm.w) / 2;
                           return Wrap(
                             spacing: AppSpacing.sm.w,
                             runSpacing: AppSpacing.sm.h,

@@ -1326,13 +1326,17 @@ class _ProviderFlowCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Wrap(
+            spacing: AppSpacing.sm.w,
+            runSpacing: AppSpacing.sm.h,
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              Expanded(
-                child: Text(
-                  placeCount > 1 ? AppCopy.hubPlacesMultiTitle : AppCopy.hubPlacesSingleTitle,
-                  style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
-                ),
+              Text(
+                placeCount > 1
+                    ? AppCopy.hubPlacesMultiTitle
+                    : AppCopy.hubPlacesSingleTitle,
+                style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
               ),
               AppButton(
                 text: AppCopy.refresh,
@@ -1385,22 +1389,33 @@ class _ProviderFlowCard extends StatelessWidget {
             ),
           ),
           gapV(AppSpacing.md),
-          Row(
-            children: [
-              Expanded(
-                child: _MiniStat(
-                  label: AppCopy.hubFeatTitlePlaces,
-                  value: '$placeCount/$maxPlaces',
-                ),
-              ),
-              gapH(AppSpacing.sm),
-              Expanded(
-                child: _MiniStat(
-                  label: AppCopy.hubKpiImages,
-                  value: imagesPerPlace >= 999 ? '∞' : '$imagesPerPlace',
-                ),
-              ),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isNarrow = constraints.maxWidth < 320.w;
+              final itemWidth = isNarrow
+                  ? constraints.maxWidth
+                  : (constraints.maxWidth - AppSpacing.sm.w) / 2;
+              return Wrap(
+                spacing: AppSpacing.sm.w,
+                runSpacing: AppSpacing.sm.h,
+                children: [
+                  SizedBox(
+                    width: itemWidth,
+                    child: _MiniStat(
+                      label: AppCopy.hubFeatTitlePlaces,
+                      value: '$placeCount/$maxPlaces',
+                    ),
+                  ),
+                  SizedBox(
+                    width: itemWidth,
+                    child: _MiniStat(
+                      label: AppCopy.hubKpiImages,
+                      value: imagesPerPlace >= 999 ? '∞' : '$imagesPerPlace',
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
           gapV(AppSpacing.md),
           SizedBox(
@@ -1665,26 +1680,50 @@ class _PlaceCard extends StatelessWidget {
                     ),
                   ),
                   gapV(AppSpacing.sm),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: AppButton(
-                          text: AppCopy.hubPlaceEdit,
-                          onPress: onEdit,
-                          size: AppButtonSize.sm,
-                          variant: AppButtonVariant.outline,
-                        ),
-                      ),
-                      gapH(AppSpacing.sm),
-                      Expanded(
-                        child: AppButton(
-                          text: AppCopy.hubPlaceDelete,
-                          onPress: onDelete,
-                          size: AppButtonSize.sm,
-                          variant: AppButtonVariant.destructive,
-                        ),
-                      ),
-                    ],
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final stack = constraints.maxWidth < 280.w;
+                      if (stack) {
+                        return Column(
+                          children: [
+                            AppButton(
+                              text: AppCopy.hubPlaceEdit,
+                              onPress: onEdit,
+                              size: AppButtonSize.sm,
+                              variant: AppButtonVariant.outline,
+                            ),
+                            gapV(AppSpacing.sm),
+                            AppButton(
+                              text: AppCopy.hubPlaceDelete,
+                              onPress: onDelete,
+                              size: AppButtonSize.sm,
+                              variant: AppButtonVariant.destructive,
+                            ),
+                          ],
+                        );
+                      }
+                      return Row(
+                        children: [
+                          Expanded(
+                            child: AppButton(
+                              text: AppCopy.hubPlaceEdit,
+                              onPress: onEdit,
+                              size: AppButtonSize.sm,
+                              variant: AppButtonVariant.outline,
+                            ),
+                          ),
+                          gapH(AppSpacing.sm),
+                          Expanded(
+                            child: AppButton(
+                              text: AppCopy.hubPlaceDelete,
+                              onPress: onDelete,
+                              size: AppButtonSize.sm,
+                              variant: AppButtonVariant.destructive,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                   gapV(AppSpacing.sm),
                   Row(

@@ -321,7 +321,10 @@ class _DetailsPageState extends State<DetailsPage> {
       shape: RoundedRectangleBorder(
         borderRadius: AppRadii.topOnly(AppRadii.xxl),
       ),
-      builder: (_) => _ReportSheet(place: place),
+      builder: (_) => SafeArea(
+        top: false,
+        child: _ReportSheet(place: place),
+      ),
     );
   }
 }
@@ -885,128 +888,139 @@ class _ReportSheetState extends State<_ReportSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final sheetMaxHeight = MediaQuery.sizeOf(context).height * 0.88;
     return Padding(
       padding: EdgeInsets.fromLTRB(
-        AppSpacing.xxl.w,
+        AppSpacing.lg.w,
         AppSpacing.lg.h,
-        AppSpacing.xxl.w,
-        MediaQuery.viewInsetsOf(context).bottom + AppSpacing.xxl.h,
+        AppSpacing.lg.w,
+        MediaQuery.viewInsetsOf(context).bottom + AppSpacing.lg.h,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Center(
-            child: Container(
-              width: 40.w,
-              height: 4.h,
-              decoration: BoxDecoration(
-                color: AppColor.border,
-                borderRadius: AppRadii.rSm,
-              ),
-            ),
-          ),
-          gapV(AppSpacing.xl),
-          Row(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: sheetMaxHeight),
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
-                width: 44.w,
-                height: 44.w,
-                decoration: BoxDecoration(
-                  color: AppColor.error.withValues(alpha: 0.12),
-                  borderRadius: AppRadii.rMd,
+              Center(
+                child: Container(
+                  width: 40.w,
+                  height: 4.h,
+                  decoration: BoxDecoration(
+                    color: AppColor.border,
+                    borderRadius: AppRadii.rSm,
+                  ),
                 ),
-                alignment: Alignment.center,
-                child: Icon(Icons.flag_outlined,
-                    color: AppColor.error, size: 22.sp),
               ),
-              gapH(AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      AppCopy.detailsReport,
-                      style:
-                          AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
+              gapV(AppSpacing.xl),
+              Row(
+                children: [
+                  Container(
+                    width: 44.w,
+                    height: 44.w,
+                    decoration: BoxDecoration(
+                      color: AppColor.error.withValues(alpha: 0.12),
+                      borderRadius: AppRadii.rMd,
                     ),
-                    Text(
-                      widget.place.text,
-                      style: AppText.bodySm
-                          .copyWith(color: AppColor.textSecondary),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    alignment: Alignment.center,
+                    child: Icon(Icons.flag_outlined,
+                        color: AppColor.error, size: 22.sp),
+                  ),
+                  gapH(AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          AppCopy.detailsReport,
+                          style: AppText.titleMd
+                              .copyWith(fontWeight: FontWeight.w800),
+                        ),
+                        Text(
+                          widget.place.text,
+                          style: AppText.bodySm
+                              .copyWith(color: AppColor.textSecondary),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
+                ],
+              ),
+              gapV(AppSpacing.lg),
+              Text(
+                AppCopy.reportPickReason,
+                style: AppText.labelMd.copyWith(
+                  color: AppColor.textSecondary,
+                  fontWeight: FontWeight.w700,
                 ),
+              ),
+              gapV(AppSpacing.sm),
+              Wrap(
+                spacing: AppSpacing.sm.w,
+                runSpacing: AppSpacing.sm.h,
+                children: _reasons.map((r) {
+                  final selected = _selected == r.code;
+                  return Semantics(
+                    button: true,
+                    selected: selected,
+                    label: 'سبب البلاغ ${r.label}',
+                    child: Material(
+                      color: selected ? AppColor.primary : AppColor.surface,
+                      borderRadius: AppRadii.rPill,
+                      child: InkWell(
+                        onTap: () => setState(() => _selected = r.code),
+                        borderRadius: AppRadii.rPill,
+                        splashColor:
+                            AppColor.primary.withValues(alpha: 0.12),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md.w,
+                            vertical: AppSpacing.sm.h,
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: AppRadii.rPill,
+                            border: Border.all(
+                              color: selected
+                                  ? AppColor.primary
+                                  : AppColor.border,
+                            ),
+                          ),
+                          child: Text(
+                            r.label,
+                            style: AppText.labelMd.copyWith(
+                              color: selected
+                                  ? AppColor.white
+                                  : AppColor.textPrimary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+              gapV(AppSpacing.lg),
+              AppInput(
+                controller: _detailsCtrl,
+                hintText: AppCopy.reportDetailsHint,
+                maxLines: 4,
+                paddingBottom: 0,
+                fillColor: AppColor.surface,
+              ),
+              gapV(AppSpacing.xl),
+              AppButton(
+                text: AppCopy.reportSendCta,
+                onPress: _submit,
+                isEnabled: !_sending,
               ),
             ],
           ),
-          gapV(AppSpacing.lg),
-          Text(
-            AppCopy.reportPickReason,
-            style: AppText.labelMd.copyWith(
-              color: AppColor.textSecondary,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          gapV(AppSpacing.sm),
-          Wrap(
-            spacing: AppSpacing.sm.w,
-            runSpacing: AppSpacing.sm.h,
-            children: _reasons.map((r) {
-              final selected = _selected == r.code;
-              return Semantics(
-                button: true,
-                selected: selected,
-                label: 'سبب البلاغ ${r.label}',
-                child: Material(
-                  color: selected ? AppColor.primary : AppColor.surface,
-                  borderRadius: AppRadii.rPill,
-                  child: InkWell(
-                    onTap: () => setState(() => _selected = r.code),
-                    borderRadius: AppRadii.rPill,
-                    splashColor: AppColor.primary.withValues(alpha: 0.12),
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md.w,
-                        vertical: AppSpacing.sm.h,
-                      ),
-                      decoration: BoxDecoration(
-                        borderRadius: AppRadii.rPill,
-                        border: Border.all(
-                          color: selected ? AppColor.primary : AppColor.border,
-                        ),
-                      ),
-                      child: Text(
-                        r.label,
-                        style: AppText.labelMd.copyWith(
-                          color:
-                              selected ? AppColor.white : AppColor.textPrimary,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-          gapV(AppSpacing.lg),
-          AppInput(
-            controller: _detailsCtrl,
-            hintText: AppCopy.reportDetailsHint,
-            maxLines: 4,
-            paddingBottom: 0,
-            fillColor: AppColor.surface,
-          ),
-          gapV(AppSpacing.xl),
-          AppButton(
-            text: AppCopy.reportSendCta,
-            onPress: _submit,
-            isEnabled: !_sending,
-          ),
-        ],
+        ),
       ),
     );
   }

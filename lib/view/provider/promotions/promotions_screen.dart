@@ -186,9 +186,16 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                     AppSpacing.huge.h,
                   ),
                   children: [
-                    Row(
+                    Wrap(
+                      spacing: AppSpacing.sm.w,
+                      runSpacing: AppSpacing.sm.h,
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        Expanded(
+                        ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: MediaQuery.sizeOf(context).width - 120.w,
+                          ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -225,18 +232,26 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                             ),
                           ),
                           gapV(AppSpacing.md),
-                          Row(
+                          Wrap(
+                            spacing: AppSpacing.sm.w,
+                            runSpacing: AppSpacing.xs.h,
+                            alignment: WrapAlignment.spaceBetween,
+                            crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
-                              Expanded(
-                                child: Text(
-                                  AppCopy.promoQuotaAvailable.replaceFirst('%n', ent.maxCampaigns.toString()),
-                                  style: AppText.labelMd.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                              Text(
+                                AppCopy.promoQuotaAvailable.replaceFirst(
+                                  '%n',
+                                  ent.maxCampaigns.toString(),
+                                ),
+                                style: AppText.labelMd.copyWith(
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
                               Text(
-                                AppCopy.promoQuotaUsed.replaceFirst('%n', countedCampaigns.toString()),
+                                AppCopy.promoQuotaUsed.replaceFirst(
+                                  '%n',
+                                  countedCampaigns.toString(),
+                                ),
                                 style: AppText.bodySm.copyWith(
                                   color: AppColor.textSecondary,
                                 ),
@@ -429,7 +444,10 @@ class _PromotionStats extends StatelessWidget {
     final clicks = campaigns.fold<int>(0, (sum, c) => sum + c.clicks);
     return LayoutBuilder(
       builder: (context, constraints) {
-        final cardWidth = (constraints.maxWidth - AppSpacing.sm.w) / 2;
+        final isNarrow = constraints.maxWidth < 340.w;
+        final cardWidth = isNarrow
+            ? constraints.maxWidth
+            : (constraints.maxWidth - AppSpacing.sm.w) / 2;
         return Wrap(
           spacing: AppSpacing.sm.w,
           runSpacing: AppSpacing.sm.h,
@@ -535,9 +553,16 @@ class _CampaignCard extends StatelessWidget {
                 ),
               ),
             if (hasImage) gapV(AppSpacing.md),
-            Row(
+            Wrap(
+              spacing: AppSpacing.sm.w,
+              runSpacing: AppSpacing.xs.h,
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                Expanded(
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: MediaQuery.sizeOf(context).width - 92.w,
+                  ),
                   child: Text(
                     campaign.title,
                     style:
@@ -603,12 +628,13 @@ class _CampaignCard extends StatelessWidget {
               ),
             ],
             gapV(AppSpacing.md),
-            Row(
+            Wrap(
+              spacing: AppSpacing.lg.w,
+              runSpacing: AppSpacing.sm.h,
               children: [
                 _MiniMetric(
                     label: AppCopy.promoMetricImpressions,
                     value: campaign.impressions.toString()),
-                gapH(AppSpacing.lg),
                 _MiniMetric(
                     label: AppCopy.promoMetricClicks,
                     value: campaign.clicks.toString()),

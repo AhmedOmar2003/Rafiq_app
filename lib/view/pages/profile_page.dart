@@ -512,37 +512,37 @@ class _ProfilePageState extends State<ProfilePage> {
         label: AppCopy.profileChangeAvatarHint,
         child: GestureDetector(
           onTap: _pickImage,
-          child: ValueListenableBuilder<ProfileImageState>(
-          valueListenable: ProfileImageStore.instance,
-          builder: (_, snap, __) {
-            final ImageProvider provider = snap.bytes != null
-                ? MemoryImage(snap.bytes!)
-                : snap.file != null
-                    ? FileImage(snap.file!)
-                    : const AssetImage('assets/images/default_profile.webp')
-                        as ImageProvider;
-            return CircleAvatar(
-              radius: 70.w,
-              backgroundColor: AppColor.surfaceCard,
-              child: CircleAvatar(
-                radius: 67.w,
-                backgroundImage: provider,
-                child: snap.hasImage
-                    ? null
-                    : Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColor.black.withValues(alpha: 0.4),
+              child: ValueListenableBuilder<ProfileImageState>(
+            valueListenable: ProfileImageStore.instance,
+            builder: (_, snap, __) {
+              final ImageProvider provider = snap.bytes != null
+                  ? MemoryImage(snap.bytes!)
+                  : snap.file != null
+                      ? FileImage(snap.file!)
+                      : const AssetImage('assets/images/default_profile.webp')
+                          as ImageProvider;
+              return CircleAvatar(
+                radius: 64.w,
+                backgroundColor: AppColor.surfaceCard,
+                child: CircleAvatar(
+                  radius: 61.w,
+                  backgroundImage: provider,
+                  child: snap.hasImage
+                      ? null
+                      : Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColor.black.withValues(alpha: 0.4),
+                          ),
+                          child: Icon(
+                            Icons.camera_alt_rounded,
+                            color: AppColor.white,
+                            size: 32.w,
+                          ),
                         ),
-                        child: Icon(
-                          Icons.camera_alt_rounded,
-                          color: AppColor.white,
-                          size: 35.w,
-                        ),
-                      ),
-              ),
-            );
-          },
+                ),
+              );
+            },
           ),
         ),
       ),
@@ -1291,7 +1291,6 @@ class _GroupLabel extends StatelessWidget {
         style: AppText.labelSm.copyWith(
           color: AppColor.textTertiary,
           fontWeight: FontWeight.w700,
-          letterSpacing: 0.4,
         ),
       ),
     );
@@ -1410,7 +1409,7 @@ class _ProfileHero extends StatelessWidget {
       child: Column(
         children: [
           child,
-          gapV(AppSpacing.lg),
+          gapV(AppSpacing.md),
           Text(
             name ?? AppCopy.profileNameFallback,
             textAlign: TextAlign.center,
@@ -1423,6 +1422,8 @@ class _ProfileHero extends StatelessWidget {
           Text(
             email ?? AppCopy.profileEmailFallback,
             textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: AppText.bodyLg.copyWith(
               color: AppColor.white.withValues(alpha: 0.85),
             ),
@@ -1543,53 +1544,55 @@ class _RoleBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isBrand = tone == _RoleBannerTone.brand;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: AppRadii.rXl,
-        child: Ink(
-          decoration: BoxDecoration(
-            gradient: isBrand
-                ? LinearGradient(
-                    begin: Alignment.topRight,
-                    end: Alignment.bottomLeft,
-                    colors: [
-                      AppColor.primary,
-                      AppColor.primary.withValues(alpha: 0.78),
-                    ],
-                  )
-                : null,
-            color: isBrand ? null : AppColor.primary.withValues(alpha: 0.06),
-            borderRadius: AppRadii.rXl,
-            border: isBrand
-                ? null
-                : Border.all(
-                    color: AppColor.primary.withValues(alpha: 0.22),
+    return Semantics(
+      button: true,
+      label: '$title. $body. $cta',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: AppRadii.rXl,
+          child: Ink(
+            decoration: BoxDecoration(
+              gradient: isBrand
+                  ? LinearGradient(
+                      begin: Alignment.topRight,
+                      end: Alignment.bottomLeft,
+                      colors: [
+                        AppColor.primary,
+                        AppColor.primary.withValues(alpha: 0.78),
+                      ],
+                    )
+                  : null,
+              color: isBrand ? null : AppColor.primary.withValues(alpha: 0.06),
+              borderRadius: AppRadii.rXl,
+              border: isBrand
+                  ? null
+                  : Border.all(
+                      color: AppColor.primary.withValues(alpha: 0.22),
+                    ),
+              boxShadow: isBrand ? AppShadows.primaryGlow : null,
+            ),
+            padding: EdgeInsets.all(AppSpacing.xl.w),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final compact = constraints.maxWidth < 330.w;
+                final iconBox = Container(
+                  width: 56.w,
+                  height: 56.w,
+                  decoration: BoxDecoration(
+                    color: isBrand
+                        ? AppColor.white.withValues(alpha: 0.20)
+                        : AppColor.primary.withValues(alpha: 0.12),
+                    borderRadius: AppRadii.rLg,
                   ),
-            boxShadow: isBrand ? AppShadows.primaryGlow : null,
-          ),
-          padding: EdgeInsets.all(AppSpacing.xl.w),
-          child: Row(
-            children: [
-              Container(
-                width: 56.w,
-                height: 56.w,
-                decoration: BoxDecoration(
-                  color: isBrand
-                      ? AppColor.white.withValues(alpha: 0.20)
-                      : AppColor.primary.withValues(alpha: 0.12),
-                  borderRadius: AppRadii.rLg,
-                ),
-                child: Icon(
-                  icon,
-                  size: 28.sp,
-                  color: isBrand ? AppColor.white : AppColor.primary,
-                ),
-              ),
-              gapH(AppSpacing.md),
-              Expanded(
-                child: Column(
+                  child: Icon(
+                    icon,
+                    size: 28.sp,
+                    color: isBrand ? AppColor.white : AppColor.primary,
+                  ),
+                );
+                final content = Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
@@ -1598,8 +1601,6 @@ class _RoleBanner extends StatelessWidget {
                         color: isBrand ? AppColor.white : AppColor.textPrimary,
                         fontWeight: FontWeight.w800,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
                     gapV(AppSpacing.xs),
                     Text(
@@ -1610,8 +1611,6 @@ class _RoleBanner extends StatelessWidget {
                             : AppColor.textSecondary,
                         height: 1.5,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
                     gapV(AppSpacing.md),
                     Container(
@@ -1644,9 +1643,28 @@ class _RoleBanner extends StatelessWidget {
                       ),
                     ),
                   ],
-                ),
-              ),
-            ],
+                );
+
+                if (compact) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      iconBox,
+                      gapV(AppSpacing.md),
+                      content,
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    iconBox,
+                    gapH(AppSpacing.md),
+                    Expanded(child: content),
+                  ],
+                );
+              },
+            ),
           ),
         ),
       ),

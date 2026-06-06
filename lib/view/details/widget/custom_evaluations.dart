@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:rafiq_app/core/utils/app_microcopy.dart';
 import 'package:rafiq_app/model/review_model.dart';
-import '../../../core/utils/spacing.dart';
 import '../../evaluations/evaluations_page.dart';
 
 /// Last-review preview embedded on the place details screen.
@@ -39,30 +38,27 @@ class CustomEvaluations extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 358.w,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _Header(hasReview: lastEvaluation != null),
-          verticalSpace(16),
-          if (lastEvaluation != null)
-            _LastReviewRow(
-              review: lastEvaluation!,
-              formattedDate: _formatDate(lastEvaluation!.date),
-            )
-          else
-            Text(
-              AppCopy.emptyResultsTitle,
-              style: AppText.titleMd.copyWith(
-                color: AppColor.black,
-                fontWeight: FontWeight.bold,
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _Header(hasReview: lastEvaluation != null),
+        gapV(AppSpacing.md),
+        if (lastEvaluation != null)
+          _LastReviewRow(
+            review: lastEvaluation!,
+            formattedDate: _formatDate(lastEvaluation!.date),
+          )
+        else
+          Text(
+            AppCopy.emptyResultsTitle,
+            style: AppText.titleMd.copyWith(
+              color: AppColor.textPrimary,
+              fontWeight: FontWeight.w800,
             ),
-          verticalSpace(20),
-          _SeeAllLink(placeId: placeId),
-        ],
-      ),
+          ),
+        gapV(AppSpacing.lg),
+        _SeeAllLink(placeId: placeId),
+      ],
     );
   }
 }
@@ -74,18 +70,20 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Wrap(
+      spacing: AppSpacing.sm.w,
+      runSpacing: AppSpacing.xs.h,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        Row(
-          children: [
-            Text(AppCopy.reviewsTitle, style: AppText.titleLg),
-            if (!hasReview) ...[
-              horizontalSpace(5),
-              Text(AppCopy.detailsBeFirstReview, style: AppText.bodySm),
-            ],
-          ],
+        Text(
+          AppCopy.reviewsTitle,
+          style: AppText.titleLg.copyWith(fontWeight: FontWeight.w800),
         ),
+        if (!hasReview)
+          Text(
+            AppCopy.detailsBeFirstReview,
+            style: AppText.bodySm,
+          ),
       ],
     );
   }
@@ -106,7 +104,7 @@ class _LastReviewRow extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _UserAvatar(name: review.name, imagePath: review.image),
-            horizontalSpace(12.w),
+            gapH(AppSpacing.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -117,11 +115,13 @@ class _LastReviewRow extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  verticalSpace(3),
-                  Row(
+                  gapV(AppSpacing.xs),
+                  Wrap(
+                    spacing: AppSpacing.sm.w,
+                    runSpacing: AppSpacing.xs.h,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       _StarsRow(rating: review.rating),
-                      horizontalSpace(8.w),
                       Text(formattedDate, style: AppText.caption),
                     ],
                   ),
@@ -130,12 +130,12 @@ class _LastReviewRow extends StatelessWidget {
             ),
           ],
         ),
-        verticalSpace(17),
+        gapV(AppSpacing.md),
         Text(
           review.body.isNotEmpty
               ? review.body
               : AppCopy.reviewNoCommentFallback,
-          style: AppText.bodySm,
+          style: AppText.bodySm.copyWith(height: 1.6),
         ),
       ],
     );
@@ -196,7 +196,7 @@ class _UserAvatar extends StatelessWidget {
     final initial = name.trim().isNotEmpty ? name.trim()[0] : '؟';
 
     return CircleAvatar(
-      radius: 20.w,
+      radius: 22.w,
       backgroundColor: AppColor.primary50,
       backgroundImage: provider,
       child: provider == null
@@ -220,18 +220,33 @@ class _SeeAllLink extends StatelessWidget {
   Widget build(BuildContext context) {
     return Align(
       alignment: Alignment.centerRight,
-      child: GestureDetector(
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => EvaluationsPage(placeId: placeId),
-          ),
-        ),
-        child: Text(
-          AppCopy.reviewsTitle,
-          style: AppText.titleLg.copyWith(
-            decoration: TextDecoration.underline,
-            color: AppColor.black,
+      child: Semantics(
+        button: true,
+        label: AppCopy.reviewsTitle,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: AppRadii.rPill,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => EvaluationsPage(placeId: placeId),
+              ),
+            ),
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm.w,
+                vertical: AppSpacing.xs.h,
+              ),
+              child: Text(
+                AppCopy.reviewsTitle,
+                style: AppText.labelMd.copyWith(
+                  decoration: TextDecoration.underline,
+                  color: AppColor.primary,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
           ),
         ),
       ),

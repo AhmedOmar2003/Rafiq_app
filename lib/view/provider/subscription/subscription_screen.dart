@@ -550,13 +550,16 @@ class _PlanCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          Row(
+          Wrap(
+            spacing: AppSpacing.sm.w,
+            runSpacing: AppSpacing.sm.h,
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Text(
                 plan.displayName,
                 style: AppText.headingMd.copyWith(color: accent),
               ),
-              const Spacer(),
               if (isCurrent)
                 const _Chip(label: AppCopy.subCurrent, color: AppColor.success)
               else if (isRecommended)
@@ -575,15 +578,16 @@ class _PlanCard extends StatelessWidget {
               style: AppText.displayMd.copyWith(color: AppColor.textPrimary),
             )
           else
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
+            Wrap(
+              spacing: AppSpacing.xs.w,
+              runSpacing: AppSpacing.xs.h,
+              crossAxisAlignment: WrapCrossAlignment.end,
               children: [
                 Text(
                   price.toString(),
                   style:
                       AppText.displayMd.copyWith(color: AppColor.textPrimary),
                 ),
-                gapH(AppSpacing.xs),
                 Padding(
                   padding: EdgeInsets.only(bottom: AppSpacing.sm.h),
                   child: Text(
@@ -770,15 +774,21 @@ class _ComparisonTable extends StatelessWidget {
 
     return AppCard(
       padding: EdgeInsets.zero,
-      child: Column(
-        children: [
-          _CompareHeader(plans: plans),
-          for (var i = 0; i < rows.length; i++)
-            _CompareRowView(
-              row: rows[i],
-              isEven: i.isEven,
-            ),
-        ],
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minWidth: 560.w),
+          child: Column(
+            children: [
+              _CompareHeader(plans: plans),
+              for (var i = 0; i < rows.length; i++)
+                _CompareRowView(
+                  row: rows[i],
+                  isEven: i.isEven,
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -839,7 +849,12 @@ class _CompareRowView extends StatelessWidget {
         children: [
           Expanded(
             flex: 3,
-            child: Text(row.label, style: AppText.bodyMd),
+            child: Text(
+              row.label,
+              style: AppText.bodyMd,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
           for (final v in row.values)
             Expanded(
