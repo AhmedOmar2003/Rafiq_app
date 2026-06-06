@@ -7,7 +7,7 @@
 > developer handoff quality.
 
 **Stack:** Flutter 3.41 · Dart 3.11 · `flutter_screenutil` (design size 390×844)
-· `google_fonts` (Rubik) · `supabase_flutter` · RTL-first (Egyptian Arabic).
+· `google_fonts` (Cairo) · `supabase_flutter` · RTL-first (Egyptian Arabic).
 
 **Source of truth in code:**
 - Tokens: `lib/core/design/tokens/` + `lib/core/utils/app_color.dart`

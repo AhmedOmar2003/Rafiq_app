@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'package:rafiq_app/core/utils/app_color.dart';
 
-/// Semantic type scale (platform-native, RTL-friendly).
+/// Semantic type scale (Cairo, RTL-friendly).
 ///
 /// Replaces the ~20 size-named styles (textStyle16Light, textStyle24Medium...)
-/// with role-based tokens so screens express intent, not pixels. One family
-/// keeps Arabic + Latin consistent without downloading fonts at runtime.
+/// with role-based tokens so screens express intent, not pixels. Cairo keeps
+/// Arabic + Latin consistent across the whole product.
 /// Sizes use `.sp` (ScreenUtil) and include sensible line-heights for Arabic
 /// legibility.
 ///
@@ -31,13 +32,13 @@ import 'package:rafiq_app/core/utils/app_color.dart';
 class AppText {
   AppText._();
 
-  static TextStyle _rubik({
+  static TextStyle _cairo({
     required double size,
     required FontWeight weight,
     Color? color,
     double height = 1.4,
   }) =>
-      TextStyle(
+      GoogleFonts.cairo(
         fontSize: size.sp,
         fontWeight: weight,
         height: height,
@@ -46,34 +47,34 @@ class AppText {
 
   // Display ----------------------------------------------------------------
   static final TextStyle displayLg =
-      _rubik(size: 34, weight: FontWeight.w700, height: 1.2);
+      _cairo(size: 34, weight: FontWeight.w700, height: 1.2);
   static final TextStyle displayMd =
-      _rubik(size: 30, weight: FontWeight.w700, height: 1.25);
+      _cairo(size: 30, weight: FontWeight.w700, height: 1.25);
 
   // Headings ---------------------------------------------------------------
   static final TextStyle headingLg =
-      _rubik(size: 24, weight: FontWeight.w600, height: 1.3);
+      _cairo(size: 24, weight: FontWeight.w600, height: 1.3);
   static final TextStyle headingMd =
-      _rubik(size: 22, weight: FontWeight.w600, height: 1.3);
+      _cairo(size: 22, weight: FontWeight.w600, height: 1.3);
   static final TextStyle headingSm =
-      _rubik(size: 20, weight: FontWeight.w600, height: 1.35);
+      _cairo(size: 20, weight: FontWeight.w600, height: 1.35);
 
   // Titles -----------------------------------------------------------------
   static final TextStyle titleLg =
-      _rubik(size: 18, weight: FontWeight.w500, height: 1.4);
+      _cairo(size: 18, weight: FontWeight.w500, height: 1.4);
   static final TextStyle titleMd =
-      _rubik(size: 16, weight: FontWeight.w500, height: 1.4);
+      _cairo(size: 16, weight: FontWeight.w500, height: 1.4);
 
   // Body -------------------------------------------------------------------
   static final TextStyle bodyLg =
-      _rubik(size: 16, weight: FontWeight.w400, height: 1.55);
-  static final TextStyle bodyMd = _rubik(
+      _cairo(size: 16, weight: FontWeight.w400, height: 1.55);
+  static final TextStyle bodyMd = _cairo(
     size: 15,
     weight: FontWeight.w400,
     height: 1.55,
     color: AppColor.textSecondary,
   );
-  static final TextStyle bodySm = _rubik(
+  static final TextStyle bodySm = _cairo(
     size: 13,
     weight: FontWeight.w400,
     height: 1.5,
@@ -82,14 +83,14 @@ class AppText {
 
   // Labels (controls, buttons, chips) --------------------------------------
   static final TextStyle labelLg =
-      _rubik(size: 16, weight: FontWeight.w500, height: 1.2);
+      _cairo(size: 16, weight: FontWeight.w500, height: 1.2);
   static final TextStyle labelMd =
-      _rubik(size: 15, weight: FontWeight.w500, height: 1.25);
+      _cairo(size: 15, weight: FontWeight.w500, height: 1.25);
   static final TextStyle labelSm =
-      _rubik(size: 13, weight: FontWeight.w500, height: 1.25);
+      _cairo(size: 13, weight: FontWeight.w500, height: 1.25);
 
   // Caption / overline -----------------------------------------------------
-  static final TextStyle caption = _rubik(
+  static final TextStyle caption = _cairo(
     size: 12,
     weight: FontWeight.w400,
     height: 1.4,

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
 
 /// App themes derived entirely from design tokens.
 ///
 /// Both themes share one radius/spacing language so the product feels unified.
-/// Typography uses the platform-bundled font stack to avoid any runtime CDN
-/// dependency on first launch.
+/// Typography uses Cairo across every Material surface and design token.
 /// `lightTheme` is the production theme; `darkTheme` is a coherent, token-driven
 /// scaffold so dark mode is a config flip rather than a rewrite.
 class ThemeServices {
@@ -40,7 +40,12 @@ class ThemeServices {
     const Color pageBg = AppColor.surface;
     const Color fieldFill = AppColor.surfaceCard;
 
-    final base = ThemeData(brightness: brightness, useMaterial3: true);
+    final base = ThemeData(
+      brightness: brightness,
+      useMaterial3: true,
+      fontFamily: GoogleFonts.cairo().fontFamily,
+    );
+    final cairoTextTheme = GoogleFonts.cairoTextTheme(base.textTheme);
 
     return base.copyWith(
       colorScheme: scheme,
@@ -51,10 +56,11 @@ class ThemeServices {
       visualDensity: VisualDensity.adaptivePlatformDensity,
       focusColor: scheme.primary.withValues(alpha: 0.12),
       hoverColor: scheme.primary.withValues(alpha: 0.04),
-      textTheme: base.textTheme.apply(
+      textTheme: cairoTextTheme.apply(
         bodyColor: scheme.onSurface,
         displayColor: scheme.onSurface,
       ),
+      primaryTextTheme: GoogleFonts.cairoTextTheme(base.primaryTextTheme),
       appBarTheme: AppBarTheme(
         centerTitle: true,
         backgroundColor: Colors.transparent,
