@@ -91,8 +91,16 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             future: _future,
             builder: (context, snapshot) {
               if (snapshot.connectionState != ConnectionState.done) {
-                return const Center(
-                    child: CircularProgressIndicator(color: AppColor.primary));
+                return ListView(
+                  padding: EdgeInsets.all(AppSpacing.lg.w),
+                  children: [
+                    const AppSkeleton(width: 180, height: 18),
+                    gapV(AppSpacing.lg),
+                    const AppSkeleton(width: double.infinity, height: 48),
+                    gapV(AppSpacing.lg),
+                    AppSkeleton.list(count: 3, itemHeight: 72),
+                  ],
+                );
               }
 
               if (snapshot.hasError) {
@@ -240,6 +248,16 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                               SizedBox(
                                 width: cardWidth,
                                 child: _KpiCard(
+                                  icon: Icons.ads_click_rounded,
+                                  label: AppCopy.anaCampaignClicks,
+                                  value:
+                                      data.snapshot.campaignClicks.toString(),
+                                  tone: AppColor.primary,
+                                ),
+                              ),
+                              SizedBox(
+                                width: cardWidth,
+                                child: _KpiCard(
                                   icon: Icons.heart_broken_outlined,
                                   label: AppCopy.anaFavoriteRemovals,
                                   value:
@@ -285,7 +303,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         );
     return place?.name ?? AppCopy.anaAllPlaces;
   }
-
 }
 
 class _AnalyticsScreenData {

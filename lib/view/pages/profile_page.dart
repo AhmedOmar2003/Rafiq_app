@@ -1049,6 +1049,10 @@ class _SupportSection extends StatelessWidget {
             AppCopy.profileSupportSection,
             style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
           ),
+          subtitle: Text(
+            AppCopy.profileSupportSubtitle,
+            style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
+          ),
           children: [
             const _GroupLabel(text: AppCopy.supportInfoGroup),
             _SupportRow(
@@ -1484,12 +1488,17 @@ class _SupportRow extends StatelessWidget {
                 ),
                 if (trailing != null)
                   Flexible(
-                    child: Text(
-                      trailing!,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppText.caption.copyWith(
-                        color: AppColor.textTertiary,
+                    child: Directionality(
+                      textDirection: TextDirection.ltr,
+                      child: Text(
+                        trailing!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.end,
+                        style: AppText.caption.copyWith(
+                          color: AppColor.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
@@ -1677,126 +1686,132 @@ class _RoleBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isBrand = tone == _RoleBannerTone.brand;
-    return Semantics(
-      button: true,
-      label: '$title. $body. $cta',
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: AppRadii.rXl,
-          child: Ink(
-            decoration: BoxDecoration(
-              gradient: isBrand
-                  ? LinearGradient(
-                      begin: Alignment.topRight,
-                      end: Alignment.bottomLeft,
-                      colors: [
-                        AppColor.primary,
-                        AppColor.primary.withValues(alpha: 0.78),
-                      ],
-                    )
-                  : null,
-              color: isBrand ? null : AppColor.primary.withValues(alpha: 0.06),
-              borderRadius: AppRadii.rXl,
-              border: isBrand
-                  ? null
-                  : Border.all(
-                      color: AppColor.primary.withValues(alpha: 0.22),
-                    ),
-              boxShadow: isBrand ? AppShadows.primaryGlow : null,
-            ),
-            padding: EdgeInsets.all(AppSpacing.lg.w),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final compact = constraints.maxWidth < 330.w;
-                final iconBox = Container(
-                  width: 48.w,
-                  height: 48.w,
-                  decoration: BoxDecoration(
-                    color: isBrand
-                        ? AppColor.white.withValues(alpha: 0.20)
-                        : AppColor.primary.withValues(alpha: 0.12),
-                    borderRadius: AppRadii.rLg,
-                  ),
-                  child: Icon(
-                    icon,
-                    size: 24.sp,
-                    color: isBrand ? AppColor.white : AppColor.primary,
-                  ),
-                );
-                final content = Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: AppText.titleMd.copyWith(
-                        color: isBrand ? AppColor.white : AppColor.textPrimary,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    gapV(AppSpacing.xs / 2),
-                    Text(
-                      body,
-                      style: AppText.bodySm.copyWith(
-                        color: isBrand
-                            ? AppColor.white.withValues(alpha: 0.92)
-                            : AppColor.textSecondary,
-                        height: 1.5,
-                      ),
-                    ),
-                    gapV(AppSpacing.sm),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md.w,
-                        vertical: AppSpacing.sm.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isBrand ? AppColor.white : AppColor.primary,
-                        borderRadius: AppRadii.rPill,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            cta,
-                            style: AppText.labelMd.copyWith(
-                              color:
-                                  isBrand ? AppColor.primary : AppColor.white,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          gapH(AppSpacing.xs),
-                          Icon(
-                            Icons.arrow_back_ios_new_rounded,
-                            size: 12.sp,
-                            color: isBrand ? AppColor.primary : AppColor.white,
-                          ),
+    return SizedBox(
+      width: double.infinity,
+      child: Semantics(
+        button: true,
+        label: '$title. $body. $cta',
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: AppRadii.rXl,
+            child: Ink(
+              decoration: BoxDecoration(
+                gradient: isBrand
+                    ? LinearGradient(
+                        begin: Alignment.topRight,
+                        end: Alignment.bottomLeft,
+                        colors: [
+                          AppColor.primary,
+                          AppColor.primary.withValues(alpha: 0.78),
                         ],
+                      )
+                    : null,
+                color:
+                    isBrand ? null : AppColor.primary.withValues(alpha: 0.06),
+                borderRadius: AppRadii.rXl,
+                border: isBrand
+                    ? null
+                    : Border.all(
+                        color: AppColor.primary.withValues(alpha: 0.22),
                       ),
+                boxShadow: isBrand ? AppShadows.primaryGlow : null,
+              ),
+              padding: EdgeInsets.all(AppSpacing.lg.w),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final compact = constraints.maxWidth < 330.w;
+                  final iconBox = Container(
+                    width: 48.w,
+                    height: 48.w,
+                    decoration: BoxDecoration(
+                      color: isBrand
+                          ? AppColor.white.withValues(alpha: 0.20)
+                          : AppColor.primary.withValues(alpha: 0.12),
+                      borderRadius: AppRadii.rLg,
                     ),
-                  ],
-                );
-
-                if (compact) {
-                  return Column(
+                    child: Icon(
+                      icon,
+                      size: 24.sp,
+                      color: isBrand ? AppColor.white : AppColor.primary,
+                    ),
+                  );
+                  final content = Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      iconBox,
-                      gapV(AppSpacing.md),
-                      content,
+                      Text(
+                        title,
+                        style: AppText.titleMd.copyWith(
+                          color:
+                              isBrand ? AppColor.white : AppColor.textPrimary,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      gapV(AppSpacing.xs / 2),
+                      Text(
+                        body,
+                        style: AppText.bodySm.copyWith(
+                          color: isBrand
+                              ? AppColor.white.withValues(alpha: 0.92)
+                              : AppColor.textSecondary,
+                          height: 1.5,
+                        ),
+                      ),
+                      gapV(AppSpacing.sm),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md.w,
+                          vertical: AppSpacing.sm.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isBrand ? AppColor.white : AppColor.primary,
+                          borderRadius: AppRadii.rPill,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              cta,
+                              style: AppText.labelMd.copyWith(
+                                color:
+                                    isBrand ? AppColor.primary : AppColor.white,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            gapH(AppSpacing.xs),
+                            Icon(
+                              Icons.arrow_back_ios_new_rounded,
+                              size: 12.sp,
+                              color:
+                                  isBrand ? AppColor.primary : AppColor.white,
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   );
-                }
 
-                return Row(
-                  children: [
-                    iconBox,
-                    gapH(AppSpacing.md),
-                    Expanded(child: content),
-                  ],
-                );
-              },
+                  if (compact) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        iconBox,
+                        gapV(AppSpacing.md),
+                        content,
+                      ],
+                    );
+                  }
+
+                  return Row(
+                    children: [
+                      iconBox,
+                      gapH(AppSpacing.md),
+                      Expanded(child: content),
+                    ],
+                  );
+                },
+              ),
             ),
           ),
         ),

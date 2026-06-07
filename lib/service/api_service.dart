@@ -28,6 +28,7 @@ class PlaceAnalyticsSnapshot {
     required this.favoriteAdds,
     required this.favoriteRemovals,
     required this.mapClicks,
+    required this.campaignClicks,
     required this.otherActions,
     required this.trendPoints,
   });
@@ -37,6 +38,7 @@ class PlaceAnalyticsSnapshot {
   final int favoriteAdds;
   final int favoriteRemovals;
   final int mapClicks;
+  final int campaignClicks;
   final int otherActions;
   final List<int> trendPoints;
 
@@ -46,6 +48,7 @@ class PlaceAnalyticsSnapshot {
     favoriteAdds: 0,
     favoriteRemovals: 0,
     mapClicks: 0,
+    campaignClicks: 0,
     otherActions: 0,
     trendPoints: <int>[],
   );
@@ -487,32 +490,17 @@ class ApiService {
     final isUnsetBudget = _isUnsetBudget(normalizedBudget);
     final isSurpriseActivity = _isSurpriseActivity(normalizedActivity);
 
-    var query = _client
-        .from('places')
-        .select(
-          'id,provider_id,place_id,place_name,description,price_range,budget,rating,place_address,image_path,activity_name,city_name,created_at,status,deleted_at',
-        )
-        .eq('status', 'approved')
-        .isFilter('deleted_at', null);
-    if (!isAnyCity) {
-      query = query.eq('city_name', normalizedCity);
-    }
-
-    if (!isUnsetBudget) {
-      query = query.eq('budget', normalizedBudget);
-    }
-
-    if (normalizedActivity.isNotEmpty && !isSurpriseActivity) {
-      query = query.eq('activity_name', normalizedActivity);
-    }
-
-    final response = await (isSurpriseActivity
-            ? query
-                .order('rating', ascending: false)
-                .order('created_at', ascending: false)
-                .limit(_placesPageSize)
-            : query.order('place_id', ascending: false).limit(_placesPageSize))
-        .timeout(_networkTimeout);
+    final response = await _client.rpc<List<dynamic>>(
+      'browse_ranked_places',
+      params: {
+        '_city_name': isAnyCity ? null : normalizedCity,
+        '_budget': isUnsetBudget ? null : normalizedBudget,
+        '_activity_name': normalizedActivity.isEmpty || isSurpriseActivity
+            ? null
+            : normalizedActivity,
+        '_limit': _placesPageSize,
+      },
+    ).timeout(_networkTimeout);
     return response
         .map((row) => Place.fromJson(Map<String, dynamic>.from(row)))
         .where((place) => place.status == 'approved')
@@ -630,7 +618,7 @@ class ApiService {
     final rows = await _client
         .from('places')
         .select(
-          'id,place_id,provider_id,place_name,description,price_range,budget,rating,place_address,image_path,activity_name,city_name,created_at,status,rejection_reason,edit_allowed',
+          'id,place_id,provider_id,place_name,description,price_range,budget,rating,place_address,image_path,activity_name,city_name,created_at,status,rejection_reason,edit_allowed,edit_request_status,edit_request_note,edit_request_response,edit_request_requested_at,edit_request_reviewed_at,edit_submitted_at',
         )
         .eq('provider_id', providerId)
         .order('created_at', ascending: false)
@@ -694,7 +682,28 @@ class ApiService {
         '_days': days,
       },
     ).timeout(_networkTimeout);
-    if (rows.isEmpty) return PlaceAnalyticsSnapshot.empty;
+    final campaignClicksRaw = await _client.rpc<dynamic>(
+      'provider_campaign_clicks_live',
+      params: {
+        '_place_id': placeId,
+        '_days': days,
+      },
+    ).timeout(_networkTimeout);
+    final campaignClicks = (campaignClicksRaw as num?)?.toInt() ??
+        int.tryParse(campaignClicksRaw?.toString() ?? '') ??
+        0;
+    if (rows.isEmpty) {
+      return PlaceAnalyticsSnapshot(
+        views: 0,
+        totalActions: campaignClicks,
+        favoriteAdds: 0,
+        favoriteRemovals: 0,
+        mapClicks: 0,
+        campaignClicks: campaignClicks,
+        otherActions: 0,
+        trendPoints: const <int>[],
+      );
+    }
 
     var views = 0;
     var favoriteAdds = 0;
@@ -745,10 +754,15 @@ class ApiService {
 
     return PlaceAnalyticsSnapshot(
       views: views,
-      totalActions: favoriteAdds + favoriteRemovals + mapClicks + otherActions,
+      totalActions: favoriteAdds +
+          favoriteRemovals +
+          mapClicks +
+          campaignClicks +
+          otherActions,
       favoriteAdds: favoriteAdds,
       favoriteRemovals: favoriteRemovals,
       mapClicks: mapClicks,
+      campaignClicks: campaignClicks,
       otherActions: otherActions,
       trendPoints: trendPoints,
     );
@@ -1049,6 +1063,10 @@ class ApiService {
   }) async {
     if (galleryImages.isEmpty) return null;
 
+    await _client
+        .from('place_images')
+        .update({'is_cover': false}).eq('place_id', placeUuid);
+
     String? coverPublicUrl;
     for (var i = 0; i < galleryImages.length; i++) {
       final file = galleryImages[i];
@@ -1079,6 +1097,7 @@ class ApiService {
   Future<Place> updatePlace({
     required String? placeUuid,
     int? legacyPlaceId,
+    String? providerId,
     required String placeName,
     required String activityName,
     required String budget,
@@ -1088,47 +1107,68 @@ class ApiService {
     required String description,
     String? imagePath,
     double? rating,
+    List<File> galleryImages = const <File>[],
 
-    /// True when the edit is a "fix after rejection" — flips status back
-    /// to pending so the admin re-reviews it. False for ordinary edits of
-    /// an already-approved place (which keeps the place live).
+    /// Kept for source compatibility. The database now derives the correct
+    /// moderation transition from the current place state and approved edit
+    /// request, so clients cannot keep an edited approved place live.
     bool resubmitForReview = false,
   }) async {
     try {
       await ensureSupabaseInitialized();
-      final payload = <String, dynamic>{
-        'place_name': placeName.trim(),
-        'activity_name': activityName.trim(),
-        'budget': budget.trim(),
-        'price_range': (priceRange?.trim().isNotEmpty == true
-            ? priceRange!.trim()
-            : budget.trim()),
-        'place_address': address.trim(),
-        'city_name': cityName.trim(),
-        'description': description.trim(),
-        if (rating != null) 'rating': rating,
-        'image_path':
-            imagePath != null && imagePath.isNotEmpty ? imagePath : null,
-        // When a provider edits a *rejected* place, we throw it back into
-        // the review queue so the admin can re-decide. We also clear the
-        // rejection_reason + edit_allowed flag so a future rejection starts
-        // from a clean slate. Edits of approved places leave status alone.
-        if (resubmitForReview) ...{
-          'status': 'pending',
-          'rejection_reason': null,
-          'edit_allowed': false,
-        },
-        'updated_at': DateTime.now().toUtc().toIso8601String(),
-      };
-
-      var query = _client.from('places').update(payload);
-      if (placeUuid != null && placeUuid.isNotEmpty) {
-        query = query.eq('id', placeUuid);
-      } else if (legacyPlaceId != null) {
-        query = query.eq('place_id', legacyPlaceId);
+      var resolvedId = placeUuid;
+      if ((resolvedId == null || resolvedId.isEmpty) && legacyPlaceId != null) {
+        final row = await _client
+            .from('places')
+            .select('id')
+            .eq('place_id', legacyPlaceId)
+            .single()
+            .timeout(_networkTimeout);
+        resolvedId = row['id']?.toString();
+      }
+      if (resolvedId == null || resolvedId.isEmpty) {
+        throw Exception('تعذر تحديد المكان المطلوب تعديله.');
       }
 
-      final response = await query.select().single().timeout(_networkTimeout);
+      String? uploadedCover;
+      if (galleryImages.isNotEmpty &&
+          providerId != null &&
+          providerId.isNotEmpty) {
+        uploadedCover = await _savePlaceGalleryImages(
+          providerId: providerId,
+          placeUuid: resolvedId,
+          galleryImages: galleryImages,
+          placeName: placeName,
+        );
+      }
+
+      await _client.rpc<dynamic>(
+        'update_provider_place',
+        params: {
+          '_place_id': resolvedId,
+          '_place_name': placeName.trim(),
+          '_activity_name': activityName.trim(),
+          '_budget': budget.trim(),
+          '_price_range': priceRange?.trim().isNotEmpty == true
+              ? priceRange!.trim()
+              : budget.trim(),
+          '_address': address.trim(),
+          '_city_name': cityName.trim(),
+          '_description': description.trim(),
+          '_image_path': uploadedCover ??
+              (imagePath?.startsWith('http') == true ? imagePath : null),
+          '_rating': rating,
+        },
+      ).timeout(_networkTimeout);
+
+      final response = await _client
+          .from('places')
+          .select(
+            'id,place_id,provider_id,place_name,description,price_range,budget,rating,place_address,image_path,activity_name,city_name,created_at,status,rejection_reason,edit_allowed,edit_request_status,edit_request_note,edit_request_response,edit_request_requested_at,edit_request_reviewed_at,edit_submitted_at',
+          )
+          .eq('id', resolvedId)
+          .single()
+          .timeout(_networkTimeout);
 
       _invalidatePlacesCache();
       return Place.fromJson(Map<String, dynamic>.from(response));
@@ -1137,6 +1177,21 @@ class ApiService {
     } catch (e) {
       throw Exception('حدث خطأ أثناء تحديث المكان: $e');
     }
+  }
+
+  Future<void> requestPlaceEdit({
+    required String placeUuid,
+    String? note,
+  }) async {
+    await ensureSupabaseInitialized();
+    await _client.rpc<dynamic>(
+      'request_place_edit',
+      params: {
+        '_place_id': placeUuid,
+        '_note': note?.trim().isNotEmpty == true ? note!.trim() : null,
+      },
+    ).timeout(_networkTimeout);
+    _invalidatePlacesCache();
   }
 
   Future<void> deletePlace(int placeId) async {

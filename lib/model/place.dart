@@ -59,23 +59,37 @@ class Place {
   /// the rejected card; meaningless outside of `status == 'rejected'`.
   final bool editAllowed;
 
-  Place(
-      {this.placeUuid,
-      this.providerId,
-      required this.name,
-      required this.description,
-      required this.priceRange,
-      required this.budget,
-      required this.rating,
-      required this.placeAddress,
-      this.imageUrl,
-      required this.activityName,
-      required this.cityName,
-      required this.placeId,
-      this.status = 'pending',
-      this.createdAt,
-      this.rejectionReason,
-      this.editAllowed = false});
+  final String editRequestStatus;
+  final String? editRequestNote;
+  final String? editRequestResponse;
+  final DateTime? editRequestRequestedAt;
+  final DateTime? editRequestReviewedAt;
+  final DateTime? editSubmittedAt;
+
+  Place({
+    this.placeUuid,
+    this.providerId,
+    required this.name,
+    required this.description,
+    required this.priceRange,
+    required this.budget,
+    required this.rating,
+    required this.placeAddress,
+    this.imageUrl,
+    required this.activityName,
+    required this.cityName,
+    required this.placeId,
+    this.status = 'pending',
+    this.createdAt,
+    this.rejectionReason,
+    this.editAllowed = false,
+    this.editRequestStatus = 'none',
+    this.editRequestNote,
+    this.editRequestResponse,
+    this.editRequestRequestedAt,
+    this.editRequestReviewedAt,
+    this.editSubmittedAt,
+  });
 
   // تحويل البيانات من JSON
   factory Place.fromJson(Map<String, dynamic> json) {
@@ -137,15 +151,30 @@ class Place {
         return normalized;
       }(),
       createdAt: () {
-        final raw = json['created_at'] ?? json['createdAt'] ?? json['CreatedAt'];
+        final raw =
+            json['created_at'] ?? json['createdAt'] ?? json['CreatedAt'];
         if (raw == null) return null;
         return DateTime.tryParse(raw.toString());
       }(),
-      rejectionReason:
-          json['rejection_reason']?.toString() ?? json['RejectionReason']?.toString(),
+      rejectionReason: json['rejection_reason']?.toString() ??
+          json['RejectionReason']?.toString(),
       editAllowed: (json['edit_allowed'] as bool?) ??
           (json['editAllowed'] as bool?) ??
           false,
+      editRequestStatus:
+          json['edit_request_status']?.toString().trim().toLowerCase() ??
+              'none',
+      editRequestNote: json['edit_request_note']?.toString(),
+      editRequestResponse: json['edit_request_response']?.toString(),
+      editRequestRequestedAt: DateTime.tryParse(
+        json['edit_request_requested_at']?.toString() ?? '',
+      ),
+      editRequestReviewedAt: DateTime.tryParse(
+        json['edit_request_reviewed_at']?.toString() ?? '',
+      ),
+      editSubmittedAt: DateTime.tryParse(
+        json['edit_submitted_at']?.toString() ?? '',
+      ),
     );
   }
 }

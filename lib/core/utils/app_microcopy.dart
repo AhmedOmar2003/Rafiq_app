@@ -133,7 +133,9 @@ class AppCopy {
   static const addPlaceDescRequired = 'الرجاء إدخال وصف عن المكان';
   static const addPlaceSaveEdit = 'حفظ التعديلات';
   static const addPlaceSaveNew = 'حفظ البيانات';
-  static const providerEditedSuccess = 'تم تعديل المكان بنجاح';
+  static const providerEditedSuccess = 'تم حفظ تعديل المكان';
+  static const providerApprovedEditSubmitted =
+      'تم إرسال التعديل للمراجعة. هنرد عليك خلال 6 ساعات.';
   static const addPlaceNameHint = 'اكتب اسم المكان';
   static const addPlaceAddressHint = 'اكتب العنوان بالتفصيل';
   static const addPlaceDescHint = 'وصف مختصر عن المكان وأهم مميزاته';
@@ -240,9 +242,10 @@ class AppCopy {
   /// Title is composed at render time as "{name}، ..." so each user feels
   /// the prompt is for them, not a generic ad. The body explains the value
   /// in human terms; the CTA is short and warm ("يلا أبدأ").
-  static const profileBannerInviteTitle = 'حوّل لمقدم خدمة';
-  static const profileBannerInviteBody = 'ضيف مكانك واختار خطتك.';
-  static const profileBannerInviteCta = 'ابدأ';
+  static const profileBannerInviteTitle = 'عندك مكان أو خدمة؟';
+  static const profileBannerInviteBody =
+      'اعرضها للناس، تابع المشاهدات، واعمل عروض من مكان واحد.';
+  static const profileBannerInviteCta = 'ابدأ كمقدم خدمة';
 
   /// Provider who switched to user mode — invite them back to their hub.
   /// Singular/plural copy auto-picked from the place count.
@@ -436,6 +439,22 @@ class AppCopy {
   static const hubPlacePreview = 'المعاينة';
   static const hubPlaceEdit = 'تعديل';
   static const hubPlaceDelete = 'حذف';
+  static const hubPlaceMore = 'خيارات المكان';
+  static const hubPendingEditHint =
+      'تقدر تعدّل بيانات المكان طول ما هو تحت المراجعة.';
+  static const hubApprovedEditTitle = 'اطلب تعديل المكان';
+  static const hubApprovedEditBody =
+      'المكان ظاهر للمستخدمين. ابعت طلب للإدارة الأول، وبعد الموافقة تقدر تعدّله وترجّعه للمراجعة.';
+  static const hubApprovedEditConfirm = 'ابعت طلب التعديل';
+  static const hubEditRequestSent =
+      'طلب التعديل وصل للإدارة. هنبلغك أول ما يتفتح التعديل.';
+  static const hubEditRequestPending = 'طلب التعديل قيد المراجعة';
+  static const hubEditRequestApproved = 'تم فتح التعديل — عدّل الآن';
+  static const hubEditRequestSubmitted =
+      'تعديلك تحت المراجعة، وهنرد عليك خلال 6 ساعات.';
+  static const hubEditRequestRejected = 'طلب التعديل اترفض';
+  static const hubEditRequestUnavailable =
+      'التعديل مش متاح للمكان بالحالة دي دلوقتي.';
   static const hubBootstrapTitle = 'جارٍ تجهيز حسابك';
   static const hubBootstrapError = 'تعذر تجهيز بيانات الحساب الآن';
   static const hubBootstrapRetryHint =
@@ -479,6 +498,7 @@ class AppCopy {
   static const anaInteractions = 'إجمالي التفاعلات';
   static const anaFavorites = 'إضافة للمفضلة';
   static const anaMapClicks = 'فتح الخريطة';
+  static const anaCampaignClicks = 'ضغطات الإعلانات';
   static const anaLockedTitle = 'فعّل تحليلات الأداء';
   static const anaLockedBody =
       'متاحة في برو أو ماكس عشان تتابع تفاعل الناس مع مكانك.';

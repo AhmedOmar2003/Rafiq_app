@@ -290,6 +290,46 @@ class _ProviderHubScreenState extends State<ProviderHubScreen> {
   }
 
   Future<void> _editPlace(Place place) async {
+    final status = place.status.trim().toLowerCase();
+    if (status == 'approved') {
+      if (place.editRequestStatus == 'pending') {
+        AppFeedback.info(AppCopy.hubEditRequestPending);
+        return;
+      }
+      if (place.editRequestStatus == 'submitted') {
+        AppFeedback.info(AppCopy.hubEditRequestSubmitted);
+        return;
+      }
+      if (!(place.editRequestStatus == 'approved' && place.editAllowed)) {
+        final confirmed = await AppConfirmDialog.show(
+          context,
+          title: AppCopy.hubApprovedEditTitle,
+          message: AppCopy.hubApprovedEditBody,
+          confirmLabel: AppCopy.hubApprovedEditConfirm,
+          cancelLabel: AppCopy.cancel,
+          icon: Icons.edit_note_rounded,
+        );
+        if (!confirmed || !mounted) return;
+        final placeUuid = place.placeUuid;
+        if (placeUuid == null || placeUuid.isEmpty) {
+          AppFeedback.error(AppCopy.hubEditRequestUnavailable);
+          return;
+        }
+        try {
+          await ApiService().requestPlaceEdit(placeUuid: placeUuid);
+          AppFeedback.success(AppCopy.hubEditRequestSent);
+          await _refreshHub();
+        } catch (error) {
+          AppFeedback.error(error.toString());
+        }
+        return;
+      }
+    } else if (status == 'suspended' ||
+        (status == 'rejected' && !place.editAllowed)) {
+      AppFeedback.warning(AppCopy.hubEditRequestUnavailable);
+      return;
+    }
+
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
@@ -1510,6 +1550,8 @@ class _PlaceCard extends StatelessWidget {
     final cover = place.imageUrl?.trim() ?? '';
     final model = SuggestionItemModel.fromPlace(place);
     final isRejected = place.status.trim().toLowerCase() == 'rejected';
+    final isPending = place.status.trim().toLowerCase() == 'pending' ||
+        place.status.trim().toLowerCase() == 'under_review';
     final rejectionReason = (place.rejectionReason ?? '').trim();
     return Semantics(
       container: true,
@@ -1571,8 +1613,56 @@ class _PlaceCard extends StatelessWidget {
                   gapV(AppSpacing.sm),
                   _PlaceModerationBanner(
                     status: place.status,
-                    createdAt: place.createdAt,
+                    createdAt: place.editRequestStatus == 'submitted'
+                        ? place.editSubmittedAt
+                        : place.createdAt,
+                    reviewSla: place.editRequestStatus == 'submitted'
+                        ? const Duration(hours: 6)
+                        : const Duration(hours: 24),
                   ),
+                  if (isPending) ...[
+                    gapV(AppSpacing.sm),
+                    const _PlaceEditNotice(
+                      icon: Icons.edit_note_rounded,
+                      text: AppCopy.hubPendingEditHint,
+                      tone: AppColor.info,
+                    ),
+                  ],
+                  if (place.editRequestStatus == 'pending') ...[
+                    gapV(AppSpacing.sm),
+                    const _PlaceEditNotice(
+                      icon: Icons.hourglass_top_rounded,
+                      text: AppCopy.hubEditRequestPending,
+                      tone: AppColor.warning,
+                    ),
+                  ],
+                  if (place.editRequestStatus == 'approved' &&
+                      place.editAllowed) ...[
+                    gapV(AppSpacing.sm),
+                    const _PlaceEditNotice(
+                      icon: Icons.lock_open_rounded,
+                      text: AppCopy.hubEditRequestApproved,
+                      tone: AppColor.success,
+                    ),
+                  ],
+                  if (place.editRequestStatus == 'submitted') ...[
+                    gapV(AppSpacing.sm),
+                    const _PlaceEditNotice(
+                      icon: Icons.fact_check_outlined,
+                      text: AppCopy.hubEditRequestSubmitted,
+                      tone: AppColor.info,
+                    ),
+                  ],
+                  if (place.editRequestStatus == 'rejected' &&
+                      (place.editRequestResponse ?? '').trim().isNotEmpty) ...[
+                    gapV(AppSpacing.sm),
+                    _PlaceEditNotice(
+                      icon: Icons.info_outline_rounded,
+                      text:
+                          '${AppCopy.hubEditRequestRejected}: ${place.editRequestResponse}',
+                      tone: AppColor.error,
+                    ),
+                  ],
                   if (isRejected && rejectionReason.isNotEmpty) ...[
                     gapV(AppSpacing.sm),
                     Container(
@@ -1622,6 +1712,14 @@ class _PlaceCard extends StatelessWidget {
                     )
                   else
                     _StandardPlaceActions(
+                      editLabel: place.editRequestStatus == 'pending'
+                          ? AppCopy.hubEditRequestPending
+                          : place.editRequestStatus == 'submitted'
+                              ? AppCopy.hubEditRequestSubmitted
+                              : place.editRequestStatus == 'approved' &&
+                                      place.editAllowed
+                                  ? AppCopy.hubEditRequestApproved
+                                  : AppCopy.hubPlaceEdit,
                       onEdit: onEdit,
                       onDelete: onDelete,
                     ),
@@ -1667,10 +1765,12 @@ class _PlaceCard extends StatelessWidget {
 
 class _StandardPlaceActions extends StatelessWidget {
   const _StandardPlaceActions({
+    required this.editLabel,
     required this.onEdit,
     required this.onDelete,
   });
 
+  final String editLabel;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -1683,17 +1783,15 @@ class _StandardPlaceActions extends StatelessWidget {
           return Column(
             children: [
               AppButton(
-                text: AppCopy.hubPlaceEdit,
+                text: editLabel,
                 onPress: onEdit,
                 size: AppButtonSize.sm,
                 variant: AppButtonVariant.outline,
               ),
               gapV(AppSpacing.sm),
-              AppButton(
-                text: AppCopy.hubPlaceDelete,
-                onPress: onDelete,
-                size: AppButtonSize.sm,
-                variant: AppButtonVariant.destructive,
+              Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: _PlaceMoreMenu(onDelete: onDelete),
               ),
             ],
           );
@@ -1702,21 +1800,14 @@ class _StandardPlaceActions extends StatelessWidget {
           children: [
             Expanded(
               child: AppButton(
-                text: AppCopy.hubPlaceEdit,
+                text: editLabel,
                 onPress: onEdit,
                 size: AppButtonSize.sm,
                 variant: AppButtonVariant.outline,
               ),
             ),
             gapH(AppSpacing.sm),
-            Expanded(
-              child: AppButton(
-                text: AppCopy.hubPlaceDelete,
-                onPress: onDelete,
-                size: AppButtonSize.sm,
-                variant: AppButtonVariant.destructive,
-              ),
-            ),
+            _PlaceMoreMenu(onDelete: onDelete),
           ],
         );
       },
@@ -1808,13 +1899,107 @@ class _RejectedPlaceActions extends StatelessWidget {
           },
         ),
         gapV(AppSpacing.sm),
-        AppButton(
-          text: AppCopy.hubPlaceDelete,
-          onPress: onDelete,
-          size: AppButtonSize.sm,
-          variant: AppButtonVariant.destructive,
+        Align(
+          alignment: AlignmentDirectional.centerEnd,
+          child: _PlaceMoreMenu(onDelete: onDelete),
         ),
       ],
+    );
+  }
+}
+
+class _PlaceMoreMenu extends StatelessWidget {
+  const _PlaceMoreMenu({required this.onDelete});
+
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<String>(
+      tooltip: AppCopy.hubPlaceMore,
+      onSelected: (value) {
+        if (value == 'delete') onDelete();
+      },
+      itemBuilder: (_) => [
+        PopupMenuItem<String>(
+          value: 'delete',
+          child: Row(
+            children: [
+              Icon(
+                Icons.delete_outline_rounded,
+                color: AppColor.error,
+                size: 20.sp,
+              ),
+              gapH(AppSpacing.sm),
+              Text(
+                AppCopy.hubPlaceDelete,
+                style: AppText.labelMd.copyWith(color: AppColor.error),
+              ),
+            ],
+          ),
+        ),
+      ],
+      child: Semantics(
+        button: true,
+        label: AppCopy.hubPlaceMore,
+        child: Container(
+          width: 48.w,
+          height: 48.h,
+          decoration: BoxDecoration(
+            color: AppColor.surfaceMuted,
+            borderRadius: AppRadii.rMd,
+            border: Border.all(color: AppColor.border),
+          ),
+          child: Icon(
+            Icons.more_horiz_rounded,
+            color: AppColor.textSecondary,
+            size: 24.sp,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PlaceEditNotice extends StatelessWidget {
+  const _PlaceEditNotice({
+    required this.icon,
+    required this.text,
+    required this.tone,
+  });
+
+  final IconData icon;
+  final String text;
+  final Color tone;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: text,
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.all(AppSpacing.md.w),
+        decoration: BoxDecoration(
+          color: tone.withValues(alpha: 0.08),
+          borderRadius: AppRadii.rMd,
+          border: Border.all(color: tone.withValues(alpha: 0.22)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: tone, size: 18.sp),
+            gapH(AppSpacing.sm),
+            Expanded(
+              child: Text(
+                text,
+                style: AppText.bodySm.copyWith(
+                  color: AppColor.textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -1858,18 +2043,18 @@ class _PlaceModerationBanner extends StatefulWidget {
   const _PlaceModerationBanner({
     required this.status,
     required this.createdAt,
+    required this.reviewSla,
   });
 
   final String status;
   final DateTime? createdAt;
+  final Duration reviewSla;
 
   @override
   State<_PlaceModerationBanner> createState() => _PlaceModerationBannerState();
 }
 
 class _PlaceModerationBannerState extends State<_PlaceModerationBanner> {
-  static const Duration _slaWindow = Duration(hours: 24);
-
   @override
   Widget build(BuildContext context) {
     final normalized = widget.status.trim().toLowerCase();
@@ -1935,7 +2120,7 @@ class _PlaceModerationBannerState extends State<_PlaceModerationBanner> {
               gapH(AppSpacing.sm),
               AppCountdownBadge(
                 createdAt: widget.createdAt,
-                sla: _slaWindow,
+                sla: widget.reviewSla,
                 color: tone,
               ),
             ],

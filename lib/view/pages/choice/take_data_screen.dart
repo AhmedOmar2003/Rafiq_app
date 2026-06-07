@@ -211,6 +211,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
         await ApiService().updatePlace(
           placeUuid: widget.editingPlace!.placeUuid,
           legacyPlaceId: widget.editingPlace!.placeId,
+          providerId: providerId,
           placeName: _placeNameController.text.trim(),
           activityName: _selectedPlaceType ?? '',
           budget: _selectedBudget ?? '',
@@ -218,6 +219,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
           cityName: _selectedCity ?? '',
           description: _descriptionController.text.trim(),
           imagePath: coverPath,
+          galleryImages: _images,
           resubmitForReview: wasRejected,
         );
       } else {
@@ -238,9 +240,11 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
 
       _showSnackBar(
         _isEditing
-            ? (widget.editingPlace?.status == 'rejected'
-                ? AppCopy.providerResubmittedSuccess
-                : AppCopy.providerEditedSuccess)
+            ? (widget.editingPlace?.status == 'approved'
+                ? AppCopy.providerApprovedEditSubmitted
+                : widget.editingPlace?.status == 'rejected'
+                    ? AppCopy.providerResubmittedSuccess
+                    : AppCopy.providerEditedSuccess)
             : AppCopy.providerAddedSuccess,
       );
       _returnToHub();
@@ -393,7 +397,9 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
                                 const _ReviewNoticeCard(),
                                 gapV(AppSpacing.lg),
                                 AppButton(
-                                  text: _isEditing ? AppCopy.addPlaceSaveEdit : AppCopy.addPlaceSaveNew,
+                                  text: _isEditing
+                                      ? AppCopy.addPlaceSaveEdit
+                                      : AppCopy.addPlaceSaveNew,
                                   onPress: _submitPlace,
                                   isLoading: _isLoading,
                                 ),
@@ -416,10 +422,10 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
 
   Widget _buildAppBar() {
     return Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg.w,
-            vertical: AppSpacing.md.h,
-          ),
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg.w,
+        vertical: AppSpacing.md.h,
+      ),
       color: AppColor.surface,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -534,9 +540,11 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
           controller: _placeNameController,
           hintText: AppCopy.addPlaceNameHint,
           label: AppCopy.addPlaceNameLabel,
-          suffixIcon: const Icon(Icons.storefront_outlined, color: AppColor.textSecondary),
+          suffixIcon: const Icon(Icons.storefront_outlined,
+              color: AppColor.textSecondary),
           textInputAction: TextInputAction.next,
-          validator: (v) => (v == null || v.isEmpty) ? AppCopy.addPlaceNameRequired : null,
+          validator: (v) =>
+              (v == null || v.isEmpty) ? AppCopy.addPlaceNameRequired : null,
         ),
         gapV(AppSpacing.lg),
         _buildDropdown(
@@ -545,7 +553,8 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
           items: _cities,
           icon: Icons.location_city_outlined,
           onChanged: (value) => setState(() => _selectedCity = value),
-          validator: (v) => (v == null || v.isEmpty) ? AppCopy.addPlaceCityRequired : null,
+          validator: (v) =>
+              (v == null || v.isEmpty) ? AppCopy.addPlaceCityRequired : null,
         ),
         gapV(AppSpacing.lg),
         _buildDropdown(
@@ -554,7 +563,8 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
           items: _placeTypes,
           icon: Icons.category_outlined,
           onChanged: (value) => setState(() => _selectedPlaceType = value),
-          validator: (v) => (v == null || v.isEmpty) ? AppCopy.addPlaceTypeRequired : null,
+          validator: (v) =>
+              (v == null || v.isEmpty) ? AppCopy.addPlaceTypeRequired : null,
         ),
         gapV(AppSpacing.lg),
         _buildDropdown(
@@ -563,25 +573,30 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
           items: _budgets,
           icon: Icons.account_balance_wallet_outlined,
           onChanged: (value) => setState(() => _selectedBudget = value),
-          validator: (v) => (v == null || v.isEmpty) ? AppCopy.addPlaceBudgetRequired : null,
+          validator: (v) =>
+              (v == null || v.isEmpty) ? AppCopy.addPlaceBudgetRequired : null,
         ),
         gapV(AppSpacing.lg),
         AppInput(
           controller: _addressController,
           hintText: AppCopy.addPlaceAddressHint,
           label: AppCopy.addPlaceAddressLabel,
-          suffixIcon: const Icon(Icons.map_outlined, color: AppColor.textSecondary),
+          suffixIcon:
+              const Icon(Icons.map_outlined, color: AppColor.textSecondary),
           textInputAction: TextInputAction.next,
-          validator: (v) => (v == null || v.isEmpty) ? AppCopy.addPlaceAddressRequired : null,
+          validator: (v) =>
+              (v == null || v.isEmpty) ? AppCopy.addPlaceAddressRequired : null,
         ),
         gapV(AppSpacing.lg),
         AppInput(
           controller: _descriptionController,
           hintText: AppCopy.addPlaceDescHint,
           label: AppCopy.addPlaceDescLabel,
-          suffixIcon: const Icon(Icons.description_outlined, color: AppColor.textSecondary),
+          suffixIcon: const Icon(Icons.description_outlined,
+              color: AppColor.textSecondary),
           maxLines: 4,
-          validator: (v) => (v == null || v.isEmpty) ? AppCopy.addPlaceDescRequired : null,
+          validator: (v) =>
+              (v == null || v.isEmpty) ? AppCopy.addPlaceDescRequired : null,
         ),
       ],
     );
@@ -659,7 +674,6 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
       ),
     );
   }
-
 }
 
 // ===========================================================================
