@@ -525,7 +525,6 @@ class ApiService {
     required String address,
     required String cityName,
     required String description,
-    String? imagePath,
     List<File> galleryImages = const [],
   }) async {
     try {
@@ -542,8 +541,9 @@ class ApiService {
         'city_name': cityName.trim(),
         'description': description.trim(),
         'rating': 0,
-        'image_path':
-            imagePath != null && imagePath.isNotEmpty ? imagePath : null,
+        // A picker path belongs to the current phone only. The durable Storage
+        // reference is attached after upload by register_provider_place_images.
+        'image_path': null,
       };
 
       final response = await _client
@@ -552,23 +552,24 @@ class ApiService {
           .select()
           .timeout(_networkTimeout);
       if (response.isNotEmpty) {
-        final createdPlace =
-            Place.fromJson(Map<String, dynamic>.from(response.first));
+        final createdRow = Map<String, dynamic>.from(response.first);
+        final createdPlace = Place.fromJson(createdRow);
         if (galleryImages.isNotEmpty && createdPlace.placeUuid != null) {
-          final coverPublicUrl = await _savePlaceGalleryImages(
+          await _savePlaceGalleryImages(
             providerId: providerId,
             placeUuid: createdPlace.placeUuid!,
             galleryImages: galleryImages,
             placeName: placeName,
           );
-          if (coverPublicUrl != null) {
-            await _client.from('places').update({
-              'image_path': coverPublicUrl,
-            }).eq('id', createdPlace.placeUuid!);
-          }
         }
+        final finalRow = await _client
+            .from('places')
+            .select()
+            .eq('id', createdPlace.placeUuid!)
+            .single()
+            .timeout(_networkTimeout);
         _invalidatePlacesCache();
-        return createdPlace;
+        return Place.fromJson(Map<String, dynamic>.from(finalRow));
       }
 
       throw Exception('لم يتم إرجاع بيانات المكان بعد الإضافة.');
@@ -648,6 +649,7 @@ class ApiService {
         .from('place_images')
         .select('storage_path,is_cover,sort_order,created_at')
         .eq('place_id', placeUuid)
+        .order('is_cover', ascending: false)
         .order('sort_order', ascending: true)
         .order('created_at', ascending: true)
         .timeout(_networkTimeout);
@@ -1063,35 +1065,43 @@ class ApiService {
   }) async {
     if (galleryImages.isEmpty) return null;
 
-    await _client
-        .from('place_images')
-        .update({'is_cover': false}).eq('place_id', placeUuid);
+    final uploadedPaths = <String>[];
+    try {
+      for (var i = 0; i < galleryImages.length; i++) {
+        final file = galleryImages[i];
+        final bytes = await file.readAsBytes();
+        if (bytes.isEmpty) continue;
 
-    String? coverPublicUrl;
-    for (var i = 0; i < galleryImages.length; i++) {
-      final file = galleryImages[i];
-      final bytes = await file.readAsBytes();
-      if (bytes.isEmpty) continue;
+        final uniqueSuffix = DateTime.now().microsecondsSinceEpoch;
+        final storagePath =
+            '$providerId/$placeUuid/$uniqueSuffix-$i.${_extensionFromPath(file.path)}';
+        await _client.storage.from('place-images').uploadBinary(
+              storagePath,
+              bytes,
+            );
+        uploadedPaths.add(storagePath);
+      }
 
-      final uniqueSuffix = DateTime.now().microsecondsSinceEpoch;
-      final storagePath =
-          '$providerId/$placeUuid/$uniqueSuffix-$i.${_extensionFromPath(file.path)}';
-      await _client.storage.from('place-images').uploadBinary(
-            storagePath,
-            bytes,
-          );
-      final publicUrl =
-          _client.storage.from('place-images').getPublicUrl(storagePath);
-      coverPublicUrl ??= publicUrl;
-      await _client.from('place_images').insert({
-        'place_id': placeUuid,
-        'storage_path': storagePath,
-        'is_cover': i == 0,
-        'alt_text': placeName.trim().isNotEmpty ? placeName.trim() : null,
-        'sort_order': i,
-      });
+      if (uploadedPaths.isEmpty) return null;
+      final coverReference = await _client.rpc<dynamic>(
+        'register_provider_place_images',
+        params: {
+          '_place_id': placeUuid,
+          '_storage_paths': uploadedPaths,
+          '_alt_text': placeName.trim().isNotEmpty ? placeName.trim() : null,
+        },
+      ).timeout(_networkTimeout);
+      return coverReference?.toString();
+    } catch (_) {
+      if (uploadedPaths.isNotEmpty) {
+        try {
+          await _client.storage.from('place-images').remove(uploadedPaths);
+        } catch (_) {
+          // Cleanup is best effort; account deletion also removes orphan files.
+        }
+      }
+      rethrow;
     }
-    return coverPublicUrl;
   }
 
   Future<Place> updatePlace({

@@ -91,7 +91,11 @@ class _DetailsItemState extends State<DetailsItem> {
     return trimmed;
   }
 
-  Widget _buildGalleryImage(BuildContext context, String rawUrl) {
+  Widget _buildGalleryImage(
+    BuildContext context,
+    String rawUrl, {
+    BoxFit fit = BoxFit.cover,
+  }) {
     final normalized = _normalizeImageUrl(rawUrl);
     if (normalized.isEmpty) {
       return _buildPlaceholder();
@@ -100,7 +104,7 @@ class _DetailsItemState extends State<DetailsItem> {
     if (normalized.startsWith('http')) {
       return CachedNetworkImage(
         url: normalized,
-        fit: BoxFit.cover,
+        fit: fit,
         placeholder: (_) => const Center(
           child: CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(AppColor.primary),
@@ -113,12 +117,54 @@ class _DetailsItemState extends State<DetailsItem> {
     if (!kIsWeb) {
       return Image.file(
         File(normalized),
-        fit: BoxFit.cover,
+        fit: fit,
         errorBuilder: (_, __, ___) => _buildPlaceholder(),
       );
     }
 
     return _buildPlaceholder();
+  }
+
+  Future<void> _openImagePreview(String rawUrl) {
+    return showDialog<void>(
+      context: context,
+      barrierColor: AppColor.black.withValues(alpha: 0.92),
+      builder: (dialogContext) => Dialog.fullscreen(
+        backgroundColor: AppColor.black,
+        child: SafeArea(
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: InteractiveViewer(
+                  minScale: 0.8,
+                  maxScale: 4,
+                  child: Center(
+                    child: _buildGalleryImage(
+                      dialogContext,
+                      rawUrl,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: AppSpacing.sm.h,
+                left: AppSpacing.sm.w,
+                child: Semantics(
+                  button: true,
+                  label: 'إغلاق الصورة',
+                  child: IconButton.filled(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    tooltip: 'إغلاق',
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -143,15 +189,28 @@ class _DetailsItemState extends State<DetailsItem> {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  PageView.builder(
-                    controller: _galleryController,
-                    itemCount: gallery.length,
-                    onPageChanged: (index) {
-                      if (!mounted) return;
-                      setState(() => _currentGalleryIndex = index);
-                    },
-                    itemBuilder: (_, index) =>
-                        _buildGalleryImage(context, gallery[index]),
+                  ColoredBox(
+                    color: AppColor.neutral100,
+                    child: PageView.builder(
+                      controller: _galleryController,
+                      itemCount: gallery.length,
+                      onPageChanged: (index) {
+                        if (!mounted) return;
+                        setState(() => _currentGalleryIndex = index);
+                      },
+                      itemBuilder: (_, index) => Semantics(
+                        button: true,
+                        label: 'عرض صورة المكان بالحجم الكامل',
+                        child: InkWell(
+                          onTap: () => _openImagePreview(gallery[index]),
+                          child: _buildGalleryImage(
+                            context,
+                            gallery[index],
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                   Positioned(
                     top: AppSpacing.md.h,

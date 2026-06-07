@@ -1,3 +1,5 @@
+import 'package:rafiq_app/core/config/supabase_config.dart';
+
 // class Place {
 //   final String name;
 //   final String description;
@@ -126,9 +128,7 @@ class Place {
       placeAddress: json['PlaceAddress']?.toString() ??
           json['place_address']?.toString() ??
           'لا يوجد عنوان',
-      imageUrl: imageValue?.toString().isNotEmpty == true
-          ? imageValue.toString()
-          : null,
+      imageUrl: _normalizeImageReference(imageValue),
       activityName: json['ActivityName']?.toString() ??
           json['activity_name']?.toString() ??
           'غير معروف',
@@ -176,5 +176,32 @@ class Place {
         json['edit_submitted_at']?.toString() ?? '',
       ),
     );
+  }
+
+  static String? _normalizeImageReference(dynamic value) {
+    final raw = value?.toString().trim() ?? '';
+    if (raw.isEmpty) return null;
+
+    const storageScheme = 'place-images://';
+    if (raw.startsWith(storageScheme)) {
+      final storagePath = raw.substring(storageScheme.length);
+      if (storagePath.isEmpty) return null;
+      final encodedPath =
+          storagePath.split('/').map(Uri.encodeComponent).join('/');
+      final baseUrl = SupabaseConfig.url.replaceFirst(RegExp(r'/+$'), '');
+      return '$baseUrl/storage/v1/object/public/place-images/$encodedPath';
+    }
+
+    if (raw.startsWith('https://') || raw.startsWith('http://')) {
+      return raw;
+    }
+
+    if (raw.startsWith('assets/')) {
+      return raw;
+    }
+
+    // Device-local paths are previews only and are invalid on another device
+    // or after the picker cache is cleared.
+    return null;
   }
 }

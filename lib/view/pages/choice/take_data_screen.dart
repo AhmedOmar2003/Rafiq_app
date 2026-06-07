@@ -200,7 +200,6 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
         }
       }
 
-      final coverPath = _images.isEmpty ? null : _images.first.path;
       if (_isEditing) {
         // If the user opened the edit screen from the "rejected card", the
         // place's current status will be 'rejected'. Saving in that case
@@ -218,7 +217,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
           address: _addressController.text.trim(),
           cityName: _selectedCity ?? '',
           description: _descriptionController.text.trim(),
-          imagePath: coverPath,
+          imagePath: widget.editingPlace?.imageUrl,
           galleryImages: _images,
           resubmitForReview: wasRejected,
         );
@@ -231,7 +230,6 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
           address: _addressController.text.trim(),
           cityName: _selectedCity ?? '',
           description: _descriptionController.text.trim(),
-          imagePath: coverPath,
           galleryImages: _images,
         );
       }

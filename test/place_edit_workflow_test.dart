@@ -34,4 +34,42 @@ void main() {
     expect(place.editRequestReviewedAt, isNotNull);
     expect(place.editSubmittedAt, isNull);
   });
+
+  test('Place resolves durable Storage image references', () {
+    final place = Place.fromJson({
+      'place_name': 'مكان بصورة ثابتة',
+      'description': 'وصف',
+      'budget': 'متوسط',
+      'rating': 0,
+      'place_address': 'القاهرة',
+      'activity_name': 'طعام',
+      'city_name': 'القاهرة',
+      'image_path':
+          'place-images://provider-id/place-id/واجهة المكان 1.webp',
+    });
+
+    expect(
+      place.imageUrl,
+      contains(
+        '/storage/v1/object/public/place-images/'
+        'provider-id/place-id/%D9%88%D8%A7%D8%AC%D9%87%D8%A9%20'
+        '%D8%A7%D9%84%D9%85%D9%83%D8%A7%D9%86%201.webp',
+      ),
+    );
+  });
+
+  test('Place never exposes a phone-local image path as a public image', () {
+    final place = Place.fromJson({
+      'place_name': 'مكان بصورة مؤقتة',
+      'description': 'وصف',
+      'budget': 'متوسط',
+      'rating': 0,
+      'place_address': 'القاهرة',
+      'activity_name': 'طعام',
+      'city_name': 'القاهرة',
+      'image_path': '/data/user/0/app/cache/image_picker/photo.jpg',
+    });
+
+    expect(place.imageUrl, isNull);
+  });
 }
