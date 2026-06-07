@@ -600,14 +600,23 @@ class _AppealSheetState extends State<_AppealSheet> {
       // provider on the phone/email of their choice. No mailto, no leaving
       // the app.
       await ApiService.ensureSupabaseInitialized();
+      final isEditAppeal = widget.place.status == 'approved' &&
+          widget.place.editRequestStatus == 'rejected';
       await Supabase.instance.client.rpc<dynamic>(
-        'submit_place_appeal',
-        params: {
-          '_place_id': widget.place.placeId,
-          '_contact_name': name,
-          '_contact_phone': phone,
-          '_message': message,
-        },
+        isEditAppeal ? 'submit_place_edit_appeal' : 'submit_place_appeal',
+        params: isEditAppeal
+            ? {
+                '_place_id': widget.place.placeUuid,
+                '_contact_name': name,
+                '_contact_phone': phone,
+                '_message': message,
+              }
+            : {
+                '_place_id': widget.place.placeId,
+                '_contact_name': name,
+                '_contact_phone': phone,
+                '_message': message,
+              },
       );
       if (!mounted) return;
       AppFeedback.success(AppCopy.appealSentSuccess);
@@ -1647,10 +1656,8 @@ class _PlaceCard extends StatelessWidget {
                   ],
                   if (place.editRequestStatus == 'submitted') ...[
                     gapV(AppSpacing.sm),
-                    const _PlaceEditNotice(
-                      icon: Icons.fact_check_outlined,
-                      text: AppCopy.hubEditRequestSubmitted,
-                      tone: AppColor.info,
+                    _EditReviewBanner(
+                      submittedAt: place.editSubmittedAt,
                     ),
                   ],
                   if (place.editRequestStatus == 'rejected' &&
@@ -1703,7 +1710,13 @@ class _PlaceCard extends StatelessWidget {
                     ),
                   ),
                   gapV(AppSpacing.sm),
-                  if (isRejected)
+                  if (place.status == 'approved' &&
+                      place.editRequestStatus == 'rejected')
+                    _EditRejectedActions(
+                      onAppeal: () => _openAppealSheet(context),
+                      onDelete: onDelete,
+                    )
+                  else if (isRejected)
                     _RejectedPlaceActions(
                       canEdit: place.editAllowed,
                       onEdit: onEdit,
@@ -1758,6 +1771,84 @@ class _PlaceCard extends StatelessWidget {
       child: Center(
         child: Icon(Icons.image_not_supported_outlined,
             color: AppColor.textTertiary, size: 38.sp),
+      ),
+    );
+  }
+}
+
+class _EditRejectedActions extends StatelessWidget {
+  const _EditRejectedActions({
+    required this.onAppeal,
+    required this.onDelete,
+  });
+
+  final VoidCallback onAppeal;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: AppButton(
+            text: AppCopy.appealTitle,
+            onPress: onAppeal,
+            size: AppButtonSize.sm,
+            variant: AppButtonVariant.outline,
+          ),
+        ),
+        gapV(AppSpacing.sm),
+        Align(
+          alignment: AlignmentDirectional.centerEnd,
+          child: _PlaceMoreMenu(onDelete: onDelete),
+        ),
+      ],
+    );
+  }
+}
+
+class _EditReviewBanner extends StatelessWidget {
+  const _EditReviewBanner({required this.submittedAt});
+
+  final DateTime? submittedAt;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: '${AppCopy.hubEditRequestSubmitted}. مدة المراجعة 6 ساعات أو أقل',
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(
+          horizontal: AppSpacing.md.w,
+          vertical: AppSpacing.sm.h,
+        ),
+        decoration: BoxDecoration(
+          color: AppColor.info.withValues(alpha: 0.08),
+          borderRadius: AppRadii.rMd,
+          border: Border.all(color: AppColor.info.withValues(alpha: 0.24)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.fact_check_outlined, size: 16.sp, color: AppColor.info),
+            gapH(AppSpacing.xs),
+            Expanded(
+              child: Text(
+                AppCopy.hubEditRequestSubmitted,
+                style: AppText.labelSm.copyWith(
+                  color: AppColor.info,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            gapH(AppSpacing.sm),
+            AppCountdownBadge(
+              createdAt: submittedAt,
+              sla: const Duration(hours: 6),
+              color: AppColor.info,
+            ),
+          ],
+        ),
       ),
     );
   }

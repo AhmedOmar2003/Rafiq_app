@@ -1065,24 +1065,14 @@ class ApiService {
   }) async {
     if (galleryImages.isEmpty) return null;
 
-    final uploadedPaths = <String>[];
+    final uploadedPaths = await _uploadPlaceImageFiles(
+      providerId: providerId,
+      placeUuid: placeUuid,
+      galleryImages: galleryImages,
+    );
+    if (uploadedPaths.isEmpty) return null;
+
     try {
-      for (var i = 0; i < galleryImages.length; i++) {
-        final file = galleryImages[i];
-        final bytes = await file.readAsBytes();
-        if (bytes.isEmpty) continue;
-
-        final uniqueSuffix = DateTime.now().microsecondsSinceEpoch;
-        final storagePath =
-            '$providerId/$placeUuid/$uniqueSuffix-$i.${_extensionFromPath(file.path)}';
-        await _client.storage.from('place-images').uploadBinary(
-              storagePath,
-              bytes,
-            );
-        uploadedPaths.add(storagePath);
-      }
-
-      if (uploadedPaths.isEmpty) return null;
       final coverReference = await _client.rpc<dynamic>(
         'register_provider_place_images',
         params: {
@@ -1104,6 +1094,40 @@ class ApiService {
     }
   }
 
+  Future<List<String>> _uploadPlaceImageFiles({
+    required String providerId,
+    required String placeUuid,
+    required List<File> galleryImages,
+  }) async {
+    final uploadedPaths = <String>[];
+    try {
+      for (var i = 0; i < galleryImages.length; i++) {
+        final file = galleryImages[i];
+        final bytes = await file.readAsBytes();
+        if (bytes.isEmpty) continue;
+
+        final uniqueSuffix = DateTime.now().microsecondsSinceEpoch;
+        final storagePath =
+            '$providerId/$placeUuid/$uniqueSuffix-$i.${_extensionFromPath(file.path)}';
+        await _client.storage.from('place-images').uploadBinary(
+              storagePath,
+              bytes,
+            );
+        uploadedPaths.add(storagePath);
+      }
+      return uploadedPaths;
+    } catch (_) {
+      if (uploadedPaths.isNotEmpty) {
+        try {
+          await _client.storage.from('place-images').remove(uploadedPaths);
+        } catch (_) {
+          // Best effort. Hard account deletion also removes orphan files.
+        }
+      }
+      rethrow;
+    }
+  }
+
   Future<Place> updatePlace({
     required String? placeUuid,
     int? legacyPlaceId,
@@ -1118,6 +1142,7 @@ class ApiService {
     String? imagePath,
     double? rating,
     List<File> galleryImages = const <File>[],
+    bool submitApprovedEdit = false,
 
     /// Kept for source compatibility. The database now derives the correct
     /// moderation transition from the current place state and approved edit
@@ -1138,6 +1163,62 @@ class ApiService {
       }
       if (resolvedId == null || resolvedId.isEmpty) {
         throw Exception('تعذر تحديد المكان المطلوب تعديله.');
+      }
+
+      if (submitApprovedEdit) {
+        var proposedImagePaths = <String>[];
+        try {
+          if (galleryImages.isNotEmpty &&
+              providerId != null &&
+              providerId.isNotEmpty) {
+            proposedImagePaths = await _uploadPlaceImageFiles(
+              providerId: providerId,
+              placeUuid: resolvedId,
+              galleryImages: galleryImages,
+            );
+          }
+
+          await _client.rpc<dynamic>(
+            'submit_provider_place_edit',
+            params: {
+              '_place_id': resolvedId,
+              '_place_name': placeName.trim(),
+              '_activity_name': activityName.trim(),
+              '_budget': budget.trim(),
+              '_price_range': priceRange?.trim().isNotEmpty == true
+                  ? priceRange!.trim()
+                  : budget.trim(),
+              '_address': address.trim(),
+              '_city_name': cityName.trim(),
+              '_description': description.trim(),
+              '_rating': rating,
+              '_image_storage_paths': proposedImagePaths,
+              '_note': null,
+            },
+          ).timeout(_networkTimeout);
+        } catch (_) {
+          if (proposedImagePaths.isNotEmpty) {
+            try {
+              await _client.storage
+                  .from('place-images')
+                  .remove(proposedImagePaths);
+            } catch (_) {
+              // Best-effort rollback for a failed edit submission.
+            }
+          }
+          rethrow;
+        }
+
+        final publishedRow = await _client
+            .from('places')
+            .select(
+              'id,place_id,provider_id,place_name,description,price_range,budget,rating,place_address,image_path,activity_name,city_name,created_at,status,rejection_reason,edit_allowed,edit_request_status,edit_request_note,edit_request_response,edit_request_requested_at,edit_request_reviewed_at,edit_submitted_at',
+            )
+            .eq('id', resolvedId)
+            .single()
+            .timeout(_networkTimeout);
+        _invalidatePlacesCache();
+        return Place.fromJson(Map<String, dynamic>.from(publishedRow));
       }
 
       String? uploadedCover;

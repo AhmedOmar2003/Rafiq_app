@@ -444,7 +444,7 @@ class AppCopy {
       'تقدر تعدّل بيانات المكان طول ما هو تحت المراجعة.';
   static const hubApprovedEditTitle = 'اطلب تعديل المكان';
   static const hubApprovedEditBody =
-      'المكان ظاهر للمستخدمين. ابعت طلب للإدارة الأول، وبعد الموافقة تقدر تعدّله وترجّعه للمراجعة.';
+      'المكان هيفضل ظاهر ببياناته الحالية. بعد موافقة الإدارة تقدر تعدّله، والتغيير الجديد يتراجع خلال 6 ساعات قبل نشره.';
   static const hubApprovedEditConfirm = 'ابعت طلب التعديل';
   static const hubEditRequestSent =
       'طلب التعديل وصل للإدارة. هنبلغك أول ما يتفتح التعديل.';
@@ -684,6 +684,8 @@ class AppCopy {
   static const addPlaceCoverLabel = 'الغلاف';
   static const addPlaceReviewNotice =
       'بعد ما تضيف مكانك، هيعدي على مراجعتنا خلال 24 ساعة قبل ما يظهر للناس. هنبلّغك بنتيجة المراجعة فور ما تتاح.';
+  static const editPlaceReviewNotice =
+      'تعديلك هيروح للإدارة ويتراجع خلال 6 ساعات أو أقل. مكانك هيفضل ظاهر ببياناته الحالية لحد ما التعديل يتقبل.';
 
   // --- Provider hub — delete dialog + appeal validation -----------------------
   static const hubDeletePlaceTitle = 'حذف المكان';

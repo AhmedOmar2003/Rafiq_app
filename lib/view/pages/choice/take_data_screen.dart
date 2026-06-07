@@ -219,6 +219,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
           description: _descriptionController.text.trim(),
           imagePath: widget.editingPlace?.imageUrl,
           galleryImages: _images,
+          submitApprovedEdit: widget.editingPlace!.status == 'approved',
           resubmitForReview: wasRejected,
         );
       } else {
@@ -392,7 +393,10 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
                             ),
                             child: Column(
                               children: [
-                                const _ReviewNoticeCard(),
+                                _ReviewNoticeCard(
+                                  isApprovedEdit: _isEditing &&
+                                      widget.editingPlace?.status == 'approved',
+                                ),
                                 gapV(AppSpacing.lg),
                                 AppButton(
                                   text: _isEditing
@@ -765,7 +769,9 @@ class _GalleryTile extends StatelessWidget {
 /// Review-time notice shown just above the submit button.
 /// Tells the provider what happens after they submit so there are no surprises.
 class _ReviewNoticeCard extends StatelessWidget {
-  const _ReviewNoticeCard();
+  const _ReviewNoticeCard({required this.isApprovedEdit});
+
+  final bool isApprovedEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -790,7 +796,9 @@ class _ReviewNoticeCard extends StatelessWidget {
           gapH(AppSpacing.sm),
           Expanded(
             child: Text(
-              AppCopy.addPlaceReviewNotice,
+              isApprovedEdit
+                  ? AppCopy.editPlaceReviewNotice
+                  : AppCopy.addPlaceReviewNotice,
               style: AppText.bodySm.copyWith(
                 color: AppColor.textPrimary,
                 height: 1.5,

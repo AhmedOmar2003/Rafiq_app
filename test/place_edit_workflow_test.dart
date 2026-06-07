@@ -72,4 +72,24 @@ void main() {
 
     expect(place.imageUrl, isNull);
   });
+
+  test('Published place remains approved while its edit is under review', () {
+    final place = Place.fromJson({
+      'id': '8d560949-5d0e-4d17-9b35-4308f1637f8c',
+      'place_name': 'النسخة المنشورة',
+      'description': 'الوصف المنشور يظل ظاهرًا',
+      'budget': 'متوسط',
+      'rating': 4,
+      'place_address': 'القاهرة',
+      'activity_name': 'طعام',
+      'city_name': 'القاهرة',
+      'status': 'approved',
+      'edit_request_status': 'submitted',
+      'edit_submitted_at': '2026-06-07T17:00:00Z',
+    });
+
+    expect(place.status, 'approved');
+    expect(place.editRequestStatus, 'submitted');
+    expect(place.editSubmittedAt, isNotNull);
+  });
 }
