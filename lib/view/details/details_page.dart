@@ -475,41 +475,94 @@ class _CampaignBannerCard extends StatelessWidget {
       label:
           '${campaign.title}. ${_campaignKindLabel(campaign.kind)}. $endLabel',
       child: Container(
+        clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           color: AppColor.surfaceCard,
           borderRadius: AppRadii.rLg,
           border: Border.all(
             color: AppColor.primary.withValues(alpha: 0.10),
           ),
+          boxShadow: AppShadows.level1,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (hasImage)
-              ClipRRect(
-                borderRadius: AppRadii.topOnly(AppRadii.lg),
-                child: CachedNetworkImage(
-                  url: campaign.imagePath!,
-                  width: double.infinity,
-                  height: 156.h,
-                  fit: BoxFit.cover,
-                  errorWidget: (_) => const SizedBox.shrink(),
-                ),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final imageHeight =
+                      (constraints.maxWidth * 0.56).clamp(190.0, 280.0);
+                  return SizedBox(
+                    width: double.infinity,
+                    height: imageHeight,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        CachedNetworkImage(
+                          url: campaign.imagePath!,
+                          fit: BoxFit.cover,
+                          errorWidget: (_) => Container(
+                            color: AppColor.neutral100,
+                            alignment: Alignment.center,
+                            child: Icon(
+                              Icons.local_offer_outlined,
+                              size: 36.sp,
+                              color: AppColor.textTertiary,
+                            ),
+                          ),
+                        ),
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                AppColor.black.withValues(alpha: 0.36),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          right: AppSpacing.md.w,
+                          bottom: AppSpacing.md.h,
+                          child: _OfferPill(
+                            label: AppCopy.detailsOfferActiveNow,
+                            color: AppColor.success,
+                            background:
+                                AppColor.surfaceCard.withValues(alpha: 0.94),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
             Padding(
-              padding: EdgeInsets.all(AppSpacing.md.w),
+              padding: EdgeInsets.all(AppSpacing.lg.w),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Wrap(
-                    spacing: AppSpacing.sm.w,
-                    runSpacing: AppSpacing.sm.h,
+                  if (!hasImage)
+                    _OfferPill(
+                      label: AppCopy.detailsOfferActiveNow,
+                      color: AppColor.success,
+                      background: AppColor.success.withValues(alpha: 0.10),
+                    ),
+                  if (!hasImage) gapV(AppSpacing.md),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _OfferPill(
-                        label: AppCopy.detailsOfferActiveNow,
-                        color: AppColor.success,
-                        background: AppColor.success.withValues(alpha: 0.10),
+                      Expanded(
+                        child: Text(
+                          campaign.title,
+                          style: AppText.titleLg.copyWith(
+                            fontWeight: FontWeight.w800,
+                            height: 1.35,
+                          ),
+                        ),
                       ),
+                      gapH(AppSpacing.md),
                       _OfferPill(
                         label: _campaignKindLabel(campaign.kind),
                         color: AppColor.primary,
@@ -517,29 +570,22 @@ class _CampaignBannerCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  gapV(AppSpacing.sm),
-                  Text(
-                    campaign.title,
-                    style: AppText.titleMd.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
                   if ((campaign.body ?? '').trim().isNotEmpty) ...[
-                    gapV(AppSpacing.sm),
+                    gapV(AppSpacing.md),
                     Text(
                       campaign.body!,
                       style: AppText.bodyMd.copyWith(
                         color: AppColor.textSecondary,
-                        height: 1.6,
+                        height: 1.65,
                       ),
                     ),
                   ],
-                  gapV(AppSpacing.md),
+                  gapV(AppSpacing.lg),
                   Container(
                     width: double.infinity,
                     padding: EdgeInsets.symmetric(
                       horizontal: AppSpacing.md.w,
-                      vertical: AppSpacing.sm.h,
+                      vertical: AppSpacing.md.h,
                     ),
                     decoration: BoxDecoration(
                       color: AppColor.surfaceVariant,
@@ -549,8 +595,8 @@ class _CampaignBannerCard extends StatelessWidget {
                       children: [
                         Icon(
                           Icons.schedule_rounded,
-                          size: 16.sp,
-                          color: AppColor.textSecondary,
+                          size: 18.sp,
+                          color: AppColor.primary,
                         ),
                         gapH(AppSpacing.sm),
                         Expanded(
@@ -558,6 +604,7 @@ class _CampaignBannerCard extends StatelessWidget {
                             endLabel,
                             style: AppText.bodySm.copyWith(
                               color: AppColor.textSecondary,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),

@@ -489,6 +489,7 @@ class _LocationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
       padding: EdgeInsets.all(AppSpacing.lg.w),
       decoration: BoxDecoration(
         color: AppColor.surfaceVariant,
@@ -562,6 +563,7 @@ class _PriceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
       padding: EdgeInsets.all(AppSpacing.lg.w),
       decoration: BoxDecoration(
         color: AppColor.primary.withValues(alpha: 0.05),
@@ -570,29 +572,31 @@ class _PriceCard extends StatelessWidget {
           color: AppColor.primary.withValues(alpha: 0.08),
         ),
       ),
-      child: Wrap(
-        alignment: WrapAlignment.spaceBetween,
-        runSpacing: AppSpacing.md.h,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                AppCopy.detailsPriceLabel,
-                style: AppText.labelSm.copyWith(
-                  color: AppColor.textSecondary,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  AppCopy.detailsPriceLabel,
+                  style: AppText.labelSm.copyWith(
+                    color: AppColor.textSecondary,
+                  ),
                 ),
-              ),
-              gapV(AppSpacing.xs),
-              Text(
-                priceLabel,
-                style: AppText.titleLg.copyWith(
-                  color: AppColor.primary,
-                  fontWeight: FontWeight.w700,
+                gapV(AppSpacing.xs),
+                Text(
+                  priceLabel,
+                  style: AppText.titleLg.copyWith(
+                    color: AppColor.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
+          gapH(AppSpacing.md),
           Container(
             padding: EdgeInsets.all(AppSpacing.sm.w),
             decoration: BoxDecoration(
