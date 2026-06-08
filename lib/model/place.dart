@@ -1,4 +1,5 @@
 import 'package:rafiq_app/core/config/supabase_config.dart';
+import 'package:rafiq_app/models/subscription/plan.dart';
 
 // class Place {
 //   final String name;
@@ -42,6 +43,7 @@ class Place {
   final String activityName;
   final String cityName;
   final int placeId;
+  final PlanTier? planTier;
 
   /// Moderation state. Matches `public.moderation_status` SQL enum:
   /// `pending` | `under_review` | `approved` | `rejected` | `suspended`.
@@ -81,6 +83,7 @@ class Place {
     required this.activityName,
     required this.cityName,
     required this.placeId,
+    this.planTier,
     this.status = 'pending',
     this.createdAt,
     this.rejectionReason,
@@ -141,6 +144,11 @@ class Place {
           return placeIdValue.toInt();
         }
         return int.tryParse(placeIdValue?.toString() ?? '0') ?? 0;
+      }(),
+      planTier: () {
+        final rawTier = json['plan_tier']?.toString().trim().toLowerCase();
+        if (rawTier == null || rawTier.isEmpty) return null;
+        return PlanTierX.fromWire(rawTier);
       }(),
       status: () {
         final rawStatus = json['status'] ?? json['Status'];

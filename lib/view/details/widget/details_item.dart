@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -51,20 +52,23 @@ class _DetailsItemState extends State<DetailsItem> {
     }
   }
 
-  void openMap() async {
+  Future<void> openMap() async {
     widget.onMapOpen?.call();
     final String query = "${widget.model.address}, ${widget.model.text}";
     final Uri googleMapsUri = Uri.parse(
         "https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(query)}");
     try {
-      if (await canLaunchUrl(googleMapsUri)) {
-        await launchUrl(
-          googleMapsUri,
-          mode: LaunchMode.externalApplication,
-        );
-      }
-    } catch (_) {
-      // Map launch failed silently — user stays in-app.
+      final canOpen = await canLaunchUrl(googleMapsUri);
+      final opened = canOpen &&
+          await launchUrl(
+            googleMapsUri,
+            mode: LaunchMode.externalApplication,
+          );
+      if (!opened && mounted) AppFeedback.error(AppCopy.errorGeneric);
+    } on PlatformException {
+      if (mounted) AppFeedback.error(AppCopy.errorGeneric);
+    } on FormatException {
+      if (mounted) AppFeedback.error(AppCopy.errorGeneric);
     }
   }
 
@@ -181,106 +185,135 @@ class _DetailsItemState extends State<DetailsItem> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            height: 220.h,
-            width: double.infinity,
-            child: ClipRRect(
-              borderRadius: AppRadii.rXl,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  ColoredBox(
-                    color: AppColor.neutral100,
-                    child: PageView.builder(
-                      controller: _galleryController,
-                      itemCount: gallery.length,
-                      onPageChanged: (index) {
-                        if (!mounted) return;
-                        setState(() => _currentGalleryIndex = index);
-                      },
-                      itemBuilder: (_, index) => Semantics(
-                        button: true,
-                        label: 'عرض صورة المكان بالحجم الكامل',
-                        child: InkWell(
-                          onTap: () => _openImagePreview(gallery[index]),
-                          child: _buildGalleryImage(
-                            context,
-                            gallery[index],
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                      ),
-                    ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final imageHeight =
+                  (constraints.maxWidth * 0.56).clamp(250.0, 350.0);
+              return SizedBox(
+                height: imageHeight,
+                width: double.infinity,
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    bottom: Radius.circular(AppRadii.xl),
                   ),
-                  Positioned(
-                    top: AppSpacing.md.h,
-                    right: AppSpacing.md.w,
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm.w,
-                          vertical: AppSpacing.xs.h),
-                      decoration: BoxDecoration(
-                        color: AppColor.surfaceCard,
-                        borderRadius: AppRadii.rPill,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.star_rounded,
-                            color: AppColor.warning,
-                            size: 16,
-                          ),
-                          gapH(AppSpacing.xs),
-                          Text(
-                            widget.model.rate > 0
-                                ? widget.model.rate.toString()
-                                : AppCopy.ratingFallback,
-                            style: AppText.labelSm.copyWith(
-                              color: AppColor.textPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  if (hasGallery)
-                    Positioned(
-                      left: AppSpacing.md.w,
-                      top: AppSpacing.md.h,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm.w,
-                          vertical: AppSpacing.xs.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColor.surfaceCard.withValues(alpha: 0.92),
-                          borderRadius: AppRadii.rPill,
-                        ),
-                        child: Text(
-                          '${_currentGalleryIndex + 1}/${gallery.length}',
-                          style: AppText.labelSm.copyWith(
-                            color: AppColor.textPrimary,
-                          ),
-                        ),
-                      ),
-                    ),
-                  if (widget.isLoading)
-                    Positioned.fill(
-                      child: Container(
-                        color: AppColor.black.withValues(alpha: 0.10),
-                        child: const Center(
-                          child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              AppColor.white,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      ColoredBox(
+                        color: AppColor.neutral100,
+                        child: PageView.builder(
+                          controller: _galleryController,
+                          itemCount: gallery.length,
+                          onPageChanged: (index) {
+                            if (!mounted) return;
+                            setState(() => _currentGalleryIndex = index);
+                          },
+                          itemBuilder: (_, index) => Semantics(
+                            button: true,
+                            label: 'عرض صورة المكان بالحجم الكامل',
+                            child: InkWell(
+                              onTap: () => _openImagePreview(gallery[index]),
+                              child: _buildGalleryImage(
+                                context,
+                                gallery[index],
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                ],
-              ),
-            ),
+                      Positioned.fill(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                AppColor.black.withValues(alpha: 0.20),
+                                Colors.transparent,
+                                AppColor.black.withValues(alpha: 0.10),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: AppSpacing.md.h,
+                        right: AppSpacing.md.w,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppSpacing.sm.w,
+                            vertical: AppSpacing.xs.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColor.surfaceCard.withValues(alpha: 0.94),
+                            borderRadius: AppRadii.rPill,
+                            boxShadow: AppShadows.level1,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.star_rounded,
+                                color: AppColor.warning,
+                                size: 16,
+                              ),
+                              gapH(AppSpacing.xs),
+                              Text(
+                                widget.model.rate > 0
+                                    ? widget.model.rate.toString()
+                                    : AppCopy.ratingFallback,
+                                style: AppText.labelSm.copyWith(
+                                  color: AppColor.textPrimary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      if (hasGallery)
+                        Positioned(
+                          left: AppSpacing.md.w,
+                          top: AppSpacing.md.h,
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: AppSpacing.sm.w,
+                              vertical: AppSpacing.xs.h,
+                            ),
+                            decoration: BoxDecoration(
+                              color:
+                                  AppColor.surfaceCard.withValues(alpha: 0.94),
+                              borderRadius: AppRadii.rPill,
+                              boxShadow: AppShadows.level1,
+                            ),
+                            child: Text(
+                              '${_currentGalleryIndex + 1}/${gallery.length}',
+                              style: AppText.labelSm.copyWith(
+                                color: AppColor.textPrimary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                      if (widget.isLoading)
+                        Positioned.fill(
+                          child: Container(
+                            color: AppColor.black.withValues(alpha: 0.10),
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  AppColor.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
           Padding(
             padding: EdgeInsets.fromLTRB(

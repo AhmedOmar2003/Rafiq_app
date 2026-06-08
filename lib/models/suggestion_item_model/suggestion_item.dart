@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:rafiq_app/core/utils/assets.dart';
 import 'package:rafiq_app/model/place.dart';
+import 'package:rafiq_app/models/subscription/plan.dart';
 
 class SuggestionItemModel {
   final String text;
@@ -15,6 +16,7 @@ class SuggestionItemModel {
   final String city;
   final int placeId;
   final String? placeUuid;
+  final PlanTier? planTier;
 
   SuggestionItemModel({
     required this.text,
@@ -29,6 +31,7 @@ class SuggestionItemModel {
     required this.city,
     required this.placeId,
     this.placeUuid,
+    this.planTier,
   });
 
   factory SuggestionItemModel.fromPlace(Place place) {
@@ -47,6 +50,7 @@ class SuggestionItemModel {
       city: place.cityName,
       placeId: place.placeId,
       placeUuid: place.placeUuid,
+      planTier: place.planTier,
     );
   }
 

@@ -206,6 +206,10 @@ class AppCopy {
   static const reportSentSuccess = 'وصلنا بلاغك، هنراجعه قريباً ✅';
   static const reportSentFail = 'معرفناش نبعت البلاغ، جرّب تاني';
   static const placeCardOpen = 'افتح '; // append place name
+  static const placePlanPro = 'برو';
+  static const placePlanMax = 'ماكس';
+  static const placePlanProSemantic = 'مكان بخطة برو';
+  static const placePlanMaxSemantic = 'مكان بخطة ماكس';
   static const profileOpenLabel = 'افتح البروفايل';
 
   // --- Profile page ------------------------------------------------------------

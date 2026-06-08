@@ -7,11 +7,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/utils/app_microcopy.dart';
 import 'package:rafiq_app/models/suggestion_item_model/suggestion_item.dart';
+import 'package:rafiq_app/models/subscription/plan.dart';
 import 'package:rafiq_app/service/api_service.dart';
+import 'package:rafiq_app/view/details/widget/details_item.dart';
 import 'package:rafiq_app/view/home/home_view.dart';
 import 'package:rafiq_app/view/pages/cubit.dart';
 import 'package:rafiq_app/view/pages/profile_page.dart';
 import 'package:rafiq_app/view/pages/suggestions/suggestions_screen.dart';
+import 'package:rafiq_app/view/pages/suggestions/widgets/suggestion_container.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -170,6 +173,155 @@ void main() {
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -500));
     await tester.pumpAndSettle();
     expect(find.text('مكان هادئ'), findsOneWidget);
+  });
+
+  testWidgets('max place card stays balanced and shows its plan badge',
+      (tester) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    SuggestionItemModel place({PlanTier? tier}) => SuggestionItemModel(
+          text: 'مكان واضح وجميل',
+          address: 'شارع طويل في الإسكندرية',
+          body: 'وصف مختصر يساعد المستخدم يفهم المكان بسرعة',
+          image: '',
+          icon: '',
+          suggestionText: 'طعام',
+          price: '300',
+          rate: 4.7,
+          color: Colors.orange,
+          city: 'الإسكندرية',
+          placeId: tier == null ? 1 : 2,
+          placeUuid: tier == null ? 'regular-place' : 'max-place',
+          planTier: tier,
+        );
+
+    Future<void> pumpCard(SuggestionItemModel model) {
+      return tester.pumpWidget(
+        ScreenUtilInit(
+          designSize: const Size(390, 844),
+          minTextAdapt: true,
+          splitScreenMode: true,
+          builder: (_, __) => MaterialApp(
+            builder: (context, child) {
+              final media = MediaQuery.of(context);
+              return MediaQuery(
+                data: media.copyWith(
+                  textScaler: const TextScaler.linear(1.3),
+                ),
+                child: child!,
+              );
+            },
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: CustomSuggestionContainer(
+                  model: model,
+                  onTap: () {},
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    await pumpCard(place(tier: PlanTier.max));
+    await tester.pumpAndSettle();
+    expect(find.text('ماكس'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('regular place card does not show a paid plan badge',
+      (tester) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final place = SuggestionItemModel(
+      text: 'مكان عادي',
+      address: 'الإسكندرية',
+      body: 'مكان بدون خطة مدفوعة',
+      image: '',
+      icon: '',
+      suggestionText: 'طعام',
+      price: '300',
+      rate: 4.2,
+      color: Colors.orange,
+      city: 'الإسكندرية',
+      placeId: 1,
+      placeUuid: 'regular-place',
+    );
+
+    await tester.pumpWidget(
+      ScreenUtilInit(
+        designSize: const Size(390, 844),
+        minTextAdapt: true,
+        splitScreenMode: true,
+        builder: (_, __) => MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: CustomSuggestionContainer(
+                model: place,
+                onTap: () {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('ماكس'), findsNothing);
+    expect(find.text('برو'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('details hero stays clear on a narrow screen', (tester) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final model = SuggestionItemModel(
+      text: 'مكان للتجربة',
+      address: 'الإسكندرية',
+      body: 'وصف المكان',
+      image: '',
+      icon: '',
+      suggestionText: 'ترفيه',
+      price: '250',
+      rate: 4.5,
+      color: Colors.blue,
+      city: 'الإسكندرية',
+      placeId: 10,
+      placeUuid: 'details-place',
+    );
+
+    await tester.pumpWidget(
+      ScreenUtilInit(
+        designSize: const Size(390, 844),
+        minTextAdapt: true,
+        splitScreenMode: true,
+        builder: (_, __) => MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: DetailsItem(
+                model: model,
+                galleryImages: const [''],
+                isLoading: false,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('مكان للتجربة'), findsOneWidget);
+    expect(find.byType(PageView), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('modal sheet stays usable on a small screen with large text',

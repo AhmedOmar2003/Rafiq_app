@@ -9,6 +9,7 @@ import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:rafiq_app/core/utils/app_microcopy.dart';
 import 'package:rafiq_app/models/suggestion_item_model/suggestion_item.dart';
+import 'package:rafiq_app/models/subscription/plan.dart';
 
 /// Suggestion card — simple, readable, and close to the design system.
 class CustomSuggestionContainer extends StatelessWidget {
@@ -21,7 +22,7 @@ class CustomSuggestionContainer extends StatelessWidget {
   final SuggestionItemModel model;
   final VoidCallback onTap;
 
-  static const double _heroHeight = 176;
+  static const double _heroHeight = 204;
 
   @override
   Widget build(BuildContext context) {
@@ -37,28 +38,31 @@ class CustomSuggestionContainer extends StatelessWidget {
         child: AppCard(
           onTap: onTap,
           padding: EdgeInsets.zero,
-          elevation: 1,
-          radius: AppRadii.rLg,
+          elevation: model.planTier == PlanTier.max ? 2 : 1,
+          radius: AppRadii.rXl,
+          border: _planBorder(model.planTier),
           child: ClipRRect(
-            borderRadius: AppRadii.rLg,
+            borderRadius: AppRadii.rXl,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _Hero(image: model.image, rating: model.rate),
+                _Hero(model: model),
                 Padding(
-                  padding: EdgeInsets.all(AppSpacing.lg.w),
+                  padding: EdgeInsets.fromLTRB(
+                    AppSpacing.lg.w,
+                    AppSpacing.md.h,
+                    AppSpacing.lg.w,
+                    AppSpacing.lg.h,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _CategoryPill(
-                        label: model.suggestionText,
-                        icon: model.icon,
-                        color: model.color,
-                      ),
-                      gapV(AppSpacing.md),
                       Text(
                         model.text,
-                        style: AppText.titleLg,
+                        style: AppText.titleLg.copyWith(
+                          fontWeight: FontWeight.w800,
+                          height: 1.3,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -67,9 +71,9 @@ class CustomSuggestionContainer extends StatelessWidget {
                         model.body,
                         style: AppText.bodySm.copyWith(
                           color: AppColor.textSecondary,
-                          height: 1.5,
+                          height: 1.4,
                         ),
-                        maxLines: 2,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       gapV(AppSpacing.sm),
@@ -88,16 +92,29 @@ class CustomSuggestionContainer extends StatelessWidget {
       ),
     );
   }
+
+  BoxBorder? _planBorder(PlanTier? tier) {
+    return switch (tier) {
+      PlanTier.pro => Border.all(
+          color: AppColor.primary.withValues(alpha: 0.24),
+          width: 1.2,
+        ),
+      PlanTier.max => Border.all(
+          color: AppColor.primary700.withValues(alpha: 0.36),
+          width: 1.4,
+        ),
+      _ => null,
+    };
+  }
 }
 
 // ---------------------------------------------------------------------------
 // Hero image with floating rating chip
 // ---------------------------------------------------------------------------
 class _Hero extends StatelessWidget {
-  const _Hero({required this.image, required this.rating});
+  const _Hero({required this.model});
 
-  final String image;
-  final dynamic rating;
+  final SuggestionItemModel model;
 
   @override
   Widget build(BuildContext context) {
@@ -106,7 +123,7 @@ class _Hero extends StatelessWidget {
         SizedBox(
           width: double.infinity,
           height: CustomSuggestionContainer._heroHeight.h,
-          child: _SmartImage(path: image),
+          child: _SmartImage(path: model.image),
         ),
         // Subtle gradient so the rating chip is readable on any image
         Positioned.fill(
@@ -128,9 +145,75 @@ class _Hero extends StatelessWidget {
         Positioned(
           top: AppSpacing.md.h,
           right: AppSpacing.md.w,
-          child: _RatingChip(rating: rating),
+          child: _RatingChip(rating: model.rate),
+        ),
+        if (model.planTier == PlanTier.pro || model.planTier == PlanTier.max)
+          Positioned(
+            top: AppSpacing.md.h,
+            left: AppSpacing.md.w,
+            child: _FeedPlanBadge(tier: model.planTier!),
+          ),
+        Positioned(
+          right: AppSpacing.md.w,
+          bottom: AppSpacing.md.h,
+          child: _CategoryPill(
+            label: model.suggestionText,
+            icon: model.icon,
+            color: model.color,
+          ),
         ),
       ],
+    );
+  }
+}
+
+class _FeedPlanBadge extends StatelessWidget {
+  const _FeedPlanBadge({required this.tier});
+
+  final PlanTier tier;
+
+  @override
+  Widget build(BuildContext context) {
+    final isMax = tier == PlanTier.max;
+    return Semantics(
+      label:
+          isMax ? AppCopy.placePlanMaxSemantic : AppCopy.placePlanProSemantic,
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm.w,
+          vertical: AppSpacing.xs.h,
+        ),
+        decoration: BoxDecoration(
+          color: AppColor.surfaceCard.withValues(alpha: 0.94),
+          borderRadius: AppRadii.rPill,
+          border: Border.all(
+            color: isMax
+                ? AppColor.primary700.withValues(alpha: 0.32)
+                : AppColor.primary.withValues(alpha: 0.24),
+          ),
+          boxShadow: AppShadows.level1,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isMax
+                  ? Icons.workspace_premium_rounded
+                  : Icons.auto_awesome_rounded,
+              size: 15.sp,
+              color: isMax ? AppColor.primary700 : AppColor.primary,
+            ),
+            gapH(AppSpacing.xs),
+            Text(
+              isMax ? AppCopy.placePlanMax : AppCopy.placePlanPro,
+              style: AppText.labelSm.copyWith(
+                color: isMax ? AppColor.primary700 : AppColor.primary,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -191,7 +274,8 @@ class _CategoryPill extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         borderRadius: AppRadii.rMd,
-        color: color.withValues(alpha: 0.92),
+        color: color.withValues(alpha: 0.94),
+        boxShadow: AppShadows.level1,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -318,6 +402,7 @@ class _SmartImage extends StatelessWidget {
     if (normalized.startsWith('http')) {
       return CachedNetworkImage(
         url: normalized,
+        width: double.infinity,
         height: CustomSuggestionContainer._heroHeight.h,
         fit: BoxFit.cover,
         placeholder: (_) => const _ImageLoadingPlaceholder(),

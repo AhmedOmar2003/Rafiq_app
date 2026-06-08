@@ -262,7 +262,7 @@ class _DetailsPageState extends State<DetailsPage> {
       body: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 760),
+          constraints: const BoxConstraints(maxWidth: 840),
           child: ListView(
             padding: EdgeInsets.fromLTRB(
               AppSpacing.lg.w,
