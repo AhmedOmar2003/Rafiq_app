@@ -17,7 +17,7 @@ import 'package:rafiq_app/service/user_role_store.dart';
 ///   │  Hero title + subtitle
 ///   │  Monthly / Yearly billing toggle (yearly highlights savings %)
 ///   │
-///   │  3 pricing cards in a Row on tablet+, stacked on mobile.
+///   │  Pricing cards stacked in one readable column.
 ///   │   • Current plan card → highlighted ring + "خطتك الحالية" chip.
 ///   │   • Recommended plan → tilted-up + accent ribbon.
 ///   │
@@ -29,8 +29,8 @@ import 'package:rafiq_app/service/user_role_store.dart';
 ///   * Catalog & entitlement both come from [SubscriptionService] (singleton
 ///     with TTL cache). The screen subscribes via [ValueListenableBuilder]
 ///     so a successful checkout immediately reflows the UI.
-///   * Upgrade CTA fires `startCheckout` and shows a soft success toast —
-///     the real entitlement flip happens after the webhook lands.
+///   * Upgrade CTA applies the current Beta entitlement through Supabase.
+///     Real payment checkout remains disabled until a gateway is connected.
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({
     super.key,
@@ -182,6 +182,37 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     return providerId;
   }
 
+  Future<void> _requestPlanDowngrade() async {
+    if (_busy) return;
+    final confirmed = await AppConfirmDialog.show(
+      context,
+      title: AppCopy.subDowngradeTitle,
+      message: AppCopy.subDowngradeMessage,
+      confirmLabel: AppCopy.subDowngradeConfirm,
+      cancelLabel: AppCopy.cancel,
+      tone: AppConfirmTone.danger,
+      icon: Icons.keyboard_return_rounded,
+    );
+    if (!confirmed || !mounted) return;
+
+    setState(() => _busy = true);
+    try {
+      final providerId = widget.providerId;
+      if (providerId == null || providerId.isEmpty) {
+        await SubscriptionService.instance.applyDemoFree();
+      } else {
+        await SubscriptionService.instance.cancelAtPeriodEnd(providerId);
+      }
+      if (!mounted) return;
+      AppFeedback.success(AppCopy.subDowngradeSuccess);
+    } catch (_) {
+      if (!mounted) return;
+      AppFeedback.error(AppCopy.subSaveFailed);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final headerTitle =
@@ -204,58 +235,49 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               // even when no provider id has been resolved yet. Demo upgrades
               // publish here too, which is why the UI reacts instantly to a
               // successful confirm.
-              return ListView(
-                padding: EdgeInsets.fromLTRB(
-                  AppSpacing.lg.w,
-                  AppSpacing.lg.h,
-                  AppSpacing.lg.w,
-                  AppSpacing.huge.h,
-                ),
-                children: [
-                  _Hero(onboarding: widget.onboarding),
-                  gapV(AppSpacing.lg),
-                  _ReviewExpectationCard(onboarding: widget.onboarding),
-                  gapV(AppSpacing.lg),
-                  _BillingToggle(
-                    yearly: _yearly,
-                    discountPct: _maxYearlyDiscount(plans),
-                    onChanged: (v) => setState(() => _yearly = v),
-                  ),
-                  gapV(AppSpacing.xl),
-                  ..._planCards(plans, ent),
-                  gapV(AppSpacing.xl),
-                  Text(
-                    AppCopy.subCompareTitle,
-                    style:
-                        AppText.titleLg.copyWith(fontWeight: FontWeight.w800),
-                    textAlign: TextAlign.start,
-                  ),
-                  gapV(AppSpacing.md),
-                  _ComparisonTable(plans: plans),
-                  if (ent.tier != PlanTier.free) ...[
-                    gapV(AppSpacing.huge),
-                    _ManageSection(
-                      entitlement: ent,
-                      onCancel: () async {
-                        // In demo mode just drop to Free locally. Once the
-                        // payment webhook is live, swap this for the real
-                        // `cancelAtPeriodEnd` call below.
-                        final providerId = widget.providerId;
-                        if (providerId != null) {
-                          try {
-                            await SubscriptionService.instance
-                                .cancelAtPeriodEnd(providerId);
-                          } catch (_) {
-                            await SubscriptionService.instance
-                                .applyDemoFree(providerId: providerId);
-                          }
-                        } else {
-                          await SubscriptionService.instance.applyDemoFree();
-                        }
-                      },
+              return Align(
+                alignment: Alignment.topCenter,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 760),
+                  child: ListView(
+                    padding: EdgeInsets.fromLTRB(
+                      AppSpacing.lg.w,
+                      AppSpacing.lg.h,
+                      AppSpacing.lg.w,
+                      AppSpacing.huge.h,
                     ),
-                  ],
-                ],
+                    children: [
+                      _Hero(onboarding: widget.onboarding),
+                      gapV(AppSpacing.lg),
+                      _ReviewExpectationCard(onboarding: widget.onboarding),
+                      gapV(AppSpacing.lg),
+                      _BillingToggle(
+                        yearly: _yearly,
+                        discountPct: _maxYearlyDiscount(plans),
+                        onChanged: (v) => setState(() => _yearly = v),
+                      ),
+                      gapV(AppSpacing.xl),
+                      ..._planCards(plans, ent),
+                      gapV(AppSpacing.xl),
+                      Text(
+                        AppCopy.subCompareTitle,
+                        style: AppText.titleLg.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                        textAlign: TextAlign.start,
+                      ),
+                      gapV(AppSpacing.md),
+                      _ComparisonTable(plans: plans),
+                      if (ent.tier != PlanTier.free) ...[
+                        gapV(AppSpacing.huge),
+                        _ManageSection(
+                          entitlement: ent,
+                          onCancel: _requestPlanDowngrade,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
               );
             },
           );

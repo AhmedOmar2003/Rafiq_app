@@ -68,6 +68,50 @@ void main() {
     expect(find.text(AppCopy.emptyFavoritesBody), findsOneWidget);
   });
 
+  testWidgets('profile remains usable on a narrow screen with large text',
+      (tester) async {
+    tester.view.physicalSize = const Size(320, 568);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      ScreenUtilInit(
+        designSize: const Size(390, 844),
+        minTextAdapt: true,
+        splitScreenMode: true,
+        builder: (_, __) => MaterialApp(
+          builder: (context, child) {
+            final media = MediaQuery.of(context);
+            return MediaQuery(
+              data: media.copyWith(
+                textScaler: const TextScaler.linear(1.3),
+              ),
+              child: child!,
+            );
+          },
+          home: const ProfilePage(enableRemoteBootstrap: false),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle(const Duration(milliseconds: 300));
+
+    expect(find.text(AppCopy.profileAccountSection), findsOneWidget);
+    expect(find.byIcon(Icons.camera_alt_rounded), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.drag(
+      find.byType(SingleChildScrollView),
+      const Offset(0, -900),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text(AppCopy.profileAppearanceSection), findsOneWidget);
+    expect(find.text(AppCopy.profileSupportSection), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('suggestions screen renders seeded cards', (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1.0;

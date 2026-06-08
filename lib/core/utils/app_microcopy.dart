@@ -215,6 +215,7 @@ class AppCopy {
   static const profileNameLabel = 'الاسم';
   static const profileEmailLabel = 'البريد الإلكتروني';
   static const profilePasswordLabel = 'كلمة السر';
+  static const profileAccountSection = 'حسابك';
   static const profileAppearanceSection = 'الوضوح والشكل';
   static const profileTextSizeLabel = 'حجم الخط';
   static const profileTextSizeHint = 'اختار الحجم اللي يريح عينك.';
@@ -243,8 +244,7 @@ class AppCopy {
   /// the prompt is for them, not a generic ad. The body explains the value
   /// in human terms; the CTA is short and warm ("يلا أبدأ").
   static const profileBannerInviteTitle = 'عندك مكان أو خدمة؟';
-  static const profileBannerInviteBody =
-      'اعرضها للناس، تابع المشاهدات، واعمل عروض من مكان واحد.';
+  static const profileBannerInviteBody = 'ضيفها وخلي الناس تقدر توصلك بسهولة.';
   static const profileBannerInviteCta = 'ابدأ كمقدم خدمة';
 
   /// Provider who switched to user mode — invite them back to their hub.
@@ -337,7 +337,12 @@ class AppCopy {
   static const subYearlyDiscount = 'وفّر %p%'; // %p replaced with discount pct
   static const subCurrent = 'خطتك الحالية';
   static const subRecommended = 'الأكثر اختياراً';
-  static const subCancelRenewal = 'إلغاء التجديد التلقائي';
+  static const subCancelRenewal = 'الرجوع للخطة المجانية';
+  static const subDowngradeTitle = 'ترجع للخطة المجانية؟';
+  static const subDowngradeMessage =
+      'مميزات خطتك الحالية هتتوقف، وتقدر تختار خطة تانية بعدين.';
+  static const subDowngradeConfirm = 'أيوه، ارجع للمجانية';
+  static const subDowngradeSuccess = 'رجعت للخطة المجانية.';
   static const subUpgrade = 'رقّي خطتك';
   static const subManage = 'إدارة الاشتراك';
   static const subFreeForever = 'مجاني للأبد';
@@ -653,6 +658,7 @@ class AppCopy {
   static const supportWhatsappMessage = 'مرحباً، أحتاج مساعدة في تطبيق رفيق.';
   static const supportEmailSubject = 'طلب مساعدة — رفيق';
   static const supportEmailBody = 'مرحباً،\n\nأحتاج مساعدة في...';
+  static const supportOpenError = 'معرفناش نفتح وسيلة التواصل. جرّب تاني.';
   static const supportPhone1 = '01036925982';
   static const supportPhone2 = '01050242285';
   static const supportEmail = 'ahmedessam.uiux@gmail.com';

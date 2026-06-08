@@ -6,6 +6,7 @@ import 'package:rafiq_app/view/pages/legal/privacy_policy_screen.dart';
 import 'package:rafiq_app/view/pages/legal/terms_screen.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -515,19 +516,30 @@ class _ProfilePageState extends State<ProfilePage> {
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
-          child: Column(
-            children: [
-              _ProfileHero(
-                name: userName,
-                email: userEmail,
-                child: _buildProfileImage(),
-              ),
-              gapV(AppSpacing.lg),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 680),
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  AppSpacing.lg.w,
+                  AppSpacing.md.h,
+                  AppSpacing.lg.w,
+                  AppSpacing.xxl.h,
+                ),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    _ProfileHero(
+                      name: userName,
+                      email: userEmail,
+                      child: _buildProfileImage(),
+                    ),
+                    gapV(AppSpacing.lg),
                     _buildRoleBanner(),
+                    const _ProfileSectionLabel(
+                      text: AppCopy.profileAccountSection,
+                    ),
+                    gapV(AppSpacing.sm),
                     _buildInfoSection(),
                     gapV(AppSpacing.lg),
                     _buildFavoritesSection(),
@@ -539,11 +551,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     _buildLogoutButton(),
                     gapV(AppSpacing.md),
                     _buildDeleteAccountButton(),
-                    gapV(AppSpacing.xxl),
                   ],
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -551,67 +562,80 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildProfileImage() {
-    return Container(
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: AppColor.black.withValues(alpha: 0.1),
-            blurRadius: 20,
-            spreadRadius: 5,
-          ),
-        ],
-      ),
-      child: Semantics(
-        button: true,
-        label: AppCopy.profileChangeAvatarHint,
-        child: GestureDetector(
-          onTap: _pickImage,
+    return Semantics(
+      button: true,
+      label: AppCopy.profileChangeAvatarHint,
+      child: Tooltip(
+        message: AppCopy.profileChangeAvatarHint,
+        child: InkWell(
+          onTap: _isAvatarSaving ? null : _pickImage,
+          customBorder: const CircleBorder(),
           child: ValueListenableBuilder<ProfileImageState>(
             valueListenable: ProfileImageStore.instance,
             builder: (_, snap, __) {
-              final ImageProvider provider = snap.bytes != null
-                  ? MemoryImage(snap.bytes!)
-                  : (snap.remoteUrl?.isNotEmpty ?? false)
-                      ? NetworkImage(snap.remoteUrl!)
-                      : snap.file != null
-                          ? FileImage(snap.file!)
-                          : const AssetImage(
-                              'assets/images/default_profile.webp',
-                            ) as ImageProvider;
-              return CircleAvatar(
-                radius: 54.w,
-                backgroundColor: AppColor.surfaceCard,
-                child: CircleAvatar(
-                  radius: 51.w,
-                  backgroundImage: provider,
-                  child: _isAvatarSaving
-                      ? Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: AppColor.black.withValues(alpha: 0.42),
+              return Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: 108.w,
+                    height: 108.w,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColor.surfaceCard,
+                      border: Border.all(
+                        color: AppColor.white.withValues(alpha: 0.75),
+                        width: 3,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColor.black.withValues(alpha: 0.12),
+                          blurRadius: 20,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: ClipOval(
+                      child: _ProfileAvatarImage(state: snap),
+                    ),
+                  ),
+                  if (_isAvatarSaving)
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColor.black.withValues(alpha: 0.42),
+                        ),
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                            color: AppColor.white,
+                            strokeWidth: 2.5,
                           ),
-                          child: const Center(
-                            child: CircularProgressIndicator(
-                              color: AppColor.white,
-                              strokeWidth: 2.5,
-                            ),
-                          ),
-                        )
-                      : snap.hasImage
-                          ? null
-                          : Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: AppColor.black.withValues(alpha: 0.4),
-                              ),
-                              child: Icon(
-                                Icons.camera_alt_rounded,
-                                color: AppColor.white,
-                                size: 28.w,
-                              ),
-                            ),
-                ),
+                        ),
+                      ),
+                    ),
+                  PositionedDirectional(
+                    end: -2.w,
+                    bottom: 2.h,
+                    child: Container(
+                      width: 36.w,
+                      height: 36.w,
+                      decoration: BoxDecoration(
+                        color: AppColor.surfaceCard,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColor.primary,
+                          width: 2,
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.camera_alt_rounded,
+                        color: AppColor.primary,
+                        size: 18.sp,
+                      ),
+                    ),
+                  ),
+                ],
               );
             },
           ),
@@ -655,7 +679,7 @@ class _ProfilePageState extends State<ProfilePage> {
           // Returning provider — bring them home.
           final isMulti = _myPlacesCount > 1;
           return Padding(
-            padding: EdgeInsets.only(bottom: AppSpacing.xl.h),
+            padding: EdgeInsets.only(bottom: AppSpacing.lg.h),
             child: _RoleBanner(
               tone: _RoleBannerTone.warm,
               icon: Icons.storefront_rounded,
@@ -673,7 +697,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
         // First-time invite — make it look like a brand ad.
         return Padding(
-          padding: EdgeInsets.only(bottom: AppSpacing.xl.h),
+          padding: EdgeInsets.only(bottom: AppSpacing.lg.h),
           child: _RoleBanner(
             tone: _RoleBannerTone.brand,
             icon: Icons.rocket_launch_rounded,
@@ -784,67 +808,90 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _buildAppearanceSection() {
     return AppCard(
-      padding: EdgeInsets.all(AppSpacing.md.w),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
+      padding: EdgeInsets.zero,
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          maintainState: true,
+          tilePadding: EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg.w,
+            vertical: AppSpacing.sm.h,
+          ),
+          childrenPadding: EdgeInsets.fromLTRB(
+            AppSpacing.lg.w,
+            0,
+            AppSpacing.lg.w,
+            AppSpacing.lg.h,
+          ),
+          leading: const _ProfileSectionIcon(
+            icon: Icons.text_fields_rounded,
+          ),
+          title: Text(
             AppCopy.profileAppearanceSection,
             style: AppText.titleMd.copyWith(fontWeight: FontWeight.w800),
           ),
-          gapV(AppSpacing.md),
-          ValueListenableBuilder<double>(
-            valueListenable: AccessibilityPreferences.instance.textScale,
-            builder: (_, scale, __) {
-              final options = <(double, String)>[
-                (0.95, AppCopy.profileTextSizeSmall),
-                (1.10, AppCopy.profileTextSizeMedium),
-                (1.25, AppCopy.profileTextSizeLarge),
-              ];
-              return Wrap(
-                spacing: AppSpacing.sm.w,
-                runSpacing: AppSpacing.sm.h,
-                children: options.map((option) {
-                  final isSelected = (scale - option.$1).abs() < 0.01;
-                  return Semantics(
-                    button: true,
-                    selected: isSelected,
-                    label: '${AppCopy.profileTextSizeLabel} ${option.$2}',
-                    child: InkWell(
-                      onTap: () => AccessibilityPreferences.instance
-                          .setTextScale(option.$1),
-                      borderRadius: AppRadii.rPill,
-                      child: Ink(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md.w,
-                          vertical: AppSpacing.sm.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color:
-                              isSelected ? AppColor.primary : AppColor.surface,
-                          borderRadius: AppRadii.rPill,
-                          border: Border.all(
-                            color:
-                                isSelected ? AppColor.primary : AppColor.border,
+          subtitle: Text(
+            AppCopy.profileTextSizeHint,
+            style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
+          ),
+          children: [
+            const Divider(height: 1, color: AppColor.border),
+            gapV(AppSpacing.md),
+            ValueListenableBuilder<double>(
+              valueListenable: AccessibilityPreferences.instance.textScale,
+              builder: (_, scale, __) {
+                final options = <(double, String)>[
+                  (0.95, AppCopy.profileTextSizeSmall),
+                  (1.10, AppCopy.profileTextSizeMedium),
+                  (1.25, AppCopy.profileTextSizeLarge),
+                ];
+                return Wrap(
+                  spacing: AppSpacing.sm.w,
+                  runSpacing: AppSpacing.sm.h,
+                  children: options.map((option) {
+                    final isSelected = (scale - option.$1).abs() < 0.01;
+                    return Semantics(
+                      button: true,
+                      selected: isSelected,
+                      label: '${AppCopy.profileTextSizeLabel} ${option.$2}',
+                      child: InkWell(
+                        onTap: () => AccessibilityPreferences.instance
+                            .setTextScale(option.$1),
+                        borderRadius: AppRadii.rPill,
+                        child: Ink(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md.w,
+                            vertical: AppSpacing.sm.h,
                           ),
-                        ),
-                        child: Text(
-                          option.$2,
-                          style: AppText.labelMd.copyWith(
+                          decoration: BoxDecoration(
                             color: isSelected
-                                ? AppColor.white
-                                : AppColor.textPrimary,
-                            fontWeight: FontWeight.w700,
+                                ? AppColor.primary
+                                : AppColor.surface,
+                            borderRadius: AppRadii.rPill,
+                            border: Border.all(
+                              color: isSelected
+                                  ? AppColor.primary
+                                  : AppColor.border,
+                            ),
+                          ),
+                          child: Text(
+                            option.$2,
+                            style: AppText.labelMd.copyWith(
+                              color: isSelected
+                                  ? AppColor.white
+                                  : AppColor.textPrimary,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  );
-                }).toList(),
-              );
-            },
-          ),
-        ],
+                    );
+                  }).toList(),
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -937,24 +984,23 @@ class _ProfilePageState extends State<ProfilePage> {
             message: AppCopy.logoutMessage,
             confirmLabel: AppCopy.logoutConfirm,
             cancelLabel: AppCopy.cancel,
-            tone: AppConfirmTone.danger,
             icon: Icons.logout_rounded,
           );
           if (!mounted) return;
           if (confirmed) await _handleLogoutConfirmedDirect();
         },
-        icon: Icon(Icons.logout_rounded, color: AppColor.error, size: 22.sp),
+        icon: Icon(Icons.logout_rounded, color: AppColor.primary, size: 22.sp),
         label: Text(
           AppCopy.logoutCta,
           style: AppText.titleMd.copyWith(
-            color: AppColor.error,
+            color: AppColor.textPrimary,
             fontWeight: FontWeight.w600,
           ),
         ),
         style: OutlinedButton.styleFrom(
           minimumSize: Size.fromHeight(52.h),
           backgroundColor: AppColor.surfaceCard,
-          side: const BorderSide(color: AppColor.error, width: 1.5),
+          side: const BorderSide(color: AppColor.border),
           shape: RoundedRectangleBorder(borderRadius: AppRadii.rMd),
         ),
       ),
@@ -1001,18 +1047,32 @@ class _ProfilePageState extends State<ProfilePage> {
 class _SupportSection extends StatelessWidget {
   const _SupportSection();
 
-  Future<void> _launch(String url) async {
-    final uri = Uri.parse(url);
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  Future<void> _launch(BuildContext context, String url) async {
+    try {
+      final opened = await launchUrl(
+        Uri.parse(url),
+        mode: LaunchMode.externalApplication,
+      );
+      if (!opened && context.mounted) {
+        AppFeedback.error(AppCopy.supportOpenError);
+      }
+    } on FormatException {
+      if (context.mounted) AppFeedback.error(AppCopy.supportOpenError);
+    } on PlatformException {
+      if (context.mounted) AppFeedback.error(AppCopy.supportOpenError);
+    }
   }
 
-  void _call(String phone) => _launch('tel:$phone');
+  void _call(BuildContext context, String phone) =>
+      _launch(context, 'tel:$phone');
 
-  void _whatsapp(String phone, String message) => _launch(
+  void _whatsapp(BuildContext context, String phone, String message) => _launch(
+        context,
         'https://wa.me/2$phone?text=${Uri.encodeComponent(message)}',
       );
 
-  void _email() => _launch(
+  void _email(BuildContext context) => _launch(
+        context,
         'mailto:${AppCopy.supportEmail}'
         '?subject=${Uri.encodeComponent(AppCopy.supportEmailSubject)}'
         '&body=${Uri.encodeComponent(AppCopy.supportEmailBody)}',
@@ -1087,7 +1147,7 @@ class _SupportSection extends StatelessWidget {
               icon: Icons.phone_outlined,
               label: AppCopy.supportCallLabel,
               trailing: AppCopy.supportPhone1,
-              onTap: () => _call(AppCopy.supportPhone1),
+              onTap: () => _call(context, AppCopy.supportPhone1),
             ),
             const _Hairline(),
             _SupportRow(
@@ -1095,6 +1155,7 @@ class _SupportSection extends StatelessWidget {
               label: AppCopy.supportWhatsappLabel,
               trailing: AppCopy.supportPhone2,
               onTap: () => _whatsapp(
+                context,
                 AppCopy.supportPhone2,
                 AppCopy.supportWhatsappMessage,
               ),
@@ -1104,7 +1165,7 @@ class _SupportSection extends StatelessWidget {
               icon: Icons.email_outlined,
               label: AppCopy.supportEmailLabel,
               trailing: AppCopy.supportEmail,
-              onTap: _email,
+              onTap: () => _email(context),
             ),
           ],
         ),
@@ -1344,10 +1405,12 @@ class _FavoritePlaceRow extends StatelessWidget {
                 height: 68.w,
                 child:
                     place.imageUrl != null && place.imageUrl!.trim().isNotEmpty
-                        ? Image.network(
-                            place.imageUrl!,
+                        ? CachedNetworkImage(
+                            url: place.imageUrl!,
+                            width: 68.w,
+                            height: 68.w,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => _favoriteFallback(),
+                            errorWidget: (_) => _favoriteFallback(),
                           )
                         : _favoriteFallback(),
               ),
@@ -1388,7 +1451,7 @@ class _FavoritePlaceRow extends StatelessWidget {
               onPressed: onRemove,
               tooltip: 'إزالة ${place.name} من المفضلة',
               icon: Icon(
-                Icons.delete_outline_rounded,
+                Icons.favorite_border_rounded,
                 size: 22.sp,
                 color: AppColor.error,
               ),
@@ -1492,10 +1555,10 @@ class _SupportRow extends StatelessWidget {
                       textDirection: TextDirection.ltr,
                       child: Text(
                         trailing!,
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.end,
-                        style: AppText.caption.copyWith(
+                        style: AppText.bodySm.copyWith(
                           color: AppColor.textSecondary,
                           fontWeight: FontWeight.w600,
                         ),
@@ -1516,6 +1579,91 @@ class _SupportRow extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ProfileSectionLabel extends StatelessWidget {
+  const _ProfileSectionLabel({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: AppText.labelMd.copyWith(
+        color: AppColor.textSecondary,
+        fontWeight: FontWeight.w800,
+      ),
+    );
+  }
+}
+
+class _ProfileSectionIcon extends StatelessWidget {
+  const _ProfileSectionIcon({required this.icon});
+
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 40.w,
+      height: 40.w,
+      decoration: BoxDecoration(
+        color: AppColor.primary.withValues(alpha: 0.08),
+        borderRadius: AppRadii.rMd,
+      ),
+      child: Icon(icon, color: AppColor.primary, size: 20.sp),
+    );
+  }
+}
+
+class _ProfileAvatarImage extends StatelessWidget {
+  const _ProfileAvatarImage({required this.state});
+
+  final ProfileImageState state;
+
+  @override
+  Widget build(BuildContext context) {
+    if (state.bytes != null) {
+      return Image.memory(
+        state.bytes!,
+        width: double.infinity,
+        height: double.infinity,
+        fit: BoxFit.cover,
+        gaplessPlayback: true,
+      );
+    }
+    if (state.remoteUrl?.trim().isNotEmpty ?? false) {
+      return CachedNetworkImage(
+        url: state.remoteUrl!,
+        width: double.infinity,
+        height: double.infinity,
+        fit: BoxFit.cover,
+        placeholder: (_) => const ColoredBox(color: AppColor.surfaceVariant),
+        errorWidget: (_) => _defaultAvatar(),
+      );
+    }
+    if (state.file != null) {
+      return Image.file(
+        state.file!,
+        width: double.infinity,
+        height: double.infinity,
+        fit: BoxFit.cover,
+        gaplessPlayback: true,
+        errorBuilder: (_, __, ___) => _defaultAvatar(),
+      );
+    }
+    return _defaultAvatar();
+  }
+
+  Widget _defaultAvatar() {
+    return Image.asset(
+      'assets/images/default_profile.webp',
+      width: double.infinity,
+      height: double.infinity,
+      fit: BoxFit.cover,
     );
   }
 }
@@ -1546,7 +1694,7 @@ class _ProfileHero extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: AppColor.primary,
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(24.r)),
+        borderRadius: AppRadii.rXl,
       ),
       child: Column(
         children: [
@@ -1721,7 +1869,7 @@ class _RoleBanner extends StatelessWidget {
               padding: EdgeInsets.all(AppSpacing.lg.w),
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final compact = constraints.maxWidth < 330.w;
+                  final compact = constraints.maxWidth < 360;
                   final iconBox = Container(
                     width: 48.w,
                     height: 48.w,
@@ -1760,6 +1908,10 @@ class _RoleBanner extends StatelessWidget {
                       ),
                       gapV(AppSpacing.sm),
                       Container(
+                        constraints: BoxConstraints(
+                          minHeight: 44.h,
+                          maxWidth: constraints.maxWidth,
+                        ),
                         padding: EdgeInsets.symmetric(
                           horizontal: AppSpacing.md.w,
                           vertical: AppSpacing.sm.h,
@@ -1768,18 +1920,22 @@ class _RoleBanner extends StatelessWidget {
                           color: isBrand ? AppColor.white : AppColor.primary,
                           borderRadius: AppRadii.rPill,
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                        child: Wrap(
+                          alignment: WrapAlignment.center,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: AppSpacing.xs.w,
                           children: [
                             Text(
                               cta,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
                               style: AppText.labelMd.copyWith(
                                 color:
                                     isBrand ? AppColor.primary : AppColor.white,
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
-                            gapH(AppSpacing.xs),
                             Icon(
                               Icons.arrow_back_ios_new_rounded,
                               size: 12.sp,

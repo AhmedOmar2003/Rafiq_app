@@ -259,44 +259,50 @@ class _DetailsPageState extends State<DetailsPage> {
           ),
         ],
       ),
-      body: ListView(
-        padding: EdgeInsets.fromLTRB(
-          AppSpacing.lg.w,
-          AppSpacing.lg.h,
-          AppSpacing.lg.w,
-          AppSpacing.huge.h,
+      body: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 760),
+          child: ListView(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.lg.w,
+              AppSpacing.lg.h,
+              AppSpacing.lg.w,
+              AppSpacing.huge.h,
+            ),
+            children: [
+              _DetailsSection(
+                model: currentModel,
+                galleryImages: galleryImages,
+                isLoading: _isGalleryLoading,
+                onMapOpen: _onMapOpen,
+              ),
+              if (_campaigns.isNotEmpty) ...[
+                gapV(AppSpacing.xl),
+                _CampaignsSection(campaigns: _campaigns),
+              ],
+              if (currentModel.body.trim().isNotEmpty) ...[
+                gapV(AppSpacing.xl),
+                _DescriptionSection(description: currentModel.body),
+              ],
+              gapV(AppSpacing.xxl),
+              _ReviewsSection(
+                placeId: currentModel.placeId,
+                isLoading: _isReviewLoading && lastEvaluation == null,
+                lastEvaluation: lastEvaluation,
+                onOpenAll: _openEvaluationsPage,
+              ),
+              gapV(AppSpacing.xxl),
+              if (filteredSuggestions.isNotEmpty)
+                _SimilarSection(
+                  items: filteredSuggestions,
+                  onItemSelected: updateModel,
+                )
+              else
+                const _NoSimilarSection(),
+            ],
+          ),
         ),
-        children: [
-          _DetailsSection(
-            model: currentModel,
-            galleryImages: galleryImages,
-            isLoading: _isGalleryLoading,
-            onMapOpen: _onMapOpen,
-          ),
-          if (_campaigns.isNotEmpty) ...[
-            gapV(AppSpacing.xl),
-            _CampaignsSection(campaigns: _campaigns),
-          ],
-          if (currentModel.body.trim().isNotEmpty) ...[
-            gapV(AppSpacing.xl),
-            _DescriptionSection(description: currentModel.body),
-          ],
-          gapV(AppSpacing.xxl),
-          _ReviewsSection(
-            placeId: currentModel.placeId,
-            isLoading: _isReviewLoading && lastEvaluation == null,
-            lastEvaluation: lastEvaluation,
-            onOpenAll: _openEvaluationsPage,
-          ),
-          gapV(AppSpacing.xxl),
-          if (filteredSuggestions.isNotEmpty)
-            _SimilarSection(
-              items: filteredSuggestions,
-              onItemSelected: updateModel,
-            )
-          else
-            const _NoSimilarSection(),
-        ],
       ),
     );
   }
