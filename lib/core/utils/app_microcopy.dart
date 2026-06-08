@@ -45,7 +45,8 @@ class AppCopy {
   static const emailInvalid = 'راجع الإيميل كده';
   static const emailGmailOnly = 'لازم يكون بريد @gmail.com';
   static const passwordRequired = 'اكتب كلمة السر';
-  static const passwordShort = 'كلمة السر قصيّرة شوية، خليها 6 حروف على الأقل';
+  static const passwordShort =
+      'استخدم 8 حروف على الأقل: حرف كبير، حرف صغير، رقم ورمز';
   static const passwordsMismatch = 'الكلمتين مش زي بعض، راجعهم';
 
   // --- Actions / buttons -------------------------------------------------------
@@ -270,8 +271,8 @@ class AppCopy {
   static const authEmailLabel = 'البريد الإلكتروني';
   static const authEmailHint = 'example@gmail.com';
   static const authPasswordLabel = 'كلمة السر';
-  static const authPasswordHint = '6 حروف على الأقل';
-  static const authPasswordHelper = 'اكتب كلمة السر وكمل.';
+  static const authPasswordHint = 'مثال: Ahmed11#';
+  static const authPasswordHelper = 'اكتب كلمة السر اللي سجلت بيها.';
   static const authForgotPasswordLink = 'نسيت كلمة السر؟';
 
   // --- Login -------------------------------------------------------------------
@@ -293,8 +294,8 @@ class AppCopy {
   static const registerHasAccountPrefix = 'عندك حساب بالفعل؟ ';
   static const registerGoToLogin = 'سجّل دخول';
   static const registerSubtitle = 'خطوة صغيرة ونبدأ.';
-  static const registerPasswordHelper = 'لازم 6 حروف أو أكتر.';
-  static const registerPasswordTip = 'يفضل تبقى قوية وسهلة تفتكرها.';
+  static const registerPasswordHelper = 'مثال قوي: Ahmed11#';
+  static const registerPasswordTip = 'اختار كلمة مختلفة عن أي حساب تاني.';
 
   // --- Forgot password ---------------------------------------------------------
   static const forgotTitle = 'نسيت كلمة السر؟';

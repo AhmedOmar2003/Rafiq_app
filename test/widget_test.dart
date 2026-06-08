@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:rafiq_app/core/security/password_policy.dart';
 import 'package:rafiq_app/service/auth_service.dart';
 import 'package:rafiq_app/service/api_service.dart';
 
@@ -8,6 +9,10 @@ void main() {
     expect(AuthService.isGmailEmail('user@yahoo.com'), isFalse);
     expect(AuthService.isStrongPassword('Aa1!aaaa'), isTrue);
     expect(AuthService.isStrongPassword('weakpass'), isFalse);
+    expect(PasswordPolicy.isStrong('Ahmed11#'), isTrue);
+    expect(PasswordPolicy.isStrong('ahmed11#'), isFalse);
+    expect(PasswordPolicy.isStrong('Ahmed###'), isFalse);
+    expect(PasswordPolicy.isStrong('Ahmed111'), isFalse);
   });
 
   test('Account mode resolution keeps new users unchosen', () {
@@ -34,7 +39,8 @@ void main() {
     expect(snapshot.providerId, 'provider-123');
   });
 
-  test('Provider history without backend choice stays unchosen until user decides',
+  test(
+      'Provider history without backend choice stays unchosen until user decides',
       () {
     final snapshot = ApiService.resolveAccountMode(
       accountMode: null,

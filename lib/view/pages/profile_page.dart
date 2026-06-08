@@ -15,6 +15,7 @@ import 'package:rafiq_app/core/design/tokens/tokens.dart';
 
 import '../../auth/login/login_screen.dart';
 import '../../core/design/components/components.dart';
+import '../../core/security/password_policy.dart';
 import '../../core/utils/app_microcopy.dart';
 import '../../core/utils/app_error_formatter.dart';
 import '../../model/place.dart';
@@ -411,6 +412,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           hintText: AppCopy.authPasswordHint,
                           controller: currentPasswordController,
                           isPassword: true,
+                          type: TextInputType.visiblePassword,
                           textInputAction: TextInputAction.next,
                           prefixIcon: const Icon(Icons.lock_outline,
                               color: AppColor.primary),
@@ -423,18 +425,24 @@ class _ProfilePageState extends State<ProfilePage> {
                           hintText: AppCopy.authPasswordHint,
                           controller: newPasswordController,
                           isPassword: true,
+                          type: TextInputType.visiblePassword,
+                          helperText: AppCopy.registerPasswordHelper,
                           textInputAction: TextInputAction.next,
                           prefixIcon: const Icon(Icons.lock_outline,
                               color: AppColor.primary),
-                          validator: (v) => (v == null || v.isEmpty)
-                              ? AppCopy.passwordRequired
-                              : null,
+                          onChanged: (_) => setState(() {}),
+                          validator: PasswordPolicy.validateNewPassword,
                         ),
+                        PasswordRequirements(
+                          password: newPasswordController.text,
+                        ),
+                        gapV(AppSpacing.md),
                         AppInput(
                           label: AppCopy.changePwConfirm,
                           hintText: AppCopy.resetConfirmHint,
                           controller: confirmPasswordController,
                           isPassword: true,
+                          type: TextInputType.visiblePassword,
                           textInputAction: TextInputAction.done,
                           onFieldSubmitted: (_) => changePassword(),
                           prefixIcon: const Icon(Icons.lock_outline,

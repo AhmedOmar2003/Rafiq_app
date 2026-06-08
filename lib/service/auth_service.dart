@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:rafiq_app/core/config/supabase_config.dart';
+import 'package:rafiq_app/core/security/password_policy.dart';
 import 'package:rafiq_app/model/user_model.dart';
 import 'package:rafiq_app/service/api_service.dart';
 
@@ -35,13 +36,11 @@ class AuthService {
   }
 
   static bool isStrongPassword(String password) {
-    return RegExp(
-      r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[#?!@$%^&*\-_.])[A-Za-z\d#?!@$%^&*\-_.]{8,}$',
-    ).hasMatch(password);
+    return PasswordPolicy.isStrong(password);
   }
 
   static String passwordRequirementMessage() {
-    return 'كلمة المرور يجب أن تكون 8 أحرف على الأقل وتحتوي على حرف كبير وحرف صغير ورقم ورمز.';
+    return PasswordPolicy.requirementMessage;
   }
 
   String _friendlyAuthError(Object error) {
@@ -71,6 +70,11 @@ class AuthService {
     }
     if (message.contains('user_not_found')) {
       return 'لا يوجد حساب مرتبط بهذا البريد الإلكتروني.';
+    }
+    if (message.contains('weak_password') ||
+        message.contains('Password should contain') ||
+        message.contains('password should contain')) {
+      return passwordRequirementMessage();
     }
     if (message.contains('Developer console is not set up correctly') ||
         message.contains('clientConfigurationError') ||

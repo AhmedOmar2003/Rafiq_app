@@ -17,6 +17,7 @@ export 'app_skeleton.dart';
 export 'app_state_view.dart';
 export 'app_success_view.dart';
 export 'plan_badge.dart';
+export 'password_requirements.dart';
 export 'profile_pill.dart';
 export 'package:rafiq_app/core/design/app_button.dart';
 export 'package:rafiq_app/core/design/app_input.dart';

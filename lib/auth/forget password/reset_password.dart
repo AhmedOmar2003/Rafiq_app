@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rafiq_app/auth/login/login_screen.dart';
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
+import 'package:rafiq_app/core/security/password_policy.dart';
 import 'package:rafiq_app/core/utils/app_microcopy.dart';
 import 'package:rafiq_app/service/auth_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -28,6 +29,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   final _confirmPasswordController = TextEditingController();
   bool _isProcessing = false;
   bool _showSuccessOverlay = false;
+  String _password = '';
 
   @override
   void dispose() {
@@ -152,17 +154,14 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                       controller: _passwordController,
                       textInputAction: TextInputAction.next,
                       isPassword: true,
+                      type: TextInputType.visiblePassword,
+                      helperText: AppCopy.registerPasswordHelper,
+                      onChanged: (value) => setState(() => _password = value),
                       paddingBottom: AppSpacing.md,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return AppCopy.passwordRequired;
-                        }
-                        if (!AuthService.isStrongPassword(value)) {
-                          return AppCopy.passwordShort;
-                        }
-                        return null;
-                      },
+                      validator: PasswordPolicy.validateNewPassword,
                     ),
+                    PasswordRequirements(password: _password),
+                    gapV(AppSpacing.md),
                     AppInput(
                       label: AppCopy.changePwConfirm,
                       hintText: AppCopy.resetConfirmHint,

@@ -204,6 +204,7 @@ class _LoginScreenState extends State<LoginScreen> {
       helperText: AppCopy.authPasswordHelper,
       autofillHints: const [AutofillHints.password],
       isPassword: true,
+      type: TextInputType.visiblePassword,
       textInputAction: TextInputAction.done,
       onFieldSubmitted: (_) => _handleLogin(),
       validator: (value) =>

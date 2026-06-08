@@ -4,6 +4,7 @@ import 'package:rafiq_app/auth/login/login_screen.dart';
 import 'package:rafiq_app/core/design/app_image.dart';
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
+import 'package:rafiq_app/core/security/password_policy.dart';
 import 'package:rafiq_app/core/utils/app_error_formatter.dart';
 import 'package:rafiq_app/core/utils/app_microcopy.dart';
 import 'package:rafiq_app/core/utils/assets.dart';
@@ -24,6 +25,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final passwordController = TextEditingController();
   bool _isLoading = false;
   bool _showSuccessOverlay = false;
+  String _password = '';
 
   @override
   void dispose() {
@@ -211,22 +213,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
       helperText: AppCopy.registerPasswordHelper,
       autofillHints: const [AutofillHints.newPassword],
       isPassword: true,
+      type: TextInputType.visiblePassword,
       textInputAction: TextInputAction.done,
+      onChanged: (value) => setState(() => _password = value),
       onFieldSubmitted: (_) => _handleRegister(),
-      validator: (value) {
-        if (value == null || value.isEmpty) return AppCopy.passwordRequired;
-        if (!AuthService.isStrongPassword(value)) return AppCopy.passwordShort;
-        return null;
-      },
+      validator: PasswordPolicy.validateNewPassword,
     );
   }
 
   Widget _buildPasswordRules() {
     return Padding(
       padding: EdgeInsets.only(top: AppSpacing.xs.h, bottom: AppSpacing.sm.h),
-      child: Text(
-        AppCopy.registerPasswordTip,
-        style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          PasswordRequirements(password: _password),
+          gapV(AppSpacing.sm),
+          Text(
+            AppCopy.registerPasswordTip,
+            style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
+          ),
+        ],
       ),
     );
   }

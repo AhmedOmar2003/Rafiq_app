@@ -104,6 +104,8 @@ class _AppInputState extends State<AppInput> {
               enabled: widget.enabled,
               autofillHints: widget.autofillHints,
               keyboardType: widget.type,
+              autocorrect: !widget.isPassword,
+              enableSuggestions: !widget.isPassword,
               readOnly: widget.readOnly,
               onTap: widget.onTap,
               obscureText: _obscure && widget.isPassword,
