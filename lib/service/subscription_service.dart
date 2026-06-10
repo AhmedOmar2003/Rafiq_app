@@ -283,6 +283,15 @@ class SubscriptionService {
     }
   }
 
+  Future<void> clearLocalState() async {
+    _entitlementInFlight = null;
+    _entitlementFetchedAt = null;
+    _entitlementProviderId = null;
+    _persistedRestored = false;
+    entitlement.value = ProviderEntitlement.freeFallback;
+    await _clearDemoTier();
+  }
+
   /// Restore a previously persisted demo upgrade. Idempotent — safe to call
   /// at every app start. Resolves immediately if the catalog isn't loaded
   /// yet (Free fallback stays until the catalog arrives, then this is

@@ -228,7 +228,6 @@ class AppCopy {
   static const profileTextSizeMedium = 'أوضح';
   static const profileTextSizeLarge = 'كبير';
   static const profileChangeAvatarHint = 'دوس عشان تغيّر الصورة';
-  static const profileImageSaveError = 'معرفناش نحفظ الصورة، جرّب تاني.';
   static const profileSwitchToProvider = 'حوّل لمقدم خدمة';
   static const profileSwitchToProviderValue = 'افتح خطط الاشتراك وأضف مكانك';
   static const profileSwitchToUser = 'تصفح كمستخدم عادي';
@@ -634,8 +633,6 @@ class AppCopy {
   static const deleteAccountBodyProviderPaidSuffix =
       '. الاشتراك ده هيتلغى تلقائياً. حسابك ومكانك وكل بياناتك هيتمسحوا للأبد. الإجراء ده مفيش رجوع منه.';
   static const deleteAccountSuccess = 'اتمسح حسابك بنجاح.';
-  static const deleteAccountError =
-      'معرفناش نمسح حسابك دلوقتي، جرّب تاني بعد شوية.';
   static const deleteAccountReasonHint = 'لو حابب تقولنا السبب (اختياري)';
 
   // --- Change password dialog --------------------------------------------------

@@ -229,9 +229,9 @@ class _ProfilePageState extends State<ProfilePage> {
       );
       if (!mounted) return;
       AppFeedback.success('صورتك اتحفظت.');
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
-      AppFeedback.error(AppCopy.profileImageSaveError);
+      AppFeedback.error(AppErrorFormatter.userMessage(error));
     } finally {
       if (mounted) setState(() => _isAvatarSaving = false);
     }
@@ -264,16 +264,16 @@ class _ProfilePageState extends State<ProfilePage> {
       // After the RPC the auth row is gone — drop every client-side
       // singleton so a fresh signup starts from zero.
       await UserRoleStore.instance.clear();
-      await SubscriptionService.instance.applyDemoFree();
+      await SubscriptionService.instance.clearLocalState();
       if (!mounted) return;
       AppFeedback.success(AppCopy.deleteAccountSuccess);
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const LoginScreen()),
         (_) => false,
       );
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
-      AppFeedback.error(AppCopy.deleteAccountError);
+      AppFeedback.error(AppErrorFormatter.userMessage(error));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -422,11 +422,10 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                         AppInput(
                           label: AppCopy.changePwNew,
-                          hintText: AppCopy.authPasswordHint,
+                          hintText: '8+، حرف كبير وصغير، رقم ورمز',
                           controller: newPasswordController,
                           isPassword: true,
                           type: TextInputType.visiblePassword,
-                          helperText: AppCopy.registerPasswordHelper,
                           textInputAction: TextInputAction.next,
                           prefixIcon: const Icon(Icons.lock_outline,
                               color: AppColor.primary),
@@ -1916,6 +1915,7 @@ class _RoleBanner extends StatelessWidget {
                       ),
                       gapV(AppSpacing.sm),
                       Container(
+                        width: double.infinity,
                         constraints: BoxConstraints(
                           minHeight: 44.h,
                           maxWidth: constraints.maxWidth,
@@ -1928,22 +1928,25 @@ class _RoleBanner extends StatelessWidget {
                           color: isBrand ? AppColor.white : AppColor.primary,
                           borderRadius: AppRadii.rPill,
                         ),
-                        child: Wrap(
-                          alignment: WrapAlignment.center,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: AppSpacing.xs.w,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.max,
                           children: [
-                            Text(
-                              cta,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                              style: AppText.labelMd.copyWith(
-                                color:
-                                    isBrand ? AppColor.primary : AppColor.white,
-                                fontWeight: FontWeight.w800,
+                            Flexible(
+                              child: Text(
+                                cta,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                                style: AppText.labelMd.copyWith(
+                                  color: isBrand
+                                      ? AppColor.primary
+                                      : AppColor.white,
+                                  fontWeight: FontWeight.w800,
+                                ),
                               ),
                             ),
+                            gapH(AppSpacing.xs),
                             Icon(
                               Icons.arrow_back_ios_new_rounded,
                               size: 12.sp,

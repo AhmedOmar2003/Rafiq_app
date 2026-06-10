@@ -14,6 +14,8 @@ class PasswordRequirements extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (password.isEmpty) return const SizedBox.shrink();
+
     final requirements = [
       ('8 حروف أو أكتر', PasswordPolicy.hasMinimumLength(password)),
       (

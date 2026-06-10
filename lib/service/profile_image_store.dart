@@ -119,22 +119,41 @@ class ProfileImageStore extends ValueNotifier<ProfileImageState> {
     }
 
     final storagePath = '${user.id}/avatar';
-    await client.storage.from('avatars').uploadBinary(
-          storagePath,
-          bytes,
-          fileOptions: FileOptions(
-            upsert: true,
-            contentType: contentType,
-            cacheControl: '3600',
-          ),
-        );
+    final avatars = client.storage.from('avatars');
+    await avatars.uploadBinary(
+      storagePath,
+      bytes,
+      fileOptions: FileOptions(
+        upsert: true,
+        contentType: contentType,
+        cacheControl: '3600',
+      ),
+    );
 
-    final baseUrl = client.storage.from('avatars').getPublicUrl(storagePath);
+    final baseUrl = avatars.getPublicUrl(storagePath);
     final remoteUrl =
         '$baseUrl?v=${DateTime.now().millisecondsSinceEpoch.toString()}';
-    await client
-        .from('profiles')
-        .update({'avatar_url': remoteUrl}).eq('id', user.id);
+    try {
+      final updatedRows = await client
+          .from('profiles')
+          .update({'avatar_url': remoteUrl})
+          .eq('id', user.id)
+          .select('id');
+      if (updatedRows.isEmpty) {
+        throw Exception('ملف البروفايل مش جاهز. سجّل دخولك من جديد.');
+      }
+    } catch (error, stackTrace) {
+      if (value.remoteUrl == null) {
+        try {
+          await avatars.remove([storagePath]);
+        } on StorageException catch (cleanupError) {
+          if (kDebugMode) {
+            debugPrint('Avatar rollback failed: ${cleanupError.message}');
+          }
+        }
+      }
+      Error.throwWithStackTrace(error, stackTrace);
+    }
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_prefsKeyRemote, remoteUrl);

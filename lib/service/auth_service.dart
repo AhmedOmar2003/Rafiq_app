@@ -577,8 +577,8 @@ class AuthService {
         if (raw is Map) {
           summary = Map<String, dynamic>.from(raw);
         }
-      } catch (_) {
-        throw Exception(_friendlyAuthError(e));
+      } catch (fallbackError) {
+        throw Exception(_friendlyAuthError(fallbackError));
       }
     }
     // Local cleanup runs even if the auth row was already invalidated.

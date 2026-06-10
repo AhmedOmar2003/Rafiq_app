@@ -13,6 +13,11 @@ void main() {
     expect(PasswordPolicy.isStrong('ahmed11#'), isFalse);
     expect(PasswordPolicy.isStrong('Ahmed###'), isFalse);
     expect(PasswordPolicy.isStrong('Ahmed111'), isFalse);
+    expect(PasswordPolicy.validateNewPassword('Ahmed11#'), isNull);
+    expect(
+      PasswordPolicy.validateNewPassword('weak'),
+      PasswordPolicy.requirementMessage,
+    );
   });
 
   test('Account mode resolution keeps new users unchosen', () {
