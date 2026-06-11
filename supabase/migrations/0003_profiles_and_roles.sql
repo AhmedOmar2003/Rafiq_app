@@ -19,7 +19,7 @@ begin;
 create table if not exists public.profiles (
   id           uuid        primary key references auth.users(id) on delete cascade,
   full_name    text        not null check (char_length(full_name) between 1 and 80),
-  email        citext      not null unique check (char_length(email) <= 254),
+  email        extensions.citext not null unique check (char_length(email) <= 254),
   phone        text                 check (phone is null or phone ~ '^\+?[0-9]{6,15}$'),
   avatar_url   text                 check (avatar_url is null or avatar_url ~* '^https?://'),
   locale       text        not null default 'ar-EG',

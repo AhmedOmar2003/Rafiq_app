@@ -40,8 +40,13 @@ create index if not exists user_roles_active_idx
 -- Admin proxy: `select role from admin_roles where user_id = ?` runs on every
 -- single dashboard page navigation. The PK already covers it, but explicit
 -- index lets the planner pick it without scanning the FK.
-create index if not exists admin_roles_user_idx
-  on public.admin_roles (user_id);
+do $$
+begin
+  if to_regclass('public.admin_roles') is not null then
+    create index if not exists admin_roles_user_idx
+      on public.admin_roles (user_id);
+  end if;
+end $$;
 
 -- ── places (count per provider for the admin Providers tab) ─────────────────
 -- `places_provider_idx` already exists with `where deleted_at is null`. We

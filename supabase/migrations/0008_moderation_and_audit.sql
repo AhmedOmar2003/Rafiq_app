@@ -92,7 +92,7 @@ create index if not exists rate_limit_buckets_expire_idx
 -- ----------------------------------------------------------------------------
 create table if not exists public.login_attempts (
   id           uuid        primary key default gen_random_uuid(),
-  email        citext      not null,
+  email        extensions.citext not null,
   ip_address   inet,
   user_agent   text,
   succeeded    boolean     not null,

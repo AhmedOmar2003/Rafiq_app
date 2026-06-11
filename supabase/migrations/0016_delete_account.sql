@@ -22,6 +22,10 @@
 
 begin;
 
+do $$ begin
+  create type public.plan_tier as enum ('free', 'pro', 'max');
+exception when duplicate_object then null; end $$;
+
 -- ----------------------------------------------------------------------------
 -- account_deletions  —  audit ledger
 --
@@ -31,7 +35,7 @@ begin;
 create table if not exists public.account_deletions (
   id            uuid        primary key default gen_random_uuid(),
   user_id       uuid        not null,                    -- copy, not FK
-  email         citext,
+  email         extensions.citext,
   had_provider  boolean     not null,
   had_paid_plan boolean     not null,
   tier_at_delete public.plan_tier,
@@ -70,7 +74,7 @@ set search_path = ''
 as $$
 declare
   _uid          uuid := auth.uid();
-  _email        citext;
+  _email        extensions.citext;
   _provider     public.providers%rowtype;
   _had_provider boolean := false;
   _had_paid     boolean := false;
