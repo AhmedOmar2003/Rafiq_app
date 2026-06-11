@@ -24,7 +24,7 @@ class PasswordRequirements extends StatelessWidget {
             PasswordPolicy.hasLowercase(password),
       ),
       ('رقم', PasswordPolicy.hasNumber(password)),
-      ('رمز مثل # أو @', PasswordPolicy.hasSpecialCharacter(password)),
+      ('رمز مميز', PasswordPolicy.hasSpecialCharacter(password)),
     ];
 
     return Semantics(

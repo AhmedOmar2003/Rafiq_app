@@ -155,7 +155,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                       textInputAction: TextInputAction.next,
                       isPassword: true,
                       type: TextInputType.visiblePassword,
-                      helperText: AppCopy.registerPasswordHelper,
+                      autofillHints: const [AutofillHints.newPassword],
                       onChanged: (value) => setState(() => _password = value),
                       paddingBottom: AppSpacing.md,
                       validator: PasswordPolicy.validateNewPassword,
@@ -168,6 +168,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                       controller: _confirmPasswordController,
                       textInputAction: TextInputAction.done,
                       isPassword: true,
+                      autofillHints: const [AutofillHints.newPassword],
                       paddingBottom: 0,
                       validator: (value) {
                         if (value == null || value.isEmpty) {

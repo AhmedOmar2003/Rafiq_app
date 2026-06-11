@@ -210,7 +210,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       label: AppCopy.authPasswordLabel,
       hintText: AppCopy.authPasswordHint,
       controller: passwordController,
-      helperText: AppCopy.registerPasswordHelper,
       autofillHints: const [AutofillHints.newPassword],
       isPassword: true,
       type: TextInputType.visiblePassword,
@@ -228,11 +227,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           PasswordRequirements(password: _password),
-          gapV(AppSpacing.sm),
-          Text(
-            AppCopy.registerPasswordTip,
-            style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
-          ),
+          if (_password.isNotEmpty) ...[
+            gapV(AppSpacing.sm),
+            Text(
+              AppCopy.registerPasswordTip,
+              style: AppText.bodySm.copyWith(color: AppColor.textSecondary),
+            ),
+          ],
         ],
       ),
     );

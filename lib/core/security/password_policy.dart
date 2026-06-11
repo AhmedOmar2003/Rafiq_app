@@ -1,6 +1,5 @@
 class PasswordPolicy {
   static const int minimumLength = 8;
-  static const String example = 'Ahmed11#';
 
   static bool hasMinimumLength(String password) =>
       password.length >= minimumLength;

@@ -23,6 +23,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final formKey = GlobalKey<FormState>();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  String _password = '';
   bool _isLoading = false;
   bool _showSuccessOverlay = false;
 
@@ -156,6 +157,8 @@ class _LoginScreenState extends State<LoginScreen> {
             gapV(AppSpacing.xxl),
             _buildEmailInput(),
             _buildPasswordInput(),
+            PasswordRequirements(password: _password),
+            if (_password.isNotEmpty) gapV(AppSpacing.sm),
             _buildForgotPassword(),
             gapV(AppSpacing.xl),
             AppButton(
@@ -201,11 +204,11 @@ class _LoginScreenState extends State<LoginScreen> {
       label: AppCopy.authPasswordLabel,
       hintText: AppCopy.authPasswordHint,
       controller: passwordController,
-      helperText: AppCopy.authPasswordHelper,
       autofillHints: const [AutofillHints.password],
       isPassword: true,
       type: TextInputType.visiblePassword,
       textInputAction: TextInputAction.done,
+      onChanged: (value) => setState(() => _password = value),
       onFieldSubmitted: (_) => _handleLogin(),
       validator: (value) =>
           (value == null || value.isEmpty) ? AppCopy.passwordRequired : null,
