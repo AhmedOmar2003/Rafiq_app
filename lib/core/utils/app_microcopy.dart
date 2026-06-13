@@ -270,8 +270,7 @@ class AppCopy {
   static const authEmailLabel = 'البريد الإلكتروني';
   static const authEmailHint = 'example@gmail.com';
   static const authPasswordLabel = 'كلمة السر';
-  static const authPasswordHint = 'مثال: Ahmed11#';
-  static const authPasswordHelper = 'اكتب كلمة السر اللي سجلت بيها.';
+  static const authPasswordHint = 'اكتب كلمة السر';
   static const authForgotPasswordLink = 'نسيت كلمة السر؟';
 
   // --- Login -------------------------------------------------------------------
@@ -293,7 +292,6 @@ class AppCopy {
   static const registerHasAccountPrefix = 'عندك حساب بالفعل؟ ';
   static const registerGoToLogin = 'سجّل دخول';
   static const registerSubtitle = 'خطوة صغيرة ونبدأ.';
-  static const registerPasswordHelper = 'مثال قوي: Ahmed11#';
   static const registerPasswordTip = 'اختار كلمة مختلفة عن أي حساب تاني.';
 
   // --- Forgot password ---------------------------------------------------------

@@ -17,7 +17,7 @@ create table if not exists public.providers (
   business_name   text        not null check (char_length(business_name) between 2 and 120),
   legal_name      text                 check (legal_name is null or char_length(legal_name) <= 120),
   description     text                 check (description is null or char_length(description) <= 2000),
-  contact_email   citext      not null,
+  contact_email   extensions.citext not null,
   contact_phone   text                 check (contact_phone is null or contact_phone ~ '^\+?[0-9]{6,15}$'),
   website_url     text                 check (website_url is null or website_url ~* '^https?://'),
   city_id         uuid        references public.cities(id) on delete set null,

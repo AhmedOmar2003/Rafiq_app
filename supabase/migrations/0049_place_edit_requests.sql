@@ -10,6 +10,14 @@
 begin;
 
 alter table public.places
+  add column if not exists place_name text,
+  add column if not exists activity_name text,
+  add column if not exists budget text,
+  add column if not exists price_range text,
+  add column if not exists place_address text,
+  add column if not exists city_name text,
+  add column if not exists image_path text,
+  add column if not exists rating numeric,
   add column if not exists edit_request_status text not null default 'none'
     check (edit_request_status in ('none', 'pending', 'approved', 'rejected', 'submitted')),
   add column if not exists edit_request_note text,
@@ -17,6 +25,57 @@ alter table public.places
   add column if not exists edit_request_requested_at timestamptz,
   add column if not exists edit_request_reviewed_at timestamptz,
   add column if not exists edit_submitted_at timestamptz;
+
+update public.places pl
+   set place_name = coalesce(nullif(pl.place_name, ''), nullif(pl.name, '')),
+       place_address = coalesce(nullif(pl.place_address, ''), nullif(pl.address, '')),
+       city_name = coalesce(
+         nullif(pl.city_name, ''),
+         (
+           select c.name_ar
+           from public.cities c
+           where c.id = pl.city_id
+           limit 1
+         )
+       ),
+       activity_name = coalesce(
+         nullif(pl.activity_name, ''),
+         (
+           select cat.name_ar
+           from public.categories cat
+           where cat.id = pl.category_id
+           limit 1
+         )
+       ),
+       budget = coalesce(
+         nullif(pl.budget, ''),
+         case pl.budget_bucket
+           when 'low' then 'أقل من 100 جنيه'
+           when 'mid' then '100 إلى 500 جنيه'
+           when 'high' then '500 إلى 1000 جنيه'
+           when 'premium' then 'أكثر من 1000 جنيه'
+           else null
+         end
+       ),
+       price_range = coalesce(
+         nullif(pl.price_range, ''),
+         nullif(pl.budget, ''),
+         case pl.budget_bucket
+           when 'low' then 'أقل من 100 جنيه'
+           when 'mid' then '100 إلى 500 جنيه'
+           when 'high' then '500 إلى 1000 جنيه'
+           when 'premium' then 'أكثر من 1000 جنيه'
+           else null
+         end
+       ),
+       rating = coalesce(pl.rating, pl.rating_avg, 0)
+ where pl.place_name is null
+    or pl.activity_name is null
+    or pl.budget is null
+    or pl.price_range is null
+    or pl.place_address is null
+    or pl.city_name is null
+    or pl.rating is null;
 
 create index if not exists places_edit_request_queue_idx
   on public.places (edit_request_status, edit_request_requested_at desc)
