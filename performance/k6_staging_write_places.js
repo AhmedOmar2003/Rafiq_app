@@ -7,11 +7,12 @@ import { buildSharedFixtures, teardownSharedFixtures } from './lib/fixtures.js';
 import { requireStagingOnly, stagingWriteOptions } from './lib/staging.js';
 import {
   authInsert,
+  buildCanonicalPlaceRow,
   cleanupStoragePrefix,
   rpc,
   serviceGet,
   servicePatch,
-  storageUploadTextObject,
+  storageUploadPlaceholderPngObject,
 } from './lib/supabase.js';
 
 const config = runtimeConfig();
@@ -23,16 +24,6 @@ export const options = stagingWriteOptions(
     'http_req_duration{scenario:staging_place_writes}': ['p(95)<3500'],
   },
 );
-
-function svgCard(label) {
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
-  <rect width="1200" height="800" rx="48" fill="#F4E8D8"/>
-  <rect x="60" y="60" width="1080" height="680" rx="36" fill="#FFFFFF"/>
-  <text x="600" y="360" text-anchor="middle" font-size="52" fill="#6B2E12">${label}</text>
-  <text x="600" y="435" text-anchor="middle" font-size="28" fill="#9A5A2A">k6 staging fixture</text>
-</svg>`;
-}
 
 function uniqueSuffix() {
   return `${Date.now()}-${exec.vu.idInTest}-${exec.scenario.iterationInTest}`;
@@ -81,19 +72,17 @@ export function stagingPlaceWrites(data) {
   const createPlace = authInsert(
     config,
     provider.accessToken,
-    'places',
+    'places?select=*',
     [
-      {
-        provider_id: provider.providerId,
-        place_name: `K6 Staging Place ${suffix}`,
-        activity_name: 'مطعم',
-        budget: '100 إلى 500 جنيه',
-        price_range: '100 إلى 500 جنيه',
-        place_address: `Staging Street ${suffix}`,
-        city_name: 'القاهرة',
+      buildCanonicalPlaceRow({
+        providerId: provider.providerId,
+        city: provider.referenceCity,
+        category: provider.referenceCategory,
+        placeName: `K6 Staging Place ${suffix}`,
+        slug: `k6-staging-place-${suffix}`,
         description: 'Created by k6 staging place write script',
-        rating: 0,
-      },
+        address: `Staging Street ${suffix}`,
+      }),
     ],
     { flow: 'staging_places' },
   );
@@ -114,11 +103,11 @@ export function stagingPlaceWrites(data) {
     {
       _place_id: createdPlace.id,
       _place_name: `K6 Pending Update ${suffix}`,
-      _activity_name: 'كافيه',
+      _activity_name: provider.referenceCategory.name_ar,
       _budget: '100 إلى 500 جنيه',
       _price_range: '100 إلى 500 جنيه',
       _address: `Updated staging address ${suffix}`,
-      _city_name: 'الجيزة',
+      _city_name: provider.referenceCity.name_ar,
       _description: 'Updated while still pending review',
       _image_path: null,
       _rating: 0,
@@ -130,16 +119,14 @@ export function stagingPlaceWrites(data) {
   });
 
   const pendingImagePaths = [0, 1].map(
-    (index) => `${provider.providerId}/${createdPlace.id}/${suffix}-pending-${index}.svg`,
+    (index) => `${provider.providerId}/${createdPlace.id}/${suffix}-pending-${index}.png`,
   );
   for (const path of pendingImagePaths) {
-    const upload = storageUploadTextObject(
+    const upload = storageUploadPlaceholderPngObject(
       config,
       provider.accessToken,
       'place-images',
       path,
-      svgCard(path),
-      'image/svg+xml',
       { flow: 'staging_places' },
     );
     check(upload.response, {
@@ -184,16 +171,14 @@ export function stagingPlaceWrites(data) {
 
   const approvedEditImagePaths = [0, 1].map(
     (index) =>
-      `${provider.providerId}/${provider.approvedPlaceUuid}/${suffix}-approved-${index}.svg`,
+      `${provider.providerId}/${provider.approvedPlaceUuid}/${suffix}-approved-${index}.png`,
   );
   for (const path of approvedEditImagePaths) {
-    const upload = storageUploadTextObject(
+    const upload = storageUploadPlaceholderPngObject(
       config,
       provider.accessToken,
       'place-images',
       path,
-      svgCard(path),
-      'image/svg+xml',
       { flow: 'staging_places' },
     );
     check(upload.response, {
@@ -209,11 +194,11 @@ export function stagingPlaceWrites(data) {
     {
       _place_id: provider.approvedPlaceUuid,
       _place_name: `K6 Approved Edit ${suffix}`,
-      _activity_name: 'مطعم',
+      _activity_name: provider.referenceCategory.name_ar,
       _budget: '100 إلى 500 جنيه',
       _price_range: '100 إلى 500 جنيه',
       _address: `Approved edit address ${suffix}`,
-      _city_name: 'القاهرة',
+      _city_name: provider.referenceCity.name_ar,
       _description: 'Submitted by k6 for staging moderation testing',
       _rating: 4.2,
       _image_storage_paths: approvedEditImagePaths,

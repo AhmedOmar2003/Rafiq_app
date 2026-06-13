@@ -6,9 +6,10 @@ import { buildSharedFixtures, teardownSharedFixtures } from './lib/fixtures.js';
 import { requireStagingOnly, stagingWriteOptions } from './lib/staging.js';
 import {
   authInsert,
+  buildCanonicalPlaceRow,
   cleanupStoragePrefix,
   rpc,
-  storageUploadTextObject,
+  storageUploadPlaceholderPngObject,
 } from './lib/supabase.js';
 
 const config = runtimeConfig();
@@ -20,14 +21,6 @@ export const options = stagingWriteOptions(
     'http_req_duration{scenario:staging_image_upload}': ['p(95)<4000'],
   },
 );
-
-function svgImage(title, tone) {
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="720" viewBox="0 0 1080 720">
-  <rect width="1080" height="720" rx="42" fill="${tone}"/>
-  <text x="540" y="350" text-anchor="middle" font-size="52" fill="#FFFFFF">${title}</text>
-</svg>`;
-}
 
 function uniqueSuffix() {
   return `${Date.now()}-${exec.vu.idInTest}-${exec.scenario.iterationInTest}`;
@@ -57,19 +50,17 @@ export function stagingImageUpload(data) {
   const createPlace = authInsert(
     config,
     provider.accessToken,
-    'places',
+    'places?select=*',
     [
-      {
-        provider_id: provider.providerId,
-        place_name: `K6 Upload Place ${suffix}`,
-        activity_name: 'كوفي شوب',
-        budget: '100 إلى 500 جنيه',
-        price_range: '100 إلى 500 جنيه',
-        place_address: `Upload street ${suffix}`,
-        city_name: 'القاهرة',
+      buildCanonicalPlaceRow({
+        providerId: provider.providerId,
+        city: provider.referenceCity,
+        category: provider.referenceCategory,
+        placeName: `K6 Upload Place ${suffix}`,
+        slug: `k6-upload-place-${suffix}`,
         description: 'Used to benchmark place image uploads on staging',
-        rating: 0,
-      },
+        address: `Upload street ${suffix}`,
+      }),
     ],
     { flow: 'staging_uploads' },
   );
@@ -79,17 +70,15 @@ export function stagingImageUpload(data) {
 
   const place = Array.isArray(createPlace.data) ? createPlace.data[0] : null;
   const placePaths = [0, 1, 2].map(
-    (index) => `${provider.providerId}/${place.id}/${suffix}-gallery-${index}.svg`,
+    (index) => `${provider.providerId}/${place.id}/${suffix}-gallery-${index}.png`,
   );
 
-  for (const [index, path] of placePaths.entries()) {
-    const upload = storageUploadTextObject(
+  for (const path of placePaths) {
+    const upload = storageUploadPlaceholderPngObject(
       config,
       provider.accessToken,
       'place-images',
       path,
-      svgImage(`Place ${index + 1}`, ['#9A3412', '#B45309', '#92400E'][index] || '#7C2D12'),
-      'image/svg+xml',
       { flow: 'staging_uploads' },
     );
     check(upload.response, {
@@ -112,14 +101,12 @@ export function stagingImageUpload(data) {
     'place gallery registered': (r) => r.status === 200,
   });
 
-  const campaignAssetPath = `${provider.providerId}/${provider.approvedPlaceUuid}/${suffix}-campaign.svg`;
-  const campaignUpload = storageUploadTextObject(
+  const campaignAssetPath = `${provider.providerId}/${provider.approvedPlaceUuid}/${suffix}-campaign.png`;
+  const campaignUpload = storageUploadPlaceholderPngObject(
     config,
     provider.accessToken,
     'campaign-assets',
     campaignAssetPath,
-    svgImage('Campaign Asset', '#6B2E12'),
-    'image/svg+xml',
     { flow: 'staging_uploads' },
   );
   check(campaignUpload.response, {

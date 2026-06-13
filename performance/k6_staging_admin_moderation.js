@@ -2,11 +2,12 @@ import { check, sleep } from 'k6';
 import exec from 'k6/execution';
 
 import { runtimeConfig } from './lib/config.js';
-import { adminDashboardRead, providerHubRead } from './lib/flows.js';
+import { providerHubRead } from './lib/flows.js';
 import { buildSharedFixtures, teardownSharedFixtures } from './lib/fixtures.js';
 import { requireStagingOnly, stagingWriteOptions } from './lib/staging.js';
 import {
   authInsert,
+  buildCanonicalPlaceRow,
   cleanupStoragePrefix,
   rpc,
   serviceGet,
@@ -52,19 +53,17 @@ export function stagingAdminModeration(data) {
   const pendingPlaceInsert = authInsert(
     config,
     provider.accessToken,
-    'places',
+    'places?select=*',
     [
-      {
-        provider_id: provider.providerId,
-        place_name: `K6 Moderation Pending ${suffix}`,
-        activity_name: 'مطعم',
-        budget: '100 إلى 500 جنيه',
-        price_range: '100 إلى 500 جنيه',
-        place_address: `Moderation street ${suffix}`,
-        city_name: 'القاهرة',
+      buildCanonicalPlaceRow({
+        providerId: provider.providerId,
+        city: provider.referenceCity,
+        category: provider.referenceCategory,
+        placeName: `K6 Moderation Pending ${suffix}`,
+        slug: `k6-moderation-pending-${suffix}`,
         description: 'Pending place for admin moderation staging flow',
-        rating: 0,
-      },
+        address: `Moderation street ${suffix}`,
+      }),
     ],
     { flow: 'staging_moderation' },
   );
@@ -75,34 +74,34 @@ export function stagingAdminModeration(data) {
     ? pendingPlaceInsert.data[0]
     : null;
 
-  const approvePlace = servicePatch(
+  const approvePlace = serviceRpc(
     config,
-    `places?id=eq.${pendingPlace.id}`,
+    'admin_set_place_status_uuid',
     {
-      status: 'approved',
-      approved_at: new Date().toISOString(),
-      rejection_reason: null,
-      updated_at: new Date().toISOString(),
+      _place_uuid: pendingPlace.id,
+      _status: 'approved',
+      _rejection_reason: null,
+      _allow_edit: false,
     },
     { flow: 'staging_moderation' },
   );
   check(approvePlace.response, {
-    'pending place approved by admin': (r) => r.status >= 200 && r.status < 300,
+    'pending place approved by admin': (r) => r.status === 200,
   });
 
-  const rejectPlace = servicePatch(
+  const rejectPlace = serviceRpc(
     config,
-    `places?id=eq.${pendingPlace.id}`,
+    'admin_set_place_status_uuid',
     {
-      status: 'rejected',
-      approved_at: null,
-      rejection_reason: 'k6 staging rejection reason',
-      updated_at: new Date().toISOString(),
+      _place_uuid: pendingPlace.id,
+      _status: 'rejected',
+      _rejection_reason: 'k6 staging rejection reason',
+      _allow_edit: false,
     },
     { flow: 'staging_moderation' },
   );
   check(rejectPlace.response, {
-    'approved place rejected by admin': (r) => r.status >= 200 && r.status < 300,
+    'approved place rejected by admin': (r) => r.status === 200,
   });
 
   const requestApprovedEdit = rpc(
@@ -142,11 +141,11 @@ export function stagingAdminModeration(data) {
     {
       _place_id: provider.approvedPlaceUuid,
       _place_name: `K6 Moderation Edit ${suffix}`,
-      _activity_name: 'مطعم',
+      _activity_name: provider.referenceCategory.name_ar,
       _budget: '100 إلى 500 جنيه',
       _price_range: '100 إلى 500 جنيه',
       _address: `Moderated address ${suffix}`,
-      _city_name: 'الإسكندرية',
+      _city_name: provider.referenceCity.name_ar,
       _description: 'Submitted for moderation by k6 staging flow',
       _rating: 4,
       _image_storage_paths: [],
@@ -191,7 +190,6 @@ export function stagingAdminModeration(data) {
     'campaign moderation queue visible': (r) => r.status === 200,
   });
 
-  adminDashboardRead(config, data.admin);
   providerHubRead(config, provider);
   sleep(0.2);
 }

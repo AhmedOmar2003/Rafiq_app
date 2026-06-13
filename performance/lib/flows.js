@@ -135,7 +135,7 @@ export function providerHubRead(config, providerFixture) {
     ],
     [
       'GET',
-      `${config.supabaseUrl}/rest/v1/places?select=id,place_id,provider_id,place_name,status,edit_allowed,edit_request_status,created_at,updated_at,edit_submitted_at&provider_id=eq.${providerFixture.providerId}&order=created_at.desc&limit=25`,
+      `${config.supabaseUrl}/rest/v1/places?select=id,provider_id,place_name,status,edit_allowed,edit_request_status,created_at,updated_at,edit_submitted_at&provider_id=eq.${providerFixture.providerId}&order=created_at.desc&limit=25`,
       null,
       {
         headers: {
@@ -238,7 +238,7 @@ export function adminDashboardRead(config, adminFixture) {
     ],
     [
       'GET',
-      `${config.supabaseUrl}/rest/v1/places?select=id,place_id,place_name,city_name,activity_name,rating,status,provider_id,created_at&order=created_at.desc&limit=100`,
+      `${config.supabaseUrl}/rest/v1/places?select=id,place_name,city_name,activity_name,rating,status,provider_id,created_at&order=created_at.desc&limit=100`,
       null,
       {
         headers: {

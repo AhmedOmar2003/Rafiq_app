@@ -35,6 +35,79 @@ export function uniqueEmail(prefix) {
   return `${prefix}.${stamp}.${suffix}@gmail.com`;
 }
 
+function budgetBucketFor(priceMin) {
+  if (priceMin <= 100) return 'low';
+  if (priceMin <= 500) return 'mid';
+  if (priceMin <= 1000) return 'high';
+  return 'premium';
+}
+
+export function fetchReferenceTaxonomy(config) {
+  const cities = serviceGet(config, 'cities?select=id,name_ar&limit=1', {
+    flow: 'staging_taxonomy',
+  });
+  const categories = serviceGet(config, 'categories?select=id,name_ar&limit=1', {
+    flow: 'staging_taxonomy',
+  });
+
+  if (!cities.ok || !Array.isArray(cities.data) || cities.data.length === 0) {
+    fail(`Could not fetch staging city reference: ${JSON.stringify(cities.data)}`);
+  }
+  if (!categories.ok || !Array.isArray(categories.data) || categories.data.length === 0) {
+    fail(
+      `Could not fetch staging category reference: ${JSON.stringify(categories.data)}`,
+    );
+  }
+
+  return {
+    city: cities.data[0],
+    category: categories.data[0],
+  };
+}
+
+export function buildCanonicalPlaceRow({
+  id,
+  providerId,
+  city,
+  category,
+  placeName,
+  slug,
+  description,
+  address,
+  budget = '100 إلى 500 جنيه',
+  priceMin = 100,
+  priceMax = 500,
+  status = 'pending',
+  approvedBy = null,
+  approvedAt = null,
+  imagePath = null,
+}) {
+  return {
+    ...(id ? { id } : {}),
+    provider_id: providerId,
+    city_id: city.id,
+    category_id: category.id,
+    slug,
+    name: placeName,
+    description,
+    address,
+    price_min: priceMin,
+    price_max: priceMax,
+    budget_bucket: budgetBucketFor(priceMin),
+    place_name: placeName,
+    activity_name: category.name_ar,
+    budget,
+    price_range: budget,
+    place_address: address,
+    city_name: city.name_ar,
+    rating: 0,
+    image_path: imagePath,
+    status,
+    approved_by: approvedBy,
+    approved_at: approvedAt,
+  };
+}
+
 export function httpJson(method, url, { headers = {}, body, tags = {} } = {}) {
   const response = http.request(method, url, body ? JSON.stringify(body) : null, {
     headers,
@@ -171,6 +244,24 @@ export function storageUploadTextObject(
   };
 }
 
+export function storageUploadPlaceholderPngObject(
+  config,
+  token,
+  bucket,
+  objectPath,
+  extraTags = {},
+) {
+  return storageUploadTextObject(
+    config,
+    token,
+    bucket,
+    objectPath,
+    'rafiq-k6-png-placeholder',
+    'image/png',
+    extraTags,
+  );
+}
+
 export function storageDeleteObject(
   config,
   token,
@@ -183,7 +274,10 @@ export function storageDeleteObject(
     storageObjectUrl(config.supabaseUrl, bucket, objectPath),
     null,
     {
-      headers: jsonHeaders(config.anonKey, token),
+      headers: {
+        apikey: token === config.serviceRoleKey ? config.serviceRoleKey : config.anonKey,
+        Authorization: `Bearer ${token}`,
+      },
       tags: { endpoint: `${bucket}_delete`, ...extraTags },
     },
   );
@@ -212,7 +306,7 @@ export function storageListPrefix(config, token, bucket, prefix, extraTags = {})
   });
 }
 
-export function cleanupStoragePrefix(config, bucket, prefix) {
+function cleanupStoragePrefixRecursive(config, bucket, prefix) {
   const listing = storageListPrefix(
     config,
     config.serviceRoleKey,
@@ -228,6 +322,14 @@ export function cleanupStoragePrefix(config, bucket, prefix) {
   for (const row of listing.data) {
     const name = row?.name;
     if (!name) continue;
+
+    // Supabase Storage returns folder-like rows with a null id. Recurse into
+    // them instead of trying to delete them as if they were files.
+    if (row?.id == null) {
+      cleanupStoragePrefixRecursive(config, bucket, `${prefix}${name}/`);
+      continue;
+    }
+
     storageDeleteObject(
       config,
       config.serviceRoleKey,
@@ -236,6 +338,10 @@ export function cleanupStoragePrefix(config, bucket, prefix) {
       { flow: 'cleanup' },
     );
   }
+}
+
+export function cleanupStoragePrefix(config, bucket, prefix) {
+  cleanupStoragePrefixRecursive(config, bucket, prefix);
 }
 
 export function adminCreateUser(config, email, fullName) {
@@ -271,7 +377,7 @@ export function fetchSamplePlace(config) {
   const row = result.data[0];
   return {
     placeUuid: row.id,
-    placeId: Number(row.place_id),
+    placeId: row.id,
     imageUrl: row.image_path || config.sampleImageUrl,
   };
 }
@@ -298,6 +404,7 @@ export function createProviderFixture(config, label) {
     fail(`become_provider failed: ${JSON.stringify(becomeProvider.data)}`);
   }
   const providerId = String(becomeProvider.data);
+  const taxonomy = fetchReferenceTaxonomy(config);
 
   const plan = rpc(config, providerToken, 'apply_demo_subscription', {
     _tier: 'pro',
@@ -306,71 +413,64 @@ export function createProviderFixture(config, label) {
   check(plan.response, {
     'provider plan ready': (r) => r.status >= 200 && r.status < 300,
   });
-
-  const approvedInsert = httpJson(
-    'POST',
-    `${config.supabaseUrl}/rest/v1/places`,
+  const approveProvider = servicePatch(
+    config,
+    `providers?id=eq.${providerId}`,
     {
-      headers: jsonHeaders(config.anonKey, providerToken, {
-        Prefer: 'return=representation',
-      }),
-      body: [
-        {
-          provider_id: providerId,
-          place_name: 'Perf Approved Place',
-          activity_name: 'طعام',
-          budget: '100 إلى 500 جنيه',
-          price_range: '100 إلى 500 جنيه',
-          place_address: 'Alex Corniche',
-          city_name: 'الإسكندرية',
-          description: 'Approved fixture for performance tests',
-          rating: 0,
-        },
-      ],
-      tags: { endpoint: 'provider_place_insert' },
+      status: 'approved',
+      updated_at: new Date().toISOString(),
     },
+    { flow: 'provider_fixture' },
+  );
+  check(approveProvider.response, {
+    'provider fixture approved': (r) => r.status >= 200 && r.status < 300,
+  });
+  const suffix = `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+
+  const approvedInsert = serviceInsert(
+    config,
+    'places?select=*',
+    [
+      buildCanonicalPlaceRow({
+        providerId,
+        city: taxonomy.city,
+        category: taxonomy.category,
+        placeName: 'Perf Approved Place',
+        slug: `perf-approved-${suffix}`,
+        description: 'Approved fixture for performance tests',
+        address: 'Staging approved fixture address',
+        status: 'approved',
+        approvedAt: new Date().toISOString(),
+      }),
+    ],
+    { endpoint: 'provider_place_insert' },
   );
   if (!approvedInsert.ok || !Array.isArray(approvedInsert.data)) {
     fail(`Approved place insert failed: ${JSON.stringify(approvedInsert.data)}`);
   }
   const approvedPlace = approvedInsert.data[0];
 
-  const pendingInsert = httpJson(
-    'POST',
-    `${config.supabaseUrl}/rest/v1/places`,
-    {
-      headers: jsonHeaders(config.anonKey, providerToken, {
-        Prefer: 'return=representation',
+  const pendingInsert = authInsert(
+    config,
+    providerToken,
+    'places?select=*',
+    [
+      buildCanonicalPlaceRow({
+        providerId,
+        city: taxonomy.city,
+        category: taxonomy.category,
+        placeName: 'Perf Pending Place',
+        slug: `perf-pending-${suffix}`,
+        description: 'Pending fixture for performance tests',
+        address: 'Staging pending fixture address',
       }),
-      body: [
-        {
-          provider_id: providerId,
-          place_name: 'Perf Pending Place',
-          activity_name: 'كافيه',
-          budget: '100 إلى 500 جنيه',
-          price_range: '100 إلى 500 جنيه',
-          place_address: 'Mansoura Street',
-          city_name: 'المنصورة',
-          description: 'Pending fixture for performance tests',
-          rating: 0,
-        },
-      ],
-      tags: { endpoint: 'provider_place_insert_pending' },
-    },
+    ],
+    { endpoint: 'provider_place_insert_pending' },
   );
   if (!pendingInsert.ok || !Array.isArray(pendingInsert.data)) {
     fail(`Pending place insert failed: ${JSON.stringify(pendingInsert.data)}`);
   }
   const pendingPlace = pendingInsert.data[0];
-
-  const approvePlace = servicePatch(config, `places?id=eq.${approvedPlace.id}`, {
-    status: 'approved',
-    approved_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  });
-  check(approvePlace.response, {
-    'approved fixture place': (r) => r.status >= 200 && r.status < 300,
-  });
 
   const campaign = rpc(config, providerToken, 'create_provider_campaign', {
     _place_id: approvedPlace.id,
@@ -406,10 +506,10 @@ export function createProviderFixture(config, label) {
     refreshToken: signIn.data.refresh_token,
     providerId,
     approvedPlaceUuid: approvedPlace.id,
-    approvedPlaceId: Number(approvedPlace.place_id),
     pendingPlaceUuid: pendingPlace.id,
-    pendingPlaceId: Number(pendingPlace.place_id),
     campaignId,
+    referenceCity: taxonomy.city,
+    referenceCategory: taxonomy.category,
   };
 }
 

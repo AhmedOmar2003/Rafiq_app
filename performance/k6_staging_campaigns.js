@@ -10,7 +10,7 @@ import {
   rpc,
   serviceGet,
   servicePatch,
-  storageUploadTextObject,
+  storageUploadPlaceholderPngObject,
 } from './lib/supabase.js';
 
 const config = runtimeConfig();
@@ -25,15 +25,6 @@ export const options = stagingWriteOptions(
 
 function uniqueSuffix() {
   return `${Date.now()}-${exec.vu.idInTest}-${exec.scenario.iterationInTest}`;
-}
-
-function bannerSvg(label) {
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420">
-  <rect width="1200" height="420" rx="36" fill="#FFF7ED"/>
-  <rect x="24" y="24" width="1152" height="372" rx="28" fill="#8A300F"/>
-  <text x="600" y="215" text-anchor="middle" font-size="54" fill="#FFFFFF">${label}</text>
-</svg>`;
 }
 
 export function setup() {
@@ -59,14 +50,12 @@ export function stagingCampaignWrites(data) {
   const startsAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
   const endsAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
-  const createAssetPath = `${provider.providerId}/${provider.approvedPlaceUuid}/${suffix}-create.svg`;
-  const createAsset = storageUploadTextObject(
+  const createAssetPath = `${provider.providerId}/${provider.approvedPlaceUuid}/${suffix}-create.png`;
+  const createAsset = storageUploadPlaceholderPngObject(
     config,
     provider.accessToken,
     'campaign-assets',
     createAssetPath,
-    bannerSvg('K6 Create Campaign'),
-    'image/svg+xml',
     { flow: 'staging_campaigns' },
   );
   check(createAsset.response, {
@@ -82,7 +71,7 @@ export function stagingCampaignWrites(data) {
       _kind: 'discount',
       _title: `K6 Campaign ${suffix}`,
       _body: 'Created by k6 staging campaign test',
-      _image_path: `campaign-assets://${createAssetPath}`,
+      _image_path: createAssetPath,
       _cta_label: 'اعرف أكتر',
       _starts_at: startsAt,
       _ends_at: endsAt,
@@ -152,14 +141,12 @@ export function stagingCampaignWrites(data) {
       r.status >= 200 && r.status < 300,
   });
 
-  const updateAssetPath = `${provider.providerId}/${provider.approvedPlaceUuid}/${suffix}-update.svg`;
-  const updateAsset = storageUploadTextObject(
+  const updateAssetPath = `${provider.providerId}/${provider.approvedPlaceUuid}/${suffix}-update.png`;
+  const updateAsset = storageUploadPlaceholderPngObject(
     config,
     provider.accessToken,
     'campaign-assets',
     updateAssetPath,
-    bannerSvg('K6 Update Campaign'),
-    'image/svg+xml',
     { flow: 'staging_campaigns' },
   );
   check(updateAsset.response, {
@@ -176,7 +163,7 @@ export function stagingCampaignWrites(data) {
       _kind: 'discount',
       _title: `K6 Campaign Updated ${suffix}`,
       _body: 'Updated by k6 staging campaign test',
-      _image_path: `campaign-assets://${updateAssetPath}`,
+      _image_path: updateAssetPath,
       _cta_label: 'شوف العرض',
       _starts_at: startsAt,
       _ends_at: endsAt,
