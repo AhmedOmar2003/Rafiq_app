@@ -1,7 +1,7 @@
 import { check, sleep } from 'k6';
 import exec from 'k6/execution';
 
-import { runtimeConfig } from './lib/config.js';
+import { envNumber, runtimeConfig } from './lib/config.js';
 import { providerHubRead } from './lib/flows.js';
 import { buildSharedFixtures, teardownSharedFixtures } from './lib/fixtures.js';
 import { requireStagingOnly, stagingWriteOptions } from './lib/staging.js';
@@ -32,20 +32,21 @@ export function setup() {
   return buildSharedFixtures(config, {
     includeRegular: false,
     includeProvider: true,
-    includeAdmin: true,
+    includeAdmin: false,
+    providerCount: envNumber('STAGING_VUS', 1),
   });
 }
 
 export function teardown(data) {
-  if (data?.provider?.providerId) {
-    cleanupStoragePrefix(config, 'campaign-assets', `${data.provider.providerId}/`);
-    cleanupStoragePrefix(config, 'place-images', `${data.provider.providerId}/`);
+  for (const provider of data?.providers || []) {
+    cleanupStoragePrefix(config, 'campaign-assets', `${provider.providerId}/`);
   }
   teardownSharedFixtures(config, data);
 }
 
 export function stagingCampaignWrites(data) {
-  const provider = data.provider;
+  const providers = data.providers?.length ? data.providers : [data.provider];
+  const provider = providers[(exec.vu.idInTest - 1) % providers.length];
   const suffix = uniqueSuffix();
   const startsAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
   const endsAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();

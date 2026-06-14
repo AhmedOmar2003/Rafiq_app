@@ -54,6 +54,20 @@ class PlaceAnalyticsSnapshot {
   );
 }
 
+class PlaceDetailsContextSnapshot {
+  const PlaceDetailsContextSnapshot({
+    required this.galleryUrls,
+    required this.latestReview,
+    required this.campaigns,
+    required this.isFavorited,
+  });
+
+  final List<String> galleryUrls;
+  final EvaluationsItemModel? latestReview;
+  final List<PlacePromotionBanner> campaigns;
+  final bool isFavorited;
+}
+
 class PromotionCampaignSnapshot {
   const PromotionCampaignSnapshot({
     required this.id,
@@ -128,6 +142,7 @@ class ApiService {
   static Future<void>? _supabaseInitFuture;
   static const int _placesPageSize = 80;
   static const int _reviewsPageSize = 50;
+  static const int _imageUploadParallelism = 3;
   static const Duration _networkTimeout = Duration(seconds: 12);
   static const Duration _placesCacheTtl = Duration(minutes: 3);
   static const Duration _reviewsCacheTtl = Duration(minutes: 2);
@@ -671,6 +686,64 @@ class ApiService {
     return urls;
   }
 
+  Future<PlaceDetailsContextSnapshot> fetchPlaceDetailsContext({
+    String? placeUuid,
+    int? legacyPlaceId,
+  }) async {
+    await ensureSupabaseInitialized();
+    final response = await _client.rpc<dynamic>(
+      'get_place_details_context',
+      params: {
+        '_place_uuid':
+            placeUuid?.trim().isNotEmpty == true ? placeUuid!.trim() : null,
+        '_legacy_place_id': legacyPlaceId,
+      },
+    ).timeout(_networkTimeout);
+
+    final data = response is Map
+        ? Map<String, dynamic>.from(response)
+        : <String, dynamic>{};
+
+    final gallery = (data['gallery'] as List? ?? const <dynamic>[])
+        .map((row) => row is Map ? Map<String, dynamic>.from(row) : null)
+        .whereType<Map<String, dynamic>>()
+        .map((row) {
+          final storagePath = row['storage_path']?.toString() ?? '';
+          if (storagePath.isEmpty) return null;
+          return _client.storage.from('place-images').getPublicUrl(storagePath);
+        })
+        .whereType<String>()
+        .toList(growable: false);
+
+    final campaigns = (data['campaigns'] as List? ?? const <dynamic>[])
+        .map((row) => row is Map ? Map<String, dynamic>.from(row) : null)
+        .whereType<Map<String, dynamic>>()
+        .map((row) => PlacePromotionBanner(
+              id: row['id']?.toString() ?? '',
+              title: row['title']?.toString() ?? 'عرض خاص',
+              body: row['body']?.toString(),
+              kind: row['kind']?.toString() ?? 'discount',
+              status: row['status']?.toString() ?? 'active',
+              imagePath: row['image_path']?.toString(),
+              ctaLabel: row['cta_label']?.toString(),
+              startsAt: DateTime.tryParse(row['starts_at']?.toString() ?? ''),
+              endsAt: DateTime.tryParse(row['ends_at']?.toString() ?? ''),
+            ))
+        .toList(growable: false);
+
+    final latestReviewRaw = data['latest_review'];
+    final latestReview = latestReviewRaw is Map
+        ? EvaluationsItemModel.fromJson(Map<String, dynamic>.from(latestReviewRaw))
+        : null;
+
+    return PlaceDetailsContextSnapshot(
+      galleryUrls: gallery,
+      latestReview: latestReview,
+      campaigns: campaigns,
+      isFavorited: data['is_favorited'] as bool? ?? false,
+    );
+  }
+
   Future<PlaceAnalyticsSnapshot> fetchPlaceAnalytics({
     required String providerId,
     String? placeId,
@@ -1099,27 +1172,41 @@ class ApiService {
     required String placeUuid,
     required List<File> galleryImages,
   }) async {
-    final uploadedPaths = <String>[];
+    final uploadedPaths = List<String?>.filled(galleryImages.length, null);
     try {
-      for (var i = 0; i < galleryImages.length; i++) {
-        final file = galleryImages[i];
-        final bytes = await file.readAsBytes();
-        if (bytes.isEmpty) continue;
+      for (var start = 0;
+          start < galleryImages.length;
+          start += _imageUploadParallelism) {
+        final end = (start + _imageUploadParallelism < galleryImages.length)
+            ? start + _imageUploadParallelism
+            : galleryImages.length;
+        final batch = <Future<void>>[];
 
-        final uniqueSuffix = DateTime.now().microsecondsSinceEpoch;
-        final storagePath =
-            '$providerId/$placeUuid/$uniqueSuffix-$i.${_extensionFromPath(file.path)}';
-        await _client.storage.from('place-images').uploadBinary(
-              storagePath,
-              bytes,
-            );
-        uploadedPaths.add(storagePath);
+        for (var i = start; i < end; i++) {
+          batch.add(() async {
+            final file = galleryImages[i];
+            final bytes = await file.readAsBytes();
+            if (bytes.isEmpty) return;
+
+            final uniqueSuffix = DateTime.now().microsecondsSinceEpoch;
+            final storagePath =
+                '$providerId/$placeUuid/$uniqueSuffix-$i.${_extensionFromPath(file.path)}';
+            await _client.storage.from('place-images').uploadBinary(
+                  storagePath,
+                  bytes,
+                );
+            uploadedPaths[i] = storagePath;
+          }());
+        }
+
+        await Future.wait(batch);
       }
-      return uploadedPaths;
+      return uploadedPaths.whereType<String>().toList(growable: false);
     } catch (_) {
-      if (uploadedPaths.isNotEmpty) {
+      final existing = uploadedPaths.whereType<String>().toList(growable: false);
+      if (existing.isNotEmpty) {
         try {
-          await _client.storage.from('place-images').remove(uploadedPaths);
+          await _client.storage.from('place-images').remove(existing);
         } catch (_) {
           // Best effort. Hard account deletion also removes orphan files.
         }

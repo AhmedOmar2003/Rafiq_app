@@ -1,5 +1,5 @@
 export const DEFAULT_SUPABASE_URL = 'https://qtlmumlcvcwqieexcguy.supabase.co';
-export const DEFAULT_DASHBOARD_URL = 'https://admin-dashboard-rafiq-app.vercel.app';
+export const DEFAULT_DASHBOARD_URL = 'https://rafiq-master-zeta.vercel.app';
 export const DEFAULT_SAMPLE_IMAGE_URL =
   'https://qtlmumlcvcwqieexcguy.supabase.co/storage/v1/object/public/place-images/d225a998-a411-445b-b7c6-1836653b6bce/b07251b4-cff9-4c42-9f90-6e434214f7cb/1780333445720623-0.jpg';
 

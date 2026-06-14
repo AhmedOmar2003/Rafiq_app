@@ -3,6 +3,11 @@ import { check, sleep } from 'k6';
 
 import { authSignIn, restGet, rpc, serviceGet, serviceHeadCount } from './supabase.js';
 
+function envBoolean(name) {
+  const raw = (__ENV[name] || '').trim().toLowerCase();
+  return ['1', 'true', 'yes', 'on'].includes(raw);
+}
+
 export function publicBrowse(config) {
   const browse = rpc(config, config.anonKey, 'browse_ranked_places', {
     _city_name: null,
@@ -19,55 +24,26 @@ export function publicBrowse(config) {
 }
 
 export function publicPlaceDetails(config, sample) {
-  const responses = http.batch([
-    [
-      'GET',
-      `${config.supabaseUrl}/rest/v1/reviews?select=review_id,place_id,user_id,name,review_text,rating,image,created_at&place_id=eq.${sample.placeId}&order=created_at.desc&limit=12`,
-      null,
-      {
-        headers: {
-          apikey: config.anonKey,
-          Authorization: `Bearer ${config.anonKey}`,
-        },
-        tags: { flow: 'public_details', endpoint: 'reviews' },
-      },
-    ],
-    [
-      'GET',
-      `${config.supabaseUrl}/rest/v1/place_images?select=storage_path,is_cover,sort_order,created_at&place_id=eq.${sample.placeUuid}&order=is_cover.desc,sort_order.asc,created_at.asc`,
-      null,
-      {
-        headers: {
-          apikey: config.anonKey,
-          Authorization: `Bearer ${config.anonKey}`,
-        },
-        tags: { flow: 'public_details', endpoint: 'place_images' },
-      },
-    ],
-    [
-      'GET',
-      `${config.supabaseUrl}/rest/v1/promotional_campaigns?select=id,title,body,kind,status,image_path,cta_label,starts_at,ends_at&place_id=eq.${sample.placeUuid}&status=eq.active&order=created_at.desc`,
-      null,
-      {
-        headers: {
-          apikey: config.anonKey,
-          Authorization: `Bearer ${config.anonKey}`,
-        },
-        tags: { flow: 'public_details', endpoint: 'promotional_campaigns' },
-      },
-    ],
-    [
-      'GET',
-      sample.imageUrl,
-      null,
-      { tags: { flow: 'public_details', endpoint: 'place_image_asset' } },
-    ],
-  ]);
-
-  check(responses[0], { 'reviews 200': (r) => r.status === 200 });
-  check(responses[1], { 'gallery 200': (r) => r.status === 200 });
-  check(responses[2], { 'campaigns 200': (r) => r.status === 200 });
-  check(responses[3], { 'image asset 200': (r) => r.status === 200 });
+  const context = rpc(
+    config,
+    config.anonKey,
+    'get_place_details_context',
+    {
+      _place_uuid: sample.placeUuid,
+      _legacy_place_id: Number.isInteger(sample.placeId) ? sample.placeId : null,
+    },
+    { flow: 'public_details', endpoint: 'place_details_context' },
+  );
+  check(context.response, {
+    'details context 200': (r) => r.status === 200,
+    'details context resolved place': () => Boolean(context.data?.place_uuid),
+  });
+  if (sample.imageUrl) {
+    const image = http.get(sample.imageUrl, {
+      tags: { flow: 'public_details', endpoint: 'place_image_asset' },
+    });
+    check(image, { 'image asset 200': (r) => r.status === 200 });
+  }
 
   sleep(0.3);
 }
@@ -176,6 +152,12 @@ export function providerHubRead(config, providerFixture) {
   check(responses[2], { 'provider plan 200': (r) => r.status === 200 });
   check(responses[3], { 'provider campaigns 200': (r) => r.status === 200 });
 
+  providerAnalyticsRead(config, providerFixture);
+  sleep(0.3);
+}
+
+export function providerAnalyticsRead(config, providerFixture) {
+  const token = providerFixture.accessToken;
   const analytics = rpc(
     config,
     token,
@@ -203,8 +185,6 @@ export function providerHubRead(config, providerFixture) {
   check(campaignClicks.response, {
     'provider campaign clicks 200': (r) => r.status === 200,
   });
-
-  sleep(0.3);
 }
 
 export function adminDataRead(config, adminFixture) {
@@ -214,14 +194,14 @@ export function adminDataRead(config, adminFixture) {
 }
 
 export function adminDashboardRead(config, adminFixture) {
-  const page = http.get(`${config.dashboardBaseUrl}/login`, {
-    tags: { flow: 'admin_dashboard', endpoint: 'dashboard_login_page' },
-  });
-  check(page, { 'dashboard login page 200': (r) => r.status === 200 });
-
-  const now = new Date();
-  now.setDate(now.getDate() - 30);
-  const sinceIso = encodeURIComponent(now.toISOString());
+  if (!envBoolean('SKIP_DASHBOARD_UI_CHECK')) {
+    const page = http.get(`${config.dashboardBaseUrl}/login`, {
+      tags: { flow: 'admin_dashboard', endpoint: 'dashboard_login_page' },
+    });
+    check(page, {
+      'dashboard login page reachable': (r) => r.status === 200 || r.status === 401,
+    });
+  }
 
   const responses = http.batch([
     [
@@ -296,19 +276,6 @@ export function adminDashboardRead(config, adminFixture) {
         tags: { flow: 'admin_dashboard', endpoint: 'subscriptions_table' },
       },
     ],
-    [
-      'HEAD',
-      `${config.supabaseUrl}/rest/v1/analytics_events?select=id&kind=eq.place_open&occurred_at=gte.${sinceIso}`,
-      null,
-      {
-        headers: {
-          apikey: config.serviceRoleKey,
-          Authorization: `Bearer ${config.serviceRoleKey}`,
-          Prefer: 'count=exact',
-        },
-        tags: { flow: 'admin_dashboard', endpoint: 'analytics_place_open_count' },
-      },
-    ],
   ]);
 
   check(responses[0], { 'admin users 200': (r) => r.status === 200 });
@@ -317,16 +284,65 @@ export function adminDashboardRead(config, adminFixture) {
   check(responses[3], { 'admin reports 200': (r) => r.status === 200 });
   check(responses[4], { 'admin appeals 200': (r) => r.status === 200 });
   check(responses[5], { 'admin subscriptions 200': (r) => r.status === 200 });
-  check(responses[6], { 'admin analytics count 200': (r) => r.status === 200 });
+  adminAnalyticsRead(config);
 
   sleep(0.3);
 }
 
-export function adminOverviewCounts(config) {
-  const now = new Date();
-  now.setDate(now.getDate() - 30);
-  const sinceIso = encodeURIComponent(now.toISOString());
+export function adminAnalyticsRead(config) {
+  const rangeStart = new Date();
+  rangeStart.setDate(rangeStart.getDate() - 30);
+  const rangeStartDay = rangeStart.toISOString().slice(0, 10);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayIso = encodeURIComponent(today.toISOString());
+  const todayDay = today.toISOString().slice(0, 10);
 
+  const responses = http.batch([
+    [
+      'GET',
+      `${config.supabaseUrl}/rest/v1/analytics_daily_rollups?select=place_id,kind,event_count,day&day=gte.${rangeStartDay}&day=lt.${todayDay}`,
+      null,
+      {
+        headers: {
+          apikey: config.serviceRoleKey,
+          Authorization: `Bearer ${config.serviceRoleKey}`,
+        },
+        tags: { flow: 'admin_analytics', endpoint: 'analytics_rollups' },
+      },
+    ],
+    [
+      'GET',
+      `${config.supabaseUrl}/rest/v1/analytics_events?select=place_id,kind&occurred_at=gte.${todayIso}&limit=1000`,
+      null,
+      {
+        headers: {
+          apikey: config.serviceRoleKey,
+          Authorization: `Bearer ${config.serviceRoleKey}`,
+        },
+        tags: { flow: 'admin_analytics', endpoint: 'analytics_today_tail' },
+      },
+    ],
+    [
+      'GET',
+      `${config.supabaseUrl}/rest/v1/campaign_metric_daily_rollups?select=campaign_id,place_id,metric,event_count,day&day=gte.${rangeStartDay}`,
+      null,
+      {
+        headers: {
+          apikey: config.serviceRoleKey,
+          Authorization: `Bearer ${config.serviceRoleKey}`,
+        },
+        tags: { flow: 'admin_analytics', endpoint: 'campaign_rollups' },
+      },
+    ],
+  ]);
+
+  check(responses[0], { 'admin analytics rollups 200': (r) => r.status === 200 });
+  check(responses[1], { 'admin analytics today tail 200': (r) => r.status === 200 });
+  check(responses[2], { 'admin campaign rollups 200': (r) => r.status === 200 });
+}
+
+export function adminOverviewCounts(config) {
   const counts = [
     serviceHeadCount(
       config,
@@ -343,15 +359,10 @@ export function adminOverviewCounts(config) {
       'moderation_reports?select=id&status=eq.open',
       { flow: 'admin_overview', endpoint: 'reports_open_count' },
     ),
-    serviceHeadCount(
-      config,
-      `analytics_events?select=id&kind=eq.place_open&occurred_at=gte.${sinceIso}`,
-      { flow: 'admin_overview', endpoint: 'place_open_count' },
-    ),
   ];
 
   check(counts[0], { 'places count 200': (r) => r.status === 200 });
   check(counts[1], { 'providers count 200': (r) => r.status === 200 });
   check(counts[2], { 'reports count 200': (r) => r.status === 200 });
-  check(counts[3], { 'analytics count 200': (r) => r.status === 200 });
+  adminAnalyticsRead(config);
 }

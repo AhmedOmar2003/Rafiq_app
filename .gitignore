@@ -93,6 +93,7 @@ supabase_remote_schema.sql
 *.tmp
 *.swp
 *.swo
+performance/results/
 
 # Keep local examples checked in
 !.env.example

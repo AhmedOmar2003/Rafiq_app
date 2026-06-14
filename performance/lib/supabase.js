@@ -1,5 +1,11 @@
 import http from 'k6/http';
 import { check, fail } from 'k6';
+import { Counter } from 'k6/metrics';
+
+const authStatus200 = new Counter('auth_status_200');
+const authStatus400 = new Counter('auth_status_400');
+const authStatus429 = new Counter('auth_status_429');
+const authStatusOther = new Counter('auth_status_other');
 
 function jsonHeaders(apiKey, token, extra = {}) {
   return {
@@ -16,6 +22,13 @@ function storageObjectUrl(baseUrl, bucket, objectPath) {
     .map((segment) => encodeURIComponent(segment))
     .join('/');
   return `${baseUrl}/storage/v1/object/${bucket}/${encodedPath}`;
+}
+
+function publicStorageObjectUrl(baseUrl, bucket, objectPath) {
+  return storageObjectUrl(baseUrl, bucket, objectPath).replace(
+    '/storage/v1/object/',
+    '/storage/v1/object/public/',
+  );
 }
 
 function maybeParseJson(body) {
@@ -122,7 +135,7 @@ export function httpJson(method, url, { headers = {}, body, tags = {} } = {}) {
 }
 
 export function authSignIn(config, email, password) {
-  return httpJson(
+  const result = httpJson(
     'POST',
     `${config.supabaseUrl}/auth/v1/token?grant_type=password`,
     {
@@ -134,6 +147,11 @@ export function authSignIn(config, email, password) {
       tags: { endpoint: 'auth_sign_in' },
     },
   );
+  if (result.status === 200) authStatus200.add(1);
+  else if (result.status === 400) authStatus400.add(1);
+  else if (result.status === 429) authStatus429.add(1);
+  else authStatusOther.add(1);
+  return result;
 }
 
 export function rpc(config, token, name, params, extraTags = {}) {
@@ -220,7 +238,7 @@ export function storageUploadTextObject(
   bucket,
   objectPath,
   textBody,
-  contentType = 'image/svg+xml',
+  contentType = 'text/plain',
   extraTags = {},
 ) {
   const response = http.request(
@@ -375,10 +393,28 @@ export function fetchSamplePlace(config) {
     fail(`Could not fetch sample place: ${JSON.stringify(result.data)}`);
   }
   const row = result.data[0];
+  const gallery = restGet(
+    config,
+    config.anonKey,
+    `place_images?select=storage_path,is_cover,sort_order&place_id=eq.${row.id}&order=is_cover.desc,sort_order.asc&limit=1`,
+    { flow: 'sample_place' },
+  );
+  const galleryPath = Array.isArray(gallery.data)
+    ? gallery.data[0]?.storage_path
+    : null;
+  const rawImagePath = row.image_path || galleryPath || null;
+  const imageUrl = rawImagePath
+    ? String(rawImagePath).startsWith('http')
+      ? String(rawImagePath)
+      : publicStorageObjectUrl(config.supabaseUrl, 'place-images', rawImagePath)
+    : String(config.sampleImageUrl || '').startsWith(config.supabaseUrl)
+      ? config.sampleImageUrl
+      : null;
+
   return {
     placeUuid: row.id,
-    placeId: row.id,
-    imageUrl: row.image_path || config.sampleImageUrl,
+    placeId: row.place_id ?? row.id,
+    imageUrl,
   };
 }
 
@@ -560,32 +596,40 @@ export function createAdminFixture(config, label) {
 export function cleanupFixtures(config, fixtures) {
   if (!fixtures) return;
 
-  if (fixtures.provider?.campaignId) {
-    serviceDelete(config, `promotional_campaigns?id=eq.${fixtures.provider.campaignId}`);
+  const providers = fixtures.providers?.length
+    ? fixtures.providers
+    : [fixtures.provider].filter(Boolean);
+  const regularUsers = fixtures.regularUsers?.length
+    ? fixtures.regularUsers
+    : [fixtures.regular].filter(Boolean);
+  const admins = fixtures.admins?.length
+    ? fixtures.admins
+    : [fixtures.admin].filter(Boolean);
+
+  for (const provider of providers) {
+    if (provider.campaignId) {
+      serviceDelete(config, `promotional_campaigns?id=eq.${provider.campaignId}`);
+    }
+    if (provider.providerId) {
+      serviceDelete(config, `places?provider_id=eq.${provider.providerId}`);
+      serviceDelete(config, `providers?id=eq.${provider.providerId}`);
+    }
   }
-  if (fixtures.provider?.approvedPlaceUuid || fixtures.provider?.pendingPlaceUuid) {
-    serviceDelete(
-      config,
-      `places?provider_id=eq.${fixtures.provider.providerId}`,
-    );
+  for (const regular of regularUsers) {
+    if (regular.userId) {
+      serviceDelete(config, `favorites?user_id=eq.${regular.userId}`);
+    }
   }
-  if (fixtures.provider?.providerId) {
-    serviceDelete(
-      config,
-      `providers?id=eq.${fixtures.provider.providerId}`,
-    );
-  }
-  if (fixtures.regular?.userId) {
-    serviceDelete(config, `favorites?user_id=eq.${fixtures.regular.userId}`);
-  }
-  if (fixtures.admin?.userId) {
-    serviceDelete(config, `admin_roles?user_id=eq.${fixtures.admin.userId}`);
+  for (const admin of admins) {
+    if (admin.userId) {
+      serviceDelete(config, `admin_roles?user_id=eq.${admin.userId}`);
+    }
   }
 
   const userIds = [
-    fixtures.regular?.userId,
-    fixtures.provider?.userId,
-    fixtures.admin?.userId,
+    ...regularUsers.map((user) => user.userId),
+    ...providers.map((provider) => provider.userId),
+    ...admins.map((admin) => admin.userId),
   ].filter(Boolean);
   for (const userId of userIds) {
     adminDeleteUser(config, userId);

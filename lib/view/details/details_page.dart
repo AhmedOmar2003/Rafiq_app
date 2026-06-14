@@ -51,9 +51,7 @@ class _DetailsPageState extends State<DetailsPage> {
     currentModel = widget.model;
     // Profile image is now owned by ProfileImageStore — just nudge it.
     ProfileImageStore.instance.ensureLoaded();
-    _fetchGalleryImages(currentModel);
-    _fetchLastEvaluationFromAPI(currentModel.placeId);
-    _hydrateInteractions(currentModel);
+    _loadPlaceContext(currentModel);
   }
 
   @override
@@ -62,86 +60,58 @@ class _DetailsPageState extends State<DetailsPage> {
     super.dispose();
   }
 
-  Future<void> _fetchLastEvaluationFromAPI(int placeId) async {
+  Future<void> _loadPlaceContext(SuggestionItemModel model) async {
     if (!_isMounted) return;
-    setState(() => _isReviewLoading = true);
+    setState(() {
+      _isReviewLoading = true;
+      _isGalleryLoading = true;
+    });
 
-    try {
-      final latestReview = await _apiService.fetchLastReview(placeId: placeId);
-
-      if (!_isMounted) return;
-
-      setState(() {
-        lastEvaluation = latestReview;
-      });
-    } catch (_) {
-      if (!_isMounted) return;
-      AppFeedback.error(AppCopy.errorGeneric);
-    } finally {
-      if (_isMounted) {
-        setState(() => _isReviewLoading = false);
-      }
-    }
-  }
-
-  Future<void> _fetchGalleryImages(SuggestionItemModel model) async {
     final placeUuid = model.placeUuid;
-    if (placeUuid == null || placeUuid.isEmpty) {
-      if (!_isMounted) return;
-      setState(() => galleryImages = [model.image]);
-      return;
+    if (placeUuid != null && placeUuid.isNotEmpty) {
+      _trackPlaceOpen(placeUuid);
     }
 
-    if (!_isMounted) return;
-    setState(() => _isGalleryLoading = true);
     try {
-      final images =
-          await _apiService.fetchPlaceGalleryImages(placeUuid: placeUuid);
+      final context = await _apiService.fetchPlaceDetailsContext(
+        placeUuid: placeUuid,
+        legacyPlaceId: model.placeId,
+      );
       if (!_isMounted) return;
+
       setState(() {
-        galleryImages = images.isNotEmpty ? images : [model.image];
+        galleryImages =
+            context.galleryUrls.isNotEmpty ? context.galleryUrls : [model.image];
+        lastEvaluation = context.latestReview;
+        _campaigns = context.campaigns;
+        _isFavorited = context.isFavorited;
       });
-    } catch (_) {
-      if (!_isMounted) return;
-      setState(() => galleryImages = [model.image]);
-    } finally {
-      if (_isMounted) {
-        setState(() => _isGalleryLoading = false);
-      }
-    }
-  }
 
-  Future<void> _hydrateInteractions(SuggestionItemModel model) async {
-    final placeUuid = model.placeUuid;
-    if (placeUuid == null || placeUuid.isEmpty) return;
-
-    _trackPlaceOpen(placeUuid);
-
-    try {
-      final results = await Future.wait<dynamic>([
-        _apiService.isPlaceFavorited(placeUuid),
-        _apiService.fetchActivePlacePromotions(placeId: placeUuid),
-      ]);
-      if (!_isMounted) return;
-      setState(() {
-        _isFavorited = (results[0] as bool?) ?? false;
-        _campaigns = (results[1] as List<PlacePromotionBanner>?) ??
-            const <PlacePromotionBanner>[];
-      });
-      for (final campaign in _campaigns) {
+      for (final campaign in context.campaigns) {
         if (_campaignImpressionsSeen.add(campaign.id)) {
-          unawaited(_apiService.recordCampaignMetric(
-            campaignId: campaign.id,
-            metric: 'impression',
-            // Pass the per-app-session id so the backend can deduplicate
-            // impressions within the 60-minute rate-limit window.
-            sessionId: AnalyticsTracker.instance.sessionId,
-          ));
+          unawaited(
+            _apiService.recordCampaignMetric(
+              campaignId: campaign.id,
+              metric: 'impression',
+              sessionId: AnalyticsTracker.instance.sessionId,
+            ),
+          );
         }
       }
     } catch (_) {
       if (!_isMounted) return;
-      setState(() => _campaigns = const []);
+      setState(() {
+        galleryImages = [model.image];
+        _campaigns = const <PlacePromotionBanner>[];
+      });
+      AppFeedback.error(AppCopy.errorGeneric);
+    } finally {
+      if (_isMounted) {
+        setState(() {
+          _isReviewLoading = false;
+          _isGalleryLoading = false;
+        });
+      }
     }
   }
 
@@ -200,9 +170,7 @@ class _DetailsPageState extends State<DetailsPage> {
     setState(() {
       currentModel = newModel;
     });
-    _fetchGalleryImages(newModel);
-    _fetchLastEvaluationFromAPI(newModel.placeId);
-    _hydrateInteractions(newModel);
+    _loadPlaceContext(newModel);
   }
 
   @override
@@ -315,7 +283,7 @@ class _DetailsPageState extends State<DetailsPage> {
       ),
     ).then((_) {
       if (!_isMounted) return;
-      _fetchLastEvaluationFromAPI(currentModel.placeId);
+      _loadPlaceContext(currentModel);
     });
   }
 

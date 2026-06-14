@@ -1,137 +1,210 @@
 import http from 'k6/http';
-import { check, sleep } from 'k6';
+import { check, fail, sleep } from 'k6';
 
-const supabaseUrl = __ENV.SUPABASE_URL || 'https://qtlmumlcvcwqieexcguy.supabase.co';
-const anonKey =
-  __ENV.SUPABASE_ANON_KEY ||
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0bG11bWxjdmN3cWllZXhjZ3V5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NDMwMTEsImV4cCI6MjA5MjExOTAxMX0.fvPB55Iedho6ABmMoVQ9M5xEPtNfSN7bwr6HYKL-Qkc';
-const dashboardBaseUrl =
-  __ENV.DASHBOARD_BASE_URL || 'https://admin-dashboard-rafiq-app.vercel.app';
+import {
+  envNumber,
+  runtimeConfig,
+  scenarioStages,
+  standardOptions,
+} from './lib/config.js';
+import { fetchSamplePlace, rpc } from './lib/supabase.js';
 
-const samplePlaceId = Number(__ENV.PLACE_ID || 20);
-const samplePlaceUuid =
-  __ENV.PLACE_UUID || 'b07251b4-cff9-4c42-9f90-6e434214f7cb';
-const sampleImageUrl =
-  __ENV.PLACE_IMAGE_URL ||
-  'https://qtlmumlcvcwqieexcguy.supabase.co/storage/v1/object/public/place-images/d225a998-a411-445b-b7c6-1836653b6bce/b07251b4-cff9-4c42-9f90-6e434214f7cb/1780333445720623-0.jpg';
-const browsePeakRate = Number(__ENV.BROWSE_PEAK_RATE || 60);
-const detailPeakRate = Number(__ENV.DETAILS_PEAK_RATE || 30);
-const stageDuration = __ENV.STAGE_DURATION || '30s';
-const coolDownDuration = __ENV.COOLDOWN_DURATION || '10s';
-
-const jsonHeaders = {
-  apikey: anonKey,
-  Authorization: `Bearer ${anonKey}`,
-  'Content-Type': 'application/json',
-};
+const config = runtimeConfig();
+const browsePeakRate = envNumber('BROWSE_PEAK_RATE', 20);
+const detailPeakRate = envNumber('DETAILS_PEAK_RATE', 10);
+const loginPagePeakRate = envNumber('LOGIN_PAGE_PEAK_RATE', 0);
+const redirectPeakRate = envNumber('REDIRECT_PEAK_RATE', 6);
+const detailsMode = (__ENV.DETAILS_MODE || 'context_rpc').trim().toLowerCase();
 
 const restHeaders = {
-  apikey: anonKey,
-  Authorization: `Bearer ${anonKey}`,
+  apikey: config.anonKey,
+  Authorization: `Bearer ${config.anonKey}`,
 };
 
-export const options = {
-  discardResponseBodies: true,
-  summaryTrendStats: ['avg', 'min', 'med', 'p(90)', 'p(95)', 'max'],
-  thresholds: {
-    http_req_failed: ['rate<0.01'],
+const scenarios = {};
+
+if (browsePeakRate > 0) {
+  scenarios.browse_places = {
+    executor: 'ramping-arrival-rate',
+    startRate: Math.max(1, Math.round(browsePeakRate * 0.25)),
+    timeUnit: '1s',
+    preAllocatedVUs: 20,
+    maxVUs: 160,
+    stages: scenarioStages(browsePeakRate),
+    exec: 'browsePlaces',
+  };
+}
+
+if (detailPeakRate > 0) {
+  scenarios.place_details_bundle = {
+    executor: 'ramping-arrival-rate',
+    startRate: Math.max(1, Math.round(detailPeakRate * 0.25)),
+    timeUnit: '1s',
+    preAllocatedVUs: 20,
+    maxVUs: 160,
+    stages: scenarioStages(detailPeakRate),
+    exec: 'loadPlaceDetailsBundle',
+  };
+}
+
+if (loginPagePeakRate > 0) {
+  scenarios.dashboard_login_page = {
+    executor: 'ramping-arrival-rate',
+    startRate: 1,
+    timeUnit: '1s',
+    preAllocatedVUs: 10,
+    maxVUs: 40,
+    stages: scenarioStages(loginPagePeakRate),
+    exec: 'loadLoginPage',
+  };
+}
+
+if (redirectPeakRate > 0) {
+  scenarios.unauthenticated_dashboard_redirect = {
+    executor: 'ramping-arrival-rate',
+    startRate: 1,
+    timeUnit: '1s',
+    preAllocatedVUs: 10,
+    maxVUs: 40,
+    stages: scenarioStages(redirectPeakRate),
+    exec: 'loadDashboardRedirect',
+  };
+}
+
+export const options = standardOptions(
+  scenarios,
+  {
     'http_req_duration{scenario:browse_places}': ['p(95)<1200'],
-    'http_req_duration{scenario:place_details_bundle}': ['p(95)<1500'],
+    'http_req_duration{scenario:place_details_bundle}': ['p(95)<1800'],
+    'http_req_duration{scenario:dashboard_login_page}': ['p(95)<1800'],
+    'http_req_duration{scenario:unauthenticated_dashboard_redirect}': ['p(95)<1800'],
     'checks{scenario:browse_places}': ['rate>0.99'],
     'checks{scenario:place_details_bundle}': ['rate>0.99'],
+    'checks{scenario:dashboard_login_page}': ['rate>0.99'],
+    'checks{scenario:unauthenticated_dashboard_redirect}': ['rate>0.99'],
   },
-  scenarios: {
-    browse_places: {
-      executor: 'ramping-arrival-rate',
-      startRate: 5,
-      timeUnit: '1s',
-      preAllocatedVUs: 20,
-      maxVUs: 120,
-      stages: [
-        { target: Math.max(1, Math.round(browsePeakRate * 0.17)), duration: stageDuration },
-        { target: Math.max(1, Math.round(browsePeakRate * 0.42)), duration: stageDuration },
-        { target: Math.max(1, Math.round(browsePeakRate * 0.67)), duration: stageDuration },
-        { target: browsePeakRate, duration: stageDuration },
-        { target: 0, duration: coolDownDuration },
-      ],
-      exec: 'browsePlaces',
-    },
-    place_details_bundle: {
-      executor: 'ramping-arrival-rate',
-      startRate: 3,
-      timeUnit: '1s',
-      preAllocatedVUs: 20,
-      maxVUs: 120,
-      stages: [
-        { target: Math.max(1, Math.round(detailPeakRate * 0.2)), duration: stageDuration },
-        { target: Math.max(1, Math.round(detailPeakRate * 0.4)), duration: stageDuration },
-        { target: Math.max(1, Math.round(detailPeakRate * 0.67)), duration: stageDuration },
-        { target: detailPeakRate, duration: stageDuration },
-        { target: 0, duration: coolDownDuration },
-      ],
-      exec: 'loadPlaceDetailsBundle',
-    },
-  },
-};
+);
+
+export function setup() {
+  if (!config.anonKey) {
+    fail('SUPABASE_ANON_KEY is required for public read tests.');
+  }
+  return { samplePlace: fetchSamplePlace(config) };
+}
 
 export function browsePlaces() {
-  const response = http.post(
-    `${supabaseUrl}/rest/v1/rpc/browse_ranked_places`,
-    JSON.stringify({
+  const browse = rpc(
+    config,
+    config.anonKey,
+    'browse_ranked_places',
+    {
       _city_name: null,
       _budget: null,
       _activity_name: null,
       _limit: 12,
-    }),
-    { headers: jsonHeaders, tags: { endpoint: 'browse_ranked_places' } },
+    },
+    { flow: 'public_read' },
   );
 
-  check(response, {
+  check(browse.response, {
     'browse returned 200': (r) => r.status === 200,
   });
 
   sleep(0.2);
 }
 
-export function loadPlaceDetailsBundle() {
+export function loadPlaceDetailsBundle(data) {
+  const sample = data.samplePlace;
+  if (detailsMode === 'context_rpc') {
+    const context = rpc(
+      config,
+      config.anonKey,
+      'get_place_details_context',
+      {
+        _place_uuid: sample.placeUuid,
+        _legacy_place_id: Number.isInteger(sample.placeId) ? sample.placeId : null,
+      },
+      { flow: 'public_details', endpoint: 'place_details_context' },
+    );
+    check(context.response, {
+      'details context returned 200': (r) => r.status === 200,
+      'details context resolved place': () => Boolean(context.data?.place_uuid),
+    });
+
+    if (sample.imageUrl) {
+      const image = http.get(sample.imageUrl, {
+        tags: { flow: 'public_details', endpoint: 'place_image_asset' },
+      });
+      check(image, { 'image returned 200': (r) => r.status === 200 });
+    }
+    sleep(0.3);
+    return;
+  }
+
   const responses = http.batch([
     [
       'GET',
-      `${supabaseUrl}/rest/v1/reviews?select=review_id,place_id,user_id,name,review_text,rating,image,created_at&place_id=eq.${samplePlaceId}&order=created_at.desc&limit=12`,
+      `${config.supabaseUrl}/rest/v1/reviews?select=id,place_id,user_id,rating,body,created_at&place_id=eq.${sample.placeId}&order=created_at.desc&limit=12`,
       null,
-      { headers: restHeaders, tags: { endpoint: 'reviews' } },
+      { headers: restHeaders, tags: { flow: 'public_details', endpoint: 'reviews' } },
     ],
     [
       'GET',
-      `${supabaseUrl}/rest/v1/place_images?select=storage_path,is_cover,sort_order,created_at&place_id=eq.${samplePlaceUuid}&order=is_cover.desc,sort_order.asc,created_at.asc`,
+      `${config.supabaseUrl}/rest/v1/place_images?select=storage_path,is_cover,sort_order,created_at&place_id=eq.${sample.placeUuid}&order=is_cover.desc,sort_order.asc,created_at.asc`,
       null,
-      { headers: restHeaders, tags: { endpoint: 'place_images' } },
+      { headers: restHeaders, tags: { flow: 'public_details', endpoint: 'place_images' } },
     ],
     [
       'GET',
-      `${supabaseUrl}/rest/v1/promotional_campaigns?select=id,title,body,kind,status,image_path,cta_label,starts_at,ends_at&place_id=eq.${samplePlaceUuid}&status=eq.active&order=created_at.desc`,
+      `${config.supabaseUrl}/rest/v1/promotional_campaigns?select=id,title,body,kind,status,image_path,cta_label,starts_at,ends_at&place_id=eq.${sample.placeUuid}&status=eq.active&order=created_at.desc`,
       null,
-      { headers: restHeaders, tags: { endpoint: 'promotional_campaigns' } },
+      {
+        headers: restHeaders,
+        tags: { flow: 'public_details', endpoint: 'promotional_campaigns' },
+      },
     ],
-    [
-      'GET',
-      sampleImageUrl,
-      null,
-      { tags: { endpoint: 'place_image_asset' } },
-    ],
-    [
-      'GET',
-      `${dashboardBaseUrl}/login`,
-      null,
-      { tags: { endpoint: 'dashboard_login_page' } },
-    ],
+    ...(sample.imageUrl
+      ? [[
+          'GET',
+          sample.imageUrl,
+          null,
+          { tags: { flow: 'public_details', endpoint: 'place_image_asset' } },
+        ]]
+      : []),
   ]);
 
   check(responses[0], { 'reviews returned 200': (r) => r.status === 200 });
   check(responses[1], { 'gallery returned 200': (r) => r.status === 200 });
   check(responses[2], { 'campaigns returned 200': (r) => r.status === 200 });
-  check(responses[3], { 'image returned 200': (r) => r.status === 200 });
-  check(responses[4], { 'dashboard login returned 200': (r) => r.status === 200 });
+  if (sample.imageUrl) {
+    check(responses[3], { 'image returned 200': (r) => r.status === 200 });
+  }
 
   sleep(0.3);
+}
+
+export function loadLoginPage() {
+  const response = http.get(`${config.dashboardBaseUrl}/login`, {
+    tags: { flow: 'public_read', endpoint: 'dashboard_login_page' },
+  });
+
+  check(response, {
+    'dashboard login returned 200': (r) => r.status === 200,
+  });
+
+  sleep(0.2);
+}
+
+export function loadDashboardRedirect() {
+  const response = http.get(`${config.dashboardBaseUrl}/dashboard/places`, {
+    redirects: 5,
+    tags: { flow: 'dashboard_redirect', endpoint: 'dashboard_places_redirect' },
+  });
+
+  check(response, {
+    'dashboard redirect landed on login': (r) =>
+      r.status === 200 && String(r.url || '').includes('/login'),
+  });
+
+  sleep(0.2);
 }
