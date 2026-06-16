@@ -4,6 +4,7 @@ import 'package:rafiq_app/auth/login/login_screen.dart';
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:rafiq_app/core/security/password_policy.dart';
+import 'package:rafiq_app/core/utils/app_error_formatter.dart';
 import 'package:rafiq_app/core/utils/app_microcopy.dart';
 import 'package:rafiq_app/service/auth_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -47,6 +48,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   }
 
   Future<void> _updatePassword() async {
+    if (_isProcessing) return;
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -70,7 +72,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       if (!mounted) {
         return;
       }
-      AppFeedback.error(AppCopy.errorGeneric);
+      AppFeedback.error(AppErrorFormatter.userMessage(e));
     } finally {
       if (mounted) {
         setState(() => _isProcessing = false);

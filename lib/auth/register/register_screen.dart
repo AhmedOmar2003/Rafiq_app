@@ -19,12 +19,15 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  static const Duration _authRetryDelay = Duration(minutes: 1);
+
   final formKey = GlobalKey<FormState>();
   final userNameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   bool _isLoading = false;
   bool _showSuccessOverlay = false;
+  DateTime? _authRetryAfter;
   String _password = '';
 
   @override
@@ -36,6 +39,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _handleRegister() async {
+    if (!_canStartAuthAttempt()) return;
     if (!formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
@@ -49,13 +53,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
       setState(() => _showSuccessOverlay = true);
     } catch (e) {
       if (!mounted) return;
-      AppFeedback.error(AppErrorFormatter.userMessage(e));
+      final message = AppErrorFormatter.userMessage(e);
+      _rememberRateLimit(message);
+      AppFeedback.error(message);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _handleGoogleRegister() async {
+    if (!_canStartAuthAttempt()) return;
     setState(() => _isLoading = true);
     try {
       final completed = await AuthService().signUpWithGoogle();
@@ -63,13 +70,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
       setState(() => _showSuccessOverlay = true);
     } catch (e) {
       if (!mounted) return;
-      AppFeedback.error(AppErrorFormatter.userMessage(e));
+      final message = AppErrorFormatter.userMessage(e);
+      _rememberRateLimit(message);
+      AppFeedback.error(message);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _navigateAfterAuth() => PostAuthRouter.replaceWithHome(context);
+
+  bool _canStartAuthAttempt() {
+    if (_isLoading) return false;
+
+    final retryAfter = _authRetryAfter;
+    if (retryAfter == null || DateTime.now().isAfter(retryAfter)) {
+      return true;
+    }
+
+    AppFeedback.error(AppCopy.authRateLimited);
+    return false;
+  }
+
+  void _rememberRateLimit(String message) {
+    if (message != AppCopy.authRateLimited) return;
+    setState(() {
+      _authRetryAfter = DateTime.now().add(_authRetryDelay);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

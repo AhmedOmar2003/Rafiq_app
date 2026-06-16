@@ -4,6 +4,7 @@ import 'package:rafiq_app/auth/forget%20password/reset_password.dart';
 import 'package:rafiq_app/auth/widgets/otp_verify_screen.dart';
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
+import 'package:rafiq_app/core/utils/app_error_formatter.dart';
 import 'package:rafiq_app/core/utils/app_microcopy.dart';
 import 'package:rafiq_app/service/auth_service.dart';
 
@@ -15,9 +16,12 @@ class ForgotPasswordScreen extends StatefulWidget {
 }
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+  static const Duration _authRetryDelay = Duration(minutes: 1);
+
   final formKey = GlobalKey<FormState>();
   final emailController = TextEditingController();
   bool _isLoading = false;
+  DateTime? _authRetryAfter;
 
   @override
   void dispose() {
@@ -26,6 +30,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   Future<void> _sendResetOtp() async {
+    if (!_canStartResetRequest()) return;
     if (!formKey.currentState!.validate()) return;
 
     final normalizedEmail = emailController.text.trim().toLowerCase();
@@ -61,10 +66,31 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      AppFeedback.error(AppCopy.errorGeneric);
+      final message = AppErrorFormatter.userMessage(e);
+      _rememberRateLimit(message);
+      AppFeedback.error(message);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  bool _canStartResetRequest() {
+    if (_isLoading) return false;
+
+    final retryAfter = _authRetryAfter;
+    if (retryAfter == null || DateTime.now().isAfter(retryAfter)) {
+      return true;
+    }
+
+    AppFeedback.error(AppCopy.authRateLimited);
+    return false;
+  }
+
+  void _rememberRateLimit(String message) {
+    if (message != AppCopy.authRateLimited) return;
+    setState(() {
+      _authRetryAfter = DateTime.now().add(_authRetryDelay);
+    });
   }
 
   @override
@@ -106,8 +132,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               controller: emailController,
               textInputAction: TextInputAction.done,
               type: TextInputType.emailAddress,
-              suffixIcon:
-                  Icon(Icons.email_outlined, color: AppColor.primary, size: 20.sp),
+              suffixIcon: Icon(Icons.email_outlined,
+                  color: AppColor.primary, size: 20.sp),
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return AppCopy.fieldRequired;

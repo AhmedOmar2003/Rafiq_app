@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform, visibleForTesting;
 import 'package:google_sign_in/google_sign_in.dart';
@@ -95,6 +97,47 @@ class AuthService {
         normalizedMessage.contains('over_request_rate_limit');
   }
 
+  void _recordAuthSecurityEvent({
+    required String eventType,
+    required String email,
+    required String friendlyMessage,
+    String role = 'user',
+  }) {
+    final status =
+        friendlyMessage == AppCopy.authRateLimited ? 'rate_limited' : 'failed';
+
+    unawaited(_recordAuthSecurityEventAsync(
+      eventType: eventType,
+      email: email,
+      status: status,
+      reason: friendlyMessage,
+      role: role,
+    ));
+  }
+
+  Future<void> _recordAuthSecurityEventAsync({
+    required String eventType,
+    required String email,
+    required String status,
+    required String reason,
+    required String role,
+  }) async {
+    try {
+      await _client.rpc('record_auth_security_event', params: {
+        '_event_type': eventType,
+        '_source': 'flutter_app',
+        '_email': email.trim().toLowerCase(),
+        '_status': status,
+        '_reason': reason,
+        '_role': role,
+        '_user_agent': null,
+      });
+    } catch (_) {
+      // Guardrail logging must never block auth UX or break older deployments
+      // that have not applied the public-launch migration yet.
+    }
+  }
+
   /// Raw Supabase sign-up call.
   ///
   /// Behaviour depends on the dashboard setting
@@ -135,7 +178,13 @@ class AuthService {
         },
       );
     } catch (e) {
-      throw Exception(_friendlyAuthError(e));
+      final friendly = _friendlyAuthError(e);
+      _recordAuthSecurityEvent(
+        eventType: 'signup_failed',
+        email: normalizedEmail,
+        friendlyMessage: friendly,
+      );
+      throw Exception(friendly);
     }
   }
 
@@ -496,7 +545,13 @@ class AuthService {
         password: normalizedPassword,
       );
     } catch (e) {
-      throw Exception(_friendlyAuthError(e));
+      final friendly = _friendlyAuthError(e);
+      _recordAuthSecurityEvent(
+        eventType: 'login_failed',
+        email: normalizedEmail,
+        friendlyMessage: friendly,
+      );
+      throw Exception(friendly);
     }
 
     final user = response.user ?? _client.auth.currentUser;
@@ -625,7 +680,13 @@ class AuthService {
         redirectTo: SupabaseConfig.recoveryRedirectUrl,
       );
     } catch (e) {
-      throw Exception(_friendlyAuthError(e));
+      final friendly = _friendlyAuthError(e);
+      _recordAuthSecurityEvent(
+        eventType: 'forgot_password_failed',
+        email: normalizedEmail,
+        friendlyMessage: friendly,
+      );
+      throw Exception(friendly);
     }
   }
 
