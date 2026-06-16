@@ -9,6 +9,16 @@ class AppErrorFormatter {
 
     final normalized = raw.toLowerCase();
 
+    if (raw == AppCopy.authRateLimited ||
+        normalized.contains('429') ||
+        normalized.contains('too many') ||
+        normalized.contains('rate limit') ||
+        normalized.contains('rate_limit') ||
+        normalized.contains('over_email_send_rate_limit') ||
+        normalized.contains('over_request_rate_limit')) {
+      return AppCopy.authRateLimited;
+    }
+
     if (normalized.contains('socketexception') ||
         normalized.contains('timeout') ||
         normalized.contains('network') ||

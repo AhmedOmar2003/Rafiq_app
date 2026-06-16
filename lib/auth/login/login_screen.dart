@@ -20,12 +20,15 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  static const Duration _authRetryDelay = Duration(minutes: 1);
+
   final formKey = GlobalKey<FormState>();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   String _password = '';
   bool _isLoading = false;
   bool _showSuccessOverlay = false;
+  DateTime? _authRetryAfter;
 
   @override
   void initState() {
@@ -45,6 +48,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleLogin() async {
+    if (!_canStartAuthAttempt()) return;
     if (!formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
@@ -54,30 +58,60 @@ class _LoginScreenState extends State<LoginScreen> {
         password: passwordController.text,
       );
       if (!mounted) return;
-      setState(() => _showSuccessOverlay = true);
+      setState(() {
+        _authRetryAfter = null;
+        _showSuccessOverlay = true;
+      });
     } catch (e) {
       if (!mounted) return;
-      AppFeedback.error(AppErrorFormatter.userMessage(e));
+      final message = AppErrorFormatter.userMessage(e);
+      _rememberRateLimit(message);
+      AppFeedback.error(message);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _handleGoogleLogin() async {
+    if (!_canStartAuthAttempt()) return;
     setState(() => _isLoading = true);
     try {
       final completed = await AuthService().signInWithGoogle();
       if (!mounted || !completed) return;
-      setState(() => _showSuccessOverlay = true);
+      setState(() {
+        _authRetryAfter = null;
+        _showSuccessOverlay = true;
+      });
     } catch (e) {
       if (!mounted) return;
-      AppFeedback.error(AppErrorFormatter.userMessage(e));
+      final message = AppErrorFormatter.userMessage(e);
+      _rememberRateLimit(message);
+      AppFeedback.error(message);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _navigateAfterAuth() => PostAuthRouter.replaceWithHome(context);
+
+  bool _canStartAuthAttempt() {
+    if (_isLoading) return false;
+
+    final retryAfter = _authRetryAfter;
+    if (retryAfter == null || DateTime.now().isAfter(retryAfter)) {
+      return true;
+    }
+
+    AppFeedback.error(AppCopy.authRateLimited);
+    return false;
+  }
+
+  void _rememberRateLimit(String message) {
+    if (message != AppCopy.authRateLimited) return;
+    setState(() {
+      _authRetryAfter = DateTime.now().add(_authRetryDelay);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -209,7 +243,9 @@ class _LoginScreenState extends State<LoginScreen> {
       type: TextInputType.visiblePassword,
       textInputAction: TextInputAction.done,
       onChanged: (value) => setState(() => _password = value),
-      onFieldSubmitted: (_) => _handleLogin(),
+      onFieldSubmitted: (_) {
+        if (!_isLoading) _handleLogin();
+      },
       validator: (value) =>
           (value == null || value.isEmpty) ? AppCopy.passwordRequired : null,
     );

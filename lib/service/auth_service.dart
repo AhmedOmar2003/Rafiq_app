@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:rafiq_app/core/config/supabase_config.dart';
 import 'package:rafiq_app/core/security/password_policy.dart';
+import 'package:rafiq_app/core/utils/app_microcopy.dart';
 import 'package:rafiq_app/model/user_model.dart';
 import 'package:rafiq_app/service/api_service.dart';
 
@@ -45,14 +46,14 @@ class AuthService {
 
   String _friendlyAuthError(Object error) {
     final message = error.toString();
+    final normalized = message.toLowerCase();
+    if (_isRateLimitMessage(normalized)) {
+      return AppCopy.authRateLimited;
+    }
     if (message.contains('sign_in_canceled') ||
         message.contains('sign-in-canceled') ||
         message.contains('canceled by user')) {
       return 'تم إلغاء تسجيل الدخول عبر Google.';
-    }
-    if (message.contains('over_email_send_rate_limit') ||
-        message.contains('AuthApiException') && message.contains('429')) {
-      return 'Supabase ما زال يحاول إرسال email confirmation. لو تريد تسجيلًا مباشرًا بدون أي تأكيد، أوقف Email Confirmation من Supabase Auth > Providers > Email ثم جرّب مرة أخرى.';
     }
     if (message.contains('email_not_confirmed')) {
       return 'الحساب يحتاج تأكيد بريد إلكتروني. أوقف Email Confirmation من Supabase لو تريد التسجيل الفوري.';
@@ -83,6 +84,15 @@ class AuthService {
       return 'إعداد Google Sign-In غير مكتمل. هذا الـ APK موقّع حاليًا بشهادة Android Debug، لذلك أضف SHA-1 و SHA-256 التاليين في Firebase/Google Cloud ثم أعد تنزيل google-services.json: SHA-1 = $_debugApkSha1, SHA-256 = $_debugApkSha256. كذلك تأكد أن Google Sign-In مفعّل وأن الملف يحتوي على oauth_client من نوع web.';
     }
     return message.replaceFirst('Exception: ', '');
+  }
+
+  bool _isRateLimitMessage(String normalizedMessage) {
+    return normalizedMessage.contains('429') ||
+        normalizedMessage.contains('too many') ||
+        normalizedMessage.contains('rate limit') ||
+        normalizedMessage.contains('rate_limit') ||
+        normalizedMessage.contains('over_email_send_rate_limit') ||
+        normalizedMessage.contains('over_request_rate_limit');
   }
 
   /// Raw Supabase sign-up call.
@@ -683,7 +693,11 @@ class AuthService {
         email: email,
         password: currentPassword,
       );
-    } catch (_) {
+    } catch (e) {
+      final friendly = _friendlyAuthError(e);
+      if (friendly == AppCopy.authRateLimited) {
+        throw Exception(friendly);
+      }
       throw Exception('كلمة السر الحالية غير صحيحة.');
     }
 

@@ -272,6 +272,8 @@ class AppCopy {
   static const authPasswordLabel = 'كلمة السر';
   static const authPasswordHint = 'اكتب كلمة السر';
   static const authForgotPasswordLink = 'نسيت كلمة السر؟';
+  static const authRateLimited =
+      'في محاولات تسجيل دخول كتير دلوقتي. استنى دقيقة وجرب تاني.';
 
   // --- Login -------------------------------------------------------------------
   static const loginTitle = 'تسجيل الدخول';
