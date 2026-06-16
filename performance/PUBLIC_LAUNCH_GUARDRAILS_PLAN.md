@@ -179,6 +179,9 @@ Implemented foundation:
 - `launch_safety_alerts`
 - `launch_safety_overview`
 - `launch_safety` platform setting
+- dashboard safety card on `/dashboard`
+- dashboard list of open/acknowledged launch alerts
+- alert acknowledge/resolve server actions with admin audit logging
 
 Alert triggers to add as scheduled jobs or dashboard server actions:
 
@@ -197,6 +200,15 @@ Suggested owner-friendly alert channels:
 - dashboard banner first
 - email alert second
 - Telegram/Slack/webhook later if needed
+
+Recommended Staging-first scheduled rule:
+
+1. Read `launch_safety_overview` every 10 minutes.
+2. Insert a `launch_safety_alerts` row only when a threshold is crossed.
+3. Deduplicate by `metric_key` and open status to avoid alert spam.
+4. Do not send email until Custom SMTP is configured and tested.
+5. Promote the scheduled job to Production only after Staging creates the
+   expected report-only alerts.
 
 ## 9. Launch Safety Mode Plan
 
@@ -235,6 +247,12 @@ Docs/reports:
 
 - `performance/PUBLIC_LAUNCH_GUARDRAILS_PLAN.md`
 - `docs/PUBLIC_LAUNCH_GUARDRAILS.md`
+
+Dashboard:
+
+- `admin-dashboard-rafiq-app/src/app/dashboard/page.tsx`
+- `admin-dashboard-rafiq-app/src/app/dashboard/page.module.css`
+- `admin-dashboard-rafiq-app/src/app/dashboard/actions.ts`
 
 ## 11. Migrations Added
 
@@ -287,7 +305,8 @@ No credentials should be committed.
 - Configure Custom SMTP
 - Configure Turnstile keys and backend verification
 - Confirm Sentry DSN is live for Flutter and dashboard
-- Add dashboard banner/email notification wiring from `launch_safety_overview`
+- Add email notification wiring from `launch_safety_overview`
+- Add Staging-tested scheduled alert creation job
 - Contact Supabase support before wide launch
 
 ## 14. What Is Safe For Controlled Beta
@@ -322,3 +341,82 @@ Final verdict:
 - `flutter analyze`: passed
 - `flutter test`: passed, 22 tests
 - dashboard `npm run build`: passed
+
+## 17. Dashboard Safety Surface
+
+The admin overview now surfaces public-launch safety in owner-friendly Arabic.
+
+It reads:
+
+- `launch_safety_overview`
+- open and acknowledged rows from `launch_safety_alerts`
+
+Visible signals:
+
+- current recommended launch mode
+- Auth `429` events in the last hour
+- signup failures today
+- forgot-password failures today
+- pending places older than 24 hours
+- pending campaigns older than 6 hours
+- open launch alerts
+- recommended action
+
+Alert actions:
+
+- `acknowledged`: admin saw the alert
+- `resolved`: issue was handled
+
+Both actions are non-destructive and logged in `admin_logs`.
+
+## 18. Custom SMTP Setup Checklist
+
+Recommended provider: Resend.
+
+Owner checklist:
+
+1. Create Resend account.
+2. Verify sending domain.
+3. Add DNS SPF, DKIM, and DMARC records.
+4. Create SMTP credentials in Resend.
+5. Configure Supabase Authentication SMTP settings.
+6. Send a signup email test.
+7. Send a password reset email test.
+8. Confirm inbox deliverability.
+9. Keep rollback values available.
+
+Never commit SMTP credentials.
+
+## 19. Turnstile Integration Plan
+
+Target screens:
+
+- Register
+- Forgot Password
+
+Safe implementation:
+
+- Flutter uses only `TURNSTILE_SITE_KEY`
+- `TURNSTILE_SECRET_KEY` remains server-side
+- a Supabase Edge Function or trusted backend verifies the token
+- Register/Forgot Password continue only after a valid token for public launch
+
+Current status:
+
+- no real keys committed
+- no Flutter flow is broken when keys are absent
+- implementation remains blocked on real Turnstile site/secret keys and a
+  server-side verifier
+
+## 20. Production Readiness Checklist
+
+Before opening registration publicly:
+
+1. Set Production sign-up/sign-in limit to `90 requests / 5 min`.
+2. Do not use `120`.
+3. Custom SMTP live and tested.
+4. Turnstile live on Register and Forgot Password.
+5. Dashboard safety card visible.
+6. Alerts visible and actionable.
+7. Sentry/error reporting verified.
+8. Supabase support contacted before major marketing/wide launch.
