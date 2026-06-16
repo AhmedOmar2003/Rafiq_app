@@ -53,6 +53,10 @@ email quota is not designed for public onboarding or password-reset spikes.
 
 Recommended provider: **Resend**.
 
+Detailed operational checklist:
+
+- `docs/CUSTOM_SMTP_RESEND_CHECKLIST.md`
+
 Setup checklist:
 
 1. Create a Resend account.
@@ -87,6 +91,10 @@ Turnstile should protect public entry points before broad launch:
 
 - Register
 - Forgot Password
+
+Detailed implementation plan:
+
+- `docs/TURNSTILE_READINESS_PLAN.md`
 
 Safe architecture:
 

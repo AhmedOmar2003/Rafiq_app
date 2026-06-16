@@ -247,6 +247,8 @@ Docs/reports:
 
 - `performance/PUBLIC_LAUNCH_GUARDRAILS_PLAN.md`
 - `docs/PUBLIC_LAUNCH_GUARDRAILS.md`
+- `docs/CUSTOM_SMTP_RESEND_CHECKLIST.md`
+- `docs/TURNSTILE_READINESS_PLAN.md`
 
 Dashboard:
 
