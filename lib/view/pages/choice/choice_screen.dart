@@ -290,7 +290,7 @@ class _ChoiceScreenState extends State<ChoiceScreen> {
                 color: Color.lerp(AppColor.white, AppColor.primary, value),
                 border: Border.all(
                   color: Color.lerp(
-                    const Color(0xFF000000).withValues(alpha: 0.1),
+                    AppColor.overlaySoft,
                     AppColor.primary,
                     value,
                   )!,

@@ -29,7 +29,7 @@ void showToast({required String msg, ToastStates state = ToastStates.success}) {
         : state == ToastStates.warning
             ? AppColor.warning
             : AppColor.success,
-    textColor: Colors.white,
+    textColor: AppColor.white,
     fontSize: 16.sp,
   );
 }
@@ -49,7 +49,7 @@ void showMessage(String message, {MessageType type = MessageType.fail}) {
                 : AppColor.success,
         content: Text(
           message,
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color: AppColor.white),
         ),
       ),
     );

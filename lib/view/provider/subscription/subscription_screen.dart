@@ -1103,7 +1103,7 @@ class _UpgradeSuccessOverlay extends StatefulWidget {
     return Navigator.of(context).push(
       PageRouteBuilder<void>(
         opaque: false,
-        barrierColor: Colors.black.withValues(alpha: 0.5),
+        barrierColor: AppColor.overlay,
         barrierDismissible: false,
         transitionDuration: AppMotion.base,
         pageBuilder: (_, __, ___) => _UpgradeSuccessOverlay(

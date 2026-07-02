@@ -134,9 +134,9 @@ class _Hero extends StatelessWidget {
                 end: Alignment.bottomCenter,
                 stops: const [0.0, 0.45, 1.0],
                 colors: [
-                  Colors.black.withValues(alpha: 0.28),
+                  AppColor.overlay.withValues(alpha: 0.28),
                   Colors.transparent,
-                  Colors.black.withValues(alpha: 0.08),
+                  AppColor.overlay.withValues(alpha: 0.08),
                 ],
               ),
             ),

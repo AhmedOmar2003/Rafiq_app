@@ -743,7 +743,7 @@ class _GalleryTile extends StatelessWidget {
             top: AppSpacing.xs.h,
             right: AppSpacing.xs.w,
             child: Material(
-              color: Colors.black.withValues(alpha: 0.55),
+              color: AppColor.overlay,
               shape: const CircleBorder(),
               child: InkResponse(
                 onTap: onRemove,

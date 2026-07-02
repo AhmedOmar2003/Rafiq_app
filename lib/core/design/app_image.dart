@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:lottie/lottie.dart';
+import 'package:rafiq_app/core/design/tokens/tokens.dart';
 
 class AppImage extends StatelessWidget {
   final String path;
@@ -59,10 +60,10 @@ class AppImage extends StatelessWidget {
           return Container(
             height: height,
             width: width,
-            color: Colors.grey[200],
+            color: AppColor.surfaceSoft,
             child: Icon(
               Icons.error_outline,
-              color: Colors.grey[400],
+              color: AppColor.textTertiary,
               size: 32,
             ),
           );
@@ -95,10 +96,10 @@ class AppImage extends StatelessWidget {
         return Container(
           height: height,
           width: width,
-          color: Colors.grey[200],
+          color: AppColor.surfaceSoft,
           child: Icon(
             Icons.image_not_supported_outlined,
-            color: Colors.grey[500],
+            color: AppColor.textTertiary,
             size: 28,
           ),
         );

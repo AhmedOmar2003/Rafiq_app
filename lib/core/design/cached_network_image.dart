@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:rafiq_app/core/design/tokens/tokens.dart';
 
 import 'package:rafiq_app/service/image_disk_cache.dart';
 
@@ -145,7 +146,7 @@ class _DefaultPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const ColoredBox(
-        color: Color(0xFFF0EEE9), // neutral100
+        color: AppColor.surfaceSoft,
       );
 }
 
@@ -154,11 +155,11 @@ class _DefaultError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const ColoredBox(
-        color: Color(0xFFF0EEE9),
+        color: AppColor.surfaceSoft,
         child: Center(
           child: Icon(
             Icons.image_not_supported_outlined,
-            color: Color(0xFF6F6F6F), // neutral600
+            color: AppColor.textTertiary,
           ),
         ),
       );

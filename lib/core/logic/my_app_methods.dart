@@ -1,4 +1,5 @@
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
+import 'package:rafiq_app/core/design/app_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../../core/design/app_image.dart';
@@ -12,58 +13,83 @@ class MyAppMethods {
     required VoidCallback onPress,
     bool isError = false,
   }) async {
-    await showDialog(
+    await showDialog<void>(
       context: context,
+      barrierColor: AppColor.overlay,
       builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.0.r),
-          ),
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AppImage(
-                AppImages.warning,
-                height: 164.h,
-                width: 190.w,
-              ),
-              verticalSpace(16),
-              Text(
-                subtitle,
-                style: AppText.titleLg,
-              ),
-              verticalSpace(16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Visibility(
-                    visible: !isError,
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: Text(
-                        "إلغاء",
-                        style: AppText.titleLg.copyWith(
-                          color: Colors.black,
+        return Dialog(
+          backgroundColor: AppColor.surfaceElevated,
+          surfaceTintColor: AppColor.surfaceElevated,
+          shape: RoundedRectangleBorder(borderRadius: AppRadii.rXl),
+          insetPadding: EdgeInsets.symmetric(horizontal: AppSpacing.xl.w),
+          child: Padding(
+            padding: EdgeInsets.all(AppSpacing.xl.w),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 72.w,
+                    height: 72.w,
+                    decoration: BoxDecoration(
+                      color: (isError ? AppColor.statusDanger : AppColor.statusWarning)
+                          .withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: AppImage(
+                      AppImages.warning,
+                      height: 40.h,
+                      width: 40.w,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+                verticalSpace(20),
+                Text(
+                  isError ? 'تنبيه' : 'تأكيد',
+                  textAlign: TextAlign.center,
+                  style: AppText.headingSm.copyWith(
+                    color: AppColor.textPrimary,
+                  ),
+                ),
+                verticalSpace(10),
+                Text(
+                  subtitle,
+                  textAlign: TextAlign.center,
+                  style: AppText.bodyMd.copyWith(color: AppColor.textSecondary),
+                ),
+                verticalSpace(24),
+                if (!isError) ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: AppButton(
+                          text: "إلغاء",
+                          variant: AppButtonVariant.ghost,
+                          onPress: () => Navigator.pop(context),
                         ),
                       ),
-                    ),
-                  ),
-                  horizontalSpace(20),
-                  TextButton(
-                    onPressed: onPress,
-                    child: Text(
-                      "تسجيل الخروج",
-                      style: AppText.titleLg.copyWith(
-                        color: Colors.red,
+                      horizontalSpace(12),
+                      Expanded(
+                        child: AppButton(
+                          text: "تسجيل الخروج",
+                          variant: AppButtonVariant.destructive,
+                          onPress: onPress,
+                        ),
                       ),
-                    ),
+                    ],
+                  ),
+                ] else ...[
+                  AppButton(
+                    text: "حسنًا",
+                    variant: AppButtonVariant.primary,
+                    fullWidth: true,
+                    onPress: onPress,
                   ),
                 ],
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
