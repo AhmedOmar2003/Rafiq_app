@@ -38,7 +38,7 @@ class RafiqApp extends StatelessWidget {
         ErrorWidget.builder = (FlutterErrorDetails details) {
           if (kDebugMode) {
             debugPrint(
-              'Rafiq render error: ${details.exception}\n${details.stack}',
+              'Ala Fein render error: ${details.exception}\n${details.stack}',
             );
           }
           return const Material(

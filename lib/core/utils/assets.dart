@@ -10,7 +10,7 @@ class AppImages {
   // ---- Images ----
   static const basePathImages = 'assets/images/';
   static const warning = '${basePathImages}warning.webp';
-  static const logo = '${basePathImages}rafiq_logo.webp';
+  static const logo = '${basePathImages}Logo-for-app.png';
   static const angham = '${basePathImages}angham.webp';
   static const padel = '${basePathImages}padel.webp';
   static const bird = '${basePathImages}bird.webp';

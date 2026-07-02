@@ -40,7 +40,7 @@ class AppShadows {
         ),
       ];
 
-  /// Brand-tinted glow for primary CTAs (used sparingly).
+  /// Nile Blue glow for primary CTAs (used sparingly).
   static List<BoxShadow> get primaryGlow => [
         BoxShadow(
           color: AppColor.primary.withValues(alpha: 0.28),

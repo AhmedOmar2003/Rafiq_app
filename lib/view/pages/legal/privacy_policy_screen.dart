@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:rafiq_app/view/pages/legal/legal_document_screen.dart';
 
 /// Internal Privacy Policy page — copy written in Egyptian Arabic that
-/// matches Rafiq's voice (warm, plain-spoken, never legalese).
+/// matches the product voice (warm, plain-spoken, never legalese).
 class PrivacyPolicyScreen extends StatelessWidget {
   const PrivacyPolicyScreen({super.key});
 
@@ -12,14 +12,13 @@ class PrivacyPolicyScreen extends StatelessWidget {
       title: 'سياسة الخصوصية',
       icon: Icons.privacy_tip_rounded,
       lastUpdated: '٣٠ مايو ٢٠٢٦',
-      intro:
-          'خصوصيتك أولوية عندنا. الصفحة دي بتشرحلك ببساطة إيه البيانات اللي '
+      intro: 'خصوصيتك أولوية عندنا. الصفحة دي بتشرحلك ببساطة إيه البيانات اللي '
           'بنجمعها، وليه، وإزاي بنحميها. لو في أي حاجة مش واضحة، تواصل معانا في أي وقت.',
       sections: [
         LegalSection(
           title: 'البيانات اللي بنجمعها',
           body:
-              'بنجمع الحد الأدنى اللي يخلّينا نقدّم لك تجربة شخصية وآمنة على رفيق.',
+              'بنجمع الحد الأدنى اللي يخلّينا نقدّم لك تجربة شخصية وآمنة على على فين؟',
           bullets: [
             'بيانات الحساب: اسمك، إيميلك، رقم تليفونك (لو ضفته).',
             'بياناتك كمقدّم خدمة: اسم النشاط، عنوانه، الصور اللي بترفعها.',
@@ -29,8 +28,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
         ),
         LegalSection(
           title: 'إزاي بنستخدم بياناتك',
-          body:
-              'بنستخدم بياناتك بس عشان نشغّلك التطبيق بأفضل صورة:',
+          body: 'بنستخدم بياناتك بس عشان نشغّلك التطبيق بأفضل صورة:',
           bullets: [
             'نعرض لك اقتراحات أماكن مناسبة لذوقك وميزانيتك.',
             'نسمحلك تدير نشاطك التجاري لو أنت مقدّم خدمة.',
@@ -41,17 +39,16 @@ class PrivacyPolicyScreen extends StatelessWidget {
         LegalSection(
           title: 'مين بيشوف بياناتك',
           body:
-              'مش بنبيع بياناتك. أبداً. بياناتك بتفضل عندنا في رفيق وتحت حمايتنا.',
+              'مش بنبيع بياناتك. أبداً. بياناتك بتفضل عندنا في على فين؟ وتحت حمايتنا.',
           bullets: [
             'الجمهور بيشوف بس: اسم النشاط، عنوانه، صوره (اللي بتختار تنشرها).',
-            'فريق رفيق بيوصل لبياناتك بس لما تطلب دعم أو لمراجعة المحتوى.',
+            'فريق على فين؟ بيوصل لبياناتك بس لما تطلب دعم أو لمراجعة المحتوى.',
             'مفيش طرف تالت بيوصل لبياناتك إلا لو القانون فرض كده.',
           ],
         ),
         LegalSection(
           title: 'حقوقك',
-          body:
-              'بياناتك ملكك. تقدر تتحكم فيها زي ما تحب:',
+          body: 'بياناتك ملكك. تقدر تتحكم فيها زي ما تحب:',
           bullets: [
             'تعديل بياناتك في أي وقت من صفحة البروفايل.',
             'حذف حسابك بالكامل من خلال زرار "حذف الحساب".',
@@ -61,8 +58,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
         ),
         LegalSection(
           title: 'الأمان',
-          body:
-              'بنحمي بياناتك بتشفير عالي المستوى أثناء النقل والتخزين. '
+          body: 'بنحمي بياناتك بتشفير عالي المستوى أثناء النقل والتخزين. '
               'بنستخدم خوادم Supabase اللي بتتبع معايير أمان عالمية. لو حصل أي خرق '
               'لبياناتك، هنبلّغك خلال ٧٢ ساعة كحد أقصى.',
         ),
@@ -76,7 +72,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
         LegalSection(
           title: 'الأطفال',
           body:
-              'رفيق مش مخصص للأطفال تحت ١٣ سنة. لو علمنا إن طفل سجّل، هنحذف '
+              'على فين؟ مش مخصص للأطفال تحت ١٣ سنة. لو علمنا إن طفل سجّل، هنحذف '
               'حسابه فوراً.',
         ),
         LegalSection(

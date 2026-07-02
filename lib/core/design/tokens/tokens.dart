@@ -1,4 +1,4 @@
-/// Rafiq design tokens — single import for the whole foundation layer.
+/// "على فين؟" design tokens — single import for the whole foundation layer.
 ///
 /// Usage: `import 'package:rafiq_app/core/design/tokens/tokens.dart';`
 library;

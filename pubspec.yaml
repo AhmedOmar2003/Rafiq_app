@@ -1,5 +1,5 @@
 name: rafiq_app
-description: "A new Flutter project."
+description: "على فين؟ - اكتشف المكان المناسب ليك."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -84,10 +84,10 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: assets/images/app_icon_location.png
+  image_path: assets/images/Logo-for-app.png
   min_sdk_android: 21
-  adaptive_icon_background: "#F2EFD6"
-  adaptive_icon_foreground: assets/images/app_icon_location_foreground.png
+  adaptive_icon_background: "#F6F1E7"
+  adaptive_icon_foreground: assets/images/Logo-for-app.png
   remove_alpha_ios: true
 
 # For information on the generic Dart part of this file, see the

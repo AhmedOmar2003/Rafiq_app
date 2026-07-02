@@ -4,7 +4,7 @@ import 'package:rafiq_app/core/design/tokens/tokens.dart';
 
 /// Button variants — one component, five intents.
 enum AppButtonVariant {
-  /// Filled coffee-brown. The single primary action on a screen.
+  /// Filled Nile Blue. The single primary action on a screen.
   primary,
 
   /// Soft cream-filled. Secondary action sitting next to a primary.
@@ -98,9 +98,9 @@ class _AppButtonState extends State<AppButton> {
         );
       case AppButtonVariant.secondary:
         return (
-          bg: AppColor.sand200,
+          bg: AppColor.brandSecondary.withValues(alpha: 0.12),
           fg: AppColor.primary,
-          border: null,
+          border: AppColor.brandSecondary,
           shadow: AppShadows.level0
         );
       case AppButtonVariant.outline:

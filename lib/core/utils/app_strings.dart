@@ -1,7 +1,7 @@
 class AppStrings {
   // appName
 
-  static const String appName = "R A F I Q";
+  static const String appName = "على فين؟";
 
   // login
 

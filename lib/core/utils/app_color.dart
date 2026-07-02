@@ -1,128 +1,113 @@
 import 'package:flutter/material.dart';
 
-/// Rafiq color tokens.
+/// "على فين؟" color tokens.
 ///
-/// Single source of truth for every color in the product. The brand identity
-/// (coffee-brown primary + warm cream surfaces + near-black text) is preserved
-/// exactly — the original constants below are unchanged. Everything added on top
-/// is a *scale* or a *semantic* token so screens stop hardcoding raw colors.
-///
-/// Naming:
-///   - Brand scales:   primaryNN / sandNN / neutralNN  (50 = lightest .. 900 = darkest)
-///   - Semantic:       success / warning / error / info (+ `*Bg` soft surface)
-///   - Roles:          surface*, border*, text*, overlay, focus
-///
-/// Rule of thumb for screens: use SEMANTIC/ROLE tokens, not raw scale steps.
+/// This is the single source of truth for color across the Flutter app.
+/// Screens should use role and semantic tokens instead of raw color values.
 class AppColor {
   AppColor._();
 
-  // ---------------------------------------------------------------------------
-  // Original brand constants — DO NOT change values (visual identity contract).
-  // ---------------------------------------------------------------------------
-  static const black = Color(0xff14171F);
+  // Brand primitives.
+  static const brandPrimary = Color(0xff0F5D7A); // Nile Blue
+  static const brandSecondary = Color(0xff1FA5A3); // Turquoise
+  static const brandAccent = Color(0xffD9A441); // Golden Sand
+  static const brandGreen = Color(0xff4E8B57); // Date Palm Green
+  static const brandTerracotta = Color(0xffB85C38); // Terracotta
+
+  // Neutral primitives.
+  static const papyrus = Color(0xffF6F1E7);
+  static const surfaceSoft = Color(0xffFAF7EF);
+  static const mist = Color(0xffD9E1E5);
+  static const charcoal = Color(0xff1F2933);
+  static const accessibleBlack = Color(0xff0B1117);
   static const white = Color(0xffFFFFFF);
-  static const primary = Color(0xff681F00);
-  static const ofWhite = Color(0xffF7F3DA);
-  static const gray = Color(0xff707070);
-  static const greyColor = Color(0xff979797);
-  static const lightGray = Color(0xffCDC9C9);
 
-  // ---------------------------------------------------------------------------
-  // Primary scale — derived around the brand coffee-brown (#681F00 == primary500)
-  // ---------------------------------------------------------------------------
-  static const primary50 = Color(0xffFBEEE9);
-  static const primary100 = Color(0xffF3D4C7);
-  static const primary200 = Color(0xffE0A78F);
-  static const primary300 = Color(0xffC97A57);
-  static const primary400 = Color(0xff9C4A26);
-  static const primary500 = primary; // #681F00 brand base
-  static const primary600 = Color(0xff5A1B00);
-  static const primary700 = Color(0xff4A1600);
-  static const primary800 = Color(0xff3A1100);
-  static const primary900 = Color(0xff240B00);
+  // Brand scales retained for backwards-compatible component references.
+  static const primary50 = Color(0xffEAF4F6);
+  static const primary100 = Color(0xffD4E9ED);
+  static const primary200 = Color(0xffA9D2DA);
+  static const primary300 = Color(0xff73B2C1);
+  static const primary400 = Color(0xff377F97);
+  static const primary500 = brandPrimary;
+  static const primary600 = Color(0xff0C526C);
+  static const primary700 = Color(0xff09445A);
+  static const primary800 = Color(0xff073747);
+  static const primary900 = Color(0xff052936);
 
-  // ---------------------------------------------------------------------------
-  // Sand / cream scale — the warm app background family (#F7F3DA, #F2EFD6)
-  // ---------------------------------------------------------------------------
-  static const sand50 = Color(0xffFDFCF4);
-  static const sand100 = ofWhite; // #F7F3DA app background
-  static const sand200 = Color(0xffF2EFD6); // adaptive icon bg
-  static const sand300 = Color(0xffE9E3BF);
-  static const sand400 = Color(0xffDED7A8);
+  // Warm surface scale.
+  static const sand50 = surfaceSoft;
+  static const sand100 = papyrus;
+  static const sand200 = Color(0xffEFE8DA);
+  static const sand300 = Color(0xffE5DAC6);
+  static const sand400 = Color(0xffD7C7AA);
 
-  // ---------------------------------------------------------------------------
-  // Neutral scale — text, borders, dividers, disabled states
-  // ---------------------------------------------------------------------------
+  // Neutral scale.
   static const neutral0 = white;
-  static const neutral50 = Color(0xffF7F6F2);
-  static const neutral100 = Color(0xffF0EEE9);
-  static const neutral200 = Color(0xffE3E1DB);
-  static const neutral300 = lightGray; // #CDC9C9
-  static const neutral400 = Color(0xffB4B0AC);
-  static const neutral500 = greyColor; // #979797
-  static const neutral600 = gray; // #707070
-  static const neutral700 = Color(0xff4C4F57);
-  static const neutral800 = Color(0xff2A2D35);
-  static const neutral900 = black; // #14171F
+  static const neutral50 = Color(0xffFAFBFB);
+  static const neutral100 = Color(0xffF3F5F6);
+  static const neutral200 = mist;
+  static const neutral300 = Color(0xffC2CDD2);
+  static const neutral400 = Color(0xff9BA9B0);
+  static const neutral500 = Color(0xff7C8990);
+  static const neutral600 = Color(0xff6B7280);
+  static const neutral700 = Color(0xff4B5563);
+  static const neutral800 = charcoal;
+  static const neutral900 = accessibleBlack;
 
-  // ---------------------------------------------------------------------------
-  // Semantic — warm-tuned so they sit naturally beside the brand (no neon).
-  // ---------------------------------------------------------------------------
-  static const success = Color(0xff2E7D5B);
-  static const successBg = Color(0xffE6F4EE);
-  // Dark enough for small Arabic labels on white and warning surfaces.
-  static const warning = Color(0xff8A570F);
-  static const warningBg = Color(0xffFBF0DD);
-  static const error = Color(0xffC5362F);
-  static const errorBg = Color(0xffFBE9E7);
-  static const info = Color(0xff2C6E9B);
-  static const infoBg = Color(0xffE5F0F7);
+  // Semantic states. Labels and icons must accompany color in UI.
+  // Darkened for WCAG AA when used as small text on white.
+  static const success = Color(0xff3F7448);
+  static const successBg = Color(0xffEDF5EE);
+  static const warning = Color(0xff7A5400);
+  static const warningBg = Color(0xffF8EED9);
+  static const error = brandTerracotta;
+  static const errorBg = Color(0xffF8ECE7);
+  static const info = brandPrimary;
+  static const infoBg = Color(0xffEAF2F5);
+  static const secondaryBg = Color(0xffE6F5F4);
 
-  // ---------------------------------------------------------------------------
-  // Role tokens (light theme) — what screens & components should reference.
-  // ---------------------------------------------------------------------------
-  static const surface = sand100; // page background
-  static const surfaceVariant = sand50; // subtle alt background
-  static const surfaceCard = white; // cards / sheets / inputs
-  static const surfaceInverse = neutral900;
+  // Surface roles.
+  static const surface = papyrus;
+  static const surfaceVariant = surfaceSoft;
+  static const surfaceCard = white;
+  static const surfaceInverse = accessibleBlack;
+  static const surfaceDefault = surface;
+  static const surfaceElevated = surfaceCard;
+  static const surfaceMuted = surfaceSoft;
 
-  static const border = neutral200;
+  // Border and content roles.
+  static const border = mist;
   static const borderStrong = neutral300;
-  static const divider = Color(0x14000000); // black @ ~8%
-
-  static const textPrimary = neutral900;
-  static const textSecondary = neutral600;
-  // Captions are commonly 12–13px, so tertiary text must still meet 4.5:1
-  // contrast on white. Hierarchy comes from size/weight, not illegibility.
-  static const textTertiary = neutral600;
+  static const divider = Color(0x1FD9E1E5);
+  static const textPrimary = charcoal;
+  static const textSecondary = Color(0xff4B5563);
+  static const textTertiary = Color(0xff6B7280);
+  static const textMuted = textTertiary;
   static const textInverse = white;
   static const textOnPrimary = white;
   static const textDisabled = neutral400;
 
-  static const focus = primary400;
-  static const overlay = Color(0x99000000); // scrims / modal backdrop @ 60%
-  static const overlaySoft = Color(0x52000000); // @ 32%
-
-  // ---------------------------------------------------------------------------
-  // Semantic aliases (spec-aligned naming for component code).
-  //   color.action.primary / actionPrimaryHover
-  //   color.status.success / warning / danger / info
-  //   color.surface.default / elevated
-  //   color.text.primary / secondary / muted
-  // These are pure aliases — same values as above, just spec-named.
-  // ---------------------------------------------------------------------------
-  static const actionPrimary = primary500; // brand action
+  // Interaction roles.
+  static const focus = brandSecondary;
+  static const overlay = Color(0x990B1117);
+  static const overlaySoft = Color(0x520B1117);
+  static const actionPrimary = brandPrimary;
   static const actionPrimaryHover = primary600;
   static const actionPrimaryActive = primary700;
+  static const actionSecondary = brandSecondary;
+  static const actionAccent = brandAccent;
 
+  // Status aliases.
   static const statusSuccess = success;
   static const statusWarning = warning;
   static const statusDanger = error;
   static const statusInfo = info;
 
-  static const surfaceDefault = surface; // cream page bg
-  static const surfaceElevated = surfaceCard; // white card bg
-  static const surfaceMuted = sand200; // subtle alt panel
-
-  static const textMuted = textTertiary;
+  // Compatibility aliases used by existing screens.
+  static const primary = brandPrimary;
+  static const black = accessibleBlack;
+  static const ofWhite = papyrus;
+  static const gray = textTertiary;
+  static const greyColor = neutral500;
+  static const lightGray = mist;
 }

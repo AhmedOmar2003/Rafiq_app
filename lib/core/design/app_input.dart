@@ -155,7 +155,7 @@ class _AppInputState extends State<AppInput> {
       suffixIcon: _suffix(),
       border: border(Colors.transparent),
       enabledBorder: border(AppColor.border),
-      focusedBorder: border(AppColor.primary, 1.5),
+      focusedBorder: border(AppColor.focus, 1.5),
       errorBorder: border(AppColor.error),
       focusedErrorBorder: border(AppColor.error, 1.5),
       disabledBorder: border(AppColor.border.withValues(alpha: 0.5)),

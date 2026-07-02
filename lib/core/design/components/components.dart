@@ -1,4 +1,4 @@
-/// Rafiq component library — single import for shared UI building blocks.
+/// "على فين؟" component library — shared UI building blocks.
 ///
 /// Usage: `import 'package:rafiq_app/core/design/components/components.dart';`
 library;

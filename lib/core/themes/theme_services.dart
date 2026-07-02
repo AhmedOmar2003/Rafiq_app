@@ -19,10 +19,10 @@ class ThemeServices {
     onPrimary: AppColor.textOnPrimary,
     primaryContainer: AppColor.primary100,
     onPrimaryContainer: AppColor.primary900,
-    secondary: AppColor.primary400,
+    secondary: AppColor.brandSecondary,
     onSecondary: AppColor.white,
-    secondaryContainer: AppColor.sand200,
-    onSecondaryContainer: AppColor.primary800,
+    secondaryContainer: AppColor.secondaryBg,
+    onSecondaryContainer: AppColor.textPrimary,
     error: AppColor.error,
     onError: AppColor.white,
     errorContainer: AppColor.errorBg,
@@ -54,7 +54,7 @@ class ThemeServices {
       dividerColor: AppColor.divider,
       materialTapTargetSize: MaterialTapTargetSize.padded,
       visualDensity: VisualDensity.adaptivePlatformDensity,
-      focusColor: scheme.primary.withValues(alpha: 0.12),
+      focusColor: AppColor.focus.withValues(alpha: 0.20),
       hoverColor: scheme.primary.withValues(alpha: 0.04),
       textTheme: cairoTextTheme.apply(
         bodyColor: scheme.onSurface,
@@ -121,7 +121,7 @@ class ThemeServices {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: AppRadii.rMd,
-          borderSide: BorderSide(color: scheme.primary, width: 1.5),
+          borderSide: const BorderSide(color: AppColor.focus, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: AppRadii.rMd,
@@ -169,11 +169,11 @@ class ThemeServices {
         waitDuration: const Duration(milliseconds: 300),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: AppColor.sand200,
+        backgroundColor: AppColor.surfaceCard,
         selectedColor: scheme.primary,
         labelStyle: AppText.labelMd.copyWith(color: scheme.onSurface),
         secondaryLabelStyle: AppText.labelMd.copyWith(color: scheme.onPrimary),
-        side: BorderSide.none,
+        side: const BorderSide(color: AppColor.border),
         shape: RoundedRectangleBorder(borderRadius: AppRadii.rPill),
         padding: EdgeInsets.symmetric(
             horizontal: AppSpacing.md.w, vertical: AppSpacing.xs.h),

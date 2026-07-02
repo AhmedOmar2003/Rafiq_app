@@ -81,10 +81,10 @@ class SubscriptionPlan {
 
   factory SubscriptionPlan.fromRow(Map<String, dynamic> row) {
     Color parseHex(String? hex) {
-      if (hex == null || hex.isEmpty) return const Color(0xff681F00);
+      if (hex == null || hex.isEmpty) return const Color(0xff0F5D7A);
       final h = hex.replaceFirst('#', '');
       final value = int.tryParse(h, radix: 16);
-      if (value == null) return const Color(0xff681F00);
+      if (value == null) return const Color(0xff0F5D7A);
       return Color(value | 0xFF000000);
     }
 

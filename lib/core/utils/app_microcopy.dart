@@ -87,8 +87,8 @@ class AppCopy {
   static const stepActivityBody = 'اختار نشاط واحد.';
 
   // --- Chatbot -----------------------------------------------------------------
-  static const chatTitle = 'رفيق الذكي 🤖';
-  static const chatOpenLabel = 'افتح رفيق الذكي';
+  static const chatTitle = 'مساعد على فين؟ 🤖';
+  static const chatOpenLabel = 'افتح مساعد على فين؟';
 
   // --- Choice / role picker ----------------------------------------------------
   static const choiceQuestion = 'إنت مين معانا اليوم؟';
@@ -215,7 +215,7 @@ class AppCopy {
 
   // --- Profile page ------------------------------------------------------------
   static const profileTitle = 'الملف الشخصي';
-  static const profileNameFallback = 'مستخدم رفيق';
+  static const profileNameFallback = 'مستخدم على فين؟';
   static const profileEmailFallback = 'لسه مفيش بريد ظاهر';
   static const profileNameLabel = 'الاسم';
   static const profileEmailLabel = 'البريد الإلكتروني';
@@ -657,8 +657,9 @@ class AppCopy {
   static const supportCallLabel = 'اتصال مباشر';
   static const supportWhatsappLabel = 'واتساب';
   static const supportEmailLabel = 'البريد الإلكتروني';
-  static const supportWhatsappMessage = 'مرحباً، أحتاج مساعدة في تطبيق رفيق.';
-  static const supportEmailSubject = 'طلب مساعدة — رفيق';
+  static const supportWhatsappMessage =
+      'مرحباً، أحتاج مساعدة في تطبيق على فين؟';
+  static const supportEmailSubject = 'طلب مساعدة — على فين؟';
   static const supportEmailBody = 'مرحباً،\n\nأحتاج مساعدة في...';
   static const supportOpenError = 'معرفناش نفتح وسيلة التواصل. جرّب تاني.';
   static const supportPhone1 = '01036925982';

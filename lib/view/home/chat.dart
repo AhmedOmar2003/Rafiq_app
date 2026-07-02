@@ -48,7 +48,7 @@ class _BotScreenState extends State<BotScreen> {
       await flutterTts.setPitch(1.0); // ✅ ضبط حدة الصوت
       await flutterTts.setSpeechRate(0.5); // ✅ ضبط سرعة القراءة
       await flutterTts.speak(
-          "أهلاً بك في مساعدك الافتراضي لتطبيق رفيق! لإرشادك وتوجيهك إلى المكان المناسب لك."); // ✅ تشغيل الصوت
+          "أهلاً بيك في مساعد على فين؟ هنساعدك تختار المكان المناسب ليك."); // ✅ تشغيل الصوت
     } catch (e) {
       debugPrint('Error in text-to-speech: $e');
     }
@@ -112,7 +112,7 @@ class _BotScreenState extends State<BotScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const AppPageHeader(
-        title: 'رفيق الذكي 🤖',
+        title: 'مساعد على فين؟ 🤖',
         tone: AppHeaderTone.brand,
         centerTitle: true,
       ),
@@ -148,7 +148,7 @@ class _BotScreenState extends State<BotScreen> {
                     ),
                   ),
                   gapH(AppSpacing.sm),
-                  Text("رفيق بيفكر...", style: AppText.bodySm),
+                  Text("على فين؟ بيفكر...", style: AppText.bodySm),
                 ],
               ),
             ),
@@ -170,7 +170,7 @@ class _BotScreenState extends State<BotScreen> {
                       controller: _userMessage,
                       style: AppText.bodyLg,
                       decoration: InputDecoration(
-                        hintText: "اسأل رفيق عن أي مكان...",
+                        hintText: "اسأل على فين؟ عن أي مكان...",
                         hintStyle: AppText.bodyLg
                             .copyWith(color: AppColor.textTertiary),
                         filled: true,

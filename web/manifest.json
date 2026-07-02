@@ -1,11 +1,11 @@
 {
-    "name": "رفيق- أماكن",
-    "short_name": "رفيق",
+    "name": "على فين؟",
+    "short_name": "على فين؟",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#F2EFD6",
-    "theme_color": "#681F00",
-    "description": "Rafiq mobile web app",
+    "background_color": "#F6F1E7",
+    "theme_color": "#0F5D7A",
+    "description": "على فين؟ - اكتشف المكان المناسب ليك",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
