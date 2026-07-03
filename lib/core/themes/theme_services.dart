@@ -6,7 +6,7 @@ import 'package:rafiq_app/core/design/tokens/tokens.dart';
 /// App themes derived entirely from design tokens.
 ///
 /// Both themes share one radius/spacing language so the product feels unified.
-/// Typography uses Cairo across every Material surface and design token.
+/// Typography uses IBM Plex Sans Arabic across every Material surface.
 /// `lightTheme` is the production theme; `darkTheme` is a coherent, token-driven
 /// scaffold so dark mode is a config flip rather than a rewrite.
 class ThemeServices {
@@ -43,9 +43,9 @@ class ThemeServices {
     final base = ThemeData(
       brightness: brightness,
       useMaterial3: true,
-      fontFamily: GoogleFonts.cairo().fontFamily,
+      fontFamily: GoogleFonts.ibmPlexSansArabic().fontFamily,
     );
-    final cairoTextTheme = GoogleFonts.cairoTextTheme(base.textTheme);
+    final appTextTheme = GoogleFonts.ibmPlexSansArabicTextTheme(base.textTheme);
 
     return base.copyWith(
       colorScheme: scheme,
@@ -56,11 +56,12 @@ class ThemeServices {
       visualDensity: VisualDensity.adaptivePlatformDensity,
       focusColor: AppColor.focus.withValues(alpha: 0.20),
       hoverColor: scheme.primary.withValues(alpha: 0.04),
-      textTheme: cairoTextTheme.apply(
+      textTheme: appTextTheme.apply(
         bodyColor: scheme.onSurface,
         displayColor: scheme.onSurface,
       ),
-      primaryTextTheme: GoogleFonts.cairoTextTheme(base.primaryTextTheme),
+      primaryTextTheme:
+          GoogleFonts.ibmPlexSansArabicTextTheme(base.primaryTextTheme),
       appBarTheme: AppBarTheme(
         centerTitle: true,
         backgroundColor: Colors.transparent,

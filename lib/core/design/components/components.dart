@@ -5,6 +5,7 @@ library;
 
 export 'app_avatar.dart';
 export 'app_badge.dart';
+export 'app_brand_mark.dart';
 export 'app_card.dart';
 export 'app_countdown_badge.dart';
 export 'app_confirm_dialog.dart';

@@ -1,13 +1,13 @@
-# Rafiq Design System & UX Architecture
+# على فين؟ Design System & UX Architecture
 
-> A complete, scalable design + UX + component system for the **Rafiq** product
+> The shared design, UX, and component system for **على فين؟**
 > (Flutter mobile app — Android & iOS — plus the Admin Dashboard), built on the
-> **existing brand identity**. Brand colors and personality are preserved; what
-> changed is consistency, structure, accessibility, offline resilience, and
-> developer handoff quality.
+> The visual identity uses Nile Blue, Turquoise, Golden Sand, Date Palm Green,
+> Terracotta, and Papyrus Cream across both product surfaces.
 
 **Stack:** Flutter 3.41 · Dart 3.11 · `flutter_screenutil` (design size 390×844)
-· `google_fonts` (Cairo) · `supabase_flutter` · RTL-first (Egyptian Arabic).
+· `google_fonts` (IBM Plex Sans Arabic) · `supabase_flutter` · RTL-first
+(Egyptian Arabic).
 
 **Source of truth in code:**
 - Tokens: `lib/core/design/tokens/` + `lib/core/utils/app_color.dart`
@@ -20,7 +20,7 @@
 
 ## 1. Product UX Audit
 
-Rafiq is a **local discovery / recommendation app**: the user answers a 3-step
+على فين؟ is a **local discovery / recommendation app**: the user answers a 3-step
 wizard (city → budget → activity) and receives place suggestions, with details,
 reviews/evaluations, payments (Paymob/cash), an AI chat assistant, and auth.
 
@@ -80,31 +80,30 @@ existing brand into reusable primitives.
 
 ## 3. Foundations
 
-### 3.1 Color (brand preserved)
-Base brand constants are **unchanged**: `primary #681F00`, `ofWhite #F7F3DA`,
-`black #14171F`, plus the original grays. On top we derived scales + semantics.
+### 3.1 Color
+The palette is centralized in `AppColor`; product screens consume semantic
+roles instead of brand hex values.
 
 | Role | Token | Value |
 |------|-------|-------|
-| Brand primary | `AppColor.primary` (=`primary500`) | `#681F00` |
-| Primary tint (surfaces) | `primary50 / primary100` | `#FBEEE9 / #F3D4C7` |
-| App background | `surface` (=`sand100`) | `#F7F3DA` |
+| Brand primary | `AppColor.primary` (=`primary500`) | `#0F5D7A` |
+| Primary tint (surfaces) | `primary50 / primary100` | `#EAF4F6 / #D4E9ED` |
+| App background | `surface` (=`papyrus`) | `#F6F1E7` |
 | Card / input | `surfaceCard` | `#FFFFFF` |
-| Text primary / secondary / tertiary | `textPrimary / textSecondary / textTertiary` | `#14171F / #707070 / #979797` |
-| Border / divider | `border / divider` | `#E3E1DB / black@8%` |
-| Success / Warning / Error / Info | `success / warning / error / info` | `#2E7D5B / #C9821E / #C5362F / #2C6E9B` |
+| Text primary / secondary / tertiary | `textPrimary / textSecondary / textTertiary` | `#1F2933 / #4B5563 / #6B7280` |
+| Border / divider | `border / divider` | `#D9E1E5 / Mist Gray alpha` |
+| Success / Warning / Error / Info | `success / warning / error / info` | `#3F7448 / #7A5400 / #B85C38 / #0F5D7A` |
 | Each semantic soft bg | `*Bg` | tinted pastels |
 
-Semantics are **warm-tuned** (no neon) so they sit beside the coffee-brown brand.
-Dark-mode role tokens (`darkSurface*`, `darkText*`, `darkPrimary`) are defined for readiness.
+Semantic status colors include text or icons in UI; color is not the only cue.
 
-### 3.2 Typography — Rubik, semantic scale
+### 3.2 Typography — IBM Plex Sans Arabic, semantic scale
 `AppText` (`tokens/app_typography.dart`) replaces 20 size-named styles with intent-named roles:
 
 `displayLg/Md` · `headingLg/Md/Sm` · `titleLg/Md` · `bodyLg/Md/Sm` · `labelLg/Md/Sm` · `caption`.
 
 Arabic legibility: generous line-height (1.4–1.55 body), medium weight for labels,
-700 for display. One family (Rubik) keeps Arabic + Latin consistent.
+700 for display. IBM Plex Sans Arabic keeps Arabic and Latin consistent.
 
 ### 3.3 Spacing — 4pt grid
 `AppSpacing`: `xs4 · sm8 · md12 · lg16 · xl20 · xxl24 · xxxl32 · huge40 · giant48`.
@@ -297,12 +296,12 @@ Principle: **motion clarifies, never decorates.**
 
 **Color (light)**
 ```
-primary       #681F00   primary50 #FBEEE9   primary100 #F3D4C7
-surface       #F7F3DA   surfaceCard #FFFFFF surfaceVariant #FDFCF4
-textPrimary   #14171F   textSecondary #707070  textTertiary #979797
-border        #E3E1DB   divider rgba(0,0,0,.08)
-success #2E7D5B  warning #C9821E  error #C5362F  info #2C6E9B
-successBg #E6F4EE  warningBg #FBF0DD  errorBg #FBE9E7  infoBg #E5F0F7
+primary       #0F5D7A   primary50 #EAF4F6   primary100 #D4E9ED
+surface       #F6F1E7   surfaceCard #FFFFFF surfaceVariant #FAF7EF
+textPrimary   #1F2933   textSecondary #4B5563  textTertiary #6B7280
+border        #D9E1E5   divider Mist Gray alpha
+success #3F7448  warning #7A5400  error #B85C38  info #0F5D7A
+successBg #EDF5EE  warningBg #F8EED9  errorBg #F8ECE7  infoBg #EAF2F5
 ```
 **Spacing (px):** 4 · 8 · 12 · 16 · 20 · 24 · 32 · 40 · 48
 **Radius (px):** 8 · 12 · 16 · 24 · 32 · 999
@@ -381,7 +380,7 @@ service/connectivity_service.dart
 | 3 button systems | One `AppButton` with 5 variants/3 sizes; theme button defaults from tokens |
 | 2 input styles | One token-driven `AppInput`; theme `inputDecorationTheme` aligned |
 | No spacing/radius system | `AppSpacing` (4pt) + `AppRadii` ladders; `gapV/gapH` |
-| Size-named type | Semantic `AppText` scale (Rubik) |
+| Size-named type | Semantic `AppText` scale (IBM Plex Sans Arabic) |
 | Raw/off-brand colors | Full `AppColor` scales + semantics; warm-tuned status colors |
 | Inconsistent feedback | `AppFeedback` + tokenized `LoadingManager` (brand spinner, not red-on-black) |
 | Missing empty/error/offline | `AppStateView` (4 factories) + global offline banner |
@@ -413,7 +412,7 @@ service/connectivity_service.dart
 
 ```
                          ┌──────────────────────────────┐
-                         │        Brand Identity         │  #681F00 · #F7F3DA · Rubik · RTL
+                         │        Brand Identity         │  Nile Blue · Papyrus · IBM Plex · RTL
                          └───────────────┬──────────────┘
                                          │
                     ┌────────────────────▼─────────────────────┐

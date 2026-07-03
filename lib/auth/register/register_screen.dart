@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:rafiq_app/auth/login/login_screen.dart';
-import 'package:rafiq_app/core/design/app_image.dart';
 import 'package:rafiq_app/core/design/components/components.dart';
 import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:rafiq_app/core/security/password_policy.dart';
@@ -113,9 +112,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: Column(
                     children: [
                       Padding(
-                        padding:
-                            EdgeInsets.symmetric(vertical: AppSpacing.xxl.h),
-                        child: _buildLogo(),
+                        padding: EdgeInsets.fromLTRB(
+                          AppSpacing.xxl.w,
+                          AppSpacing.xxl.h,
+                          AppSpacing.xxl.w,
+                          AppSpacing.xl.h,
+                        ),
+                        child: const AppBrandMark(),
                       ),
                       Expanded(child: _buildRegisterForm()),
                     ],
@@ -139,21 +142,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _buildLogo() {
-    return ExcludeSemantics(
-      child: Center(
-        child: AppImage(AppImages.logo, height: 100.h, width: 180.w),
-      ),
-    );
-  }
-
   Widget _buildRegisterForm() {
     return Container(
       padding: EdgeInsets.symmetric(
           vertical: AppSpacing.xxxl.h, horizontal: AppSpacing.xxl.w),
       width: double.infinity,
       decoration: BoxDecoration(
-        color: AppColor.surface,
+        color: AppColor.surfaceCard,
         borderRadius: AppRadii.topOnly(AppRadii.xxl),
       ),
       child: Form(

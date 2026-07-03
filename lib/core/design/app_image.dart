@@ -61,7 +61,7 @@ class AppImage extends StatelessWidget {
             height: height,
             width: width,
             color: AppColor.surfaceSoft,
-            child: Icon(
+            child: const Icon(
               Icons.error_outline,
               color: AppColor.textTertiary,
               size: 32,
@@ -97,7 +97,7 @@ class AppImage extends StatelessWidget {
           height: height,
           width: width,
           color: AppColor.surfaceSoft,
-          child: Icon(
+          child: const Icon(
             Icons.image_not_supported_outlined,
             color: AppColor.textTertiary,
             size: 28,

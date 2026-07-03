@@ -89,6 +89,18 @@ flutter_launcher_icons:
   adaptive_icon_background: "#F6F1E7"
   adaptive_icon_foreground: assets/images/Logo-for-app.png
   remove_alpha_ios: true
+  web:
+    generate: true
+    image_path: assets/images/Logo-for-app.png
+    background_color: "#F6F1E7"
+    theme_color: "#0F5D7A"
+  windows:
+    generate: true
+    image_path: assets/images/Logo-for-app.png
+    icon_size: 256
+  macos:
+    generate: true
+    image_path: assets/images/Logo-for-app.png
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -105,7 +117,7 @@ flutter:
   #   images   ~1.2 MB  (was 5.5 MB, -78%)
   #   icons    ~28 KB   (vector SVGs)
   #   anims    none     (placeholder dir)
-  # Cairo is the app-wide Arabic-first typeface through google_fonts.
+  # IBM Plex Sans Arabic is the app-wide Arabic-first typeface.
   assets:
     - assets/images/
     - assets/animations/

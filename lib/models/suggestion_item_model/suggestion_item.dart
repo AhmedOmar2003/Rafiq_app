@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:rafiq_app/core/utils/assets.dart';
 import 'package:rafiq_app/model/place.dart';
 import 'package:rafiq_app/models/subscription/plan.dart';
@@ -92,15 +93,15 @@ class SuggestionItemModel {
   static Color _mapCategoryToColor(String description) {
     switch (description.toLowerCase()) {
       case "ترفيه":
-        return const Color(0xff0434C3);
+        return AppColor.brandSecondary;
       case "رياضة":
-        return const Color(0xffB7280F);
+        return AppColor.brandPrimary;
       case "طعام":
-        return const Color(0xffF29339);
+        return AppColor.brandAccent;
       case "سياحي":
-        return const Color.fromARGB(255, 221, 48, 4);
+        return AppColor.brandGreen;
       default:
-        return Colors.grey;
+        return AppColor.textTertiary;
     }
   }
 }

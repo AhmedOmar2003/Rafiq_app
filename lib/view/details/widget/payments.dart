@@ -2,7 +2,6 @@ import 'package:rafiq_app/core/design/tokens/tokens.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/design/app_image.dart';
-import '../../../core/utils/spacing.dart';
 import '../../../models/payments/payments_model.dart';
 
 class Payments extends StatelessWidget {
@@ -18,17 +17,18 @@ class Payments extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16.w),
-      margin: EdgeInsets.only(bottom: 16.h, right: 33.w, left: 33.w),
-      height: 47.h,
-      width: 326.w,
+      padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
+      margin: EdgeInsets.only(
+        bottom: AppSpacing.lg.h,
+        right: AppSpacing.xxxl.w,
+        left: AppSpacing.xxxl.w,
+      ),
+      constraints: BoxConstraints(minHeight: 48.h),
+      width: double.infinity,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10.r),
-        color: AppColor.white,
-        border: Border.all(
-          color: const Color(0xff000061).withValues(alpha: .38),
-          width: 0.3,
-        ),
+        borderRadius: AppRadii.rMd,
+        color: AppColor.surfaceCard,
+        border: Border.all(color: AppColor.border),
       ),
       child: Row(
         children: [
@@ -39,16 +39,16 @@ class Payments extends StatelessWidget {
               shape: BoxShape.circle,
               color: color,
               border: Border.all(
-                color: const Color(0xff85847D),
+                color: AppColor.borderStrong,
                 width: 1,
               ),
             ),
           ),
-          horizontalSpace(7),
+          gapH(AppSpacing.sm),
           Text(
             model.text,
             style: AppText.titleMd.copyWith(
-              color: AppColor.black,
+              color: AppColor.textPrimary,
             ),
           ),
           const Spacer(),

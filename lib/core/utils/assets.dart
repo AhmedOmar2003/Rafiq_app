@@ -1,9 +1,6 @@
 /// Asset path constants.
 ///
-/// All raster images ship as **WebP** (quality 80, max 1200px on the long
-/// side). The conversion saved ~4.4 MB from the bundle. WebP is supported
-/// natively by Flutter via the standard `Image.asset` / `Image.network`
-/// constructors — no extra package needed.
+/// Central paths for bundled raster and vector assets.
 class AppImages {
   AppImages._();
 
@@ -21,9 +18,9 @@ class AppImages {
   static const masterCard = '${basePathImages}master_card.webp';
   static const instaPay = '${basePathImages}insta_pay.webp';
   static const etisalat = '${basePathImages}etisalat.webp';
-  static const onboarding1 = '${basePathImages}onboarding1.webp';
-  static const onboarding2 = '${basePathImages}onboarding2.webp';
-  static const onboarding3 = '${basePathImages}onboarding3.webp';
+  static const onboarding1 = '${basePathImages}onboarding1.png';
+  static const onboarding2 = '${basePathImages}onboarding2.png';
+  static const onboarding3 = '${basePathImages}onboarding3.png';
   static const success = 'assets/animations/success.json';
   static const loginSuccess = '${basePathImages}Group 34246.webp';
   static const choice = '${basePathImages}Choice.webp';

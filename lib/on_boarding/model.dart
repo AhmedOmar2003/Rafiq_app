@@ -25,6 +25,7 @@ List<OnBoardingModel> onBoardingList = [
   ),
   OnBoardingModel(
     text: AppCopy.onboardingTitle3,
+    body: AppCopy.onboardingBody3,
     image: AppImages.onboarding3,
   ),
 ];

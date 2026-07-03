@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:rafiq_app/core/utils/app_color.dart';
 
 /// Plan tier identifier — mirrors `public.plan_tier` in Postgres.
 enum PlanTier { free, pro, max }
@@ -81,10 +82,10 @@ class SubscriptionPlan {
 
   factory SubscriptionPlan.fromRow(Map<String, dynamic> row) {
     Color parseHex(String? hex) {
-      if (hex == null || hex.isEmpty) return const Color(0xff0F5D7A);
+      if (hex == null || hex.isEmpty) return AppColor.brandPrimary;
       final h = hex.replaceFirst('#', '');
       final value = int.tryParse(h, radix: 16);
-      if (value == null) return const Color(0xff0F5D7A);
+      if (value == null) return AppColor.brandPrimary;
       return Color(value | 0xFF000000);
     }
 

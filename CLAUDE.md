@@ -49,7 +49,7 @@ rafiq_master/
 | Token class | File | Purpose |
 |-------------|------|---------|
 | `AppColor` | `core/utils/app_color.dart` | All colors — use semantic tokens, not raw scale steps |
-| `AppText` | `tokens/app_typography.dart` | Type scale: `bodyMd`, `titleLg`, `headingSm`… |
+| `AppText` | `tokens/app_typography.dart` | IBM Plex Sans Arabic type scale: `bodyMd`, `titleLg`, `headingSm`… |
 | `AppSpacing` | `tokens/app_spacing.dart` | 4pt grid: `xs=4 sm=8 md=12 lg=16 xl=20 xxl=24 xxxl=32` |
 | `AppRadii` | `tokens/app_radii.dart` | `sm=8 md=12 lg=16 xl=24 xxl=32 pill=999` |
 | `AppShadows` | `tokens/app_shadows.dart` | `level0..3`, `primaryGlow` |
@@ -68,7 +68,7 @@ rafiq_master/
 - `AppOfflineBanner`, `AppConfirmDialog`, `AppSuccessView`
 
 ### Admin CSS tokens (`globals.css` `:root`)
-- `--color-primary: #681F00`, `--color-primary-alpha`, `--color-primary-hover`
+- `--color-primary: #0F5D7A`, `--color-primary-alpha`, `--color-primary-hover`
 - `--color-background: var(--sand-100)`, `--color-surface: #fff`
 - `--radius-sm/md/lg/xl/pill`, `--space-xs/sm/md/lg/xl/2xl`
 - Status: `--color-success/error/warning` + `-bg` / `-alpha` variants
@@ -92,7 +92,8 @@ rafiq_master/
 ### Admin (Next.js)
 - Pages are Server Components; client components are isolated to interactive islands.
 - Use CSS Modules (`shared.module.css` for shared patterns, page-local `.module.css` for one-offs).
-- Never hardcode `#681F00` or hex colors inline — use `var(--color-primary)` etc.
+- Never hardcode brand hex colors inline — use semantic CSS variables such as
+  `var(--color-primary)`.
 - Status display: always use `<StatusBadge status={row.status} />` from `components/ui/StatusBadge`.
 - No fake/placeholder data visible to users (no hardcoded counts, badges, or demo rows).
 

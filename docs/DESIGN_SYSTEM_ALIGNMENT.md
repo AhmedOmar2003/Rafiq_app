@@ -1,8 +1,8 @@
-# Rafiq Design System — Spec Alignment
+# على فين؟ Design System — Spec Alignment
 
 Reference: `C:\Users\dell\.claude\programing skills\Programming Skills\design-system`
 
-This document maps the Rafiq Flutter implementation to the official design-system
+This document maps the Flutter implementation to the product design system,
 spec, names the patterns each screen uses, and lists open gaps. It complements
 the longer `DESIGN_SYSTEM.md` (overview) with the **mapping-and-conformance**
 view a reviewer can scan in one pass.
@@ -13,18 +13,18 @@ view a reviewer can scan in one pass.
 
 | Spec token              | Rafiq token                | Value                          |
 | ----------------------- | -------------------------- | ------------------------------ |
-| `color.text.primary`    | `AppColor.textPrimary`     | `#14171F` (neutral-900)        |
-| `color.text.secondary`  | `AppColor.textSecondary`   | `#707070` (neutral-600)        |
-| `color.text.muted`      | `AppColor.textTertiary`    | `#979797` (neutral-500)        |
-| `color.surface.default` | `AppColor.surfaceDefault`  | `#F7F3DA` (cream, page bg)     |
+| `color.text.primary`    | `AppColor.textPrimary`     | `#1F2933` (Deep Charcoal)      |
+| `color.text.secondary`  | `AppColor.textSecondary`   | `#4B5563`                      |
+| `color.text.muted`      | `AppColor.textTertiary`    | `#6B7280`                      |
+| `color.surface.default` | `AppColor.surfaceDefault`  | `#F6F1E7` (Papyrus Cream)      |
 | `color.surface.elevated`| `AppColor.surfaceElevated` | `#FFFFFF` (white card)         |
-| `color.border.default`  | `AppColor.border`          | `#E3E1DB` (neutral-200)        |
-| `color.action.primary`  | `AppColor.actionPrimary`   | `#681F00` (brand coffee)       |
-| `color.action.primaryHover` | `AppColor.actionPrimaryHover` | `#5A1B00`              |
-| `color.status.success`  | `AppColor.statusSuccess`   | `#2E7D5B`                      |
-| `color.status.warning`  | `AppColor.statusWarning`   | `#C9821E`                      |
-| `color.status.danger`   | `AppColor.statusDanger`    | `#C5362F`                      |
-| `color.status.info`     | `AppColor.statusInfo`      | `#2C6E9B`                      |
+| `color.border.default`  | `AppColor.border`          | `#D9E1E5` (Mist Gray)          |
+| `color.action.primary`  | `AppColor.actionPrimary`   | `#0F5D7A` (Nile Blue)          |
+| `color.action.primaryHover` | `AppColor.actionPrimaryHover` | `#0C526C`              |
+| `color.status.success`  | `AppColor.statusSuccess`   | `#3F7448`                      |
+| `color.status.warning`  | `AppColor.statusWarning`   | `#7A5400`                      |
+| `color.status.danger`   | `AppColor.statusDanger`    | `#B85C38`                      |
+| `color.status.info`     | `AppColor.statusInfo`      | `#0F5D7A`                      |
 
 Spec rule: *"Use semantic tokens in product code."* — all role tokens above are
 exposed in `AppColor`. Legacy names (`primary`, `error`, `surface`, `surfaceCard`)
@@ -37,11 +37,11 @@ remain as aliases for backward compat.
 | `display`  | `AppText.displayLg/Md` | 34/30 · 700 |
 | `headline` | `AppText.headingLg/Md/Sm` | 24/22/20 · 600 |
 | `title`    | `AppText.titleLg/Md` | 18/16 · 500   |
-| `body`     | `AppText.bodyLg/Md/Sm` | 16/14/12 · 400 |
-| `label`    | `AppText.labelLg/Md/Sm` | 16/14/12 · 500 |
-| `caption`  | `AppText.caption`    | 11 · 400      |
+| `body`     | `AppText.bodyLg/Md/Sm` | 16/15/13 · 400 |
+| `label`    | `AppText.labelLg/Md/Sm` | 16/15/13 · 600 |
+| `caption`  | `AppText.caption`    | 12 · 400      |
 
-One family (Rubik). Matches the spec's "limit to one primary family" rule.
+One family (IBM Plex Sans Arabic) is used across the app.
 
 ### Spacing (spec base → `AppSpacing`)
 
@@ -66,15 +66,12 @@ Spec rule satisfied: *"Use shadows sparingly. Prefer subtle elevation."*
 
 ## Composition Primitives (the unification layer)
 
-These widgets replace the ad-hoc Scaffold/AppBar/Dialog code each screen used
-to roll. They are the **only** approved way to compose a page.
+These widgets replace common ad-hoc Scaffold/AppBar/Dialog patterns.
 
 | Primitive             | Replaces                                    | Used by                                                         |
 | --------------------- | ------------------------------------------- | --------------------------------------------------------------- |
 | `AppPageScaffold`     | bare `Scaffold` + manual bg/padding         | `details`, `evaluations`, `suggestions`, `cash`                  |
 | `AppPageHeader`       | mix of `AppBar` / `CustomAppBar` / Containers | `details`, `evaluations`, `suggestions`, `cash`                |
-| `AppStickyFooter`     | inline footer Containers with shadows       | `details` (booking CTA)                                          |
-| `AppSectionHeader`    | inline `Row(title + count)` patterns        | available for adoption                                           |
 | `AppConfirmDialog`    | hand-rolled `Dialog`/`AlertDialog`          | `profile` (logout)                                               |
 | `AppSuccessView`      | OverlayEntry success animations             | login, register, reset, details (payment), evaluations (review)  |
 | `AppStateView`        | inline empty Containers                     | `suggestions` (empty results)                                    |

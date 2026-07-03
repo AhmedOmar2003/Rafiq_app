@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../../core/design/app_image.dart';
 import '../../../../../core/utils/spacing.dart';
 import '../utils/assets.dart';
+import '../utils/app_microcopy.dart';
 
 class MyAppMethods {
   static Future<void> showErrorORWarningDialog({
@@ -33,7 +34,9 @@ class MyAppMethods {
                     width: 72.w,
                     height: 72.w,
                     decoration: BoxDecoration(
-                      color: (isError ? AppColor.statusDanger : AppColor.statusWarning)
+                      color: (isError
+                              ? AppColor.statusDanger
+                              : AppColor.statusWarning)
                           .withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
@@ -82,9 +85,9 @@ class MyAppMethods {
                   ),
                 ] else ...[
                   AppButton(
-                    text: "حسنًا",
+                    text: AppCopy.ok,
                     variant: AppButtonVariant.primary,
-                    fullWidth: true,
+                    isFullWidth: true,
                     onPress: onPress,
                   ),
                 ],

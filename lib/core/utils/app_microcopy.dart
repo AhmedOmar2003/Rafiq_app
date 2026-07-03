@@ -669,10 +669,12 @@ class AppCopy {
 
   // --- Onboarding --------------------------------------------------------------
   static const onboardingTitle1 = 'محتار؟\nهنساعدك في الاختيار';
-  static const onboardingTitle2 = 'هتلاقي مجموعة\nمتنوعة من الاختيارات';
+  static const onboardingTitle2 = 'اختيارات كتير… قرار أسهل';
   static const onboardingBody2 =
-      'أي مكان بتدوّر عليه هتلاقي اللي يناسبك\nسواء جوّة أو بره المدينة';
-  static const onboardingTitle3 = 'اكتشف الأماكن اللي\nتناسب مزاجك وميزانيتك';
+      'جوه المدينة أو برّه، هنرشحلك أماكن تناسب مزاجك وميزانيتك.';
+  static const onboardingTitle3 = 'خروجة جاهزة على مزاجك';
+  static const onboardingBody3 =
+      'شوف الترشيحات، اختار اللي يعجبك، وانطلق من غير حيرة.';
   static const onboardingCta = 'يلا نبدأ';
   static const onboardingNext = 'التالي';
   static const onboardingSkip = 'تخطّي';

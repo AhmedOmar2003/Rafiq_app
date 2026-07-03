@@ -4,11 +4,10 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'package:rafiq_app/core/utils/app_color.dart';
 
-/// Semantic type scale (Cairo, RTL-friendly).
+/// Semantic type scale (IBM Plex Sans Arabic, RTL-friendly).
 ///
 /// Replaces the ~20 size-named styles (textStyle16Light, textStyle24Medium...)
-/// with role-based tokens so screens express intent, not pixels. Cairo keeps
-/// Arabic + Latin consistent across the whole product.
+/// with role-based tokens so screens express intent, not pixels.
 /// Sizes use `.sp` (ScreenUtil) and include sensible line-heights for Arabic
 /// legibility.
 ///
@@ -32,13 +31,13 @@ import 'package:rafiq_app/core/utils/app_color.dart';
 class AppText {
   AppText._();
 
-  static TextStyle _cairo({
+  static TextStyle _ibmPlexArabic({
     required double size,
     required FontWeight weight,
     Color? color,
     double height = 1.4,
   }) =>
-      GoogleFonts.cairo(
+      GoogleFonts.ibmPlexSansArabic(
         fontSize: size.sp,
         fontWeight: weight,
         height: height,
@@ -47,34 +46,34 @@ class AppText {
 
   // Display ----------------------------------------------------------------
   static final TextStyle displayLg =
-      _cairo(size: 34, weight: FontWeight.w700, height: 1.2);
+      _ibmPlexArabic(size: 34, weight: FontWeight.w700, height: 1.2);
   static final TextStyle displayMd =
-      _cairo(size: 30, weight: FontWeight.w700, height: 1.25);
+      _ibmPlexArabic(size: 30, weight: FontWeight.w700, height: 1.25);
 
   // Headings ---------------------------------------------------------------
   static final TextStyle headingLg =
-      _cairo(size: 24, weight: FontWeight.w600, height: 1.3);
+      _ibmPlexArabic(size: 24, weight: FontWeight.w600, height: 1.3);
   static final TextStyle headingMd =
-      _cairo(size: 22, weight: FontWeight.w600, height: 1.3);
+      _ibmPlexArabic(size: 22, weight: FontWeight.w600, height: 1.3);
   static final TextStyle headingSm =
-      _cairo(size: 20, weight: FontWeight.w600, height: 1.35);
+      _ibmPlexArabic(size: 20, weight: FontWeight.w600, height: 1.35);
 
   // Titles -----------------------------------------------------------------
   static final TextStyle titleLg =
-      _cairo(size: 18, weight: FontWeight.w500, height: 1.4);
+      _ibmPlexArabic(size: 18, weight: FontWeight.w500, height: 1.4);
   static final TextStyle titleMd =
-      _cairo(size: 16, weight: FontWeight.w500, height: 1.4);
+      _ibmPlexArabic(size: 16, weight: FontWeight.w500, height: 1.4);
 
   // Body -------------------------------------------------------------------
   static final TextStyle bodyLg =
-      _cairo(size: 16, weight: FontWeight.w400, height: 1.55);
-  static final TextStyle bodyMd = _cairo(
+      _ibmPlexArabic(size: 16, weight: FontWeight.w400, height: 1.55);
+  static final TextStyle bodyMd = _ibmPlexArabic(
     size: 15,
     weight: FontWeight.w400,
     height: 1.55,
     color: AppColor.textSecondary,
   );
-  static final TextStyle bodySm = _cairo(
+  static final TextStyle bodySm = _ibmPlexArabic(
     size: 13,
     weight: FontWeight.w400,
     height: 1.5,
@@ -83,14 +82,14 @@ class AppText {
 
   // Labels (controls, buttons, chips) --------------------------------------
   static final TextStyle labelLg =
-      _cairo(size: 16, weight: FontWeight.w500, height: 1.2);
+      _ibmPlexArabic(size: 16, weight: FontWeight.w600, height: 1.2);
   static final TextStyle labelMd =
-      _cairo(size: 15, weight: FontWeight.w500, height: 1.25);
+      _ibmPlexArabic(size: 15, weight: FontWeight.w600, height: 1.25);
   static final TextStyle labelSm =
-      _cairo(size: 13, weight: FontWeight.w500, height: 1.25);
+      _ibmPlexArabic(size: 13, weight: FontWeight.w600, height: 1.25);
 
   // Caption / overline -----------------------------------------------------
-  static final TextStyle caption = _cairo(
+  static final TextStyle caption = _ibmPlexArabic(
     size: 12,
     weight: FontWeight.w400,
     height: 1.4,

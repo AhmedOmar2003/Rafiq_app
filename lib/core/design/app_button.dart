@@ -74,6 +74,7 @@ class AppButton extends StatefulWidget {
 
 class _AppButtonState extends State<AppButton> {
   bool _pressed = false;
+  bool _focused = false;
 
   double get _height => switch (widget.size) {
         AppButtonSize.sm => 44.h,
@@ -154,25 +155,38 @@ class _AppButtonState extends State<AppButton> {
         opacity: opacity,
         child: _ScaleOnPress(
           enabled: !disabled,
-          onPressedDown: (v) => setState(() => _pressed = v),
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: disabled ? null : widget.onPress,
-            child: AnimatedContainer(
-              duration: AppMotion.fast,
-              constraints: BoxConstraints(minHeight: _height),
-              width: widget.isFullWidth ? double.infinity : null,
-              padding: EdgeInsets.symmetric(horizontal: AppSpacing.xl.w),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: c.bg,
+          child: AnimatedContainer(
+            duration: AppMotion.fast,
+            constraints: BoxConstraints(minHeight: _height),
+            width: widget.isFullWidth ? double.infinity : null,
+            decoration: BoxDecoration(
+              color: c.bg,
+              borderRadius: AppRadii.rMd,
+              border: _focused
+                  ? Border.all(color: AppColor.focus, width: 2)
+                  : c.border != null
+                      ? Border.all(color: c.border!, width: 1.5)
+                      : null,
+              boxShadow: _pressed ? AppShadows.level0 : c.shadow,
+            ),
+            child: Material(
+              color: Colors.transparent,
+              borderRadius: AppRadii.rMd,
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: disabled ? null : widget.onPress,
+                canRequestFocus: !disabled,
+                excludeFromSemantics: true,
                 borderRadius: AppRadii.rMd,
-                border: c.border != null
-                    ? Border.all(color: c.border!, width: 1.5)
-                    : null,
-                boxShadow: _pressed ? AppShadows.level0 : c.shadow,
+                focusColor: AppColor.focus.withValues(alpha: 0.16),
+                hoverColor: AppColor.brandSecondary.withValues(alpha: 0.08),
+                onFocusChange: (value) => setState(() => _focused = value),
+                onHighlightChanged: (value) => setState(() => _pressed = value),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: AppSpacing.xl.w),
+                  child: Center(child: _content(c.fg)),
+                ),
               ),
-              child: _content(c.fg),
             ),
           ),
         ),
@@ -213,12 +227,10 @@ class _ScaleOnPress extends StatefulWidget {
   const _ScaleOnPress({
     required this.child,
     this.enabled = true,
-    this.onPressedDown,
   });
 
   final Widget child;
   final bool enabled;
-  final ValueChanged<bool>? onPressedDown;
 
   @override
   State<_ScaleOnPress> createState() => _ScaleOnPressState();
@@ -230,7 +242,6 @@ class _ScaleOnPressState extends State<_ScaleOnPress> {
   void _set(bool v) {
     if (!widget.enabled) return;
     setState(() => _down = v);
-    widget.onPressedDown?.call(v);
   }
 
   @override
