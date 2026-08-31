@@ -59,7 +59,7 @@ dependencies:
   dart_openai: ^5.1.0
   google_generative_ai: ^0.4.6
   flutter_tts: ^4.2.2
-  pin_code_fields: ^8.0.1
+  pin_code_fields: ^9.4.0
   flutter_timer_countdown: ^1.0.7
   smart_countdown: ^1.0.1
   circular_countdown_timer: ^0.2.4
