@@ -44,7 +44,7 @@ dependencies:
   flutter_screenutil: ^5.9.3
   google_fonts: ^6.3.2
   fluttertoast: ^8.2.8
-  flutter_native_splash: ^2.4.3
+  flutter_native_splash: ^2.4.8
   dialogs: ^0.0.7
   country_picker: ^2.0.27
   device_preview: ^1.2.0
